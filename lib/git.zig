@@ -3,7 +3,11 @@ const raw = @import("raw.zig");
 
 const log = std.log.scoped(.git);
 
-/// Only one instance of `Handle` should be initalized at any one time
+/// Init the global state
+///
+/// This function must be called before any other libgit2 function in order to set up global state and threading.
+///
+/// This function may be called multiple times.
 pub fn init() !Handle {
     log.debug("init called", .{});
 
@@ -20,8 +24,10 @@ pub fn init() !Handle {
     return Handle{};
 }
 
-/// Only one instance of `Handle` should be initalized at any one time
 pub const Handle = struct {
+    /// Shutdown the global state
+    /// 
+    /// Clean up the global state and threading context after calling it as many times as `init` was called.
     pub fn deinit(self: Handle) void {
         _ = self;
 
@@ -38,6 +44,9 @@ pub const Handle = struct {
         log.debug("libgit shutdown successfully", .{});
     }
 
+    /// Open a git repository.
+    ///
+    /// The `path` argument must point to either a git repository folder, or an existing work dir.
     pub fn openRepository(self: Handle, path: [:0]const u8) !GitRepository {
         _ = self;
 
@@ -56,6 +65,11 @@ pub const Handle = struct {
 pub const GitRepository = struct {
     repo: *raw.git_repository = undefined,
 
+    /// Free a previously allocated repository
+    ///
+    /// Note that after a repository is free'd, all the objects it has spawned will still exist 
+    /// until they are manually closed by the user, but accessing any of the attributes of an 
+    /// object without a backing repository will result in undefined behavior
     pub fn deinit(self: *GitRepository) void {
         log.debug("GitRepository.deinit called", .{});
 
