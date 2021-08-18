@@ -10,12 +10,16 @@ pub fn main() !void {
     defer handle.deinit();
 
     {
-        var repo = try handle.initRepository(repo_path, false);
+        var repo = try handle.repositoryInit(repo_path, false);
         defer repo.deinit();
     }
 
+    var git_buf = try handle.repositoryDiscover(repo_path, false, null);
+    defer git_buf.deinit();
+    std.log.info("found repo @ path {s}", .{git_buf.slice()});
+
     {
-        var repo = try handle.openRepository(repo_path);
+        var repo = try handle.repositoryOpen(git_buf.slice());
         defer repo.deinit();
     }
 }

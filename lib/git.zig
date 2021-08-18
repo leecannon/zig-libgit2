@@ -22,6 +22,7 @@ pub fn init() !Handle {
     return Handle{};
 }
 
+/// This type bundles all functionality that does not act on an instance of an object
 pub const Handle = struct {
     /// Shutdown the global state
     /// 
@@ -47,10 +48,10 @@ pub const Handle = struct {
     /// * `is_bare` - if true, a Git repository without a working directory is
     ///     created at the pointed path. If false, provided path will be
     ///     considered as the working directory into which the .git directory will be created.
-    pub fn initRepository(self: Handle, path: [:0]const u8, is_bare: bool) !GitRepository {
+    pub fn repositoryInit(self: Handle, path: [:0]const u8, is_bare: bool) !GitRepository {
         _ = self;
 
-        log.debug("Handle.initRepository called, path={s}, is_bare={}", .{ path, is_bare });
+        log.debug("Handle.repositoryInit called, path={s}, is_bare={}", .{ path, is_bare });
 
         var repo: ?*raw.git_repository = undefined;
 
@@ -69,10 +70,10 @@ pub const Handle = struct {
     ///
     /// ## Parameters
     /// * `path` - the path to the repository
-    pub fn openRepository(self: Handle, path: [:0]const u8) !GitRepository {
+    pub fn repositoryOpen(self: Handle, path: [:0]const u8) !GitRepository {
         _ = self;
 
-        log.debug("Handle.openRepository called, path={s}", .{path});
+        log.debug("Handle.repositoryOpen called, path={s}", .{path});
 
         var repo: ?*raw.git_repository = undefined;
 
@@ -81,6 +82,21 @@ pub const Handle = struct {
         log.debug("repository opened successfully", .{});
 
         return GitRepository{ .repo = repo.? };
+    }
+
+    pub fn repositoryDiscover(self: Handle, start_path: [:0]const u8, across_fs: bool, ceiling_dirs: ?[:0]const u8) !GitBuf {
+        _ = self;
+
+        log.debug("Handle.repositoryDiscover called, start_path={s}, across_fs={}, ceiling_dirs={s}", .{ start_path, across_fs, ceiling_dirs });
+
+        var git_buf = GitBuf.zero();
+
+        const ceiling_dirs_temp: [*c]const u8 = if (ceiling_dirs) |slice| slice.ptr else null;
+        try wrapCall("git_repository_discover", .{ &git_buf.buf, start_path.ptr, @boolToInt(across_fs), ceiling_dirs_temp });
+
+        log.debug("repository discovered - {s}", .{git_buf.slice()});
+
+        return git_buf;
     }
 
     comptime {
@@ -118,8 +134,8 @@ pub const GitWorktree = struct {
     /// Open working tree as a repository
     ///
     /// Open the working directory of the working tree as a normal repository that can then be worked on.
-    pub fn openRepository(self: GitWorktree) !GitRepository {
-        log.debug("GitWorktree.openRepository called", .{});
+    pub fn repositoryOpen(self: GitWorktree) !GitRepository {
+        log.debug("GitWorktree.repositoryOpen called", .{});
 
         var repo: ?*raw.git_repository = undefined;
 
@@ -144,8 +160,8 @@ pub const GitOdb = struct {
     /// Create a repository object to wrap an object database to be used
     /// with the API when all you have is an object database. This doesn't
     /// have any paths associated with it, so use with care.
-    pub fn openRepository(self: GitOdb) !GitRepository {
-        log.debug("GitOdb.openRepository called", .{});
+    pub fn repositoryOpen(self: GitOdb) !GitRepository {
+        log.debug("GitOdb.repositoryOpen called", .{});
 
         var repo: ?*raw.git_repository = undefined;
 
@@ -154,6 +170,28 @@ pub const GitOdb = struct {
         log.debug("repository opened successfully", .{});
 
         return GitRepository{ .repo = repo.? };
+    }
+
+    comptime {
+        std.testing.refAllDecls(@This());
+    }
+};
+
+/// A data buffer for exporting data from libgit2
+pub const GitBuf = struct {
+    buf: raw.git_buf,
+
+    fn zero() GitBuf {
+        return .{ .buf = std.mem.zeroInit(raw.git_buf, .{}) };
+    }
+
+    pub fn slice(self: GitBuf) [:0]const u8 {
+        return self.buf.ptr[0..self.buf.size :0];
+    }
+
+    /// Free the memory referred to by the git_buf.
+    pub fn deinit(self: *GitBuf) void {
+        raw.git_buf_dispose(&self.buf);
     }
 
     comptime {
