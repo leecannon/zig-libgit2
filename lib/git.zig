@@ -11,15 +11,13 @@ const log = std.log.scoped(.git);
 pub fn init() !Handle {
     log.debug("init called", .{});
 
-    checkUninitialized();
+    const number = try wrapCallWithReturn("git_libgit2_init", .{});
 
-    try wrapCall("git_libgit2_init", .{});
-
-    if (std.builtin.mode == .Debug) {
-        initialized = true;
+    if (number == 1) {
+        log.debug("libgit2 initalization successful", .{});
+    } else {
+        log.debug("{} ongoing initalizations without shutdown", .{number});
     }
-
-    log.info("libgit initalization successful", .{});
 
     return Handle{};
 }
@@ -33,16 +31,16 @@ pub const Handle = struct {
 
         log.debug("Handle.deinit called", .{});
 
-        checkInitialized();
+        const number = wrapCallWithReturn("git_libgit2_shutdown", .{}) catch unreachable;
 
-        wrapCall("git_libgit2_shutdown", .{}) catch unreachable;
-
-        if (std.builtin.mode == .Debug) {
-            initialized = false;
+        if (number == 0) {
+            log.debug("libgit2 shutdown successful", .{});
+        } else {
+            log.debug("{} initializations have not been shutdown (after this one)", .{number});
         }
-
-        log.debug("libgit shutdown successfully", .{});
     }
+
+    // pub fn initRepository(self: Handle, path: []const u8) !GitRepository {}
 
     /// Open a git repository.
     ///
@@ -153,7 +151,7 @@ inline fn wrapCall(comptime name: []const u8, args: anytype) GitError!void {
 inline fn wrapCallWithReturn(
     comptime name: []const u8,
     args: anytype,
-) GitError!(@typeInfo(@TypeOf(@field(raw, name))).Fn.return_type orelse void) {
+) GitError!@typeInfo(@TypeOf(@field(raw, name))).Fn.return_type.? {
     const value = @call(.{}, @field(raw, name), args);
     checkForError(value) catch |err| {
         log.emerg(name ++ " failed with error {}", .{err});
@@ -199,29 +197,6 @@ fn checkForError(value: raw.git_error_code) GitError!void {
             unreachable;
         },
     };
-}
-
-// TODO: Should the code that checks/sets `initialized` be atomic?
-usingnamespace if (std.builtin.mode == .Debug) struct {
-    pub var initialized: bool = false;
-} else struct {};
-
-inline fn checkInitialized() void {
-    if (std.builtin.mode == .Debug) {
-        if (!initialized) {
-            log.emerg("git is not initialized", .{});
-            unreachable;
-        }
-    }
-}
-
-inline fn checkUninitialized() void {
-    if (std.builtin.mode == .Debug) {
-        if (initialized) {
-            log.emerg("git is initialized", .{});
-            unreachable;
-        }
-    }
 }
 
 comptime {
