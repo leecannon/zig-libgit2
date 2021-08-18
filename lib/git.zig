@@ -49,18 +49,18 @@ pub const Handle = struct {
 
         log.debug("repository opened successfully", .{});
 
-        return GitRepository{ .repo = repo };
+        return GitRepository{ .repo = repo.? };
     }
 };
 
 pub const GitRepository = struct {
-    repo: ?*raw.git_repository = undefined,
+    repo: *raw.git_repository = undefined,
 
     pub fn deinit(self: *GitRepository) void {
         log.debug("GitRepository.deinit called", .{});
 
         raw.git_repository_free(self.repo);
-        self.repo = null;
+        self.* = undefined;
 
         log.debug("repository closed successfully", .{});
     }
