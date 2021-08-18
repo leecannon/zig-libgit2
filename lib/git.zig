@@ -4,25 +4,6 @@ const raw = @import("raw.zig");
 const log = std.log.scoped(.git);
 
 /// Only one instance of `Handle` should be initalized at any one time
-pub const Handle = struct {
-    pub fn deinit(self: Handle) void {
-        _ = self;
-
-        log.debug("Handle.deinit called", .{});
-
-        checkInitialized();
-
-        wrapCall(raw.git_libgit2_shutdown, .{}) catch unreachable;
-
-        if (std.builtin.mode == .Debug) {
-            initialized = false;
-        }
-
-        log.info("libgit shutdown successful", .{});
-    }
-};
-
-/// Only one instance of `Handle` should be initalized at any one time
 pub fn init() !Handle {
     log.debug("init called", .{});
 
@@ -38,6 +19,49 @@ pub fn init() !Handle {
 
     return Handle{};
 }
+
+/// Only one instance of `Handle` should be initalized at any one time
+pub const Handle = struct {
+    pub fn deinit(self: Handle) void {
+        _ = self;
+
+        log.debug("Handle.deinit called", .{});
+
+        checkInitialized();
+
+        wrapCall(raw.git_libgit2_shutdown, .{}) catch unreachable;
+
+        if (std.builtin.mode == .Debug) {
+            initialized = false;
+        }
+
+        log.debug("libgit shutdown successfully", .{});
+    }
+
+    pub fn openRepository(self: Handle, path: [:0]const u8) !GitRepository {
+        _ = self;
+
+        log.debug("Handle.openRepository called, path={s}", .{path});
+
+        var repo: ?*raw.git_repository = undefined;
+
+        try wrapCall(raw.git_repository_open, .{ &repo, path.ptr });
+
+        log.debug("repository opened successfully", .{});
+
+        return GitRepository{ .repo = repo.? };
+    }
+};
+
+pub const GitRepository = struct {
+    repo: *raw.git_repository = undefined,
+
+    pub fn deinit(self: GitRepository) void {
+        log.debug("GitRepository.deinit called", .{});
+        raw.git_repository_free(self.repo);
+        log.debug("repository closed successfully", .{});
+    }
+};
 
 pub const GitError = error{
     /// Generic error
