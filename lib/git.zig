@@ -40,11 +40,35 @@ pub const Handle = struct {
         }
     }
 
-    // pub fn initRepository(self: Handle, path: []const u8) !GitRepository {}
+    /// Creates a new Git repository in the given folder.
+    ///
+    /// ## Parameters
+    /// * `path` - the path to the repository
+    /// * `is_bare` - if true, a Git repository without a working directory is
+    ///     created at the pointed path. If false, provided path will be
+    ///     considered as the working directory into which the .git directory will be created.
+    pub fn initRepository(self: Handle, path: [:0]const u8, is_bare: bool) !GitRepository {
+        _ = self;
+
+        log.debug("Handle.initRepository called, path={s}, is_bare={}", .{ path, is_bare });
+
+        var repo: ?*raw.git_repository = undefined;
+
+        try wrapCall("git_repository_init", .{ &repo, path.ptr, @boolToInt(is_bare) });
+
+        log.debug("repository created successfully", .{});
+
+        return GitRepository{ .repo = repo.? };
+    }
 
     /// Open a git repository.
     ///
     /// The `path` argument must point to either a git repository folder, or an existing work dir.
+    ///
+    /// The method will automatically detect if 'path' is a normal or bare repository or fail is `path` is neither.
+    ///
+    /// ## Parameters
+    /// * `path` - the path to the repository
     pub fn openRepository(self: Handle, path: [:0]const u8) !GitRepository {
         _ = self;
 
