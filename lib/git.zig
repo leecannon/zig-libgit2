@@ -82,10 +82,15 @@ pub const Handle = struct {
 
         return GitRepository{ .repo = repo.? };
     }
+
+    comptime {
+        std.testing.refAllDecls(@This());
+    }
 };
 
+/// Representation of an existing git repository, including all its object contents
 pub const GitRepository = struct {
-    repo: *raw.git_repository = undefined,
+    repo: *raw.git_repository,
 
     /// Free a previously allocated repository
     ///
@@ -99,6 +104,34 @@ pub const GitRepository = struct {
         self.* = undefined;
 
         log.debug("repository closed successfully", .{});
+    }
+
+    comptime {
+        std.testing.refAllDecls(@This());
+    }
+};
+
+/// Representation of a working tree
+pub const GitWorktree = struct {
+    worktree: *raw.git_worktree,
+
+    /// Open working tree as a repository
+    ///
+    /// Open the working directory of the working tree as a normal repository that can then be worked on.
+    pub fn openRepository(self: GitWorktree) !GitRepository {
+        log.debug("GitWorktree.openRepository called", .{});
+
+        var repo: ?*raw.git_repository = undefined;
+
+        try wrapCall("git_repository_open_from_worktree", .{ &repo, self.worktree });
+
+        log.debug("repository opened successfully", .{});
+
+        return GitRepository{ .repo = repo.? };
+    }
+
+    comptime {
+        std.testing.refAllDecls(@This());
     }
 };
 
