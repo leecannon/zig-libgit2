@@ -9,7 +9,7 @@ pub fn init() !Handle {
 
     checkUninitialized();
 
-    try wrapCall(raw.git_libgit2_init, .{});
+    try wrapCall("git_libgit2_init", .{});
 
     if (std.builtin.mode == .Debug) {
         initialized = true;
@@ -29,7 +29,7 @@ pub const Handle = struct {
 
         checkInitialized();
 
-        wrapCall(raw.git_libgit2_shutdown, .{}) catch unreachable;
+        wrapCall("git_libgit2_shutdown", .{}) catch unreachable;
 
         if (std.builtin.mode == .Debug) {
             initialized = false;
@@ -45,7 +45,7 @@ pub const Handle = struct {
 
         var repo: ?*raw.git_repository = undefined;
 
-        try wrapCall(raw.git_repository_open, .{ &repo, path.ptr });
+        try wrapCall("git_repository_open", .{ &repo, path.ptr });
 
         log.debug("repository opened successfully", .{});
 
@@ -129,12 +129,23 @@ pub const GitError = error{
     ApplyFail,
 };
 
-inline fn wrapCall(function: anytype, args: anytype) GitError!void {
-    checkForError(@call(.{}, function, args)) catch |err| {
-        // TODO: Better function name in log output
-        log.emerg("`" ++ @typeName(@TypeOf(function)) ++ "` failed with error {}", .{err});
+inline fn wrapCall(comptime name: []const u8, args: anytype) GitError!void {
+    checkForError(@call(.{}, @field(raw, name), args)) catch |err| {
+        log.emerg(name ++ " failed with error {}", .{err});
         return err;
     };
+}
+
+inline fn wrapCallWithReturn(
+    comptime name: []const u8,
+    args: anytype,
+) GitError!(@typeInfo(@TypeOf(@field(raw, name))).Fn.return_type orelse void) {
+    const value = @call(.{}, @field(raw, name), args);
+    checkForError(value) catch |err| {
+        log.emerg(name ++ " failed with error {}", .{err});
+        return err;
+    };
+    return value;
 }
 
 fn checkForError(value: raw.git_error_code) GitError!void {
