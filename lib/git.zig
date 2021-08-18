@@ -135,6 +135,32 @@ pub const GitWorktree = struct {
     }
 };
 
+/// An open object database handle.
+pub const GitOdb = struct {
+    odb: *raw.git_odb,
+
+    /// Create a "fake" repository to wrap an object database
+    ///
+    /// Create a repository object to wrap an object database to be used
+    /// with the API when all you have is an object database. This doesn't
+    /// have any paths associated with it, so use with care.
+    pub fn openRepository(self: GitOdb) !GitRepository {
+        log.debug("GitOdb.openRepository called", .{});
+
+        var repo: ?*raw.git_repository = undefined;
+
+        try wrapCall("git_repository_wrap_odb", .{ &repo, self.odb });
+
+        log.debug("repository opened successfully", .{});
+
+        return GitRepository{ .repo = repo.? };
+    }
+
+    comptime {
+        std.testing.refAllDecls(@This());
+    }
+};
+
 pub const GitError = error{
     /// Generic error
     GenericError,
