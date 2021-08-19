@@ -24,6 +24,13 @@ pub fn init() !Handle {
     return Handle{};
 }
 
+/// Get detailed information regarding the last error that occured on this thread.
+pub fn getDetailedLastError() ?GitDetailedError {
+    return GitDetailedError{
+        .e = raw.git_error_last() orelse return null,
+    };
+}
+
 /// This type bundles all functionality that does not act on an instance of an object
 pub const Handle = struct {
     /// Shutdown the global state
@@ -63,6 +70,149 @@ pub const Handle = struct {
 
         return GitRepository{ .repo = repo.? };
     }
+
+    /// Create a new Git repository in the given folder with extended controls.
+    ///
+    /// This will initialize a new git repository (creating the repo_path if requested by flags) and working directory as needed.
+    /// It will auto-detect the case sensitivity of the file system and if the file system supports file mode bits correctly.
+    ///
+    /// ## Parameters
+    /// * `path` - the path to the repository
+    /// * `options` - The options to use during the creation of the repository
+    pub fn repositoryInitExtended(self: Handle, path: [:0]const u8, options: GitRepositoryInitExtendedOptions) !GitRepository {
+        _ = self;
+
+        log.debug("Handle.repositoryInitExtended called, path={s}, options={}", .{ path, options });
+
+        var opts: raw.git_repository_init_options = undefined;
+        try wrapCall("git_repository_init_options_init", .{ &opts, raw.GIT_REPOSITORY_INIT_OPTIONS_VERSION });
+
+        opts.flags = options.flags.toInt();
+        opts.mode = options.mode.toInt();
+        opts.workdir_path = if (options.workdir_path) |slice| slice.ptr else null;
+        opts.description = if (options.description) |slice| slice.ptr else null;
+        opts.template_path = if (options.template_path) |slice| slice.ptr else null;
+        opts.initial_head = if (options.initial_head) |slice| slice.ptr else null;
+        opts.origin_url = if (options.origin_url) |slice| slice.ptr else null;
+
+        var repo: ?*raw.git_repository = undefined;
+
+        try wrapCall("git_repository_init_ext", .{ &repo, path.ptr, &opts });
+
+        log.debug("repository created successfully", .{});
+
+        return GitRepository{ .repo = repo.? };
+    }
+
+    pub const GitRepositoryInitExtendedOptions = struct {
+        flags: GitRepositoryInitExtendedFlags = .{},
+        mode: InitMode = .shared_umask,
+
+        /// The path to the working dir or NULL for default (i.e. repo_path parent on non-bare repos). IF THIS IS RELATIVE PATH, 
+        /// IT WILL BE EVALUATED RELATIVE TO THE REPO_PATH. If this is not the "natural" working directory, a .git gitlink file 
+        /// will be created here linking to the repo_path.
+        workdir_path: ?[:0]const u8 = null,
+
+        /// If set, this will be used to initialize the "description" file in the repository, instead of using the template 
+        /// content.
+        description: ?[:0]const u8 = null,
+
+        /// When GIT_REPOSITORY_INIT_EXTERNAL_TEMPLATE is set, this contains the path to use for the template directory. If this 
+        /// is `null`, the config or default directory options will be used instead.
+        template_path: ?[:0]const u8 = null,
+
+        /// The name of the head to point HEAD at. If NULL, then this will be treated as "master" and the HEAD ref will be set to
+        /// "refs/heads/master".
+        /// If this begins with "refs/" it will be used verbatim; otherwise "refs/heads/" will be prefixed.
+        initial_head: ?[:0]const u8 = null,
+
+        /// If this is non-NULL, then after the rest of the repository initialization is completed, an "origin" remote will be 
+        /// added pointing to this URL.
+        origin_url: ?[:0]const u8 = null,
+
+        pub const GitRepositoryInitExtendedFlags = packed struct {
+            /// Create a bare repository with no working directory.
+            bare: bool = false,
+
+            /// Return an GIT_EEXISTS error if the repo_path appears to already be an git repository.
+            no_reinit: bool = false,
+
+            /// Normally a "/.git/" will be appended to the repo path for non-bare repos (if it is not already there), but passing 
+            /// this flag prevents that behavior.
+            no_dotgit_dir: bool = false,
+
+            /// Make the repo_path (and workdir_path) as needed. Init is always willing to create the ".git" directory even without 
+            /// this flag. This flag tells init to create the trailing component of the repo and workdir paths as needed.
+            mkdir: bool = false,
+
+            /// Recursively make all components of the repo and workdir paths as necessary.
+            mkpath: bool = false,
+
+            /// libgit2 normally uses internal templates to initialize a new repo. This flags enables external templates, looking the
+            /// "template_path" from the options if set, or the `init.templatedir` global config if not, or falling back on 
+            /// "/usr/share/git-core/templates" if it exists.
+            external_template: bool = false,
+
+            /// If an alternate workdir is specified, use relative paths for the gitdir and core.worktree.
+            relative_gitlink: bool = false,
+
+            z_padding: std.meta.Int(.unsigned, @bitSizeOf(c_uint) - 7) = 0,
+
+            pub fn toInt(self: GitRepositoryInitExtendedFlags) c_uint {
+                return @bitCast(c_uint, self);
+            }
+
+            pub fn format(
+                value: GitRepositoryInitExtendedFlags,
+                comptime fmt: []const u8,
+                options: std.fmt.FormatOptions,
+                writer: anytype,
+            ) !void {
+                _ = fmt;
+                return formatWithoutFields(
+                    value,
+                    options,
+                    writer,
+                    &.{"z_padding"},
+                );
+            }
+
+            test {
+                try std.testing.expectEqual(@sizeOf(c_uint), @sizeOf(GitRepositoryInitExtendedFlags));
+                try std.testing.expectEqual(@bitSizeOf(c_uint), @bitSizeOf(GitRepositoryInitExtendedFlags));
+            }
+
+            comptime {
+                std.testing.refAllDecls(@This());
+            }
+        };
+
+        pub const InitMode = union(enum) {
+            /// Use permissions configured by umask - the default.
+            shared_umask: void,
+
+            /// Use "--shared=group" behavior, chmod'ing the new repo to be group writable and "g+sx" for sticky group assignment.
+            shared_group: void,
+
+            /// Use "--shared=all" behavior, adding world readability.
+            shared_all: void,
+
+            custom: c_uint,
+
+            pub fn toInt(self: InitMode) c_uint {
+                return switch (self) {
+                    .shared_umask => 0,
+                    .shared_group => 0o2775,
+                    .shared_all => 0o2777,
+                    .custom => |custom| custom,
+                };
+            }
+        };
+
+        comptime {
+            std.testing.refAllDecls(@This());
+        }
+    };
 
     /// Open a git repository.
     ///
@@ -120,7 +270,6 @@ pub const Handle = struct {
         return GitRepository{ .repo = repo.? };
     }
 
-    /// Options for `Handle.repositoryOpenExtended`
     pub const GitRepositoryOpenExtendedFlags = packed struct {
         /// Only open the repository if it can be immediately found in the start_path. Do not walk up from the start_path looking 
         /// at parent directories.
@@ -395,9 +544,69 @@ pub const GitError = error{
     ApplyFail,
 };
 
+pub const GitDetailedError = struct {
+    e: *const raw.git_error,
+
+    pub const ErrorClass = enum(c_int) {
+        NONE = 0,
+        NOMEMORY,
+        OS,
+        INVALID,
+        REFERENCE,
+        ZLIB,
+        REPOSITORY,
+        CONFIG,
+        REGEX,
+        ODB,
+        INDEX,
+        OBJECT,
+        NET,
+        TAG,
+        TREE,
+        INDEXER,
+        SSL,
+        SUBMODULE,
+        THREAD,
+        STASH,
+        CHECKOUT,
+        FETCHHEAD,
+        MERGE,
+        SSH,
+        FILTER,
+        REVERT,
+        CALLBACK,
+        CHERRYPICK,
+        DESCRIBE,
+        REBASE,
+        FILESYSTEM,
+        PATCH,
+        WORKTREE,
+        SHA1,
+        HTTP,
+        INTERNAL,
+    };
+
+    pub fn message(self: GitDetailedError) [:0]const u8 {
+        return std.mem.sliceTo(self.e.message, 0);
+    }
+
+    pub fn errorClass(self: GitDetailedError) ErrorClass {
+        return @intToEnum(ErrorClass, self.e.klass);
+    }
+
+    comptime {
+        std.testing.refAllDecls(@This());
+    }
+};
+
 inline fn wrapCall(comptime name: []const u8, args: anytype) GitError!void {
     checkForError(@call(.{}, @field(raw, name), args)) catch |err| {
-        log.emerg(name ++ " failed with error {}", .{err});
+        if (getDetailedLastError()) |detailed| {
+            log.emerg(name ++ " failed with error {s}/{s} - {s}", .{ @errorName(err), @tagName(detailed.errorClass()), detailed.message() });
+        } else {
+            log.emerg(name ++ " failed with error {s}", .{@errorName(err)});
+        }
+
         return err;
     };
 }

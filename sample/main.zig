@@ -1,7 +1,7 @@
 const std = @import("std");
 const git = @import("git");
 
-const repo_path = "./temp_repo";
+const repo_path = "./zig-cache/test_repo";
 
 pub fn main() !void {
     defer std.fs.cwd().deleteTree(repo_path) catch {};
@@ -10,7 +10,7 @@ pub fn main() !void {
     defer handle.deinit();
 
     {
-        var repo = try handle.repositoryInit(repo_path, false);
+        var repo = try handle.repositoryInitExtended(repo_path, .{ .flags = .{ .mkdir = true, .mkpath = true } });
         defer repo.deinit();
     }
 
