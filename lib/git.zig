@@ -438,7 +438,26 @@ pub const GitRepository = struct {
 
         const ret = (try wrapCallWithReturn("git_repository_head_detached", .{self.repo})) == 1;
 
-        log.debug("head is detached: {}", .{ret});
+        log.debug("is head detached: {}", .{ret});
+
+        return ret;
+    }
+
+    /// Check if a worktree's HEAD is detached
+    ///
+    /// A worktree's HEAD is detached when it points directly to a commit instead of a branch.
+    ///
+    /// ## Parameters
+    /// * `name` - name of the worktree to retrieve HEAD for
+    pub fn isHeadForWorktreeDetached(self: GitRepository, name: [:0]const u8) !bool {
+        log.debug("GitRepository.isHeadForWorktreeDetached called", .{});
+
+        const ret = (try wrapCallWithReturn(
+            "git_repository_head_detached_for_worktree",
+            .{ self.repo, name.ptr },
+        )) == 1;
+
+        log.debug("head for worktree {s} is detached: {}", .{ name, ret });
 
         return ret;
     }
