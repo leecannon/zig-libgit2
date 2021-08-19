@@ -49,9 +49,16 @@ pub fn build(b: *std.build.Builder) void {
 pub fn addLibGit(exe: *std.build.LibExeObjStep, target: std.build.Target, comptime prefix_path: []const u8) void {
     if (prefix_path.len > 0 and !std.mem.endsWith(u8, prefix_path, "/")) @panic("prefix-path must end with '/' if it is not empty");
 
+    // The below build_options dependency hack is required to work around https://github.com/ziglang/zig/issues/5375
+
+    const build_option_file = std.fmt.allocPrint(exe.builder.allocator, "zig-cache/{s}_build_options.zig", .{exe.name}) catch unreachable;
+
     const git_pkg = std.build.Pkg{
         .name = "git",
         .path = .{ .path = prefix_path ++ "lib/git.zig" },
+        .dependencies = &[_]std.build.Pkg{
+            .{ .name = "build_options", .path = .{ .path = build_option_file } },
+        },
     };
 
     exe.addPackage(git_pkg);
@@ -59,9 +66,17 @@ pub fn addLibGit(exe: *std.build.LibExeObjStep, target: std.build.Target, compti
     linkLibGit(exe, target);
 }
 
+var old_version_opt: ?bool = null;
+
 fn linkLibGit(exe: *std.build.LibExeObjStep, target: std.build.Target) void {
     _ = target;
 
     exe.linkLibC();
     exe.linkSystemLibrary("git2");
+
+    if (old_version_opt == null) {
+        old_version_opt = exe.builder.option(bool, "old_version", "Is the available version of libgit2 older than v1.0.0") orelse false;
+    }
+
+    exe.addBuildOption(bool, "old_version", old_version_opt.?);
 }

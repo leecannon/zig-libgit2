@@ -22,7 +22,7 @@ jobs:
         run: sudo apt install libgit2-dev
 
       - name: test
-        run: zig build test
+        run: zig build test -Dold_version
   lint:
     runs-on: ubuntu-latest
     steps:

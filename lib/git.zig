@@ -2,6 +2,7 @@ const std = @import("std");
 const raw = @import("raw.zig");
 
 const log = std.log.scoped(.git);
+const old_version: bool = @import("build_options").old_version;
 
 pub const GIT_PATH_LIST_SEPARATOR = raw.GIT_PATH_LIST_SEPARATOR;
 
@@ -85,7 +86,11 @@ pub const Handle = struct {
         log.debug("Handle.repositoryInitExtended called, path={s}, options={}", .{ path, options });
 
         var opts: raw.git_repository_init_options = undefined;
-        try wrapCall("git_repository_init_options_init", .{ &opts, raw.GIT_REPOSITORY_INIT_OPTIONS_VERSION });
+        if (old_version) {
+            try wrapCall("git_repository_init_init_options", .{ &opts, raw.GIT_REPOSITORY_INIT_OPTIONS_VERSION });
+        } else {
+            try wrapCall("git_repository_init_options_init", .{ &opts, raw.GIT_REPOSITORY_INIT_OPTIONS_VERSION });
+        }
 
         opts.flags = options.flags.toInt();
         opts.mode = options.mode.toInt();
