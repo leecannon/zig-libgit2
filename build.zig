@@ -6,7 +6,7 @@ pub fn build(b: *std.build.Builder) void {
 
     // Tests
     {
-        const lib_test = b.addTest("lib/git.zig");
+        const lib_test = b.addTest("lib/tests.zig");
         lib_test.setTarget(target);
         lib_test.setBuildMode(mode);
         linkLibGit(lib_test, target);

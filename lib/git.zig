@@ -388,6 +388,25 @@ pub const Handle = struct {
     }
 };
 
+/// In-memory representation of a reference.
+pub const GitReference = struct {
+    ref: *raw.git_reference,
+
+    /// Free the given reference.
+    pub fn deinit(self: *GitReference) void {
+        log.debug("GitReference.deinit called", .{});
+
+        raw.git_reference_free(self.ref);
+        self.* = undefined;
+
+        log.debug("reference freed successfully", .{});
+    }
+
+    comptime {
+        std.testing.refAllDecls(@This());
+    }
+};
+
 /// Representation of an existing git repository, including all its object contents
 pub const GitRepository = struct {
     repo: *raw.git_repository,
@@ -406,6 +425,19 @@ pub const GitRepository = struct {
         log.debug("repository closed successfully", .{});
     }
 
+    /// Retrieve and resolve the reference pointed at by HEAD.
+    pub fn repositoryHead(self: GitRepository) !GitReference {
+        log.debug("Handle.repositoryHead called", .{});
+
+        var ref: ?*raw.git_reference = undefined;
+
+        try wrapCall("git_repository_head", .{ &ref, self.repo });
+
+        log.debug("reference opened successfully", .{});
+
+        return GitReference{ .ref = ref.? };
+    }
+
     comptime {
         std.testing.refAllDecls(@This());
     }
@@ -414,6 +446,16 @@ pub const GitRepository = struct {
 /// Representation of a working tree
 pub const GitWorktree = struct {
     worktree: *raw.git_worktree,
+
+    /// Free a previously allocated worktree
+    pub fn deinit(self: *GitWorktree) void {
+        log.debug("GitWorktree.deinit called", .{});
+
+        raw.git_worktree_free(self.worktree);
+        self.* = undefined;
+
+        log.debug("worktree freed successfully", .{});
+    }
 
     /// Open working tree as a repository
     ///
@@ -601,10 +643,18 @@ pub const GitDetailedError = struct {
 
 inline fn wrapCall(comptime name: []const u8, args: anytype) GitError!void {
     checkForError(@call(.{}, @field(raw, name), args)) catch |err| {
-        if (getDetailedLastError()) |detailed| {
-            log.emerg(name ++ " failed with error {s}/{s} - {s}", .{ @errorName(err), @tagName(detailed.errorClass()), detailed.message() });
-        } else {
-            log.emerg(name ++ " failed with error {s}", .{@errorName(err)});
+
+        // Outputing err or emerg log during test counts as a failed test, even if the error is expected
+        if (!std.builtin.is_test) {
+            if (getDetailedLastError()) |detailed| {
+                log.emerg(name ++ " failed with error {s}/{s} - {s}", .{
+                    @errorName(err),
+                    @tagName(detailed.errorClass()),
+                    detailed.message(),
+                });
+            } else {
+                log.emerg(name ++ " failed with error {s}", .{@errorName(err)});
+            }
         }
 
         return err;
@@ -617,7 +667,11 @@ inline fn wrapCallWithReturn(
 ) GitError!@typeInfo(@TypeOf(@field(raw, name))).Fn.return_type.? {
     const value = @call(.{}, @field(raw, name), args);
     checkForError(value) catch |err| {
-        log.emerg(name ++ " failed with error {}", .{err});
+
+        // Outputing err or emerg log during test counts as a failed test, even if the error is expected
+        if (!std.builtin.is_test) {
+            log.emerg(name ++ " failed with error {}", .{err});
+        }
         return err;
     };
     return value;
