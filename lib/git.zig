@@ -519,6 +519,40 @@ pub const GitRepository = struct {
         return ret;
     }
 
+    /// Get the location of a specific repository file or directory
+    ///
+    /// This function will retrieve the path of a specific repository item. It will thereby honor things like the repository's
+    /// common directory, gitdir, etc. In case a file path cannot exist for a given item (e.g. the working directory of a bare
+    /// repository), `NOTFOUND` is returned.
+    pub fn itemPath(self: GitRepository, item: RepositoryItem) !GitBuf {
+        log.debug("GitRepository.itemPath called, item={s}", .{item});
+
+        var buf = GitBuf.zero();
+
+        try wrapCall("git_repository_item_path", .{ &buf.buf, self.repo, @enumToInt(item) });
+
+        log.debug("item path: {s}", .{buf.slice()});
+
+        return buf;
+    }
+
+    pub const RepositoryItem = enum(c_uint) {
+        GITDIR,
+        WORKDIR,
+        COMMONDIR,
+        INDEX,
+        OBJECTS,
+        REFS,
+        PACKED_REFS,
+        REMOTES,
+        CONFIG,
+        INFO,
+        HOOKS,
+        LOGS,
+        MODULES,
+        WORKTREES,
+    };
+
     comptime {
         std.testing.refAllDecls(@This());
     }

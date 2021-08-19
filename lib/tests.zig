@@ -34,7 +34,7 @@ test "repository discover" {
 }
 
 test "fresh repo has head reference to unborn branch" {
-    var test_handle = try TestHandle.init("head_reference_unborn");
+    var test_handle = try TestHandle.init("head_reference_unborn_error");
     defer test_handle.deinit();
 
     try std.testing.expectError(git.GitError.UnbornBranch, test_handle.repo.head());
@@ -48,10 +48,23 @@ test "fresh repo has unborn head reference" {
 }
 
 test "fresh repo is empty" {
-    var test_handle = try TestHandle.init("head_reference_unborn");
+    var test_handle = try TestHandle.init("fresh_repo_is_empty");
     defer test_handle.deinit();
 
     try std.testing.expect(try test_handle.repo.isEmpty());
+}
+
+test "item paths" {
+    var test_handle = try TestHandle.init("item_paths");
+    defer test_handle.deinit();
+
+    var buf = try test_handle.repo.itemPath(.CONFIG);
+    defer buf.deinit();
+
+    const expected = try std.fmt.allocPrint(std.testing.allocator, "{s}/.git/config", .{test_handle.repo_path[1..]});
+    defer std.testing.allocator.free(expected);
+
+    try std.testing.expectStringEndsWith(buf.slice(), expected);
 }
 
 const TestHandle = struct {
