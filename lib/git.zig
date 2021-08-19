@@ -430,6 +430,19 @@ pub const GitRepository = struct {
         log.debug("repository closed successfully", .{});
     }
 
+    /// Check if a repository's HEAD is detached
+    ///
+    /// A repository's HEAD is detached when it points directly to a commit instead of a branch.
+    pub fn isHeadDetached(self: GitRepository) !bool {
+        log.debug("GitRepository.isHeadDetached called", .{});
+
+        const ret = (try wrapCallWithReturn("git_repository_head_detached", .{self.repo})) == 1;
+
+        log.debug("head is detached: {}", .{ret});
+
+        return ret;
+    }
+
     /// Retrieve and resolve the reference pointed at by HEAD.
     pub fn head(self: GitRepository) !GitReference {
         log.debug("GitRepository.head called", .{});
