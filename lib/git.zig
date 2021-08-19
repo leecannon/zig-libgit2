@@ -86,6 +86,100 @@ pub const Handle = struct {
         return GitRepository{ .repo = repo.? };
     }
 
+    /// Find and open a repository with extended controls.
+    ///
+    /// The `path` argument must point to either a git repository folder, or an existing work dir.
+    ///
+    /// The method will automatically detect if 'path' is a normal or bare repository or fail is `path` is neither.
+    ///
+    /// *Note:* `path` can only be null if the `open_from_env` option is used.
+    ///
+    /// ## Parameters
+    /// * `path` - the path to the repository
+    /// * `flags` - A combination of the GIT_REPOSITORY_OPEN flags above.
+    /// * `ceiling_dirs` - A `GIT_PATH_LIST_SEPARATOR` delimited list of path prefixes at which the search for a containing
+    ///                    repository should terminate. `ceiling_dirs` can be `null`.
+    pub fn repositoryOpenExtended(
+        self: Handle,
+        path: ?[:0]const u8,
+        flags: GitRepositoryOpenExtendedFlags,
+        ceiling_dirs: ?[:0]const u8,
+    ) !GitRepository {
+        _ = self;
+
+        log.debug("Handle.repositoryOpenExtended called, path={s}, flags={}, ceiling_dirs={s}", .{ path, flags, ceiling_dirs });
+
+        var repo: ?*raw.git_repository = undefined;
+
+        const path_temp: [*c]const u8 = if (path) |slice| slice.ptr else null;
+        const ceiling_dirs_temp: [*c]const u8 = if (ceiling_dirs) |slice| slice.ptr else null;
+        try wrapCall("git_repository_open_ext", .{ &repo, path_temp, flags.toInt(), ceiling_dirs_temp });
+
+        log.debug("repository opened successfully", .{});
+
+        return GitRepository{ .repo = repo.? };
+    }
+
+    /// Options for `Handle.repositoryOpenExtended`
+    pub const GitRepositoryOpenExtendedFlags = packed struct {
+        /// Only open the repository if it can be immediately found in the start_path. Do not walk up from the start_path looking 
+        /// at parent directories.
+        no_search: bool = false,
+
+        /// Unless this flag is set, open will not continue searching across filesystem boundaries (i.e. when `st_dev` changes 
+        /// from the `stat` system call).  For example, searching in a user's home directory at "/home/user/source/" will not 
+        /// return "/.git/" as the found repo if "/" is a different filesystem than "/home".
+        cross_fs: bool = false,
+
+        /// Open repository as a bare repo regardless of core.bare config, and defer loading config file for faster setup.
+        /// Unlike `Handle.repositoryOpenBare`, this can follow gitlinks.
+        bare: bool = false,
+
+        /// Do not check for a repository by appending /.git to the start_path; only open the repository if start_path itself 
+        /// points to the git directory.     
+        no_dotgit: bool = false,
+
+        /// Find and open a git repository, respecting the environment variables used by the git command-line tools. If set, 
+        /// `Handle.repositoryOpenExtended` will ignore the other flags and the `ceiling_dirs` argument, and will allow a null 
+        /// `path` to use `GIT_DIR` or search from the current directory.
+        /// The search for a repository will respect $GIT_CEILING_DIRECTORIES and $GIT_DISCOVERY_ACROSS_FILESYSTEM.  The opened 
+        /// repository will respect $GIT_INDEX_FILE, $GIT_NAMESPACE, $GIT_OBJECT_DIRECTORY, and $GIT_ALTERNATE_OBJECT_DIRECTORIES.
+        /// In the future, this flag will also cause `Handle.repositoryOpenExtended` to respect $GIT_WORK_TREE and 
+        /// $GIT_COMMON_DIR; currently, `Handle.repositoryOpenExtended` with this flag will error out if either $GIT_WORK_TREE or 
+        /// $GIT_COMMON_DIR is set.
+        open_from_env: bool = false,
+
+        z_padding: std.meta.Int(.unsigned, @bitSizeOf(c_uint) - 5) = 0,
+
+        pub fn toInt(self: GitRepositoryOpenExtendedFlags) c_uint {
+            return @bitCast(c_uint, self);
+        }
+
+        pub fn format(
+            value: GitRepositoryOpenExtendedFlags,
+            comptime fmt: []const u8,
+            options: std.fmt.FormatOptions,
+            writer: anytype,
+        ) !void {
+            _ = fmt;
+            return formatWithoutFields(
+                value,
+                options,
+                writer,
+                &.{"z_padding"},
+            );
+        }
+
+        test {
+            try std.testing.expectEqual(@sizeOf(c_uint), @sizeOf(GitRepositoryOpenExtendedFlags));
+            try std.testing.expectEqual(@bitSizeOf(c_uint), @bitSizeOf(GitRepositoryOpenExtendedFlags));
+        }
+
+        comptime {
+            std.testing.refAllDecls(@This());
+        }
+    };
+
     /// Look for a git repository and provide its path.
     ///
     /// The lookup start from base_path and walk across parent directories if nothing has been found. The lookup ends when the
@@ -100,7 +194,7 @@ pub const Handle = struct {
     ///                 directories.
     /// * `ceiling_dirs` - A `GIT_PATH_LIST_SEPARATOR` separated list of absolute symbolic link free paths. The lookup will stop 
     ///                    when any of this paths is reached. Note that the lookup always performs on `start_path` no matter 
-    ///                    `start_path` appears in `ceiling_dirs`. `ceiling_dirs` might be `null`.
+    ///                    `start_path` appears in `ceiling_dirs`. `ceiling_dirs` can be `null`.
     pub fn repositoryDiscover(self: Handle, start_path: [:0]const u8, across_fs: bool, ceiling_dirs: ?[:0]const u8) !GitBuf {
         _ = self;
 
@@ -130,8 +224,9 @@ pub const GitRepository = struct {
 
     /// Free a previously allocated repository
     ///
-    /// Note that after a repository is free'd, all the objects it has spawned will still exist until they are manually closed by
-    /// the user, but accessing any of the attributes of an object without a backing repository will result in undefined behavior
+    /// *Note:* that after a repository is free'd, all the objects it has spawned will still exist until they are manually closed 
+    /// by the user, but accessing any of the attributes of an object without a backing repository will result in undefined 
+    /// behavior
     pub fn deinit(self: *GitRepository) void {
         log.debug("GitRepository.deinit called", .{});
 
@@ -335,6 +430,42 @@ fn checkForError(value: raw.git_error_code) GitError!void {
             unreachable;
         },
     };
+}
+
+fn formatWithoutFields(value: anytype, options: std.fmt.FormatOptions, writer: anytype, comptime blacklist: []const []const u8) !void {
+    // This ANY const is a workaround for: https://github.com/ziglang/zig/issues/7948
+    const ANY = "any";
+
+    const T = @TypeOf(value);
+
+    switch (@typeInfo(T)) {
+        .Struct => |info| {
+            try writer.writeAll(@typeName(T));
+            try writer.writeAll("{");
+            comptime var i = 0;
+            outer: inline for (info.fields) |f| {
+                inline for (blacklist) |blacklist_item| {
+                    if (comptime std.mem.indexOf(u8, f.name, blacklist_item) != null) continue :outer;
+                }
+
+                if (i == 0) {
+                    try writer.writeAll(" .");
+                } else {
+                    try writer.writeAll(", .");
+                }
+
+                try writer.writeAll(f.name);
+                try writer.writeAll(" = ");
+                try std.fmt.formatType(@field(value, f.name), ANY, options, writer, std.fmt.default_max_depth - 1);
+
+                i += 1;
+            }
+            try writer.writeAll(" }");
+        },
+        else => {
+            @compileError("Unimplemented for: " ++ @typeName(T));
+        },
+    }
 }
 
 comptime {

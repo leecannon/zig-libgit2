@@ -16,10 +16,15 @@ pub fn main() !void {
 
     var git_buf = try handle.repositoryDiscover(repo_path, false, null);
     defer git_buf.deinit();
-    std.log.info("found repo @ path {s}", .{git_buf.slice()});
+    std.log.info("found repo @ {s}", .{git_buf.slice()});
 
     {
         var repo = try handle.repositoryOpen(git_buf.slice());
+        defer repo.deinit();
+    }
+
+    {
+        var repo = try handle.repositoryOpenExtended(git_buf.slice(), .{}, null);
         defer repo.deinit();
     }
 }
