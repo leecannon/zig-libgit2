@@ -536,6 +536,19 @@ pub const GitRepository = struct {
         return buf;
     }
 
+    /// Get the path of this repository
+    ///
+    /// This is the path of the `.git` folder for normal repositories, or of the repository itself for bare repositories.
+    pub fn path(self: GitRepository) [:0]const u8 {
+        log.debug("GitRepository.path called", .{});
+
+        const slice = std.mem.sliceTo(raw.git_repository_path(self.repo), 0);
+
+        log.debug("path: {s}", .{slice});
+
+        return slice;
+    }
+
     pub const RepositoryItem = enum(c_uint) {
         GITDIR,
         WORKDIR,

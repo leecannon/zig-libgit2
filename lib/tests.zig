@@ -61,7 +61,7 @@ test "item paths" {
     var buf = try test_handle.repo.itemPath(.CONFIG);
     defer buf.deinit();
 
-    const expected = try std.fmt.allocPrint(std.testing.allocator, "{s}/.git/config", .{test_handle.repo_path[1..]});
+    const expected = try std.fmt.allocPrintZ(std.testing.allocator, "{s}/.git/config", .{test_handle.repo_path[1..]});
     defer std.testing.allocator.free(expected);
 
     try std.testing.expectStringEndsWith(buf.slice(), expected);
