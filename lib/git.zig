@@ -431,12 +431,28 @@ pub const GitRepository = struct {
     }
 
     /// Retrieve and resolve the reference pointed at by HEAD.
-    pub fn repositoryHead(self: GitRepository) !GitReference {
-        log.debug("Handle.repositoryHead called", .{});
+    pub fn head(self: GitRepository) !GitReference {
+        log.debug("GitRepository.head called", .{});
 
         var ref: ?*raw.git_reference = undefined;
 
         try wrapCall("git_repository_head", .{ &ref, self.repo });
+
+        log.debug("reference opened successfully", .{});
+
+        return GitReference{ .ref = ref.? };
+    }
+
+    /// Retrieve the referenced HEAD for the worktree
+    ///
+    /// ## Parameters
+    /// * `name` - name of the worktree to retrieve HEAD for
+    pub fn headForWorktree(self: GitRepository, name: [:0]const u8) !GitReference {
+        log.debug("GitRepository.headForWorktree called", .{});
+
+        var ref: ?*raw.git_reference = undefined;
+
+        try wrapCall("git_repository_head_for_worktree", .{ &ref, self.repo, name.ptr });
 
         log.debug("reference opened successfully", .{});
 
