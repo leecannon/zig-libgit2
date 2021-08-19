@@ -40,6 +40,13 @@ test "fresh repo has head reference to unborn branch" {
     try std.testing.expectError(git.GitError.UnbornBranch, test_handle.repo.head());
 }
 
+test "fresh repo has unborn head reference" {
+    var test_handle = try TestHandle.init("head_reference_unborn");
+    defer test_handle.deinit();
+
+    try std.testing.expect(try test_handle.repo.isHeadUnborn());
+}
+
 const TestHandle = struct {
     handle: git.Handle,
     repo_path: [:0]const u8,

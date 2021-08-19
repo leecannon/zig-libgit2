@@ -443,25 +443,6 @@ pub const GitRepository = struct {
         return ret;
     }
 
-    /// Check if a worktree's HEAD is detached
-    ///
-    /// A worktree's HEAD is detached when it points directly to a commit instead of a branch.
-    ///
-    /// ## Parameters
-    /// * `name` - name of the worktree to retrieve HEAD for
-    pub fn isHeadForWorktreeDetached(self: GitRepository, name: [:0]const u8) !bool {
-        log.debug("GitRepository.isHeadForWorktreeDetached called", .{});
-
-        const ret = (try wrapCallWithReturn(
-            "git_repository_head_detached_for_worktree",
-            .{ self.repo, name.ptr },
-        )) == 1;
-
-        log.debug("head for worktree {s} is detached: {}", .{ name, ret });
-
-        return ret;
-    }
-
     /// Retrieve and resolve the reference pointed at by HEAD.
     pub fn head(self: GitRepository) !GitReference {
         log.debug("GitRepository.head called", .{});
@@ -475,12 +456,31 @@ pub const GitRepository = struct {
         return GitReference{ .ref = ref.? };
     }
 
+    /// Check if a worktree's HEAD is detached
+    ///
+    /// A worktree's HEAD is detached when it points directly to a commit instead of a branch.
+    ///
+    /// ## Parameters
+    /// * `name` - name of the worktree to retrieve HEAD for
+    pub fn isHeadForWorktreeDetached(self: GitRepository, name: [:0]const u8) !bool {
+        log.debug("GitRepository.isHeadForWorktreeDetached called, name={s}", .{name});
+
+        const ret = (try wrapCallWithReturn(
+            "git_repository_head_detached_for_worktree",
+            .{ self.repo, name.ptr },
+        )) == 1;
+
+        log.debug("head for worktree {s} is detached: {}", .{ name, ret });
+
+        return ret;
+    }
+
     /// Retrieve the referenced HEAD for the worktree
     ///
     /// ## Parameters
     /// * `name` - name of the worktree to retrieve HEAD for
     pub fn headForWorktree(self: GitRepository, name: [:0]const u8) !GitReference {
-        log.debug("GitRepository.headForWorktree called", .{});
+        log.debug("GitRepository.headForWorktree called, name={s}", .{name});
 
         var ref: ?*raw.git_reference = undefined;
 
@@ -489,6 +489,20 @@ pub const GitRepository = struct {
         log.debug("reference opened successfully", .{});
 
         return GitReference{ .ref = ref.? };
+    }
+
+    /// Check if the current branch is unborn
+    ///
+    /// An unborn branch is one named from HEAD but which doesn't exist in the refs namespace, because it doesn't have any commit
+    /// to point to.
+    pub fn isHeadUnborn(self: GitRepository) !bool {
+        log.debug("GitRepository.isHeadUnborn called", .{});
+
+        const ret = (try wrapCallWithReturn("git_repository_head_unborn", .{self.repo})) == 1;
+
+        log.debug("is head unborn: {}", .{ret});
+
+        return ret;
     }
 
     comptime {
