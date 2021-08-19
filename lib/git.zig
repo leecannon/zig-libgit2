@@ -180,6 +180,27 @@ pub const Handle = struct {
         }
     };
 
+    /// Open a bare repository on the serverside.
+    ///
+    /// This is a fast open for bare repositories that will come in handy if you're e.g. hosting git repositories and need to 
+    /// access them efficiently
+    ///
+    /// ## Parameters
+    /// * `path` - the path to the repository
+    pub fn repositoryOpenBare(self: Handle, path: [:0]const u8) !GitRepository {
+        _ = self;
+
+        log.debug("Handle.repositoryOpenBare called, path={s}", .{path});
+
+        var repo: ?*raw.git_repository = undefined;
+
+        try wrapCall("git_repository_open_bare", .{ &repo, path.ptr });
+
+        log.debug("repository opened successfully", .{});
+
+        return GitRepository{ .repo = repo.? };
+    }
+
     /// Look for a git repository and provide its path.
     ///
     /// The lookup start from base_path and walk across parent directories if nothing has been found. The lookup ends when the

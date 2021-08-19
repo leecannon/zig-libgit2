@@ -24,6 +24,11 @@ pub fn main() !void {
     }
 
     {
+        var repo = try handle.repositoryOpenBare(git_buf.slice());
+        defer repo.deinit();
+    }
+
+    {
         var repo = try handle.repositoryOpenExtended(git_buf.slice(), .{}, null);
         defer repo.deinit();
     }
