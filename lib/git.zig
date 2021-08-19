@@ -505,6 +505,20 @@ pub const GitRepository = struct {
         return ret;
     }
 
+    /// Check if a repository is empty
+    ///
+    /// An empty repository has just been initialized and contains no references apart from HEAD, which must be pointing to the
+    /// unborn master branch.
+    pub fn isEmpty(self: GitRepository) !bool {
+        log.debug("GitRepository.isEmpty called", .{});
+
+        const ret = (try wrapCallWithReturn("git_repository_is_empty", .{self.repo})) == 1;
+
+        log.debug("is repository empty: {}", .{ret});
+
+        return ret;
+    }
+
     comptime {
         std.testing.refAllDecls(@This());
     }

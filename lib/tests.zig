@@ -47,6 +47,13 @@ test "fresh repo has unborn head reference" {
     try std.testing.expect(try test_handle.repo.isHeadUnborn());
 }
 
+test "fresh repo is empty" {
+    var test_handle = try TestHandle.init("head_reference_unborn");
+    defer test_handle.deinit();
+
+    try std.testing.expect(try test_handle.repo.isEmpty());
+}
+
 const TestHandle = struct {
     handle: git.Handle,
     repo_path: [:0]const u8,
