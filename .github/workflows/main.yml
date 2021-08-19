@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    paths:
+      - '**.zig'
+  pull_request:
+     paths:
+      - '**.zig'
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: goto-bus-stop/setup-zig@v1.3.0
+        with:
+          version: master
+
+      - name: Install libgit2
+        run: sudo apt install libgit2-dev
+
+      - name: test
+        run: zig build test
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: goto-bus-stop/setup-zig@v1.3.0
+        with:
+          version: master
+      - run: zig fmt --check --ast-check **.zig
