@@ -4,6 +4,7 @@ const git = @import("git.zig");
 test "simple repository init" {
     const repo_path = "./zig-cache/test_repos/simple_repository_init";
 
+    std.fs.cwd().deleteTree(repo_path) catch {};
     defer std.fs.cwd().deleteTree(repo_path) catch {};
 
     const handle = try git.init();
@@ -16,6 +17,7 @@ test "simple repository init" {
 test "extended repository init" {
     const repo_path = "./zig-cache/test_repos/extended_repository_init/very/nested/repo";
 
+    std.fs.cwd().deleteTree("./zig-cache/test_repos/extended_repository_init") catch {};
     defer std.fs.cwd().deleteTree("./zig-cache/test_repos/extended_repository_init") catch {};
 
     const handle = try git.init();
@@ -57,6 +59,7 @@ test "fresh repo is empty" {
 test "bare repo is bare" {
     const repo_path = "./zig-cache/test_repos/bare_repo_is_bare";
 
+    std.fs.cwd().deleteTree(repo_path) catch {};
     defer std.fs.cwd().deleteTree(repo_path) catch {};
 
     const handle = try git.init();
@@ -129,6 +132,8 @@ const TestHandle = struct {
     pub fn init(test_name: []const u8) !TestHandle {
         const repo_path = try std.fmt.allocPrintZ(std.testing.allocator, "./zig-cache/test_repos/{s}", .{test_name});
         errdefer std.testing.allocator.free(repo_path);
+
+        std.fs.cwd().deleteTree(repo_path) catch {};
 
         const handle = try git.init();
         errdefer handle.deinit();
