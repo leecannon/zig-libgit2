@@ -530,6 +530,17 @@ pub const GitRepository = struct {
         return ret;
     }
 
+    /// Check if a repository is a linked work tree
+    pub fn isWorktree(self: GitRepository) bool {
+        log.debug("GitRepository.isWorktree called", .{});
+
+        const ret = raw.git_repository_is_worktree(self.repo) == 1;
+
+        log.debug("is repository worktree: {}", .{ret});
+
+        return ret;
+    }
+
     /// Get the location of a specific repository file or directory
     ///
     /// This function will retrieve the path of a specific repository item. It will thereby honor things like the repository's
