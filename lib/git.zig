@@ -641,6 +641,21 @@ pub const GitRepository = struct {
     }
 };
 
+/// Memory representation of a set of config files
+pub const GitConfig = struct {
+    config: *raw.git_config,
+
+    /// Free the configuration and its associated memory and files
+    pub fn deinit(self: *GitConfig) void {
+        log.debug("GitConfig.deinit called", .{});
+
+        raw.git_config_free(self.config);
+        self.* = undefined;
+
+        log.debug("config freed successfully", .{});
+    }
+};
+
 /// Representation of a working tree
 pub const GitWorktree = struct {
     worktree: *raw.git_worktree,
