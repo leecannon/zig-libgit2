@@ -476,6 +476,29 @@ pub const GitRepository = struct {
         log.debug("successfully set head", .{});
     }
 
+    /// Make the repository HEAD directly point to the Commit.
+    ///
+    /// If the provided committish cannot be found in the repository, the HEAD is unaltered and GIT_ENOTFOUND is returned.
+    ///
+    /// If the provided commitish cannot be peeled into a commit, the HEAD is unaltered and -1 is returned.
+    ///
+    /// Otherwise, the HEAD will eventually be detached and will directly point to the peeled Commit.
+    ///
+    /// ## Parameters
+    /// * `commitish` - Object id of the Commit the HEAD should point to
+    pub fn setHeadDetached(self: *GitRepository, commitish: GitOid) !void {
+        // This check is to prevent formating the oid when we are not going to print anything
+        if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
+            var buf: [GitOid.HEX_BUFFER_SIZE]u8 = undefined;
+            const slice = try commitish.formatHex(&buf);
+            log.debug("GitRepository.setHeadDetached called, commitish={s}", .{slice});
+        }
+
+        try wrapCall("git_repository_set_head_detached", .{ self.repo, commitish.oid });
+
+        log.debug("successfully set head", .{});
+    }
+
     /// Check if a worktree's HEAD is detached
     ///
     /// A worktree's HEAD is detached when it points directly to a commit instead of a branch.
@@ -965,7 +988,6 @@ pub const GitRepository = struct {
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
             var buf: [GitOid.HEX_BUFFER_SIZE]u8 = undefined;
             const slice = try ret.formatHex(&buf);
-
             log.debug("file hash acquired successfully, hash={s}", .{slice});
         }
 
