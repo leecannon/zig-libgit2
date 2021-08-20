@@ -113,6 +113,14 @@ test "get ref db" {
     defer ref_db.deinit();
 }
 
+test "get index" {
+    var test_handle = try TestHandle.init("get_index");
+    defer test_handle.deinit();
+
+    var index = try test_handle.repo.getIndex();
+    defer index.deinit();
+}
+
 const TestHandle = struct {
     handle: git.Handle,
     repo_path: [:0]const u8,

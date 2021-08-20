@@ -707,6 +707,24 @@ pub const GitRepository = struct {
         return GitRefDb{ .ref_db = ref_db.? };
     }
 
+    /// Get the Reference Database Backend for this repository.
+    ///
+    /// If a custom refsdb has not been set, the default database for the repository will be returned (the one that manipulates
+    /// loose and packed references in the `.git` directory).
+    /// 
+    /// The refdb must be freed once it's no longer being used by the user.
+    pub fn getIndex(self: GitRepository) !GitIndex {
+        log.debug("GitRepository.getIndex called", .{});
+
+        var index: ?*raw.git_index = undefined;
+
+        try wrapCall("git_repository_index", .{ &index, self.repo });
+
+        log.debug("repository index acquired successfully", .{});
+
+        return GitIndex{ .index = index.? };
+    }
+
     comptime {
         std.testing.refAllDecls(@This());
     }
