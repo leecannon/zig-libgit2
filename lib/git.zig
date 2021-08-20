@@ -524,7 +524,7 @@ pub const GitRepository = struct {
     /// This function will retrieve the path of a specific repository item. It will thereby honor things like the repository's
     /// common directory, gitdir, etc. In case a file path cannot exist for a given item (e.g. the working directory of a bare
     /// repository), `NOTFOUND` is returned.
-    pub fn itemPath(self: GitRepository, item: RepositoryItem) !GitBuf {
+    pub fn getItemPath(self: GitRepository, item: RepositoryItem) !GitBuf {
         log.debug("GitRepository.itemPath called, item={s}", .{item});
 
         var buf = GitBuf.zero();
@@ -539,7 +539,7 @@ pub const GitRepository = struct {
     /// Get the path of this repository
     ///
     /// This is the path of the `.git` folder for normal repositories, or of the repository itself for bare repositories.
-    pub fn path(self: GitRepository) [:0]const u8 {
+    pub fn getPath(self: GitRepository) [:0]const u8 {
         log.debug("GitRepository.path called", .{});
 
         const slice = std.mem.sliceTo(raw.git_repository_path(self.repo), 0);
@@ -552,7 +552,7 @@ pub const GitRepository = struct {
     /// Get the path of the working directory for this repository
     ///
     /// If the repository is bare, this function will always return `null`.
-    pub fn workdir(self: GitRepository) ?[:0]const u8 {
+    pub fn getWorkdir(self: GitRepository) ?[:0]const u8 {
         log.debug("GitRepository.workdir called", .{});
 
         if (raw.git_repository_workdir(self.repo)) |ret| {
@@ -572,7 +572,7 @@ pub const GitRepository = struct {
     ///
     /// If the repository is bare, it is the root directory for the repository. If the repository is a worktree, it is the parent 
     /// repo's gitdir. Otherwise, it is the gitdir.
-    pub fn commondir(self: GitRepository) ?[:0]const u8 {
+    pub fn getCommondir(self: GitRepository) ?[:0]const u8 {
         log.debug("GitRepository.commondir called", .{});
 
         if (raw.git_repository_commondir(self.repo)) |ret| {

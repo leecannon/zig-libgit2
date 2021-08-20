@@ -58,7 +58,7 @@ test "item paths" {
     var test_handle = try TestHandle.init("item_paths");
     defer test_handle.deinit();
 
-    var buf = try test_handle.repo.itemPath(.CONFIG);
+    var buf = try test_handle.repo.getItemPath(.CONFIG);
     defer buf.deinit();
 
     const expected = try std.fmt.allocPrintZ(std.testing.allocator, "{s}/.git/config", .{test_handle.repo_path[1..]});
