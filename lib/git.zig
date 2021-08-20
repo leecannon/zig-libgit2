@@ -999,6 +999,21 @@ pub const GitRepository = struct {
     }
 };
 
+/// Annotated commits, the input to merge and rebase.
+pub const GitAnnotatedCommit = struct {
+    commit: *raw.git_annotated_commit,
+
+    /// Free the annotated commit
+    pub fn deinit(self: *GitAnnotatedCommit) void {
+        log.debug("GitAnnotatedCommit.deinit called", .{});
+
+        raw.git_annotated_commit_free(self.commit);
+        self.* = undefined;
+
+        log.debug("annotated commit freed successfully", .{});
+    }
+};
+
 /// Basic type (loose or packed) of any Git object.
 pub const GitObject = enum(c_int) {
     /// Object can be any of the following
