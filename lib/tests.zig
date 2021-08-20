@@ -89,6 +89,14 @@ test "get config" {
     defer config.deinit();
 }
 
+test "get config snapshot" {
+    var test_handle = try TestHandle.init("get_config_snapshot");
+    defer test_handle.deinit();
+
+    var config = try test_handle.repo.getConfigSnapshot();
+    defer config.deinit();
+}
+
 const TestHandle = struct {
     handle: git.Handle,
     repo_path: [:0]const u8,

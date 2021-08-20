@@ -636,6 +636,24 @@ pub const GitRepository = struct {
         return GitConfig{ .config = config.? };
     }
 
+    /// Get a snapshot of the repository's configuration
+    ///
+    /// Convenience function to take a snapshot from the repository's configuration. The contents of this snapshot will not 
+    /// change, even if the underlying config files are modified.
+    ///
+    /// The configuration file must be freed once it's no longer being used by the user.
+    pub fn getConfigSnapshot(self: GitRepository) !GitConfig {
+        log.debug("GitRepository.getConfigSnapshot called", .{});
+
+        var config: ?*raw.git_config = undefined;
+
+        try wrapCall("git_repository_config_snapshot", .{ &config, self.repo });
+
+        log.debug("repository config acquired successfully", .{});
+
+        return GitConfig{ .config = config.? };
+    }
+
     pub const RepositoryItem = enum(c_uint) {
         GITDIR,
         WORKDIR,
