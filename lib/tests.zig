@@ -105,6 +105,14 @@ test "get odb" {
     defer odb.deinit();
 }
 
+test "get ref db" {
+    var test_handle = try TestHandle.init("get_refdb");
+    defer test_handle.deinit();
+
+    var ref_db = try test_handle.repo.getRefDb();
+    defer ref_db.deinit();
+}
+
 const TestHandle = struct {
     handle: git.Handle,
     repo_path: [:0]const u8,

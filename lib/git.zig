@@ -689,6 +689,24 @@ pub const GitRepository = struct {
         return GitOdb{ .odb = odb.? };
     }
 
+    /// Get the Reference Database Backend for this repository.
+    ///
+    /// If a custom refsdb has not been set, the default database for the repository will be returned (the one that manipulates
+    /// loose and packed references in the `.git` directory).
+    /// 
+    /// The refdb must be freed once it's no longer being used by the user.
+    pub fn getRefDb(self: GitRepository) !GitRefDb {
+        log.debug("GitRepository.getRefDb called", .{});
+
+        var ref_db: ?*raw.git_refdb = undefined;
+
+        try wrapCall("git_repository_refdb", .{ &ref_db, self.repo });
+
+        log.debug("repository refdb acquired successfully", .{});
+
+        return GitRefDb{ .ref_db = ref_db.? };
+    }
+
     comptime {
         std.testing.refAllDecls(@This());
     }
@@ -696,13 +714,13 @@ pub const GitRepository = struct {
 
 /// An open refs database handle.
 pub const GitRefDb = struct {
-    refdb: *raw.git_refdb,
+    ref_db: *raw.git_refdb,
 
     /// Free the configuration and its associated memory and files
     pub fn deinit(self: *GitRefDb) void {
         log.debug("GitRefDb.deinit called", .{});
 
-        raw.git_refdb_free(self.refdb);
+        raw.git_refdb_free(self.ref_db);
         self.* = undefined;
 
         log.debug("refdb freed successfully", .{});
