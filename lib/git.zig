@@ -444,7 +444,7 @@ pub const GitRepository = struct {
     }
 
     /// Retrieve and resolve the reference pointed at by HEAD.
-    pub fn head(self: GitRepository) !GitReference {
+    pub fn getHead(self: GitRepository) !GitReference {
         log.debug("GitRepository.head called", .{});
 
         var ref: ?*raw.git_reference = undefined;
@@ -520,10 +520,10 @@ pub const GitRepository = struct {
     }
 
     /// Check if a repository is bare
-    pub fn isBare(self: GitRepository) !bool {
+    pub fn isBare(self: GitRepository) bool {
         log.debug("GitRepository.isBare called", .{});
 
-        const ret = (try wrapCallWithReturn("git_repository_is_bare", .{self.repo})) == 1;
+        const ret = raw.git_repository_is_bare(self.repo) == 1;
 
         log.debug("is repository bare: {}", .{ret});
 
