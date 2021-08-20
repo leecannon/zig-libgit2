@@ -456,6 +456,26 @@ pub const GitRepository = struct {
         return GitReference{ .ref = ref.? };
     }
 
+    /// Make the repository HEAD point to the specified reference.
+    ///
+    /// If the provided reference points to a Tree or a Blob, the HEAD is unaltered and -1 is returned.
+    ///
+    /// If the provided reference points to a branch, the HEAD will point to that branch, staying attached, or become attached if
+    /// it isn't yet.
+    /// If the branch doesn't exist yet, no error will be return. The HEAD will then be attached to an unborn branch.
+    ///
+    /// Otherwise, the HEAD will be detached and will directly point to the Commit.
+    ///
+    /// ## Parameters
+    /// * `ref_name` - Canonical name of the reference the HEAD should point at
+    pub fn setHead(self: *GitRepository, ref_name: [:0]const u8) !void {
+        log.debug("GitRepository.setHead called, workdir={s}", .{ref_name});
+
+        try wrapCall("git_repository_set_head", .{ self.repo, ref_name.ptr });
+
+        log.debug("successfully set head", .{});
+    }
+
     /// Check if a worktree's HEAD is detached
     ///
     /// A worktree's HEAD is detached when it points directly to a commit instead of a branch.
@@ -607,6 +627,15 @@ pub const GitRepository = struct {
         return null;
     }
 
+    /// Set the path to the working directory for this repository
+    pub fn setWorkdir(self: *GitRepository, workdir: [:0]const u8, update_gitlink: bool) !void {
+        log.debug("GitRepository.setWorkdir called, workdir={s}, update_gitlink={}", .{ workdir, update_gitlink });
+
+        try wrapCall("git_repository_set_workdir", .{ self.repo, workdir.ptr, @boolToInt(update_gitlink) });
+
+        log.debug("successfully set workdir", .{});
+    }
+
     /// Get the path of the shared common directory for this repository.
     ///
     /// If the repository is bare, it is the root directory for the repository. If the repository is a worktree, it is the parent 
@@ -625,15 +654,6 @@ pub const GitRepository = struct {
         log.debug("no commondir", .{});
 
         return null;
-    }
-
-    /// Set the path to the working directory for this repository
-    pub fn setWorkdir(self: *GitRepository, workdir: [:0]const u8, update_gitlink: bool) !void {
-        log.debug("GitRepository.setWorkdir called, workdir={s}, update_gitlink={}", .{ workdir, update_gitlink });
-
-        try wrapCall("git_repository_set_workdir", .{ self.repo, workdir.ptr, @boolToInt(update_gitlink) });
-
-        log.debug("successfully set workdir", .{});
     }
 
     /// Get the configuration file for this repository.
