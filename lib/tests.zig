@@ -139,6 +139,18 @@ test "foreach fetch head fails on fresh repository" {
     try std.testing.expectError(git.GitError.NotFound, test_handle.repo.foreachFetchHead(dummyFetchHeadCallback));
 }
 
+fn dummyFetchMergeCallback(oid: git.GitOid) c_int {
+    _ = oid;
+    return 0;
+}
+
+test "foreach merge head fails on fresh repository" {
+    var test_handle = try TestHandle.init("foreach_merge_head_fails_on_fresh");
+    defer test_handle.deinit();
+
+    try std.testing.expectError(git.GitError.NotFound, test_handle.repo.foreachMergeHead(dummyFetchMergeCallback));
+}
+
 const TestHandle = struct {
     handle: git.Handle,
     repo_path: [:0]const u8,

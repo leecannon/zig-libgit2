@@ -858,6 +858,65 @@ pub const GitRepository = struct {
         return ret;
     }
 
+    /// If a merge is in progress, invoke 'callback' for each commit ID in the MERGE_HEAD file.
+    ///
+    /// Return a non-zero value from the callback to stop the loop.
+    ///
+    /// ## Parameters
+    /// * `callback_fn` - the callback function
+    ///
+    /// ## Callback Parameters
+    /// * `oid` - The merge OID
+    pub fn foreachMergeHead(
+        self: GitRepository,
+        comptime callback_fn: fn (oid: GitOid) c_int,
+    ) !c_int {
+        const cb = struct {
+            pub fn cb(oid: GitOid, _: *u8) c_int {
+                return callback_fn(oid);
+            }
+        }.cb;
+
+        var dummy_data: u8 = undefined;
+        return self.foreachMergeHeadWithUserData(&dummy_data, cb);
+    }
+
+    /// If a merge is in progress, invoke 'callback' for each commit ID in the MERGE_HEAD file.
+    ///
+    /// Return a non-zero value from the callback to stop the loop.
+    ///
+    /// ## Parameters
+    /// * `user_data` - pointer to user data to be passed to the callback
+    /// * `callback_fn` - the callback function
+    ///
+    /// ## Callback Parameters
+    /// * `oid` - The merge OID
+    /// * `user_data_ptr` - pointer to user data
+    pub fn foreachMergeHeadWithUserData(
+        self: GitRepository,
+        user_data: anytype,
+        comptime callback_fn: fn (
+            oid: GitOid,
+            user_data_ptr: @TypeOf(user_data),
+        ) c_int,
+    ) !c_int {
+        const UserDataType = @TypeOf(user_data);
+
+        const cb = struct {
+            pub fn cb(c_oid: [*c]const raw.git_oid, payload: ?*c_void) callconv(.C) c_int {
+                return callback_fn(GitOid{ .oid = c_oid.? }, @ptrCast(UserDataType, payload));
+            }
+        }.cb;
+
+        log.debug("GitRepository.foreachMergeHeadWithUserData called", .{});
+
+        const ret = try wrapCallWithReturn("git_repository_mergehead_foreach", .{ self.repo, cb, user_data });
+
+        log.debug("callback returned: {}", .{ret});
+
+        return ret;
+    }
+
     comptime {
         std.testing.refAllDecls(@This());
     }
