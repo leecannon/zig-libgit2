@@ -549,6 +549,25 @@ pub const GitRepository = struct {
         return slice;
     }
 
+    /// Get the path of the working directory for this repository
+    ///
+    /// If the repository is bare, this function will always return `null`.
+    pub fn workdir(self: GitRepository) ?[:0]const u8 {
+        log.debug("GitRepository.workdir called", .{});
+
+        if (raw.git_repository_workdir(self.repo)) |ret| {
+            const slice = std.mem.sliceTo(ret, 0);
+
+            log.debug("workdir: {s}", .{slice});
+
+            return slice;
+        }
+
+        log.debug("no workdir", .{});
+
+        return null;
+    }
+
     pub const RepositoryItem = enum(c_uint) {
         GITDIR,
         WORKDIR,
