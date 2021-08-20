@@ -1071,7 +1071,15 @@ inline fn wrapCallWithReturn(
 
         // Outputing err or emerg log during test counts as a failed test, even if the error is expected
         if (!std.builtin.is_test) {
-            log.emerg(name ++ " failed with error {}", .{err});
+            if (getDetailedLastError()) |detailed| {
+                log.emerg(name ++ " failed with error {s}/{s} - {s}", .{
+                    @errorName(err),
+                    @tagName(detailed.errorClass()),
+                    detailed.message(),
+                });
+            } else {
+                log.emerg(name ++ " failed with error {s}", .{@errorName(err)});
+            }
         }
         return err;
     };
