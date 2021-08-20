@@ -568,6 +568,26 @@ pub const GitRepository = struct {
         return null;
     }
 
+    /// Get the path of the shared common directory for this repository.
+    ///
+    /// If the repository is bare, it is the root directory for the repository. If the repository is a worktree, it is the parent 
+    /// repo's gitdir. Otherwise, it is the gitdir.
+    pub fn commondir(self: GitRepository) ?[:0]const u8 {
+        log.debug("GitRepository.commondir called", .{});
+
+        if (raw.git_repository_commondir(self.repo)) |ret| {
+            const slice = std.mem.sliceTo(ret, 0);
+
+            log.debug("commondir: {s}", .{slice});
+
+            return slice;
+        }
+
+        log.debug("no commondir", .{});
+
+        return null;
+    }
+
     pub const RepositoryItem = enum(c_uint) {
         GITDIR,
         WORKDIR,
