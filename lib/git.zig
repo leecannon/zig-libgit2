@@ -457,6 +457,23 @@ pub const GitRepository = struct {
         return ret;
     }
 
+    /// Get the currently active namespace for this repository
+    pub fn getNamespace(self: GitRepository) !?[:0]const u8 {
+        log.debug("GitRepository.getNamespace called", .{});
+
+        const ret = raw.git_repository_get_namespace(self.repo);
+
+        if (ret) |ptr| {
+            const slice = std.mem.sliceTo(ptr, 0);
+            log.debug("namespace: {s}", .{slice});
+            return slice;
+        }
+
+        log.debug("no namespace", .{});
+
+        return null;
+    }
+
     /// Sets the active namespace for this Git Repository
     ///
     /// This namespace affects all reference operations for the repo.

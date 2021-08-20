@@ -158,6 +158,27 @@ test "fresh repo state is none" {
     try std.testing.expectEqual(git.GitRepository.RepositoryState.NONE, test_handle.repo.getState());
 }
 
+test "fresh repo has no namespace" {
+    var test_handle = try TestHandle.init("fresh_repo_no_namespace");
+    defer test_handle.deinit();
+
+    try std.testing.expect((try test_handle.repo.getNamespace()) == null);
+}
+
+test "set namespace" {
+    var test_handle = try TestHandle.init("set_namespace");
+    defer test_handle.deinit();
+
+    try std.testing.expect((try test_handle.repo.getNamespace()) == null);
+
+    try test_handle.repo.setNamespace("namespace");
+
+    const result = try test_handle.repo.getNamespace();
+    try std.testing.expect(result != null);
+
+    try std.testing.expectEqualStrings("namespace", result.?);
+}
+
 const TestHandle = struct {
     handle: git.Handle,
     repo_path: [:0]const u8,
