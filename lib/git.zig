@@ -469,11 +469,25 @@ pub const GitRepository = struct {
         try wrapCall("git_repository_ident", .{ &c_name, &c_email, self.repo });
 
         const name: ?[:0]const u8 = if (c_name) |ptr| std.mem.sliceTo(ptr, 0) else null;
-        const email: ?[:0]const u8 = if (c_name) |ptr| std.mem.sliceTo(ptr, 0) else null;
+        const email: ?[:0]const u8 = if (c_email) |ptr| std.mem.sliceTo(ptr, 0) else null;
 
         log.debug("identity acquired: name={s}, email={s}", .{ name, email });
 
         return Identity{ .name = name, .email = email };
+    }
+
+    /// Set the identity to be used for writing reflogs
+    ///
+    /// If both are set, this name and email will be used to write to the reflog. Pass `null` to unset. When unset, the identity
+    /// will be taken from the repository's configuration.
+    pub fn setIdentity(self: GitRepository, identity: Identity) !void {
+        log.debug("GitRepository.setIdentity called, identity.name={s}, identity.email={s}", .{ identity.name, identity.email });
+
+        const name_temp: [*c]const u8 = if (identity.name) |slice| slice.ptr else null;
+        const email_temp: [*c]const u8 = if (identity.email) |slice| slice.ptr else null;
+        try wrapCall("git_repository_set_ident", .{ self.repo, name_temp, email_temp });
+
+        log.debug("successfully set identity", .{});
     }
 
     /// Get the currently active namespace for this repository
