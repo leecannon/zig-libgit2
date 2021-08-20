@@ -430,6 +430,48 @@ pub const GitRepository = struct {
         log.debug("repository closed successfully", .{});
     }
 
+    /// These values represent possible states for the repository to be in, based on the current operation which is ongoing.
+    pub const RepositoryState = enum(c_int) {
+        NONE,
+        MERGE,
+        REVERT,
+        REVERT_SEQUENCE,
+        CHERRYPICK,
+        CHERRYPICK_SEQUENCE,
+        BISECT,
+        REBASE,
+        REBASE_INTERACTIVE,
+        REBASE_MERGE,
+        APPLY_MAILBOX,
+        APPLY_MAILBOX_OR_REBASE,
+    };
+
+    /// Determines the status of a git repository - ie, whether an operation (merge, cherry-pick, etc) is in progress.
+    pub fn getState(self: GitRepository) RepositoryState {
+        log.debug("GitRepository.getState called", .{});
+
+        const ret = @intToEnum(RepositoryState, raw.git_repository_state(self.repo));
+
+        log.debug("repository state: {s}", .{@tagName(ret)});
+
+        return ret;
+    }
+
+    /// Sets the active namespace for this Git Repository
+    ///
+    /// This namespace affects all reference operations for the repo.
+    /// See `man gitnamespaces`
+    /// ## Parameters
+    /// * `namespace` - The namespace. This should not include the refs folder, e.g. to namespace all references under 
+    ///                 "refs/namespaces/foo/", use "foo" as the namespace.
+    pub fn setNamespace(self: *GitRepository, namespace: [:0]const u8) !void {
+        log.debug("GitRepository.setNamespace called, namespace={s}", .{namespace});
+
+        try wrapCall("git_repository_set_namespace", .{ self.repo, namespace.ptr });
+
+        log.debug("successfully set namespace", .{});
+    }
+
     /// Check if a repository's HEAD is detached
     ///
     /// A repository's HEAD is detached when it points directly to a commit instead of a branch.
@@ -529,33 +571,6 @@ pub const GitRepository = struct {
         try wrapCall("git_repository_detach_head", .{self.repo});
 
         log.debug("successfully detached the head", .{});
-    }
-
-    /// These values represent possible states for the repository to be in, based on the current operation which is ongoing.
-    pub const RepositoryState = enum(c_int) {
-        NONE,
-        MERGE,
-        REVERT,
-        REVERT_SEQUENCE,
-        CHERRYPICK,
-        CHERRYPICK_SEQUENCE,
-        BISECT,
-        REBASE,
-        REBASE_INTERACTIVE,
-        REBASE_MERGE,
-        APPLY_MAILBOX,
-        APPLY_MAILBOX_OR_REBASE,
-    };
-
-    /// Determines the status of a git repository - ie, whether an operation (merge, cherry-pick, etc) is in progress.
-    pub fn getState(self: GitRepository) RepositoryState {
-        log.debug("GitRepository.getState called", .{});
-
-        const ret = @intToEnum(RepositoryState, raw.git_repository_state(self.repo));
-
-        log.debug("repository state: {s}", .{@tagName(ret)});
-
-        return ret;
     }
 
     /// Check if a worktree's HEAD is detached
