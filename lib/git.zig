@@ -917,14 +917,97 @@ pub const GitRepository = struct {
         return ret;
     }
 
+    /// Calculate hash of file using repository filtering rules.
+    ///
+    /// If you simply want to calculate the hash of a file on disk with no filters, you can just use the `GitOdb.hashFile` API.
+    /// However, if you want to hash a file in the repository and you want to apply filtering rules (e.g. crlf filters) before
+    /// generating the SHA, then use this function.
+    ///
+    /// Note: if the repository has `core.safecrlf` set to fail and the filtering triggers that failure, then this function will
+    /// return an error and not calculate the hash of the file.
+    ///
+    /// ## Parameters
+    /// * `path` - Path to file on disk whose contents should be hashed. This can be a relative path.
+    /// * `object_type` - The object type to hash as (e.g. `GitObject.BLOB`)
+    /// * `as_path` - The path to use to look up filtering rules. If this is `null`, then the `path` parameter will be used
+    ///               instead. If this is passed as the empty string, then no filters will be applied when calculating the hash.
+    pub fn hashFile(self: GitRepository, path: [:0]const u8, object_type: GitObject, as_path: ?[:0]const u8) !GitOid {
+        log.debug("GitRepository.hashFile called, path={s}, object_type={}, as_path={s}", .{ path, object_type, as_path });
+
+        var oid: ?*raw.git_oid = undefined;
+
+        const as_path_temp: [*c]const u8 = if (as_path) |slice| slice.ptr else null;
+        try wrapCall("git_repository_hashfile", .{ oid, self.repo, path.ptr, @enumToInt(object_type), as_path_temp });
+
+        const ret = GitOid{ .oid = oid.? };
+
+        // This check is to prevent formating the oid when we are not going to print anything
+        if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
+            var buf: [GitOid.HEX_BUFFER_SIZE]u8 = undefined;
+            const slice = try ret.formatHex(&buf);
+
+            log.debug("file hash acquired successfully, hash={s}", .{slice});
+        }
+
+        return ret;
+    }
+
     comptime {
         std.testing.refAllDecls(@This());
     }
 };
 
+/// Basic type (loose or packed) of any Git object.
+pub const GitObject = enum(c_int) {
+    /// Object can be any of the following
+    ANY = -2,
+    /// Object is invalid.
+    INVALID = -1,
+    /// A commit object.
+    COMMIT = 1,
+    /// A tree (directory listing) object.
+    TREE = 2,
+    /// A file revision object.
+    BLOB = 3,
+    /// An annotated tag object.
+    TAG = 4,
+    /// A delta, base is given by an offset.
+    OFS_DELTA = 6,
+    /// A delta, base is given by object id.
+    REF_DELTA = 7,
+};
+
 /// Unique identity of any object (commit, tree, blob, tag).
 pub const GitOid = struct {
     oid: *const raw.git_oid,
+
+    /// Size (in bytes) of a hex formatted oid
+    pub const HEX_BUFFER_SIZE = raw.GIT_OID_HEXSZ;
+
+    /// Format a git_oid into a hex string.
+    ///
+    /// ## Parameters
+    /// * `buf` - Slice to format the oid into, must be atleast `HEX_BUFFER_SIZE` long.
+    pub fn formatHex(self: GitOid, buf: []u8) ![]const u8 {
+        if (buf.len < HEX_BUFFER_SIZE) return error.BufferTooShort;
+
+        try wrapCall("git_oid_fmt", .{ buf.ptr, self.oid });
+
+        return buf[0..HEX_BUFFER_SIZE];
+    }
+
+    /// Format a git_oid into a zero-terminated hex string.
+    ///
+    /// ## Parameters
+    /// * `buf` - Slice to format the oid into, must be atleast `HEX_BUFFER_SIZE` + 1 long.
+    pub fn formatHexZ(self: GitOid, buf: []u8) ![:0]const u8 {
+        if (buf.len < (HEX_BUFFER_SIZE + 1)) return error.BufferTooShort;
+
+        try wrapCall("git_oid_fmt", .{ buf.ptr, self.oid });
+        buf[HEX_BUFFER_SIZE] = 0;
+
+        return buf[0..HEX_BUFFER_SIZE :0];
+    }
 
     comptime {
         std.testing.refAllDecls(@This());
