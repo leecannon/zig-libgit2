@@ -588,6 +588,15 @@ pub const GitRepository = struct {
         return null;
     }
 
+    /// Set the path to the working directory for this repository
+    pub fn setWorkdir(self: *GitRepository, workdir: [:0]const u8, update_gitlink: bool) !void {
+        log.debug("GitRepository.setWorkdir called, workdir={s}, update_gitlink={}", .{ workdir, update_gitlink });
+
+        try wrapCall("git_repository_set_workdir", .{ self.repo, workdir.ptr, @boolToInt(update_gitlink) });
+
+        log.debug("successfully set workdir", .{});
+    }
+
     pub const RepositoryItem = enum(c_uint) {
         GITDIR,
         WORKDIR,
