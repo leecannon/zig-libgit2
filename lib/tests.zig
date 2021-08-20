@@ -124,6 +124,21 @@ test "get index" {
     defer index.deinit();
 }
 
+fn dummyFetchHeadCallback(ref_name: [:0]const u8, remote_url: [:0]const u8, oid: git.GitOid, is_merge: bool) c_int {
+    _ = ref_name;
+    _ = remote_url;
+    _ = oid;
+    _ = is_merge;
+    return 0;
+}
+
+test "foreach fetch head fails on fresh repository" {
+    var test_handle = try TestHandle.init("foreach_fetch_head_fails_on_fresh");
+    defer test_handle.deinit();
+
+    try std.testing.expectError(git.GitError.NotFound, test_handle.repo.foreachFetchHead(dummyFetchHeadCallback));
+}
+
 const TestHandle = struct {
     handle: git.Handle,
     repo_path: [:0]const u8,

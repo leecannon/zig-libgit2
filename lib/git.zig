@@ -767,6 +767,106 @@ pub const GitRepository = struct {
         log.debug("successfully cleaned state", .{});
     }
 
+    /// Invoke `callback_fn` for each entry in the given FETCH_HEAD file.
+    ///
+    /// Return a non-zero value from the callback to stop the loop.
+    ///
+    /// ## Parameters
+    /// * `callback_fn` - the callback function
+    ///
+    /// ## Callback Parameters
+    /// * `ref_name` - The reference name
+    /// * `remote_url` - The remote URL
+    /// * `oid` - The reference target OID
+    /// * `is_merge` - Was the reference the result of a merge
+    pub fn foreachFetchHead(
+        self: GitRepository,
+        comptime callback_fn: fn (
+            ref_name: [:0]const u8,
+            remote_url: [:0]const u8,
+            oid: GitOid,
+            is_merge: bool,
+        ) c_int,
+    ) !c_int {
+        const cb = struct {
+            pub fn cb(
+                ref_name: [:0]const u8,
+                remote_url: [:0]const u8,
+                oid: GitOid,
+                is_merge: bool,
+                _: *u8,
+            ) c_int {
+                return callback_fn(ref_name, remote_url, oid, is_merge);
+            }
+        }.cb;
+
+        var dummy_data: u8 = undefined;
+        return self.foreachFetchHeadWithUserData(&dummy_data, cb);
+    }
+
+    /// Invoke `callback_fn` for each entry in the given FETCH_HEAD file.
+    ///
+    /// Return a non-zero value from the callback to stop the loop.
+    ///
+    /// ## Parameters
+    /// * `user_data` - pointer to user data to be passed to the callback
+    /// * `callback_fn` - the callback function
+    ///
+    /// ## Callback Parameters
+    /// * `ref_name` - The reference name
+    /// * `remote_url` - The remote URL
+    /// * `oid` - The reference target OID
+    /// * `is_merge` - Was the reference the result of a merge
+    /// * `user_data_ptr` - pointer to user data
+    pub fn foreachFetchHeadWithUserData(
+        self: GitRepository,
+        user_data: anytype,
+        comptime callback_fn: fn (
+            ref_name: [:0]const u8,
+            remote_url: [:0]const u8,
+            oid: GitOid,
+            is_merge: bool,
+            user_data_ptr: @TypeOf(user_data),
+        ) c_int,
+    ) !c_int {
+        const UserDataType = @TypeOf(user_data);
+
+        const cb = struct {
+            pub fn cb(
+                c_ref_name: [*c]const u8,
+                c_remote_url: [*c]const u8,
+                c_oid: [*c]const raw.git_oid,
+                c_is_merge: c_uint,
+                payload: ?*c_void,
+            ) callconv(.C) c_int {
+                return callback_fn(
+                    std.mem.sliceTo(c_ref_name, 0),
+                    std.mem.sliceTo(c_remote_url, 0),
+                    GitOid{ .oid = c_oid.? },
+                    c_is_merge == 1,
+                    @ptrCast(UserDataType, payload),
+                );
+            }
+        }.cb;
+
+        log.debug("GitRepository.foreachFetchHeadWithUserData called", .{});
+
+        const ret = try wrapCallWithReturn("git_repository_fetchhead_foreach", .{ self.repo, cb, user_data });
+
+        log.debug("callback returned: {}", .{ret});
+
+        return ret;
+    }
+
+    comptime {
+        std.testing.refAllDecls(@This());
+    }
+};
+
+/// Unique identity of any object (commit, tree, blob, tag).
+pub const GitOid = struct {
+    oid: *const raw.git_oid,
+
     comptime {
         std.testing.refAllDecls(@This());
     }
