@@ -499,6 +499,20 @@ pub const GitRepository = struct {
         log.debug("successfully set head", .{});
     }
 
+    /// Make the repository HEAD directly point to the Commit.
+    ///
+    /// This behaves like `GitRepository.setHeadDetached` but takes an annotated commit, which lets you specify which 
+    /// extended sha syntax string was specified by a user, allowing for more exact reflog messages.
+    ///
+    /// See the documentation for `GitRepository.setHeadDetached`.
+    pub fn setHeadDetachedFromAnnotated(self: *GitRepository, commitish: GitAnnotatedCommit) !void {
+        log.debug("GitRepository.setHeadDetachedFromAnnotated called", .{});
+
+        try wrapCall("git_repository_set_head_detached_from_annotated", .{ self.repo, commitish.commit });
+
+        log.debug("successfully set head", .{});
+    }
+
     /// Check if a worktree's HEAD is detached
     ///
     /// A worktree's HEAD is detached when it points directly to a commit instead of a branch.
@@ -1011,6 +1025,22 @@ pub const GitAnnotatedCommit = struct {
         self.* = undefined;
 
         log.debug("annotated commit freed successfully", .{});
+    }
+
+    /// Gets the commit ID that the given `GitAnnotatedCommit` refers to.
+    pub fn getCommitId(self: GitAnnotatedCommit) !GitOid {
+        log.debug("GitAnnotatedCommit.getCommitId called", .{});
+
+        const oid = GitOid{ .oid = raw.git_annotated_commit_ref(self.commit).? };
+
+        // This check is to prevent formating the oid when we are not going to print anything
+        if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
+            var buf: [GitOid.HEX_BUFFER_SIZE]u8 = undefined;
+            const slice = try oid.formatHex(&buf);
+            log.debug("annotated commit id acquired: {s}", .{slice});
+        }
+
+        return oid;
     }
 };
 
