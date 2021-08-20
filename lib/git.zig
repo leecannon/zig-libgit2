@@ -639,6 +639,17 @@ pub const GitRepository = struct {
         return ret;
     }
 
+    /// Determine if the repository was a shallow clone
+    pub fn isShallow(self: GitRepository) bool {
+        log.debug("GitRepository.isShallow called", .{});
+
+        const ret = raw.git_repository_is_shallow(self.repo) == 1;
+
+        log.debug("is repository a shallow clone: {}", .{ret});
+
+        return ret;
+    }
+
     /// Check if a repository is empty
     ///
     /// An empty repository has just been initialized and contains no references apart from HEAD, which must be pointing to the

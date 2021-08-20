@@ -179,6 +179,13 @@ test "set namespace" {
     try std.testing.expectEqualStrings("namespace", result.?);
 }
 
+test "fresh repo is not a shallow clone" {
+    var test_handle = try TestHandle.init("fresh_not_shallow");
+    defer test_handle.deinit();
+
+    try std.testing.expect(!test_handle.repo.isShallow());
+}
+
 const TestHandle = struct {
     handle: git.Handle,
     repo_path: [:0]const u8,
