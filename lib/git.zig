@@ -457,6 +457,25 @@ pub const GitRepository = struct {
         return ret;
     }
 
+    /// Retrieve the configured identity to use for reflogs
+    ///
+    /// The memory is owned by the repository and must not be freed by the user.
+    pub fn getIdentity(self: GitRepository) !Identity {
+        log.debug("GitRepository.getIdentity called", .{});
+
+        var c_name: [*c]u8 = undefined;
+        var c_email: [*c]u8 = undefined;
+
+        try wrapCall("git_repository_ident", .{ &c_name, &c_email, self.repo });
+
+        const name: ?[:0]const u8 = if (c_name) |ptr| std.mem.sliceTo(ptr, 0) else null;
+        const email: ?[:0]const u8 = if (c_name) |ptr| std.mem.sliceTo(ptr, 0) else null;
+
+        log.debug("identity acquired: name={s}, email={s}", .{ name, email });
+
+        return Identity{ .name = name, .email = email };
+    }
+
     /// Get the currently active namespace for this repository
     pub fn getNamespace(self: GitRepository) !?[:0]const u8 {
         log.debug("GitRepository.getNamespace called", .{});
@@ -1099,6 +1118,11 @@ pub const GitRepository = struct {
     comptime {
         std.testing.refAllDecls(@This());
     }
+};
+
+pub const Identity = struct {
+    name: ?[:0]const u8,
+    email: ?[:0]const u8,
 };
 
 /// Annotated commits, the input to merge and rebase.

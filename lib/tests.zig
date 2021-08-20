@@ -186,6 +186,16 @@ test "fresh repo is not a shallow clone" {
     try std.testing.expect(!test_handle.repo.isShallow());
 }
 
+test "fresh repo has non identity set" {
+    var test_handle = try TestHandle.init("fresh_no_identity");
+    defer test_handle.deinit();
+
+    const ident = try test_handle.repo.getIdentity();
+
+    try std.testing.expect(ident.name == null);
+    try std.testing.expect(ident.email == null);
+}
+
 const TestHandle = struct {
     handle: git.Handle,
     repo_path: [:0]const u8,
