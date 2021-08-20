@@ -725,6 +725,27 @@ pub const GitRepository = struct {
         return GitIndex{ .index = index.? };
     }
 
+    /// Retrieve git's prepared message
+    ///
+    /// Operations such as git revert/cherry-pick/merge with the -n option stop just short of creating a commit with the changes 
+    /// and save their prepared message in .git/MERGE_MSG so the next git-commit execution can present it to the user for them to
+    /// amend if they wish.
+    ///
+    /// Use this function to get the contents of this file. Don't forget to remove the file after you create the commit.
+    pub fn getPreparedMessage(self: GitRepository) !GitBuf {
+        // TODO: Change this function and others to return null instead of `GitError.NotFound`
+
+        log.debug("GitRepository.getPreparedMessage called", .{});
+
+        var buf = GitBuf.zero();
+
+        try wrapCall("git_repository_message", .{ &buf.buf, self.repo });
+
+        log.debug("prepared message: {s}", .{buf.slice()});
+
+        return buf;
+    }
+
     comptime {
         std.testing.refAllDecls(@This());
     }
