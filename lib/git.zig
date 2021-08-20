@@ -712,6 +712,25 @@ pub const GitRepository = struct {
     }
 };
 
+/// Memory representation of an index file.
+pub const GitIndex = struct {
+    index: *raw.git_index,
+
+    /// Free an existing index object.
+    pub fn deinit(self: *GitIndex) void {
+        log.debug("GitIndex.deinit called", .{});
+
+        raw.git_index_free(self.index);
+        self.* = undefined;
+
+        log.debug("index freed successfully", .{});
+    }
+
+    comptime {
+        std.testing.refAllDecls(@This());
+    }
+};
+
 /// An open refs database handle.
 pub const GitRefDb = struct {
     ref_db: *raw.git_refdb,
