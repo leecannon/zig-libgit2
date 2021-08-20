@@ -519,6 +519,17 @@ pub const GitRepository = struct {
         return ret;
     }
 
+    /// Check if a repository is bare
+    pub fn isBare(self: GitRepository) !bool {
+        log.debug("GitRepository.isBare called", .{});
+
+        const ret = (try wrapCallWithReturn("git_repository_is_bare", .{self.repo})) == 1;
+
+        log.debug("is repository bare: {}", .{ret});
+
+        return ret;
+    }
+
     /// Get the location of a specific repository file or directory
     ///
     /// This function will retrieve the path of a specific repository item. It will thereby honor things like the repository's

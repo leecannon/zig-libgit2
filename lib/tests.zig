@@ -54,6 +54,20 @@ test "fresh repo is empty" {
     try std.testing.expect(try test_handle.repo.isEmpty());
 }
 
+test "bare repo is bare" {
+    const repo_path = "./zig-cache/test_repos/bare_repo_is_bare";
+
+    defer std.fs.cwd().deleteTree(repo_path) catch {};
+
+    const handle = try git.init();
+    defer handle.deinit();
+
+    var repo = try handle.repositoryInitExtended(repo_path, .{ .flags = .{ .mkdir = true, .mkpath = true, .bare = true } });
+    defer repo.deinit();
+
+    try std.testing.expect(try repo.isBare());
+}
+
 test "item paths" {
     var test_handle = try TestHandle.init("item_paths");
     defer test_handle.deinit();
