@@ -746,6 +746,17 @@ pub const GitRepository = struct {
         return buf;
     }
 
+    /// Remove git's prepared message.
+    ///
+    /// Remove the message that `getPreparedMessage` retrieves.
+    pub fn removePreparedMessage(self: *GitRepository) !void {
+        log.debug("GitRepository.removePreparedMessage called", .{});
+
+        try wrapCall("git_repository_message_remove", .{self.repo});
+
+        log.debug("successfully removed prepared message", .{});
+    }
+
     comptime {
         std.testing.refAllDecls(@This());
     }
