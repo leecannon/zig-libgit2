@@ -97,6 +97,14 @@ test "get config snapshot" {
     defer config.deinit();
 }
 
+test "get odb" {
+    var test_handle = try TestHandle.init("get_odb");
+    defer test_handle.deinit();
+
+    var odb = try test_handle.repo.getOdb();
+    defer odb.deinit();
+}
+
 const TestHandle = struct {
     handle: git.Handle,
     repo_path: [:0]const u8,

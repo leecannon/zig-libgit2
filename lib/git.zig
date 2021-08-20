@@ -558,6 +558,23 @@ pub const GitRepository = struct {
         return buf;
     }
 
+    pub const RepositoryItem = enum(c_uint) {
+        GITDIR,
+        WORKDIR,
+        COMMONDIR,
+        INDEX,
+        OBJECTS,
+        REFS,
+        PACKED_REFS,
+        REMOTES,
+        CONFIG,
+        INFO,
+        HOOKS,
+        LOGS,
+        MODULES,
+        WORKTREES,
+    };
+
     /// Get the path of this repository
     ///
     /// This is the path of the `.git` folder for normal repositories, or of the repository itself for bare repositories.
@@ -654,22 +671,23 @@ pub const GitRepository = struct {
         return GitConfig{ .config = config.? };
     }
 
-    pub const RepositoryItem = enum(c_uint) {
-        GITDIR,
-        WORKDIR,
-        COMMONDIR,
-        INDEX,
-        OBJECTS,
-        REFS,
-        PACKED_REFS,
-        REMOTES,
-        CONFIG,
-        INFO,
-        HOOKS,
-        LOGS,
-        MODULES,
-        WORKTREES,
-    };
+    /// Get the Object Database for this repository.
+    ///
+    /// If a custom ODB has not been set, the default database for the repository will be returned (the one located in 
+    /// `.git/objects`).
+    ///
+    /// The ODB must be freed once it's no longer being used by the user.
+    pub fn getOdb(self: GitRepository) !GitOdb {
+        log.debug("GitRepository.getOdb called", .{});
+
+        var odb: ?*raw.git_odb = undefined;
+
+        try wrapCall("git_repository_odb", .{ &odb, self.repo });
+
+        log.debug("repository odb acquired successfully", .{});
+
+        return GitOdb{ .odb = odb.? };
+    }
 
     comptime {
         std.testing.refAllDecls(@This());
@@ -729,6 +747,16 @@ pub const GitWorktree = struct {
 pub const GitOdb = struct {
     odb: *raw.git_odb,
 
+    /// Close an open object database.
+    pub fn deinit(self: *GitOdb) void {
+        log.debug("GitOdb.deinit called", .{});
+
+        raw.git_odb_free(self.odb);
+        self.* = undefined;
+
+        log.debug("GitOdb freed successfully", .{});
+    }
+
     /// Create a "fake" repository to wrap an object database
     ///
     /// Create a repository object to wrap an object database to be used with the API when all you have is an object database. 
@@ -762,9 +790,14 @@ pub const GitBuf = struct {
         return self.buf.ptr[0..self.buf.size :0];
     }
 
-    /// Free the memory referred to by the git_buf.
+    /// Free the memory referred to by the GitBuf.
     pub fn deinit(self: *GitBuf) void {
+        log.debug("GitBuf.deinit called", .{});
+
         raw.git_buf_dispose(&self.buf);
+        self.* = undefined;
+
+        log.debug("GitBuf freed successfully", .{});
     }
 
     comptime {
