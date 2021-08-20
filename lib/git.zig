@@ -757,6 +757,16 @@ pub const GitRepository = struct {
         log.debug("successfully removed prepared message", .{});
     }
 
+    /// Remove all the metadata associated with an ongoing command like merge, revert, cherry-pick, etc.
+    /// For example: MERGE_HEAD, MERGE_MSG, etc.
+    pub fn stateCleanup(self: *GitRepository) !void {
+        log.debug("GitRepository.stateCleanup called", .{});
+
+        try wrapCall("git_repository_state_cleanup", .{self.repo});
+
+        log.debug("successfully cleaned state", .{});
+    }
+
     comptime {
         std.testing.refAllDecls(@This());
     }
