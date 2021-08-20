@@ -619,6 +619,23 @@ pub const GitRepository = struct {
         log.debug("successfully set workdir", .{});
     }
 
+    /// Get the configuration file for this repository.
+    ///
+    /// If a configuration file has not been set, the default config set for the repository will be returned, including global 
+    /// and system configurations (if they are available). The configuration file must be freed once it's no longer being used by
+    /// the user.
+    pub fn getConfig(self: GitRepository) !GitConfig {
+        log.debug("GitRepository.getConfig called", .{});
+
+        var config: ?*raw.git_config = undefined;
+
+        try wrapCall("git_repository_config", .{ &config, self.repo });
+
+        log.debug("repository config acquired successfully", .{});
+
+        return GitConfig{ .config = config.? };
+    }
+
     pub const RepositoryItem = enum(c_uint) {
         GITDIR,
         WORKDIR,
