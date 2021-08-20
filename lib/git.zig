@@ -1129,6 +1129,82 @@ pub const GitRepository = struct {
         return ret;
     }
 
+    /// Get file status for a single file.
+    ///
+    /// This tries to get status for the filename that you give.  If no files match that name (in either the HEAD, index, or
+    /// working directory), this returns GIT_ENOTFOUND.
+    ///
+    /// If the name matches multiple files (for example, if the `path` names a directory or if running on a case- insensitive
+    /// filesystem and yet the HEAD has two entries that both match the path), then this returns GIT_EAMBIGUOUS because it cannot
+    /// give correct results.
+    ///
+    /// This does not do any sort of rename detection.  Renames require a set of targets and because of the path filtering, there
+    /// is not enough information to check renames correctly.  To check file status with rename detection, there is no choice but
+    /// to do a full `git_status_list_new` and scan through looking for the path that you are interested in.
+    pub fn fileStatus(self: GitRepository, path: [:0]const u8) !FileStatus {
+        log.debug("GitRepository.fileStatus called, path={s}", .{path});
+
+        var flags: c_uint = undefined;
+
+        try wrapCall("git_status_file", .{ &flags, self.repo, path.ptr });
+
+        const ret = @bitCast(FileStatus, flags);
+
+        log.debug("file status: {}", .{ret});
+
+        return ret;
+    }
+
+    comptime {
+        std.testing.refAllDecls(@This());
+    }
+};
+
+/// Status flags for a single file
+///
+/// A combination of these values will be returned to indicate the status of a file.  Status compares the working directory, the
+/// index, and the current HEAD of the repository.  
+/// The `INDEX` set of flags represents the status of file in the  index relative to the HEAD, and the `WT` set of flags represent
+/// the status of the file in the working directory relative to the index.
+pub const FileStatus = packed struct {
+    CURRENT: bool = false,
+    INDEX_NEW: bool = false,
+    INDEX_MODIFIED: bool = false,
+    INDEX_DELETED: bool = false,
+    INDEX_RENAMED: bool = false,
+    INDEX_TYPECHANGE: bool = false,
+    WT_NEW: bool = false,
+    WT_MODIFIED: bool = false,
+    WT_DELETED: bool = false,
+    WT_TYPECHANGE: bool = false,
+    WT_RENAMED: bool = false,
+    WT_UNREADABLE: bool = false,
+    IGNORED: bool = false,
+    CONFLICTED: bool = false,
+
+    z_padding1: u2 = 0,
+    z_padding2: u16 = 0,
+
+    pub fn format(
+        value: FileStatus,
+        comptime fmt: []const u8,
+        options: std.fmt.FormatOptions,
+        writer: anytype,
+    ) !void {
+        _ = fmt;
+        return formatWithoutFields(
+            value,
+            options,
+            writer,
+            &.{ "z_padding1", "z_padding2" },
+        );
+    }
+
+    test {
+        try std.testing.expectEqual(@sizeOf(c_uint), @sizeOf(FileStatus));
+        try std.testing.expectEqual(@bitSizeOf(c_uint), @bitSizeOf(FileStatus));
+    }
+
     comptime {
         std.testing.refAllDecls(@This());
     }
