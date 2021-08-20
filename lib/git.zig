@@ -513,6 +513,24 @@ pub const GitRepository = struct {
         log.debug("successfully set head", .{});
     }
 
+    /// Detach the HEAD.
+    ///
+    /// If the HEAD is already detached and points to a Commit, 0 is returned.
+    ///
+    /// If the HEAD is already detached and points to a Tag, the HEAD is updated into making it point to the peeled Commit, and 0
+    /// is returned.
+    ///
+    /// If the HEAD is already detached and points to a non commitish, the HEAD is unaltered, and -1 is returned.
+    ///
+    /// Otherwise, the HEAD will be detached and point to the peeled Commit.
+    pub fn detachHead(self: *GitRepository) !void {
+        log.debug("GitRepository.detachHead called", .{});
+
+        try wrapCall("git_repository_detach_head", .{self.repo});
+
+        log.debug("successfully detached the head", .{});
+    }
+
     /// Check if a worktree's HEAD is detached
     ///
     /// A worktree's HEAD is detached when it points directly to a commit instead of a branch.
