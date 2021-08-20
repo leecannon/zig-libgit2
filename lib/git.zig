@@ -694,6 +694,25 @@ pub const GitRepository = struct {
     }
 };
 
+/// An open refs database handle.
+pub const GitRefDb = struct {
+    refdb: *raw.git_refdb,
+
+    /// Free the configuration and its associated memory and files
+    pub fn deinit(self: *GitRefDb) void {
+        log.debug("GitRefDb.deinit called", .{});
+
+        raw.git_refdb_free(self.refdb);
+        self.* = undefined;
+
+        log.debug("refdb freed successfully", .{});
+    }
+
+    comptime {
+        std.testing.refAllDecls(@This());
+    }
+};
+
 /// Memory representation of a set of config files
 pub const GitConfig = struct {
     config: *raw.git_config,
@@ -706,6 +725,10 @@ pub const GitConfig = struct {
         self.* = undefined;
 
         log.debug("config freed successfully", .{});
+    }
+
+    comptime {
+        std.testing.refAllDecls(@This());
     }
 };
 
