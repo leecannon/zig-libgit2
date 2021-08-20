@@ -1145,16 +1145,16 @@ pub const GitDetailedError = struct {
 inline fn wrapCall(comptime name: []const u8, args: anytype) GitError!void {
     checkForError(@call(.{}, @field(raw, name), args)) catch |err| {
 
-        // Outputing err or emerg log during test counts as a failed test, even if the error is expected
+        // We dont want to output log messages in tests, as the error might be expected
         if (!std.builtin.is_test) {
             if (getDetailedLastError()) |detailed| {
-                log.emerg(name ++ " failed with error {s}/{s} - {s}", .{
+                log.err(name ++ " failed with error {s}/{s} - {s}", .{
                     @errorName(err),
                     @tagName(detailed.errorClass()),
                     detailed.message(),
                 });
             } else {
-                log.emerg(name ++ " failed with error {s}", .{@errorName(err)});
+                log.err(name ++ " failed with error {s}", .{@errorName(err)});
             }
         }
 
@@ -1169,16 +1169,16 @@ inline fn wrapCallWithReturn(
     const value = @call(.{}, @field(raw, name), args);
     checkForError(value) catch |err| {
 
-        // Outputing err or emerg log during test counts as a failed test, even if the error is expected
+        // We dont want to output log messages in tests, as the error might be expected
         if (!std.builtin.is_test) {
             if (getDetailedLastError()) |detailed| {
-                log.emerg(name ++ " failed with error {s}/{s} - {s}", .{
+                log.err(name ++ " failed with error {s}/{s} - {s}", .{
                     @errorName(err),
                     @tagName(detailed.errorClass()),
                     detailed.message(),
                 });
             } else {
-                log.emerg(name ++ " failed with error {s}", .{@errorName(err)});
+                log.err(name ++ " failed with error {s}", .{@errorName(err)});
             }
         }
         return err;
