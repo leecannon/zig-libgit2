@@ -151,6 +151,13 @@ test "foreach merge head fails on fresh repository" {
     try std.testing.expectError(git.GitError.NotFound, test_handle.repo.foreachMergeHead(dummyFetchMergeCallback));
 }
 
+test "fresh repo state is none" {
+    var test_handle = try TestHandle.init("fresh_repo_state_none");
+    defer test_handle.deinit();
+
+    try std.testing.expectEqual(git.GitRepository.RepositoryState.NONE, test_handle.repo.getState());
+}
+
 const TestHandle = struct {
     handle: git.Handle,
     repo_path: [:0]const u8,

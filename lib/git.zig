@@ -531,6 +531,33 @@ pub const GitRepository = struct {
         log.debug("successfully detached the head", .{});
     }
 
+    /// These values represent possible states for the repository to be in, based on the current operation which is ongoing.
+    pub const RepositoryState = enum(c_int) {
+        NONE,
+        MERGE,
+        REVERT,
+        REVERT_SEQUENCE,
+        CHERRYPICK,
+        CHERRYPICK_SEQUENCE,
+        BISECT,
+        REBASE,
+        REBASE_INTERACTIVE,
+        REBASE_MERGE,
+        APPLY_MAILBOX,
+        APPLY_MAILBOX_OR_REBASE,
+    };
+
+    /// Determines the status of a git repository - ie, whether an operation (merge, cherry-pick, etc) is in progress.
+    pub fn getState(self: GitRepository) RepositoryState {
+        log.debug("GitRepository.getState called", .{});
+
+        const ret = @intToEnum(RepositoryState, raw.git_repository_state(self.repo));
+
+        log.debug("repository state: {s}", .{@tagName(ret)});
+
+        return ret;
+    }
+
     /// Check if a worktree's HEAD is detached
     ///
     /// A worktree's HEAD is detached when it points directly to a commit instead of a branch.
