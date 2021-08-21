@@ -1645,13 +1645,13 @@ inline fn wrapCall(comptime name: []const u8, args: anytype) GitError!void {
         // We dont want to output log messages in tests, as the error might be expected
         if (!std.builtin.is_test) {
             if (getDetailedLastError()) |detailed| {
-                log.err(name ++ " failed with error {s}/{s} - {s}", .{
+                log.warn(name ++ " failed with error {s}/{s} - {s}", .{
                     @errorName(err),
                     @tagName(detailed.errorClass()),
                     detailed.message(),
                 });
             } else {
-                log.err(name ++ " failed with error {s}", .{@errorName(err)});
+                log.warn(name ++ " failed with error {s}", .{@errorName(err)});
             }
         }
 
@@ -1669,13 +1669,13 @@ inline fn wrapCallWithReturn(
         // We dont want to output log messages in tests, as the error might be expected
         if (!std.builtin.is_test) {
             if (getDetailedLastError()) |detailed| {
-                log.err(name ++ " failed with error {s}/{s} - {s}", .{
+                log.warn(name ++ " failed with error {s}/{s} - {s}", .{
                     @errorName(err),
                     @tagName(detailed.errorClass()),
                     detailed.message(),
                 });
             } else {
-                log.err(name ++ " failed with error {s}", .{@errorName(err)});
+                log.warn(name ++ " failed with error {s}", .{@errorName(err)});
             }
         }
         return err;
