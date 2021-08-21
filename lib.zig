@@ -1512,6 +1512,20 @@ pub const StatusList = struct {
         log.debug("status list freed successfully", .{});
     }
 
+    /// Gets the count of status entries in this list.
+    ///
+    /// If there are no changes in status (at least according the options given when the status list was created), this can 
+    /// return 0.
+    pub fn getEntryCount(self: StatusList) usize {
+        log.debug("StatusList.getEntryCount called", .{});
+
+        const ret = raw.git_status_list_entrycount(self.status_list);
+
+        log.debug("status list entry count: {}", .{ret});
+
+        return ret;
+    }
+
     comptime {
         std.testing.refAllDecls(@This());
     }

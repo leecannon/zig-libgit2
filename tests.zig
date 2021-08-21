@@ -266,6 +266,8 @@ test "fresh repo status list" {
 
     var status_list = try test_handle.repo.getStatusList(.{});
     defer status_list.deinit();
+
+    try std.testing.expectEqual(@as(usize, 0), status_list.getEntryCount());
 }
 
 const TestHandle = struct {
