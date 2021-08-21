@@ -124,7 +124,7 @@ test "get index" {
     defer index.deinit();
 }
 
-fn dummyFetchHeadCallback(ref_name: [:0]const u8, remote_url: [:0]const u8, oid: git.GitOid, is_merge: bool) c_int {
+fn dummyFetchHeadCallback(ref_name: [:0]const u8, remote_url: [:0]const u8, oid: git.Oid, is_merge: bool) c_int {
     _ = ref_name;
     _ = remote_url;
     _ = oid;
@@ -139,7 +139,7 @@ test "foreach fetch head fails on fresh repository" {
     try std.testing.expectError(git.GitError.NotFound, test_handle.repo.foreachFetchHead(dummyFetchHeadCallback));
 }
 
-fn dummyFetchMergeCallback(oid: git.GitOid) c_int {
+fn dummyFetchMergeCallback(oid: git.Oid) c_int {
     _ = oid;
     return 0;
 }
@@ -173,7 +173,7 @@ test "fresh repo state is none" {
     var test_handle = try TestHandle.init("fresh_repo_state_none");
     defer test_handle.deinit();
 
-    try std.testing.expectEqual(git.GitRepository.RepositoryState.NONE, test_handle.repo.getState());
+    try std.testing.expectEqual(git.Repository.RepositoryState.NONE, test_handle.repo.getState());
 }
 
 test "fresh repo has no namespace" {
@@ -248,7 +248,7 @@ test "set identity" {
 const TestHandle = struct {
     handle: git.Handle,
     repo_path: [:0]const u8,
-    repo: git.GitRepository,
+    repo: git.Repository,
 
     pub fn init(test_name: []const u8) !TestHandle {
         const repo_path = try std.fmt.allocPrintZ(std.testing.allocator, "./zig-cache/test_repos/{s}", .{test_name});
