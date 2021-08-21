@@ -162,7 +162,7 @@ test "foreach file status extended on fresh repository" {
     var count: usize = 0;
 
     _ = try test_handle.repo.foreachFileStatusExtendedWithUserData(
-        .{ .options = git.Repository.ForeachFileStatusExtendedOptions.Options.DEFAULT },
+        .{ .options = git.Repository.FileStatusOptions.Options.DEFAULT },
         &count,
         dummyFileStatusCallback,
     );
@@ -258,6 +258,14 @@ test "set identity" {
         try std.testing.expectEqualStrings(name, ident.name.?);
         try std.testing.expectEqualStrings(email, ident.email.?);
     }
+}
+
+test "fresh repo status list" {
+    var test_handle = try TestHandle.init("set_identity");
+    defer test_handle.deinit();
+
+    var status_list = try test_handle.repo.getStatusList(.{});
+    defer status_list.deinit();
 }
 
 const TestHandle = struct {

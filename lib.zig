@@ -86,19 +86,7 @@ pub const Handle = struct {
         log.debug("Handle.repositoryInitExtended called, path={s}, options={}", .{ path, options });
 
         var opts: raw.git_repository_init_options = undefined;
-        if (old_version) {
-            try wrapCall("git_repository_init_init_options", .{ &opts, raw.GIT_REPOSITORY_INIT_OPTIONS_VERSION });
-        } else {
-            try wrapCall("git_repository_init_options_init", .{ &opts, raw.GIT_REPOSITORY_INIT_OPTIONS_VERSION });
-        }
-
-        opts.flags = options.flags.toInt();
-        opts.mode = options.mode.toInt();
-        opts.workdir_path = if (options.workdir_path) |slice| slice.ptr else null;
-        opts.description = if (options.description) |slice| slice.ptr else null;
-        opts.template_path = if (options.template_path) |slice| slice.ptr else null;
-        opts.initial_head = if (options.initial_head) |slice| slice.ptr else null;
-        opts.origin_url = if (options.origin_url) |slice| slice.ptr else null;
+        try options.toCType(&opts);
 
         var repo: ?*raw.git_repository = undefined;
 
@@ -213,6 +201,22 @@ pub const Handle = struct {
                 };
             }
         };
+
+        fn toCType(self: RepositoryInitExtendedOptions, c_type: *raw.git_repository_init_options) !void {
+            if (old_version) {
+                try wrapCall("git_repository_init_init_options", .{ c_type, raw.GIT_REPOSITORY_INIT_OPTIONS_VERSION });
+            } else {
+                try wrapCall("git_repository_init_options_init", .{ c_type, raw.GIT_REPOSITORY_INIT_OPTIONS_VERSION });
+            }
+
+            c_type.flags = self.flags.toInt();
+            c_type.mode = self.mode.toInt();
+            c_type.workdir_path = if (self.workdir_path) |slice| slice.ptr else null;
+            c_type.description = if (self.description) |slice| slice.ptr else null;
+            c_type.template_path = if (self.template_path) |slice| slice.ptr else null;
+            c_type.initial_head = if (self.initial_head) |slice| slice.ptr else null;
+            c_type.origin_url = if (self.origin_url) |slice| slice.ptr else null;
+        }
 
         comptime {
             std.testing.refAllDecls(@This());
@@ -1240,7 +1244,7 @@ pub const Repository = struct {
     /// * `status` - The status of the file
     pub fn foreachFileStatusExtended(
         self: Repository,
-        options: ForeachFileStatusExtendedOptions,
+        options: FileStatusOptions,
         comptime callback_fn: fn (path: [:0]const u8, status: FileStatus) c_int,
     ) !c_int {
         const cb = struct {
@@ -1274,7 +1278,7 @@ pub const Repository = struct {
     /// * `user_data_ptr` - pointer to user data
     pub fn foreachFileStatusExtendedWithUserData(
         self: Repository,
-        options: ForeachFileStatusExtendedOptions,
+        options: FileStatusOptions,
         user_data: anytype,
         comptime callback_fn: fn (
             path: [:0]const u8,
@@ -1297,19 +1301,7 @@ pub const Repository = struct {
         log.debug("Repository.foreachFileStatusExtendedWithUserData called, options={}", .{options});
 
         var opts: raw.git_status_options = undefined;
-        if (old_version) {
-            try wrapCall("git_status_init_options", .{ &opts, raw.GIT_REPOSITORY_INIT_OPTIONS_VERSION });
-        } else {
-            try wrapCall("git_status_options_init", .{ &opts, raw.GIT_REPOSITORY_INIT_OPTIONS_VERSION });
-        }
-
-        opts.show = @enumToInt(options.show);
-        opts.flags = @bitCast(c_int, options.options);
-        opts.pathspec = .{
-            .strings = @intToPtr([*c][*c]u8, @ptrToInt(options.pathspec.ptr)),
-            .count = options.pathspec.len,
-        };
-        opts.baseline = if (options.baseline) |tree| tree.tree else null;
+        try options.toCType(&opts);
 
         const ret = try wrapCallWithReturn("git_status_foreach_ext", .{ self.repo, &opts, cb, user_data });
 
@@ -1318,7 +1310,7 @@ pub const Repository = struct {
         return ret;
     }
 
-    pub const ForeachFileStatusExtendedOptions = struct {
+    pub const FileStatusOptions = struct {
         /// which files to scan and in what order
         show: Show = .INDEX_AND_WORKDIR,
 
@@ -1458,10 +1450,48 @@ pub const Repository = struct {
             }
         };
 
+        fn toCType(self: FileStatusOptions, c_type: *raw.git_status_options) !void {
+            if (old_version) {
+                try wrapCall("git_status_init_options", .{ c_type, raw.GIT_REPOSITORY_INIT_OPTIONS_VERSION });
+            } else {
+                try wrapCall("git_status_options_init", .{ c_type, raw.GIT_REPOSITORY_INIT_OPTIONS_VERSION });
+            }
+
+            c_type.show = @enumToInt(self.show);
+            c_type.flags = @bitCast(c_int, self.options);
+            c_type.pathspec = .{
+                .strings = @intToPtr([*c][*c]u8, @ptrToInt(self.pathspec.ptr)),
+                .count = self.pathspec.len,
+            };
+            c_type.baseline = if (self.baseline) |tree| tree.tree else null;
+        }
+
         comptime {
             std.testing.refAllDecls(@This());
         }
     };
+
+    /// Gather file status information and populate a `StatusList`.
+    ///
+    /// Note that if a `pathspec` is given in the `git_status_options` to filter the status, then the results from rename
+    /// detection (if you enable it) may not be accurate. To do rename detection properly, this must be called with no `pathspec`
+    /// so that all files can be considered.
+    ///
+    /// ## Parameters
+    /// * `options` - options regarding which files to get the status of
+    pub fn getStatusList(self: Repository, options: FileStatusOptions) !StatusList {
+        log.debug("Repository.getStatusList called, options={}", .{options});
+
+        var opts: raw.git_status_options = undefined;
+        try options.toCType(&opts);
+
+        var status_list: ?*raw.git_status_list = undefined;
+        try wrapCall("git_status_list_new", .{ &status_list, self.repo, &opts });
+
+        log.debug("successfully fetched status list", .{});
+
+        return StatusList{ .status_list = status_list.? };
+    }
 
     comptime {
         std.testing.refAllDecls(@This());
