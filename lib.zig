@@ -1095,6 +1095,66 @@ pub const Repository = struct {
         return ret;
     }
 
+    /// Calculate hash of file using repository filtering rules.
+    ///
+    /// If you simply want to calculate the hash of a file on disk with no filters, you can just use the `Odb.hashFile` API.
+    /// However, if you want to hash a file in the repository and you want to apply filtering rules (e.g. crlf filters) before
+    /// generating the SHA, then use this function.
+    ///
+    /// Note: if the repository has `core.safecrlf` set to fail and the filtering triggers that failure, then this function will
+    /// return an error and not calculate the hash of the file.
+    ///
+    /// ## Parameters
+    /// * `path` - Path to file on disk whose contents should be hashed. This can be a relative path.
+    /// * `object_type` - The object type to hash as (e.g. `ObjectType.BLOB`)
+    /// * `as_path` - The path to use to look up filtering rules. If this is `null`, then the `path` parameter will be used
+    ///               instead. If this is passed as the empty string, then no filters will be applied when calculating the hash.
+    pub fn hashFile(self: Repository, path: [:0]const u8, object_type: ObjectType, as_path: ?[:0]const u8) !Oid {
+        log.debug("Repository.hashFile called, path={s}, object_type={}, as_path={s}", .{ path, object_type, as_path });
+
+        var oid: ?*raw.git_oid = undefined;
+
+        const as_path_temp: [*c]const u8 = if (as_path) |slice| slice.ptr else null;
+        try wrapCall("git_repository_hashfile", .{ oid, self.repo, path.ptr, @enumToInt(object_type), as_path_temp });
+
+        const ret = Oid{ .oid = oid.? };
+
+        // This check is to prevent formating the oid when we are not going to print anything
+        if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
+            var buf: [Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            const slice = try ret.formatHex(&buf);
+            log.debug("file hash acquired successfully, hash={s}", .{slice});
+        }
+
+        return ret;
+    }
+
+    /// Get file status for a single file.
+    ///
+    /// This tries to get status for the filename that you give.  If no files match that name (in either the HEAD, index, or
+    /// working directory), this returns GIT_ENOTFOUND.
+    ///
+    /// If the name matches multiple files (for example, if the `path` names a directory or if running on a case- insensitive
+    /// filesystem and yet the HEAD has two entries that both match the path), then this returns GIT_EAMBIGUOUS because it cannot
+    /// give correct results.
+    ///
+    /// This does not do any sort of rename detection.  Renames require a set of targets and because of the path filtering, there
+    /// is not enough information to check renames correctly.  To check file status with rename detection, there is no choice but
+    /// to do a full `git_status_list_new` and scan through looking for the path that you are interested in.
+    pub fn fileStatus(self: Repository, path: [:0]const u8) !FileStatus {
+        log.debug("Repository.fileStatus called, path={s}", .{path});
+
+        var flags: c_uint = undefined;
+
+        try wrapCall("git_status_file", .{ &flags, self.repo, path.ptr });
+
+        const ret = @bitCast(FileStatus, flags);
+
+        log.debug("file status: {}", .{ret});
+
+        return ret;
+    }
+
     /// Gather file statuses and run a callback for each one.
     ///
     /// If the callback returns a non-zero value, this function will stop looping and return that value to caller.
@@ -1161,64 +1221,267 @@ pub const Repository = struct {
         return ret;
     }
 
-    /// Calculate hash of file using repository filtering rules.
+    /// Gather file status information and run callbacks as requested.
     ///
-    /// If you simply want to calculate the hash of a file on disk with no filters, you can just use the `Odb.hashFile` API.
-    /// However, if you want to hash a file in the repository and you want to apply filtering rules (e.g. crlf filters) before
-    /// generating the SHA, then use this function.
+    /// This is an extended version of the `foreachFileStatus` API that allows for more granular control over which paths will be
+    /// processed and in what order. See the `ForeachFileStatusExtendedOptions` structure for details about the additional 
+    /// controls that this makes available.
     ///
-    /// Note: if the repository has `core.safecrlf` set to fail and the filtering triggers that failure, then this function will
-    /// return an error and not calculate the hash of the file.
+    /// Note that if a `pathspec` is given in the `ForeachFileStatusExtendedOptions` to filter the status, then the results from
+    /// rename detection (if you enable it) may not be accurate. To do rename detection properly, this must be called with no
+    /// `pathspec` so that all files can be considered.
     ///
     /// ## Parameters
-    /// * `path` - Path to file on disk whose contents should be hashed. This can be a relative path.
-    /// * `object_type` - The object type to hash as (e.g. `ObjectType.BLOB`)
-    /// * `as_path` - The path to use to look up filtering rules. If this is `null`, then the `path` parameter will be used
-    ///               instead. If this is passed as the empty string, then no filters will be applied when calculating the hash.
-    pub fn hashFile(self: Repository, path: [:0]const u8, object_type: ObjectType, as_path: ?[:0]const u8) !Oid {
-        log.debug("Repository.hashFile called, path={s}, object_type={}, as_path={s}", .{ path, object_type, as_path });
+    /// * `options` - callback options
+    /// * `callback_fn` - the callback function
+    ///
+    /// ## Callback Parameters
+    /// * `path` - The file path
+    /// * `status` - The status of the file
+    pub fn foreachFileStatusExtended(
+        self: Repository,
+        options: ForeachFileStatusExtendedOptions,
+        comptime callback_fn: fn (path: [:0]const u8, status: FileStatus) c_int,
+    ) !c_int {
+        const cb = struct {
+            pub fn cb(path: [:0]const u8, status: FileStatus, _: *u8) c_int {
+                return callback_fn(path, status);
+            }
+        }.cb;
 
-        var oid: ?*raw.git_oid = undefined;
+        var dummy_data: u8 = undefined;
+        return self.foreachFileStatusExtendedWithUserData(options, &dummy_data, cb);
+    }
 
-        const as_path_temp: [*c]const u8 = if (as_path) |slice| slice.ptr else null;
-        try wrapCall("git_repository_hashfile", .{ oid, self.repo, path.ptr, @enumToInt(object_type), as_path_temp });
+    /// Gather file status information and run callbacks as requested.
+    ///
+    /// This is an extended version of the `foreachFileStatus` API that allows for more granular control over which paths will be
+    /// processed and in what order. See the `ForeachFileStatusExtendedOptions` structure for details about the additional 
+    /// controls that this makes available.
+    ///
+    /// Note that if a `pathspec` is given in the `ForeachFileStatusExtendedOptions` to filter the status, then the results from
+    /// rename detection (if you enable it) may not be accurate. To do rename detection properly, this must be called with no
+    /// `pathspec` so that all files can be considered.
+    ///
+    /// ## Parameters
+    /// * `options` - callback options
+    /// * `user_data` - pointer to user data to be passed to the callback
+    /// * `callback_fn` - the callback function
+    ///
+    /// ## Callback Parameters
+    /// * `path` - The file path
+    /// * `status` - The status of the file
+    /// * `user_data_ptr` - pointer to user data
+    pub fn foreachFileStatusExtendedWithUserData(
+        self: Repository,
+        options: ForeachFileStatusExtendedOptions,
+        user_data: anytype,
+        comptime callback_fn: fn (
+            path: [:0]const u8,
+            status: FileStatus,
+            user_data_ptr: @TypeOf(user_data),
+        ) c_int,
+    ) !c_int {
+        const UserDataType = @TypeOf(user_data);
 
-        const ret = Oid{ .oid = oid.? };
+        const cb = struct {
+            pub fn cb(path: [*c]const u8, status: c_uint, payload: ?*c_void) callconv(.C) c_int {
+                return callback_fn(
+                    std.mem.sliceTo(path, 0),
+                    @bitCast(FileStatus, status),
+                    @intToPtr(UserDataType, @ptrToInt(payload)),
+                );
+            }
+        }.cb;
 
-        // This check is to prevent formating the oid when we are not going to print anything
-        if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-            var buf: [Oid.HEX_BUFFER_SIZE]u8 = undefined;
-            const slice = try ret.formatHex(&buf);
-            log.debug("file hash acquired successfully, hash={s}", .{slice});
+        log.debug("Repository.foreachFileStatusExtendedWithUserData called, options={}", .{options});
+
+        var opts: raw.git_status_options = undefined;
+        if (old_version) {
+            try wrapCall("git_status_init_options", .{ &opts, raw.GIT_REPOSITORY_INIT_OPTIONS_VERSION });
+        } else {
+            try wrapCall("git_status_options_init", .{ &opts, raw.GIT_REPOSITORY_INIT_OPTIONS_VERSION });
         }
+
+        opts.show = @enumToInt(options.show);
+        opts.flags = @bitCast(c_int, options.options);
+        opts.pathspec = .{
+            .strings = @intToPtr([*c][*c]u8, @ptrToInt(options.pathspec.ptr)),
+            .count = options.pathspec.len,
+        };
+        opts.baseline = if (options.baseline) |tree| tree.tree else null;
+
+        const ret = try wrapCallWithReturn("git_status_foreach_ext", .{ self.repo, &opts, cb, user_data });
+
+        log.debug("callback returned: {}", .{ret});
 
         return ret;
     }
 
-    /// Get file status for a single file.
-    ///
-    /// This tries to get status for the filename that you give.  If no files match that name (in either the HEAD, index, or
-    /// working directory), this returns GIT_ENOTFOUND.
-    ///
-    /// If the name matches multiple files (for example, if the `path` names a directory or if running on a case- insensitive
-    /// filesystem and yet the HEAD has two entries that both match the path), then this returns GIT_EAMBIGUOUS because it cannot
-    /// give correct results.
-    ///
-    /// This does not do any sort of rename detection.  Renames require a set of targets and because of the path filtering, there
-    /// is not enough information to check renames correctly.  To check file status with rename detection, there is no choice but
-    /// to do a full `git_status_list_new` and scan through looking for the path that you are interested in.
-    pub fn fileStatus(self: Repository, path: [:0]const u8) !FileStatus {
-        log.debug("Repository.fileStatus called, path={s}", .{path});
+    pub const ForeachFileStatusExtendedOptions = struct {
+        /// which files to scan and in what order
+        show: Show = .INDEX_AND_WORKDIR,
 
-        var flags: c_uint = undefined;
+        /// Flags to control status callbacks
+        options: Options = .{},
 
-        try wrapCall("git_status_file", .{ &flags, self.repo, path.ptr });
+        /// The `pathspec` is an array of path patterns to match (using fnmatch-style matching), or just an array of paths to 
+        /// match exactly if `Options.DISABLE_PATHSPEC_MATCH` is specified in the flags.
+        pathspec: [][:0]const u8 = &[_][:0]const u8{},
 
-        const ret = @bitCast(FileStatus, flags);
+        /// The `baseline` is the tree to be used for comparison to the working directory and index; defaults to HEAD.
+        baseline: ?Tree = null,
 
-        log.debug("file status: {}", .{ret});
+        /// Select the files on which to report status.
+        pub const Show = enum(c_uint) {
+            /// The default. This roughly matches `git status --porcelain` regarding which files are included and in what order.
+            INDEX_AND_WORKDIR,
+            /// Only gives status based on HEAD to index comparison, not looking at working directory changes.
+            INDEX_ONLY,
+            /// Only gives status based on index to working directory comparison, not comparing the index to the HEAD.
+            WORKDIR_ONLY,
+        };
 
-        return ret;
+        /// Flags to control status callbacks
+        ///
+        /// Calling `Repository.forEachFileStatus` is like calling the extended version with: `INCLUDE_IGNORED`, 
+        /// `INCLUDE_UNTRACKED`, and `RECURSE_UNTRACKED_DIRS`. Those options are bundled together as `Options.DEFAULTS` if
+        /// you want them as a baseline.
+        pub const Options = packed struct {
+            /// Says that callbacks should be made on untracked files.
+            /// These will only be made if the workdir files are included in the status
+            /// "show" option.
+            INCLUDE_UNTRACKED: bool = false,
+
+            /// Says that ignored files get callbacks.
+            /// Again, these callbacks will only be made if the workdir files are
+            /// included in the status "show" option.
+            INCLUDE_IGNORED: bool = false,
+
+            /// Indicates that callback should be made even on unmodified files.
+            INCLUDE_UNMODIFIED: bool = false,
+
+            /// Indicates that submodules should be skipped.
+            /// This only applies if there are no pending typechanges to the submodule
+            /// (either from or to another type).
+            EXCLUDE_SUBMODULES: bool = false,
+
+            /// Indicates that all files in untracked directories should be included.
+            /// Normally if an entire directory is new, then just the top-level
+            /// directory is included (with a trailing slash on the entry name).
+            /// This flag says to include all of the individual files in the directory
+            /// instead.
+            RECURSE_UNTRACKED_DIRS: bool = false,
+
+            /// Indicates that the given path should be treated as a literal path,
+            /// and not as a pathspec pattern.
+            DISABLE_PATHSPEC_MATCH: bool = false,
+
+            /// Indicates that the contents of ignored directories should be included
+            /// in the status. This is like doing `git ls-files -o -i --exclude-standard`
+            /// with core git.
+            RECURSE_IGNORED_DIRS: bool = false,
+
+            /// Indicates that rename detection should be processed between the head and
+            /// the index and enables the GIT_STATUS_INDEX_RENAMED as a possible status
+            /// flag.
+            RENAMES_HEAD_TO_INDEX: bool = false,
+
+            /// Indicates that rename detection should be run between the index and the
+            /// working directory and enabled GIT_STATUS_WT_RENAMED as a possible status
+            /// flag.
+            RENAMES_INDEX_TO_WORKDIR: bool = false,
+
+            /// Overrides the native case sensitivity for the file system and forces
+            /// the output to be in case-sensitive order.
+            SORT_CASE_SENSITIVELY: bool = false,
+
+            /// Overrides the native case sensitivity for the file system and forces
+            /// the output to be in case-insensitive order.
+            SORT_CASE_INSENSITIVELY: bool = false,
+
+            /// Iindicates that rename detection should include rewritten files.
+            RENAMES_FROM_REWRITES: bool = false,
+
+            /// Bypasses the default status behavior of doing a "soft" index reload
+            /// (i.e. reloading the index data if the file on disk has been modified
+            /// outside libgit2).
+            NO_REFRESH: bool = false,
+
+            /// Tells libgit2 to refresh the stat cache in the index for files that are
+            /// unchanged but have out of date stat einformation in the index.
+            /// It will result in less work being done on subsequent calls to get status.
+            /// This is mutually exclusive with the NO_REFRESH option.
+            UPDATE_INDEX: bool = false,
+
+            /// Normally files that cannot be opened or read are ignored as
+            /// these are often transient files; this option will return
+            /// unreadable files as `GIT_STATUS_WT_UNREADABLE`.
+            INCLUDE_UNREADABLE: bool = false,
+
+            /// Unreadable files will be detected and given the status
+            /// untracked instead of unreadable.
+            INCLUDE_UNREADABLE_AS_UNTRACKED: bool = false,
+
+            z_padding: u16 = 0,
+
+            pub const DEFAULT: Options = blk: {
+                var opt = Options{};
+                opt.INCLUDE_IGNORED = true;
+                opt.INCLUDE_UNTRACKED = true;
+                opt.RECURSE_UNTRACKED_DIRS = true;
+                break :blk opt;
+            };
+
+            pub fn format(
+                value: Options,
+                comptime fmt: []const u8,
+                options: std.fmt.FormatOptions,
+                writer: anytype,
+            ) !void {
+                _ = fmt;
+                return formatWithoutFields(
+                    value,
+                    options,
+                    writer,
+                    &.{"z_padding"},
+                );
+            }
+
+            test {
+                try std.testing.expectEqual(@sizeOf(c_uint), @sizeOf(Options));
+                try std.testing.expectEqual(@bitSizeOf(c_uint), @bitSizeOf(Options));
+            }
+
+            comptime {
+                std.testing.refAllDecls(@This());
+            }
+        };
+
+        comptime {
+            std.testing.refAllDecls(@This());
+        }
+    };
+
+    comptime {
+        std.testing.refAllDecls(@This());
+    }
+
+    //
+};
+
+/// Representation of a tree object.
+pub const Tree = struct {
+    tree: *raw.git_tree,
+
+    /// Close an open tree
+    pub fn deinit(self: *Tree) void {
+        log.debug("Tree.deinit called", .{});
+
+        raw.git_tree_free(self.tree);
+        self.* = undefined;
+
+        log.debug("tree freed successfully", .{});
     }
 
     comptime {
@@ -1643,7 +1906,8 @@ inline fn wrapCall(comptime name: []const u8, args: anytype) GitError!void {
     checkForError(@call(.{}, @field(raw, name), args)) catch |err| {
 
         // We dont want to output log messages in tests, as the error might be expected
-        if (!std.builtin.is_test) {
+        // also dont incur the cost of calling `getDetailedLastError` if we are not going to use it
+        if (!std.builtin.is_test and @enumToInt(std.log.Level.warn) <= @enumToInt(std.log.level)) {
             if (getDetailedLastError()) |detailed| {
                 log.warn(name ++ " failed with error {s}/{s} - {s}", .{
                     @errorName(err),
@@ -1667,7 +1931,8 @@ inline fn wrapCallWithReturn(
     checkForError(value) catch |err| {
 
         // We dont want to output log messages in tests, as the error might be expected
-        if (!std.builtin.is_test) {
+        // also dont incur the cost of calling `getDetailedLastError` if we are not going to use it
+        if (!std.builtin.is_test and @enumToInt(std.log.Level.warn) <= @enumToInt(std.log.level)) {
             if (getDetailedLastError()) |detailed| {
                 log.warn(name ++ " failed with error {s}/{s} - {s}", .{
                     @errorName(err),

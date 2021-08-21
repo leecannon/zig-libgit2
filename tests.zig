@@ -155,6 +155,21 @@ test "foreach file status on fresh repository" {
     try std.testing.expectEqual(@as(usize, 0), count);
 }
 
+test "foreach file status extended on fresh repository" {
+    var test_handle = try TestHandle.init("foreach_file_status_extended_on_fresh");
+    defer test_handle.deinit();
+
+    var count: usize = 0;
+
+    _ = try test_handle.repo.foreachFileStatusExtendedWithUserData(
+        .{ .options = git.Repository.ForeachFileStatusExtendedOptions.Options.DEFAULT },
+        &count,
+        dummyFileStatusCallback,
+    );
+
+    try std.testing.expectEqual(@as(usize, 0), count);
+}
+
 fn dummyFileStatusCallback(path: [:0]const u8, status: git.FileStatus, count: *usize) c_int {
     _ = path;
     _ = status;
