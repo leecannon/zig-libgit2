@@ -1526,6 +1526,49 @@ pub const StatusList = struct {
         return ret;
     }
 
+    /// Get a pointer to one of the entries in the status list.
+    ///
+    /// ## Parameters
+    /// * `index` - Position of the entry
+    pub fn getStatusByIndex(self: StatusList, index: usize) ?*const StatusEntry {
+        log.debug("StatusList.getEntryCount called", .{});
+
+        const ret_opt = raw.git_status_byindex(self.status_list, index);
+
+        if (ret_opt) |ret| {
+            const result = @intToPtr(*const StatusEntry, @ptrToInt(ret));
+
+            log.debug("successfully fetched status entry: {}", .{result});
+
+            return result;
+        } else {
+            log.warn("index out of bounds", .{});
+            return null;
+        }
+    }
+
+    /// A status entry, providing the differences between the file as it exists in HEAD and the index, and providing the 
+    /// differences between the index and the working directory.
+    pub const StatusEntry = extern struct {
+        /// The status flags for this file
+        status: FileStatus,
+
+        /// detailed information about the differences between the file in HEAD and the file in the index.
+        head_to_index: DiffDelta,
+
+        /// detailed information about the differences between the file in the index and the file in the working directory.
+        index_to_workdir: DiffDelta,
+    };
+
+    comptime {
+        std.testing.refAllDecls(@This());
+    }
+};
+
+/// Description of changes to one entry.
+pub const DiffDelta = extern struct {
+    diff_delta: *const raw.git_diff_delta,
+
     comptime {
         std.testing.refAllDecls(@This());
     }
