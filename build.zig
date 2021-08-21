@@ -71,6 +71,8 @@ var old_version_opt: ?bool = null;
 fn linkLibGit(exe: *std.build.LibExeObjStep, target: std.build.Target) void {
     _ = target;
 
+    // TODO: Handle non-linux
+
     exe.linkLibC();
     exe.linkSystemLibrary("git2");
 

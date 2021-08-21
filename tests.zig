@@ -144,6 +144,24 @@ fn dummyFetchMergeCallback(oid: git.GitOid) c_int {
     return 0;
 }
 
+test "foreach file status on fresh repository" {
+    var test_handle = try TestHandle.init("foreach_file_status_on_fresh");
+    defer test_handle.deinit();
+
+    var count: usize = 0;
+
+    _ = try test_handle.repo.foreachFileStatusWithUserData(&count, dummyFileStatusCallback);
+
+    try std.testing.expectEqual(@as(usize, 0), count);
+}
+
+fn dummyFileStatusCallback(path: [:0]const u8, status: git.FileStatus, count: *usize) c_int {
+    _ = path;
+    _ = status;
+    count.* += 1;
+    return 0;
+}
+
 test "foreach merge head fails on fresh repository" {
     var test_handle = try TestHandle.init("foreach_merge_head_fails_on_fresh");
     defer test_handle.deinit();

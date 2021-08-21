@@ -1095,6 +1095,72 @@ pub const GitRepository = struct {
         return ret;
     }
 
+    /// Gather file statuses and run a callback for each one.
+    ///
+    /// If the callback returns a non-zero value, this function will stop looping and return that value to caller.
+    ///
+    /// ## Parameters
+    /// * `callback_fn` - the callback function
+    ///
+    /// ## Callback Parameters
+    /// * `path` - The file path
+    /// * `status` - The status of the file
+    pub fn foreachFileStatus(
+        self: GitRepository,
+        comptime callback_fn: fn (path: [:0]const u8, status: FileStatus) c_int,
+    ) !c_int {
+        const cb = struct {
+            pub fn cb(path: [:0]const u8, status: FileStatus, _: *u8) c_int {
+                return callback_fn(path, status);
+            }
+        }.cb;
+
+        var dummy_data: u8 = undefined;
+        return self.foreachFileStatusWithUserData(&dummy_data, cb);
+    }
+
+    /// Gather file statuses and run a callback for each one.
+    ///
+    /// If the callback returns a non-zero value, this function will stop looping and return that value to caller.
+    ///
+    /// ## Parameters
+    /// * `user_data` - pointer to user data to be passed to the callback
+    /// * `callback_fn` - the callback function
+    ///
+    /// ## Callback Parameters
+    /// * `path` - The file path
+    /// * `status` - The status of the file
+    /// * `user_data_ptr` - pointer to user data
+    pub fn foreachFileStatusWithUserData(
+        self: GitRepository,
+        user_data: anytype,
+        comptime callback_fn: fn (
+            path: [:0]const u8,
+            status: FileStatus,
+            user_data_ptr: @TypeOf(user_data),
+        ) c_int,
+    ) !c_int {
+        const UserDataType = @TypeOf(user_data);
+
+        const cb = struct {
+            pub fn cb(path: [*c]const u8, status: c_uint, payload: ?*c_void) callconv(.C) c_int {
+                return callback_fn(
+                    std.mem.sliceTo(path, 0),
+                    @bitCast(FileStatus, status),
+                    @intToPtr(UserDataType, @ptrToInt(payload)),
+                );
+            }
+        }.cb;
+
+        log.debug("GitRepository.foreachFileStatusWithUserData called", .{});
+
+        const ret = try wrapCallWithReturn("git_status_foreach", .{ self.repo, cb, user_data });
+
+        log.debug("callback returned: {}", .{ret});
+
+        return ret;
+    }
+
     /// Calculate hash of file using repository filtering rules.
     ///
     /// If you simply want to calculate the hash of a file on disk with no filters, you can just use the `GitOdb.hashFile` API.
