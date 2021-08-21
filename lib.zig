@@ -1493,6 +1493,28 @@ pub const Repository = struct {
         return StatusList{ .status_list = status_list.? };
     }
 
+    /// Test if the ignore rules apply to a given file.
+    ///
+    /// This function checks the ignore rules to see if they would apply to the given file. This indicates if the file would be
+    /// ignored regardless of whether the file is already in the index or committed to the repository.
+    ///
+    /// One way to think of this is if you were to do "git add ." on the directory containing the file, would it be added or not?
+    ///
+    /// ## Parameters
+    /// * `path` - The file to check ignores for, rooted at the repo's workdir.
+    pub fn statusShouldIgnore(self: Repository, path: [:0]const u8) !bool {
+        log.debug("Repository.statusShouldIgnore called, path={s}", .{path});
+
+        var result: c_int = undefined;
+        try wrapCall("git_status_should_ignore", .{ &result, self.repo, path.ptr });
+
+        const ret = result == 1;
+
+        log.debug("status should ignore: {}", .{ret});
+
+        return ret;
+    }
+
     comptime {
         std.testing.refAllDecls(@This());
     }
@@ -1531,7 +1553,7 @@ pub const StatusList = struct {
     /// ## Parameters
     /// * `index` - Position of the entry
     pub fn getStatusByIndex(self: StatusList, index: usize) ?*const StatusEntry {
-        log.debug("StatusList.getEntryCount called", .{});
+        log.debug("StatusList.getStatusByIndex called, index={}", .{index});
 
         const ret_opt = raw.git_status_byindex(self.status_list, index);
 
