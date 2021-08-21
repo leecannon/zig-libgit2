@@ -1466,8 +1466,25 @@ pub const Repository = struct {
     comptime {
         std.testing.refAllDecls(@This());
     }
+};
 
-    //
+/// Representation of a status collection
+pub const StatusList = struct {
+    status_list: *raw.git_status_list,
+
+    /// Free an existing status list
+    pub fn deinit(self: *StatusList) void {
+        log.debug("StatusList.deinit called", .{});
+
+        raw.git_status_list_free(self.status_list);
+        self.* = undefined;
+
+        log.debug("status list freed successfully", .{});
+    }
+
+    comptime {
+        std.testing.refAllDecls(@This());
+    }
 };
 
 /// Representation of a tree object.
