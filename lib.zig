@@ -1915,6 +1915,51 @@ pub const Index = opaque {
         return null;
     }
 
+    pub fn getIndexCapabilities(self: *const Index) IndexCapability {
+        log.debug("Index.getIndexCapabilities called", .{});
+
+        const cap = @bitCast(IndexCapability, raw.git_index_caps(self.toC()));
+
+        log.debug("successfully fetched index capabilities {}", .{cap});
+
+        return cap;
+    }
+
+    pub const IndexCapability = packed struct {
+        IGNORE_CASE: bool = false,
+        NO_FILEMODE: bool = false,
+        NO_SYMLINKS: bool = false,
+
+        z_padding1: u13 = 0,
+        z_padding2: u15 = 0,
+
+        FROM_OWNER: bool = false,
+
+        pub fn format(
+            value: IndexCapability,
+            comptime fmt: []const u8,
+            options: std.fmt.FormatOptions,
+            writer: anytype,
+        ) !void {
+            _ = fmt;
+            return formatWithoutFields(
+                value,
+                options,
+                writer,
+                &.{ "z_padding1", "z_padding2" },
+            );
+        }
+
+        test {
+            try std.testing.expectEqual(@sizeOf(c_int), @sizeOf(IndexCapability));
+            try std.testing.expectEqual(@bitSizeOf(c_int), @bitSizeOf(IndexCapability));
+        }
+
+        comptime {
+            std.testing.refAllDecls(@This());
+        }
+    };
+
     inline fn fromC(self: anytype) *@This() {
         return @intToPtr(*@This(), @ptrToInt(self));
     }

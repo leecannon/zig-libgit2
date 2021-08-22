@@ -299,6 +299,21 @@ test "new index has no repository" {
     try std.testing.expect(index.getRepository() == null);
 }
 
+test "new index capabilities" {
+    var handle = try git.init();
+    defer handle.deinit();
+
+    const index = try handle.indexNew();
+    defer index.deinit();
+
+    const cap = index.getIndexCapabilities();
+
+    try std.testing.expect(!cap.FROM_OWNER);
+    try std.testing.expect(!cap.IGNORE_CASE);
+    try std.testing.expect(!cap.NO_FILEMODE);
+    try std.testing.expect(!cap.NO_SYMLINKS);
+}
+
 const TestHandle = struct {
     handle: git.Handle,
     repo_path: [:0]const u8,
