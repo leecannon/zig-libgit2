@@ -47,6 +47,9 @@ pub const Handle = struct {
 
     /// Create a new bare Git index object as a memory representation of the Git index file in `path`, without a repository to
     /// back it.
+    ///
+    /// ## Parameters
+    /// * `path` - the path to the index
     pub fn indexOpen(self: Handle, path: [:0]const u8) !*Index {
         _ = self;
 
@@ -57,6 +60,23 @@ pub const Handle = struct {
         try wrapCall("git_index_open", .{ &index, path.ptr });
 
         log.debug("index opened successfully", .{});
+
+        return Index.fromC(index.?);
+    }
+
+    /// Create an in-memory index object.
+    ///
+    /// This index object cannot be read/written to the filesystem, but may be used to perform in-memory index operations.
+    pub fn indexNew(self: Handle) !*Index {
+        _ = self;
+
+        log.debug("Handle.indexInit called", .{});
+
+        var index: ?*raw.git_index = undefined;
+
+        try wrapCall("git_index_new", .{&index});
+
+        log.debug("index created successfully", .{});
 
         return Index.fromC(index.?);
     }

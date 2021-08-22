@@ -281,6 +281,14 @@ test "bare index" {
     defer index.deinit();
 }
 
+test "new index" {
+    var handle = try git.init();
+    defer handle.deinit();
+
+    const index = try handle.indexNew();
+    defer index.deinit();
+}
+
 const TestHandle = struct {
     handle: git.Handle,
     repo_path: [:0]const u8,
