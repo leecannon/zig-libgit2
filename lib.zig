@@ -1901,6 +1901,20 @@ pub const Index = opaque {
         log.debug("index freed successfully", .{});
     }
 
+    pub fn getRepository(self: *const Index) ?*Repository {
+        log.debug("Index.getRepository called", .{});
+
+        const ret = raw.git_index_owner(self.toC());
+
+        if (ret) |ptr| {
+            log.debug("successfully fetched owning repository", .{});
+            return Repository.fromC(ptr);
+        }
+
+        log.debug("no owning repository", .{});
+        return null;
+    }
+
     inline fn fromC(self: anytype) *@This() {
         return @intToPtr(*@This(), @ptrToInt(self));
     }

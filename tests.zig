@@ -289,6 +289,16 @@ test "new index" {
     defer index.deinit();
 }
 
+test "new index has no repository" {
+    var handle = try git.init();
+    defer handle.deinit();
+
+    const index = try handle.indexNew();
+    defer index.deinit();
+
+    try std.testing.expect(index.getRepository() == null);
+}
+
 const TestHandle = struct {
     handle: git.Handle,
     repo_path: [:0]const u8,
