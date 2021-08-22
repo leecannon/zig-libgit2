@@ -6,11 +6,8 @@ const old_version: bool = @import("build_options").old_version;
 
 pub const GIT_PATH_LIST_SEPARATOR = raw.GIT_PATH_LIST_SEPARATOR;
 
-/// Init the global state
-///
-/// This function must be called before any other libgit2 function in order to set up global state and threading.
-///
-/// This function may be called multiple times.
+/// Initialize global state. This function must be called before any other function.
+/// *NOTE*: This function can called multiple times.
 pub fn init() !Handle {
     log.debug("init called", .{});
 
@@ -32,9 +29,8 @@ pub fn getDetailedLastError() ?*const DetailedError {
 
 /// This type bundles all functionality that does not act on an instance of an object
 pub const Handle = struct {
-    /// Shutdown the global state
-    /// 
-    /// Clean up the global state and threading context after calling it as many times as `init` was called.
+    /// De-initialize the libraries global state.
+    /// *NOTE*: should be called as many times as `init` was called.
     pub fn deinit(self: Handle) void {
         _ = self;
 
@@ -49,7 +45,7 @@ pub const Handle = struct {
         }
     }
 
-    /// Creates a new Git repository in the given folder.
+    /// Create a new repository in the given directory.
     ///
     /// ## Parameters
     /// * `path` - the path to the repository
@@ -70,10 +66,7 @@ pub const Handle = struct {
         return Repository.fromC(repo.?);
     }
 
-    /// Create a new Git repository in the given folder with extended controls.
-    ///
-    /// This will initialize a new git repository (creating the repo_path if requested by flags) and working directory as needed.
-    /// It will auto-detect the case sensitivity of the file system and if the file system supports file mode bits correctly.
+    /// Create a new repository in the given directory with extended options.
     ///
     /// ## Parameters
     /// * `path` - the path to the repository
@@ -95,11 +88,7 @@ pub const Handle = struct {
         return Repository.fromC(repo.?);
     }
 
-    /// Open a git repository.
-    ///
-    /// The `path` argument must point to either a git repository folder, or an existing work dir.
-    ///
-    /// The method will automatically detect if 'path' is a normal or bare repository or fail is `path` is neither.
+    /// Open a repository.
     ///
     /// ## Parameters
     /// * `path` - the path to the repository
@@ -117,19 +106,15 @@ pub const Handle = struct {
         return Repository.fromC(repo.?);
     }
 
-    /// Find and open a repository with extended controls.
+    /// Find and open a repository with extended options.
     ///
-    /// The `path` argument must point to either a git repository folder, or an existing work dir.
-    ///
-    /// The method will automatically detect if 'path' is a normal or bare repository or fail is `path` is neither.
-    ///
-    /// *Note:* `path` can only be null if the `open_from_env` option is used.
+    /// *NOTE*: `path` can only be null if the `open_from_env` option is used.
     ///
     /// ## Parameters
     /// * `path` - the path to the repository
-    /// * `flags` - A combination of the GIT_REPOSITORY_OPEN flags above.
+    /// * `flags` - options controlling how the repository is opened
     /// * `ceiling_dirs` - A `GIT_PATH_LIST_SEPARATOR` delimited list of path prefixes at which the search for a containing
-    ///                    repository should terminate. `ceiling_dirs` can be `null`.
+    ///                    repository should terminate.
     pub fn repositoryOpenExtended(
         self: Handle,
         path: ?[:0]const u8,
@@ -151,10 +136,7 @@ pub const Handle = struct {
         return Repository.fromC(repo.?);
     }
 
-    /// Open a bare repository on the serverside.
-    ///
-    /// This is a fast open for bare repositories that will come in handy if you're e.g. hosting git repositories and need to 
-    /// access them efficiently
+    /// Open a bare repository.
     ///
     /// ## Parameters
     /// * `path` - the path to the repository
@@ -172,21 +154,16 @@ pub const Handle = struct {
         return Repository.fromC(repo.?);
     }
 
-    /// Look for a git repository and provide its path.
+    /// Look for a git repository and return its path.
     ///
-    /// The lookup start from base_path and walk across parent directories if nothing has been found. The lookup ends when the
-    /// first repository is found, or when reaching a directory referenced in ceiling_dirs or when the filesystem changes 
-    /// (in case across_fs is true).
-    ///
-    /// The method will automatically detect if the repository is bare (if there is a repository).
+    /// The lookup starts from `start_path` and walks the directory tree until the first repository is found, or when reaching a
+    /// directory referenced in `ceiling_dirs` or when the filesystem changes (when `across_fs` is false).
     ///
     /// ## Parameters
-    /// * `start_path` - The base path where the lookup starts.
-    /// * `across_fs` - If true, then the lookup will not stop when a filesystem device change is detected while exploring parent 
-    ///                 directories.
+    /// * `start_path` - The path where the lookup starts.
+    /// * `across_fs` - If true, then the lookup will not stop when a filesystem device change is encountered.
     /// * `ceiling_dirs` - A `GIT_PATH_LIST_SEPARATOR` separated list of absolute symbolic link free paths. The lookup will stop 
-    ///                    when any of this paths is reached. Note that the lookup always performs on `start_path` no matter 
-    ///                    `start_path` appears in `ceiling_dirs`. `ceiling_dirs` can be `null`.
+    ///                    when any of this paths is reached.
     pub fn repositoryDiscover(self: Handle, start_path: [:0]const u8, across_fs: bool, ceiling_dirs: ?[:0]const u8) !Buf {
         _ = self;
 
@@ -209,25 +186,24 @@ pub const Handle = struct {
         flags: RepositoryInitExtendedFlags = .{},
         mode: InitMode = .shared_umask,
 
-        /// The path to the working dir or NULL for default (i.e. repo_path parent on non-bare repos). IF THIS IS RELATIVE PATH, 
-        /// IT WILL BE EVALUATED RELATIVE TO THE REPO_PATH. If this is not the "natural" working directory, a .git gitlink file 
-        /// will be created here linking to the repo_path.
+        /// The path to the working dir or `null` for default (i.e. repo_path parent on non-bare repos). 
+        /// *NOTE*: if this is a relative path, it must be relative to the repository path. 
+        /// If this is not the "natural" working directory, a .git gitlink file will be created linking to the repository path.
         workdir_path: ?[:0]const u8 = null,
 
-        /// If set, this will be used to initialize the "description" file in the repository, instead of using the template 
-        /// content.
+        /// A "description" file to be used in the repository, instead of using the template content.
         description: ?[:0]const u8 = null,
 
-        /// When GIT_REPOSITORY_INIT_EXTERNAL_TEMPLATE is set, this contains the path to use for the template directory. If this 
-        /// is `null`, the config or default directory options will be used instead.
+        /// When `RepositoryInitExtendedFlags.external_template` is set, this must contain the path to use for the template
+        /// directory. If this is `null`, the config or default directory options will be used instead.
         template_path: ?[:0]const u8 = null,
 
-        /// The name of the head to point HEAD at. If NULL, then this will be treated as "master" and the HEAD ref will be set to
-        /// "refs/heads/master".
+        /// The name of the head to point HEAD at. If `null`, then this will be treated as "master" and the HEAD ref will be set
+        /// to "refs/heads/master".
         /// If this begins with "refs/" it will be used verbatim; otherwise "refs/heads/" will be prefixed.
         initial_head: ?[:0]const u8 = null,
 
-        /// If this is non-NULL, then after the rest of the repository initialization is completed, an "origin" remote will be 
+        /// If this is non-`null`, then after the rest of the repository initialization is completed, an "origin" remote will be 
         /// added pointing to this URL.
         origin_url: ?[:0]const u8 = null,
 
@@ -235,23 +211,23 @@ pub const Handle = struct {
             /// Create a bare repository with no working directory.
             bare: bool = false,
 
-            /// Return an GIT_EEXISTS error if the repo_path appears to already be an git repository.
+            /// Return an `GitError.EXISTS` error if the path appears to already be an git repository.
             no_reinit: bool = false,
 
             /// Normally a "/.git/" will be appended to the repo path for non-bare repos (if it is not already there), but passing 
             /// this flag prevents that behavior.
             no_dotgit_dir: bool = false,
 
-            /// Make the repo_path (and workdir_path) as needed. Init is always willing to create the ".git" directory even without 
-            /// this flag. This flag tells init to create the trailing component of the repo and workdir paths as needed.
+            /// Make the repo_path (and workdir_path) as needed. Init is always willing to create the ".git" directory even
+            /// without this flag. This flag tells init to create the trailing component of the repo and workdir paths as needed.
             mkdir: bool = false,
 
             /// Recursively make all components of the repo and workdir paths as necessary.
             mkpath: bool = false,
 
-            /// libgit2 normally uses internal templates to initialize a new repo. This flags enables external templates, looking the
-            /// "template_path" from the options if set, or the `init.templatedir` global config if not, or falling back on 
-            /// "/usr/share/git-core/templates" if it exists.
+            /// libgit2 normally uses internal templates to initialize a new repo. 
+            /// This flag enables external templates, looking at the "template_path" from the options if set, or the
+            /// `init.templatedir` global config if not, or falling back on "/usr/share/git-core/templates" if it exists.
             external_template: bool = false,
 
             /// If an alternate workdir is specified, use relative paths for the gitdir and core.worktree.
@@ -332,31 +308,22 @@ pub const Handle = struct {
     };
 
     pub const RepositoryOpenOptions = packed struct {
-        /// Only open the repository if it can be immediately found in the start_path. Do not walk up from the start_path looking 
-        /// at parent directories.
+        /// Only open the repository if it can be immediately found in the path. Do not walk up the directory tree to look for it.
         no_search: bool = false,
 
-        /// Unless this flag is set, open will not continue searching across filesystem boundaries (i.e. when `st_dev` changes 
-        /// from the `stat` system call).  For example, searching in a user's home directory at "/home/user/source/" will not 
-        /// return "/.git/" as the found repo if "/" is a different filesystem than "/home".
+        /// Unless this flag is set, open will not search across filesystem boundaries.
         cross_fs: bool = false,
 
-        /// Open repository as a bare repo regardless of core.bare config, and defer loading config file for faster setup.
-        /// Unlike `Handle.repositoryOpenBare`, this can follow gitlinks.
+        /// Open repository as a bare repo regardless of core.bare config.
         bare: bool = false,
 
-        /// Do not check for a repository by appending /.git to the start_path; only open the repository if start_path itself 
-        /// points to the git directory.     
+        /// Do not check for a repository by appending /.git to the path; only open the repository if path itself points to the
+        /// git directory.     
         no_dotgit: bool = false,
 
         /// Find and open a git repository, respecting the environment variables used by the git command-line tools. If set, 
-        /// `Handle.repositoryOpenExtended` will ignore the other flags and the `ceiling_dirs` argument, and will allow a null 
+        /// `Handle.repositoryOpenExtended` will ignore the other flags and the `ceiling_dirs` argument, and will allow a `null`
         /// `path` to use `GIT_DIR` or search from the current directory.
-        /// The search for a repository will respect $GIT_CEILING_DIRECTORIES and $GIT_DISCOVERY_ACROSS_FILESYSTEM.  The opened 
-        /// repository will respect $GIT_INDEX_FILE, $GIT_NAMESPACE, $GIT_OBJECT_DIRECTORY, and $GIT_ALTERNATE_OBJECT_DIRECTORIES.
-        /// In the future, this flag will also cause `Handle.repositoryOpenExtended` to respect $GIT_WORK_TREE and 
-        /// $GIT_COMMON_DIR; currently, `Handle.repositoryOpenExtended` with this flag will error out if either $GIT_WORK_TREE or 
-        /// $GIT_COMMON_DIR is set.
         open_from_env: bool = false,
 
         z_padding: std.meta.Int(.unsigned, @bitSizeOf(c_uint) - 5) = 0,
@@ -395,9 +362,7 @@ pub const Handle = struct {
     }
 };
 
-/// In-memory representation of a reference.
 pub const Reference = opaque {
-    /// Free the given reference.
     pub fn deinit(self: *Reference) void {
         log.debug("Reference.deinit called", .{});
 
@@ -436,13 +401,7 @@ pub const RepositoryItem = enum(c_uint) {
     WORKTREES,
 };
 
-/// Representation of an existing git repository, including all its object contents
 pub const Repository = opaque {
-    /// Free a previously allocated repository
-    ///
-    /// *Note:* that after a repository is free'd, all the objects it has spawned will still exist until they are manually closed 
-    /// by the user, but accessing any of the attributes of an object without a backing repository will result in undefined 
-    /// behavior
     pub fn deinit(self: *Repository) void {
         log.debug("Repository.deinit called", .{});
 
@@ -451,7 +410,6 @@ pub const Repository = opaque {
         log.debug("repository closed successfully", .{});
     }
 
-    /// Determines the status of a git repository - ie, whether an operation (merge, cherry-pick, etc) is in progress.
     pub fn getState(self: *const Repository) RepositoryState {
         log.debug("Repository.getState called", .{});
 
@@ -463,8 +421,6 @@ pub const Repository = opaque {
     }
 
     /// Retrieve the configured identity to use for reflogs
-    ///
-    /// The memory is owned by the repository and must not be freed by the user.
     pub fn getIdentity(self: *const Repository) !Identity {
         log.debug("Repository.getIdentity called", .{});
 
@@ -483,8 +439,8 @@ pub const Repository = opaque {
 
     /// Set the identity to be used for writing reflogs
     ///
-    /// If both are set, this name and email will be used to write to the reflog. Pass `null` to unset. When unset, the identity
-    /// will be taken from the repository's configuration.
+    /// If both are set, this name and email will be used to write to the reflog.
+    /// Set to `null` to unset; When unset, the identity will be taken from the repository's configuration.
     pub fn setIdentity(self: *const Repository, identity: Identity) !void {
         log.debug("Repository.setIdentity called, identity.name={s}, identity.email={s}", .{ identity.name, identity.email });
 
@@ -495,7 +451,6 @@ pub const Repository = opaque {
         log.debug("successfully set identity", .{});
     }
 
-    /// Get the currently active namespace for this repository
     pub fn getNamespace(self: *const Repository) !?[:0]const u8 {
         log.debug("Repository.getNamespace called", .{});
 
@@ -514,8 +469,8 @@ pub const Repository = opaque {
 
     /// Sets the active namespace for this Git Repository
     ///
-    /// This namespace affects all reference operations for the repo.
-    /// See `man gitnamespaces`
+    /// This namespace affects all reference operations for the repo. See `man gitnamespaces`
+    ///
     /// ## Parameters
     /// * `namespace` - The namespace. This should not include the refs folder, e.g. to namespace all references under 
     ///                 "refs/namespaces/foo/", use "foo" as the namespace.
@@ -527,9 +482,6 @@ pub const Repository = opaque {
         log.debug("successfully set namespace", .{});
     }
 
-    /// Check if a repository's HEAD is detached
-    ///
-    /// A repository's HEAD is detached when it points directly to a commit instead of a branch.
     pub fn isHeadDetached(self: *const Repository) !bool {
         log.debug("Repository.isHeadDetached called", .{});
 
@@ -540,7 +492,6 @@ pub const Repository = opaque {
         return ret;
     }
 
-    /// Retrieve and resolve the reference pointed at by HEAD.
     pub fn getHead(self: *const Repository) !*Reference {
         log.debug("Repository.head called", .{});
 
@@ -555,13 +506,12 @@ pub const Repository = opaque {
 
     /// Make the repository HEAD point to the specified reference.
     ///
-    /// If the provided reference points to a Tree or a Blob, the HEAD is unaltered and -1 is returned.
+    /// If the provided reference points to a Tree or a Blob, the HEAD is unaltered and an error is returned.
     ///
     /// If the provided reference points to a branch, the HEAD will point to that branch, staying attached, or become attached if
-    /// it isn't yet.
-    /// If the branch doesn't exist yet, no error will be return. The HEAD will then be attached to an unborn branch.
+    /// it isn't yet. If the branch doesn't exist yet, the HEAD will be attached to an unborn branch.
     ///
-    /// Otherwise, the HEAD will be detached and will directly point to the Commit.
+    /// Otherwise, the HEAD will be detached and will directly point to the commit.
     ///
     /// ## Parameters
     /// * `ref_name` - Canonical name of the reference the HEAD should point at
@@ -573,37 +523,41 @@ pub const Repository = opaque {
         log.debug("successfully set head", .{});
     }
 
-    /// Make the repository HEAD directly point to the Commit.
+    /// Make the repository HEAD directly point to a commit.
     ///
-    /// If the provided committish cannot be found in the repository, the HEAD is unaltered and GIT_ENOTFOUND is returned.
-    ///
-    /// If the provided commitish cannot be peeled into a commit, the HEAD is unaltered and -1 is returned.
-    ///
-    /// Otherwise, the HEAD will eventually be detached and will directly point to the peeled Commit.
+    /// If the provided commit cannot be found in the repository `GitError.NotFound` is returned.
+    /// If the provided commit cannot be peeled into a commit, the HEAD is unaltered and an error is returned.
+    /// Otherwise, the HEAD will eventually be detached and will directly point to the peeled commit.
     ///
     /// ## Parameters
-    /// * `commitish` - Object id of the Commit the HEAD should point to
-    pub fn setHeadDetached(self: *Repository, commitish: Oid) !void {
+    /// * `commit` - Object id of the commit the HEAD should point to
+    pub fn setHeadDetached(self: *Repository, commit: Oid) !void {
         // This check is to prevent formating the oid when we are not going to print anything
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
             var buf: [Oid.HEX_BUFFER_SIZE]u8 = undefined;
-            const slice = try commitish.formatHex(&buf);
-            log.debug("Repository.setHeadDetached called, commitish={s}", .{slice});
+            const slice = try commit.formatHex(&buf);
+            log.debug("Repository.setHeadDetached called, commit={s}", .{slice});
         }
 
-        try wrapCall("git_repository_set_head_detached", .{ self.toC(), commitish.toC() });
+        try wrapCall("git_repository_set_head_detached", .{ self.toC(), commit.toC() });
 
         log.debug("successfully set head", .{});
     }
 
-    /// Make the repository HEAD directly point to the Commit.
+    /// Make the repository HEAD directly point to the commit.
     ///
     /// This behaves like `Repository.setHeadDetached` but takes an annotated commit, which lets you specify which 
     /// extended sha syntax string was specified by a user, allowing for more exact reflog messages.
     ///
     /// See the documentation for `Repository.setHeadDetached`.
     pub fn setHeadDetachedFromAnnotated(self: *Repository, commitish: *const AnnotatedCommit) !void {
-        log.debug("Repository.setHeadDetachedFromAnnotated called", .{});
+        // This check is to prevent formating the oid when we are not going to print anything
+        if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
+            var buf: [Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            const oid = try commitish.getCommitId();
+            const slice = try oid.formatHex(&buf);
+            log.debug("Repository.setHeadDetachedFromAnnotated called, commitish={s}", .{slice});
+        }
 
         try wrapCall("git_repository_set_head_detached_from_annotated", .{ self.toC(), commitish.toC() });
 
@@ -612,14 +566,10 @@ pub const Repository = opaque {
 
     /// Detach the HEAD.
     ///
-    /// If the HEAD is already detached and points to a Commit, 0 is returned.
+    /// If the HEAD is already detached and points to a Tag, the HEAD is updated into making it point to the peeled commit.
+    /// If the HEAD is already detached and points to a non commitish, the HEAD is unaltered, and an error is returned.
     ///
-    /// If the HEAD is already detached and points to a Tag, the HEAD is updated into making it point to the peeled Commit, and 0
-    /// is returned.
-    ///
-    /// If the HEAD is already detached and points to a non commitish, the HEAD is unaltered, and -1 is returned.
-    ///
-    /// Otherwise, the HEAD will be detached and point to the peeled Commit.
+    /// Otherwise, the HEAD will be detached and point to the peeled commit.
     pub fn detachHead(self: *Repository) !void {
         log.debug("Repository.detachHead called", .{});
 
@@ -628,12 +578,6 @@ pub const Repository = opaque {
         log.debug("successfully detached the head", .{});
     }
 
-    /// Check if a worktree's HEAD is detached
-    ///
-    /// A worktree's HEAD is detached when it points directly to a commit instead of a branch.
-    ///
-    /// ## Parameters
-    /// * `name` - name of the worktree to retrieve HEAD for
     pub fn isHeadForWorktreeDetached(self: *const Repository, name: [:0]const u8) !bool {
         log.debug("Repository.isHeadForWorktreeDetached called, name={s}", .{name});
 
@@ -647,10 +591,6 @@ pub const Repository = opaque {
         return ret;
     }
 
-    /// Retrieve the referenced HEAD for the worktree
-    ///
-    /// ## Parameters
-    /// * `name` - name of the worktree to retrieve HEAD for
     pub fn headForWorktree(self: *const Repository, name: [:0]const u8) !*Reference {
         log.debug("Repository.headForWorktree called, name={s}", .{name});
 
@@ -663,10 +603,6 @@ pub const Repository = opaque {
         return Reference.fromC(ref.?);
     }
 
-    /// Check if the current branch is unborn
-    ///
-    /// An unborn branch is one named from HEAD but which doesn't exist in the refs namespace, because it doesn't have any commit
-    /// to point to.
     pub fn isHeadUnborn(self: *const Repository) !bool {
         log.debug("Repository.isHeadUnborn called", .{});
 
@@ -677,7 +613,6 @@ pub const Repository = opaque {
         return ret;
     }
 
-    /// Determine if the repository was a shallow clone
     pub fn isShallow(self: *const Repository) bool {
         log.debug("Repository.isShallow called", .{});
 
@@ -688,10 +623,6 @@ pub const Repository = opaque {
         return ret;
     }
 
-    /// Check if a repository is empty
-    ///
-    /// An empty repository has just been initialized and contains no references apart from HEAD, which must be pointing to the
-    /// unborn master branch.
     pub fn isEmpty(self: *const Repository) !bool {
         log.debug("Repository.isEmpty called", .{});
 
@@ -702,7 +633,6 @@ pub const Repository = opaque {
         return ret;
     }
 
-    /// Check if a repository is bare
     pub fn isBare(self: *const Repository) bool {
         log.debug("Repository.isBare called", .{});
 
@@ -713,7 +643,6 @@ pub const Repository = opaque {
         return ret;
     }
 
-    /// Check if a repository is a linked work tree
     pub fn isWorktree(self: *const Repository) bool {
         log.debug("Repository.isWorktree called", .{});
 
@@ -725,11 +654,8 @@ pub const Repository = opaque {
     }
 
     /// Get the location of a specific repository file or directory
-    ///
-    /// This function will retrieve the path of a specific repository item. It will thereby honor things like the repository's
-    /// common directory, gitdir, etc. In case a file path cannot exist for a given item (e.g. the working directory of a bare
-    /// repository), `NOTFOUND` is returned.
     pub fn getItemPath(self: *const Repository, item: RepositoryItem) !Buf {
+        // TODO: Return optional instead of error
         log.debug("Repository.itemPath called, item={s}", .{item});
 
         var buf = Buf{};
@@ -741,9 +667,6 @@ pub const Repository = opaque {
         return buf;
     }
 
-    /// Get the path of this repository
-    ///
-    /// This is the path of the `.git` folder for normal repositories, or of the repository itself for bare repositories.
     pub fn getPath(self: *const Repository) [:0]const u8 {
         log.debug("Repository.path called", .{});
 
@@ -754,9 +677,6 @@ pub const Repository = opaque {
         return slice;
     }
 
-    /// Get the path of the working directory for this repository
-    ///
-    /// If the repository is bare, this function will always return `null`.
     pub fn getWorkdir(self: *const Repository) ?[:0]const u8 {
         log.debug("Repository.workdir called", .{});
 
@@ -773,7 +693,6 @@ pub const Repository = opaque {
         return null;
     }
 
-    /// Set the path to the working directory for this repository
     pub fn setWorkdir(self: *Repository, workdir: [:0]const u8, update_gitlink: bool) !void {
         log.debug("Repository.setWorkdir called, workdir={s}, update_gitlink={}", .{ workdir, update_gitlink });
 
@@ -782,10 +701,6 @@ pub const Repository = opaque {
         log.debug("successfully set workdir", .{});
     }
 
-    /// Get the path of the shared common directory for this repository.
-    ///
-    /// If the repository is bare, it is the root directory for the repository. If the repository is a worktree, it is the parent 
-    /// repo's gitdir. Otherwise, it is the gitdir.
     pub fn getCommondir(self: *const Repository) ?[:0]const u8 {
         log.debug("Repository.commondir called", .{});
 
@@ -804,9 +719,8 @@ pub const Repository = opaque {
 
     /// Get the configuration file for this repository.
     ///
-    /// If a configuration file has not been set, the default config set for the repository will be returned, including global 
-    /// and system configurations (if they are available). The configuration file must be freed once it's no longer being used by
-    /// the user.
+    /// If a configuration file has not been set, the default config set for the repository will be returned, including any global 
+    /// and system configurations.
     pub fn getConfig(self: *const Repository) !*Config {
         log.debug("Repository.getConfig called", .{});
 
@@ -821,10 +735,7 @@ pub const Repository = opaque {
 
     /// Get a snapshot of the repository's configuration
     ///
-    /// Convenience function to take a snapshot from the repository's configuration. The contents of this snapshot will not 
-    /// change, even if the underlying config files are modified.
-    ///
-    /// The configuration file must be freed once it's no longer being used by the user.
+    /// The contents of this snapshot will not change, even if the underlying config files are modified.
     pub fn getConfigSnapshot(self: *const Repository) !*Config {
         log.debug("Repository.getConfigSnapshot called", .{});
 
@@ -837,12 +748,6 @@ pub const Repository = opaque {
         return Config.fromC(config.?);
     }
 
-    /// Get the Object Database for this repository.
-    ///
-    /// If a custom ODB has not been set, the default database for the repository will be returned (the one located in 
-    /// `.git/objects`).
-    ///
-    /// The ODB must be freed once it's no longer being used by the user.
     pub fn getOdb(self: *const Repository) !*Odb {
         log.debug("Repository.getOdb called", .{});
 
@@ -855,12 +760,6 @@ pub const Repository = opaque {
         return Odb.fromC(odb.?);
     }
 
-    /// Get the Reference Database Backend for this repository.
-    ///
-    /// If a custom refsdb has not been set, the default database for the repository will be returned (the one that manipulates
-    /// loose and packed references in the `.git` directory).
-    /// 
-    /// The refdb must be freed once it's no longer being used by the user.
     pub fn getRefDb(self: *const Repository) !*RefDb {
         log.debug("Repository.getRefDb called", .{});
 
@@ -873,12 +772,6 @@ pub const Repository = opaque {
         return RefDb.fromC(ref_db.?);
     }
 
-    /// Get the Reference Database Backend for this repository.
-    ///
-    /// If a custom refsdb has not been set, the default database for the repository will be returned (the one that manipulates
-    /// loose and packed references in the `.git` directory).
-    /// 
-    /// The refdb must be freed once it's no longer being used by the user.
     pub fn getIndex(self: *const Repository) !*Index {
         log.debug("Repository.getIndex called", .{});
 
@@ -912,9 +805,7 @@ pub const Repository = opaque {
         return buf;
     }
 
-    /// Remove git's prepared message.
-    ///
-    /// Remove the message that `getPreparedMessage` retrieves.
+    /// Remove git's prepared message file.
     pub fn removePreparedMessage(self: *Repository) !void {
         log.debug("Repository.removePreparedMessage called", .{});
 
@@ -935,7 +826,7 @@ pub const Repository = opaque {
 
     /// Invoke `callback_fn` for each entry in the given FETCH_HEAD file.
     ///
-    /// Return a non-zero value from the callback to stop the loop.
+    /// Return a non-zero value from the callback to stop the loop. This non-zero value is returned by the function.
     ///
     /// ## Parameters
     /// * `callback_fn` - the callback function
@@ -943,7 +834,7 @@ pub const Repository = opaque {
     /// ## Callback Parameters
     /// * `ref_name` - The reference name
     /// * `remote_url` - The remote URL
-    /// * `oid` - The reference target OID
+    /// * `oid` - The reference OID
     /// * `is_merge` - Was the reference the result of a merge
     pub fn foreachFetchHead(
         self: *const Repository,
@@ -972,7 +863,7 @@ pub const Repository = opaque {
 
     /// Invoke `callback_fn` for each entry in the given FETCH_HEAD file.
     ///
-    /// Return a non-zero value from the callback to stop the loop.
+    /// Return a non-zero value from the callback to stop the loop. This non-zero value is returned by the function.
     ///
     /// ## Parameters
     /// * `user_data` - pointer to user data to be passed to the callback
@@ -981,7 +872,7 @@ pub const Repository = opaque {
     /// ## Callback Parameters
     /// * `ref_name` - The reference name
     /// * `remote_url` - The remote URL
-    /// * `oid` - The reference target OID
+    /// * `oid` - The reference OID
     /// * `is_merge` - Was the reference the result of a merge
     /// * `user_data_ptr` - pointer to user data
     pub fn foreachFetchHeadWithUserData(
@@ -1026,7 +917,7 @@ pub const Repository = opaque {
 
     /// If a merge is in progress, invoke 'callback' for each commit ID in the MERGE_HEAD file.
     ///
-    /// Return a non-zero value from the callback to stop the loop.
+    /// Return a non-zero value from the callback to stop the loop. This non-zero value is returned by the function.
     ///
     /// ## Parameters
     /// * `callback_fn` - the callback function
@@ -1049,7 +940,7 @@ pub const Repository = opaque {
 
     /// If a merge is in progress, invoke 'callback' for each commit ID in the MERGE_HEAD file.
     ///
-    /// Return a non-zero value from the callback to stop the loop.
+    /// Return a non-zero value from the callback to stop the loop. This non-zero value is returned by the function.
     ///
     /// ## Parameters
     /// * `user_data` - pointer to user data to be passed to the callback
@@ -1085,7 +976,7 @@ pub const Repository = opaque {
 
     /// Calculate hash of file using repository filtering rules.
     ///
-    /// If you simply want to calculate the hash of a file on disk with no filters, you can just use the `Odb.hashFile` API.
+    /// If you simply want to calculate the hash of a file on disk with no filters, you can just use `Odb.hashFile`.
     /// However, if you want to hash a file in the repository and you want to apply filtering rules (e.g. crlf filters) before
     /// generating the SHA, then use this function.
     ///
@@ -1119,17 +1010,16 @@ pub const Repository = opaque {
 
     /// Get file status for a single file.
     ///
-    /// This tries to get status for the filename that you give.  If no files match that name (in either the HEAD, index, or
-    /// working directory), this returns GIT_ENOTFOUND.
+    /// This tries to get status for the filename that you give. If no files match that name (in either the HEAD, index, or
+    /// working directory), this returns `GitError.NotFound`.
     ///
     /// If the name matches multiple files (for example, if the `path` names a directory or if running on a case- insensitive
-    /// filesystem and yet the HEAD has two entries that both match the path), then this returns GIT_EAMBIGUOUS because it cannot
-    /// give correct results.
+    /// filesystem and yet the HEAD has two entries that both match the path), then this returns `GitError.Ambiguous`.
     ///
-    /// This does not do any sort of rename detection.  Renames require a set of targets and because of the path filtering, there
-    /// is not enough information to check renames correctly.  To check file status with rename detection, there is no choice but
-    /// to do a full `git_status_list_new` and scan through looking for the path that you are interested in.
+    /// This does not do any sort of rename detection.
     pub fn fileStatus(self: *const Repository, path: [:0]const u8) !FileStatus {
+        // TODO: return optional instead of GitError.NotFound
+
         log.debug("Repository.fileStatus called, path={s}", .{path});
 
         var flags: c_uint = undefined;
@@ -1145,7 +1035,7 @@ pub const Repository = opaque {
 
     /// Gather file statuses and run a callback for each one.
     ///
-    /// If the callback returns a non-zero value, this function will stop looping and return that value to caller.
+    /// Return a non-zero value from the callback to stop the loop. This non-zero value is returned by the function.
     ///
     /// ## Parameters
     /// * `callback_fn` - the callback function
@@ -1169,7 +1059,7 @@ pub const Repository = opaque {
 
     /// Gather file statuses and run a callback for each one.
     ///
-    /// If the callback returns a non-zero value, this function will stop looping and return that value to caller.
+    /// Return a non-zero value from the callback to stop the loop. This non-zero value is returned by the function.
     ///
     /// ## Parameters
     /// * `user_data` - pointer to user data to be passed to the callback
@@ -1211,13 +1101,14 @@ pub const Repository = opaque {
 
     /// Gather file status information and run callbacks as requested.
     ///
-    /// This is an extended version of the `foreachFileStatus` API that allows for more granular control over which paths will be
-    /// processed and in what order. See the `ForeachFileStatusExtendedOptions` structure for details about the additional 
-    /// controls that this makes available.
+    /// This is an extended version of the `foreachFileStatus` function that allows for more granular control over which paths
+    /// will be processed. See `FileStatusOptions` for details about the additional options that this makes available.
     ///
-    /// Note that if a `pathspec` is given in the `ForeachFileStatusExtendedOptions` to filter the status, then the results from
-    /// rename detection (if you enable it) may not be accurate. To do rename detection properly, this must be called with no
-    /// `pathspec` so that all files can be considered.
+    /// Note that if a `pathspec` is given in the `FileStatusOptions` to filter the status, then the results from rename
+    /// detection (if you enable it) may not be accurate. To do rename detection properly, this must be called with no `pathspec`
+    /// so that all files can be considered.
+    ///
+    /// Return a non-zero value from the callback to stop the loop. This non-zero value is returned by the function.
     ///
     /// ## Parameters
     /// * `options` - callback options
@@ -1243,13 +1134,14 @@ pub const Repository = opaque {
 
     /// Gather file status information and run callbacks as requested.
     ///
-    /// This is an extended version of the `foreachFileStatus` API that allows for more granular control over which paths will be
-    /// processed and in what order. See the `ForeachFileStatusExtendedOptions` structure for details about the additional 
-    /// controls that this makes available.
+    /// This is an extended version of the `foreachFileStatus` function that allows for more granular control over which paths
+    /// will be processed. See `FileStatusOptions` for details about the additional options that this makes available.
     ///
-    /// Note that if a `pathspec` is given in the `ForeachFileStatusExtendedOptions` to filter the status, then the results from
-    /// rename detection (if you enable it) may not be accurate. To do rename detection properly, this must be called with no
-    /// `pathspec` so that all files can be considered.
+    /// Note that if a `pathspec` is given in the `FileStatusOptions` to filter the status, then the results from rename
+    /// detection (if you enable it) may not be accurate. To do rename detection properly, this must be called with no `pathspec`
+    /// so that all files can be considered.
+    ///
+    /// Return a non-zero value from the callback to stop the loop. This non-zero value is returned by the function.
     ///
     /// ## Parameters
     /// * `options` - callback options
@@ -1296,9 +1188,9 @@ pub const Repository = opaque {
 
     /// Gather file status information and populate a `StatusList`.
     ///
-    /// Note that if a `pathspec` is given in the `git_status_options` to filter the status, then the results from rename
-    /// detection (if you enable it) may not be accurate. To do rename detection properly, this must be called with no `pathspec`
-    /// so that all files can be considered.
+    /// Note that if a `pathspec` is given in the `FileStatusOptions` to filter the status, then the results from rename detection
+    /// (if you enable it) may not be accurate. To do rename detection properly, this must be called with no `pathspec` so that
+    /// all files can be considered.
     ///
     /// ## Parameters
     /// * `options` - options regarding which files to get the status of
@@ -1318,11 +1210,6 @@ pub const Repository = opaque {
 
     /// Test if the ignore rules apply to a given file.
     ///
-    /// This function checks the ignore rules to see if they would apply to the given file. This indicates if the file would be
-    /// ignored regardless of whether the file is already in the index or committed to the repository.
-    ///
-    /// One way to think of this is if you were to do "git add ." on the directory containing the file, would it be added or not?
-    ///
     /// ## Parameters
     /// * `path` - The file to check ignores for, rooted at the repo's workdir.
     pub fn statusShouldIgnore(self: *const Repository, path: [:0]const u8) !bool {
@@ -1339,14 +1226,14 @@ pub const Repository = opaque {
     }
 
     pub const FileStatusOptions = struct {
-        /// which files to scan and in what order
+        /// which files to scan
         show: Show = .INDEX_AND_WORKDIR,
 
         /// Flags to control status callbacks
         flags: Flags = .{},
 
         /// The `pathspec` is an array of path patterns to match (using fnmatch-style matching), or just an array of paths to 
-        /// match exactly if `Options.DISABLE_PATHSPEC_MATCH` is specified in the flags.
+        /// match exactly if `Flags.DISABLE_PATHSPEC_MATCH` is specified in the flags.
         pathspec: StrArray = .{},
 
         /// The `baseline` is the tree to be used for comparison to the working directory and index; defaults to HEAD.
@@ -1365,8 +1252,7 @@ pub const Repository = opaque {
         /// Flags to control status callbacks
         ///
         /// Calling `Repository.forEachFileStatus` is like calling the extended version with: `INCLUDE_IGNORED`, 
-        /// `INCLUDE_UNTRACKED`, and `RECURSE_UNTRACKED_DIRS`. Those options are bundled together as `Options.DEFAULTS` if
-        /// you want them as a baseline.
+        /// `INCLUDE_UNTRACKED`, and `RECURSE_UNTRACKED_DIRS`. Those options are provided as `Options.DEFAULTS`.
         pub const Flags = packed struct {
             /// Says that callbacks should be made on untracked files.
             /// These will only be made if the workdir files are included in the status
@@ -1496,7 +1382,6 @@ pub const Repository = opaque {
         }
     };
 
-    /// These values represent possible states for the repository to be in, based on the current operation which is ongoing.
     pub const RepositoryState = enum(c_int) {
         NONE,
         MERGE,
@@ -1525,7 +1410,6 @@ pub const Repository = opaque {
     }
 };
 
-/// Array of strings
 pub const StrArray = extern struct {
     strings: [*c][*c]u8 = null,
     count: usize = 0,
@@ -1560,9 +1444,7 @@ pub const StrArray = extern struct {
     }
 };
 
-/// Representation of a status collection
 pub const StatusList = opaque {
-    /// Free an existing status list
     pub fn deinit(self: *StatusList) void {
         log.debug("StatusList.deinit called", .{});
 
@@ -1571,10 +1453,6 @@ pub const StatusList = opaque {
         log.debug("status list freed successfully", .{});
     }
 
-    /// Gets the count of status entries in this list.
-    ///
-    /// If there are no changes in status (at least according the options given when the status list was created), this can 
-    /// return 0.
     pub fn getEntryCount(self: *const StatusList) usize {
         log.debug("StatusList.getEntryCount called", .{});
 
@@ -1585,10 +1463,6 @@ pub const StatusList = opaque {
         return ret;
     }
 
-    /// Get a pointer to one of the entries in the status list.
-    ///
-    /// ## Parameters
-    /// * `index` - Position of the entry
     pub fn getStatusByIndex(self: *const StatusList, index: usize) ?*const StatusEntry {
         log.debug("StatusList.getStatusByIndex called, index={}", .{index});
 
@@ -1609,13 +1483,13 @@ pub const StatusList = opaque {
     /// A status entry, providing the differences between the file as it exists in HEAD and the index, and providing the 
     /// differences between the index and the working directory.
     pub const StatusEntry = extern struct {
-        /// The status flags for this file
+        /// The status for this file
         status: FileStatus,
 
-        /// detailed information about the differences between the file in HEAD and the file in the index.
+        /// information about the differences between the file in HEAD and the file in the index.
         head_to_index: *DiffDelta,
 
-        /// detailed information about the differences between the file in the index and the file in the working directory.
+        /// information about the differences between the file in the index and the file in the working directory.
         index_to_workdir: *DiffDelta,
 
         test {
@@ -1644,21 +1518,21 @@ pub const StatusList = opaque {
 /// Description of changes to one entry.
 ///
 /// A `delta` is a file pair with an old and new revision. The old version may be absent if the file was just created and the new
-///  version may be absent if the file was deleted. A diff is mostly just a list of deltas.
+/// version may be absent if the file was deleted. A diff is mostly just a list of deltas.
 ///
 /// When iterating over a diff, this will be passed to most callbacks and you can use the contents to understand exactly what has
 /// changed.
 ///
 /// The `old_file` represents the "from" side of the diff and the `new_file` represents to "to" side of the diff.  What those
-/// means depend on the function that was used to generate the diff and will be documented below.
-/// You can also use the `GIT_DIFF_REVERSE` flag to flip it around.
+/// means depend on the function that was used to generate the diff. You can also use the `GIT_DIFF_REVERSE` flag to flip it
+/// around.
 ///
-/// Although the two sides of the delta are named "old_file" and "new_file", they actually may correspond to entries that
+/// Although the two sides of the delta are named `old_file` and `new_file`, they actually may correspond to entries that
 /// represent a file, a symbolic link, a submodule commit id, or even a tree (if you are tracking type changes or
 /// ignored/untracked directories).
 ///
 /// Under some circumstances, in the name of efficiency, not all fields will be filled in, but we generally try to fill in as much
-/// as possible. One example is that the "flags" field may not have either the `BINARY` or the `NOT_BINARY` flag set to avoid
+/// as possible. One example is that the `flags` field may not have either the `BINARY` or the `NOT_BINARY` flag set to avoid
 /// examining file contents if you do not pass in hunk and/or line callbacks to the diff foreach iteration function.  It will just
 /// use the git attributes for those files.
 ///
@@ -1803,9 +1677,7 @@ pub const FileMode = enum(u16) {
     COMMIT = 0o160000,
 };
 
-/// Representation of a tree object.
 pub const Tree = opaque {
-    /// Close an open tree
     pub fn deinit(self: *Tree) void {
         log.debug("Tree.deinit called", .{});
 
@@ -1827,12 +1699,6 @@ pub const Tree = opaque {
     }
 };
 
-/// Status flags for a single file
-///
-/// A combination of these values will be returned to indicate the status of a file.  Status compares the working directory, the
-/// index, and the current HEAD of the repository.  
-/// The `INDEX` set of flags represents the status of file in the  index relative to the HEAD, and the `WT` set of flags represent
-/// the status of the file in the working directory relative to the index.
 pub const FileStatus = packed struct {
     CURRENT: bool = false,
     INDEX_NEW: bool = false,
@@ -1882,9 +1748,7 @@ pub const Identity = struct {
     email: ?[:0]const u8,
 };
 
-/// Annotated commits, the input to merge and rebase.
 pub const AnnotatedCommit = opaque {
-    /// Free the annotated commit
     pub fn deinit(self: *AnnotatedCommit) void {
         log.debug("AnnotatedCommit.deinit called", .{});
 
@@ -1992,9 +1856,7 @@ pub const Oid = extern struct {
     }
 };
 
-/// Memory representation of an index file.
 pub const Index = opaque {
-    /// Free an existing index object.
     pub fn deinit(self: *Index) void {
         log.debug("Index.deinit called", .{});
 
@@ -2016,9 +1878,7 @@ pub const Index = opaque {
     }
 };
 
-/// An open refs database handle.
 pub const RefDb = opaque {
-    /// Free the configuration and its associated memory and files
     pub fn deinit(self: *RefDb) void {
         log.debug("RefDb.deinit called", .{});
 
@@ -2040,9 +1900,7 @@ pub const RefDb = opaque {
     }
 };
 
-/// Memory representation of a set of config files
 pub const Config = opaque {
-    /// Free the configuration and its associated memory and files
     pub fn deinit(self: *Config) void {
         log.debug("Config.deinit called", .{});
 
@@ -2064,9 +1922,7 @@ pub const Config = opaque {
     }
 };
 
-/// Representation of a working tree
 pub const Worktree = opaque {
-    /// Free a previously allocated worktree
     pub fn deinit(self: *Worktree) void {
         log.debug("Worktree.deinit called", .{});
 
@@ -2075,9 +1931,6 @@ pub const Worktree = opaque {
         log.debug("worktree freed successfully", .{});
     }
 
-    /// Open working tree as a repository
-    ///
-    /// Open the working directory of the working tree as a normal repository that can then be worked on.
     pub fn repositoryOpen(self: *Worktree) !*Repository {
         log.debug("Worktree.repositoryOpen called", .{});
 
@@ -2103,9 +1956,7 @@ pub const Worktree = opaque {
     }
 };
 
-/// An open object database handle.
 pub const Odb = opaque {
-    /// Close an open object database.
     pub fn deinit(self: *Odb) void {
         log.debug("Odb.deinit called", .{});
 
@@ -2114,10 +1965,6 @@ pub const Odb = opaque {
         log.debug("Odb freed successfully", .{});
     }
 
-    /// Create a "fake" repository to wrap an object database
-    ///
-    /// Create a repository object to wrap an object database to be used with the API when all you have is an object database. 
-    /// This doesn't have any paths associated with it, so use with care.
     pub fn repositoryOpen(self: *Odb) !*Repository {
         log.debug("Odb.repositoryOpen called", .{});
 
@@ -2154,7 +2001,6 @@ pub const Buf = extern struct {
         return self.ptr.?[0..self.size];
     }
 
-    /// Free the memory referred to by the Buf.
     pub fn deinit(self: *Buf) void {
         log.debug("Buf.deinit called", .{});
 
