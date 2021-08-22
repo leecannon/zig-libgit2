@@ -1915,17 +1915,27 @@ pub const Index = opaque {
         return null;
     }
 
-    pub fn getIndexCapabilities(self: *const Index) IndexCapability {
+    pub fn getIndexCapabilities(self: *const Index) IndexCapabilities {
         log.debug("Index.getIndexCapabilities called", .{});
 
-        const cap = @bitCast(IndexCapability, raw.git_index_caps(self.toC()));
+        const cap = @bitCast(IndexCapabilities, raw.git_index_caps(self.toC()));
 
-        log.debug("successfully fetched index capabilities {}", .{cap});
+        log.debug("successfully fetched index capabilities={}", .{cap});
 
         return cap;
     }
 
-    pub const IndexCapability = packed struct {
+    /// If you pass `IndexCapabilities.FROM_OWNER` for the capabilities, then capabilities will be read from the config of the
+    /// owner object, looking at `core.ignorecase`, `core.filemode`, `core.symlinks`.
+    pub fn setIndexCapabilities(self: *Index, capabilities: IndexCapabilities) !void {
+        log.debug("Index.getIndexCapabilities called, capabilities={}", .{capabilities});
+
+        try wrapCall("git_index_set_caps", .{ self.toC(), @bitCast(c_int, capabilities) });
+
+        log.debug("successfully set index capabilities", .{});
+    }
+
+    pub const IndexCapabilities = packed struct {
         IGNORE_CASE: bool = false,
         NO_FILEMODE: bool = false,
         NO_SYMLINKS: bool = false,
@@ -1936,7 +1946,7 @@ pub const Index = opaque {
         FROM_OWNER: bool = false,
 
         pub fn format(
-            value: IndexCapability,
+            value: IndexCapabilities,
             comptime fmt: []const u8,
             options: std.fmt.FormatOptions,
             writer: anytype,
@@ -1951,8 +1961,8 @@ pub const Index = opaque {
         }
 
         test {
-            try std.testing.expectEqual(@sizeOf(c_int), @sizeOf(IndexCapability));
-            try std.testing.expectEqual(@bitSizeOf(c_int), @bitSizeOf(IndexCapability));
+            try std.testing.expectEqual(@sizeOf(c_int), @sizeOf(IndexCapabilities));
+            try std.testing.expectEqual(@bitSizeOf(c_int), @bitSizeOf(IndexCapabilities));
         }
 
         comptime {
