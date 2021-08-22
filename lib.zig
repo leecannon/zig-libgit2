@@ -26,10 +26,8 @@ pub fn init() !Handle {
 }
 
 /// Get detailed information regarding the last error that occured on this thread.
-pub fn getDetailedLastError() ?DetailedError {
-    return DetailedError{
-        .e = raw.git_error_last() orelse return null,
-    };
+pub fn getDetailedLastError() ?*const DetailedError {
+    return DetailedError.fromC(raw.git_error_last() orelse return null);
 }
 
 /// This type bundles all functionality that does not act on an instance of an object
@@ -58,7 +56,7 @@ pub const Handle = struct {
     /// * `is_bare` - If true, a Git repository without a working directory is created at the pointed path. 
     ///               If false, provided path will be considered as the working directory into which the .git directory will be 
     ///               created.
-    pub fn repositoryInit(self: Handle, path: [:0]const u8, is_bare: bool) !Repository {
+    pub fn repositoryInit(self: Handle, path: [:0]const u8, is_bare: bool) !*Repository {
         _ = self;
 
         log.debug("Handle.repositoryInit called, path={s}, is_bare={}", .{ path, is_bare });
@@ -69,7 +67,7 @@ pub const Handle = struct {
 
         log.debug("repository created successfully", .{});
 
-        return Repository{ .repo = repo.? };
+        return Repository.fromC(repo.?);
     }
 
     /// Create a new Git repository in the given folder with extended controls.
@@ -80,7 +78,7 @@ pub const Handle = struct {
     /// ## Parameters
     /// * `path` - the path to the repository
     /// * `options` - The options to use during the creation of the repository
-    pub fn repositoryInitExtended(self: Handle, path: [:0]const u8, options: RepositoryInitExtendedOptions) !Repository {
+    pub fn repositoryInitExtended(self: Handle, path: [:0]const u8, options: RepositoryInitOptions) !*Repository {
         _ = self;
 
         log.debug("Handle.repositoryInitExtended called, path={s}, options={}", .{ path, options });
@@ -94,10 +92,120 @@ pub const Handle = struct {
 
         log.debug("repository created successfully", .{});
 
-        return Repository{ .repo = repo.? };
+        return Repository.fromC(repo.?);
     }
 
-    pub const RepositoryInitExtendedOptions = struct {
+    /// Open a git repository.
+    ///
+    /// The `path` argument must point to either a git repository folder, or an existing work dir.
+    ///
+    /// The method will automatically detect if 'path' is a normal or bare repository or fail is `path` is neither.
+    ///
+    /// ## Parameters
+    /// * `path` - the path to the repository
+    pub fn repositoryOpen(self: Handle, path: [:0]const u8) !*Repository {
+        _ = self;
+
+        log.debug("Handle.repositoryOpen called, path={s}", .{path});
+
+        var repo: ?*raw.git_repository = undefined;
+
+        try wrapCall("git_repository_open", .{ &repo, path.ptr });
+
+        log.debug("repository opened successfully", .{});
+
+        return Repository.fromC(repo.?);
+    }
+
+    /// Find and open a repository with extended controls.
+    ///
+    /// The `path` argument must point to either a git repository folder, or an existing work dir.
+    ///
+    /// The method will automatically detect if 'path' is a normal or bare repository or fail is `path` is neither.
+    ///
+    /// *Note:* `path` can only be null if the `open_from_env` option is used.
+    ///
+    /// ## Parameters
+    /// * `path` - the path to the repository
+    /// * `flags` - A combination of the GIT_REPOSITORY_OPEN flags above.
+    /// * `ceiling_dirs` - A `GIT_PATH_LIST_SEPARATOR` delimited list of path prefixes at which the search for a containing
+    ///                    repository should terminate. `ceiling_dirs` can be `null`.
+    pub fn repositoryOpenExtended(
+        self: Handle,
+        path: ?[:0]const u8,
+        flags: RepositoryOpenOptions,
+        ceiling_dirs: ?[:0]const u8,
+    ) !*Repository {
+        _ = self;
+
+        log.debug("Handle.repositoryOpenExtended called, path={s}, flags={}, ceiling_dirs={s}", .{ path, flags, ceiling_dirs });
+
+        var repo: ?*raw.git_repository = undefined;
+
+        const path_temp: [*c]const u8 = if (path) |slice| slice.ptr else null;
+        const ceiling_dirs_temp: [*c]const u8 = if (ceiling_dirs) |slice| slice.ptr else null;
+        try wrapCall("git_repository_open_ext", .{ &repo, path_temp, flags.toInt(), ceiling_dirs_temp });
+
+        log.debug("repository opened successfully", .{});
+
+        return Repository.fromC(repo.?);
+    }
+
+    /// Open a bare repository on the serverside.
+    ///
+    /// This is a fast open for bare repositories that will come in handy if you're e.g. hosting git repositories and need to 
+    /// access them efficiently
+    ///
+    /// ## Parameters
+    /// * `path` - the path to the repository
+    pub fn repositoryOpenBare(self: Handle, path: [:0]const u8) !*Repository {
+        _ = self;
+
+        log.debug("Handle.repositoryOpenBare called, path={s}", .{path});
+
+        var repo: ?*raw.git_repository = undefined;
+
+        try wrapCall("git_repository_open_bare", .{ &repo, path.ptr });
+
+        log.debug("repository opened successfully", .{});
+
+        return Repository.fromC(repo.?);
+    }
+
+    /// Look for a git repository and provide its path.
+    ///
+    /// The lookup start from base_path and walk across parent directories if nothing has been found. The lookup ends when the
+    /// first repository is found, or when reaching a directory referenced in ceiling_dirs or when the filesystem changes 
+    /// (in case across_fs is true).
+    ///
+    /// The method will automatically detect if the repository is bare (if there is a repository).
+    ///
+    /// ## Parameters
+    /// * `start_path` - The base path where the lookup starts.
+    /// * `across_fs` - If true, then the lookup will not stop when a filesystem device change is detected while exploring parent 
+    ///                 directories.
+    /// * `ceiling_dirs` - A `GIT_PATH_LIST_SEPARATOR` separated list of absolute symbolic link free paths. The lookup will stop 
+    ///                    when any of this paths is reached. Note that the lookup always performs on `start_path` no matter 
+    ///                    `start_path` appears in `ceiling_dirs`. `ceiling_dirs` can be `null`.
+    pub fn repositoryDiscover(self: Handle, start_path: [:0]const u8, across_fs: bool, ceiling_dirs: ?[:0]const u8) !Buf {
+        _ = self;
+
+        log.debug(
+            "Handle.repositoryDiscover called, start_path={s}, across_fs={}, ceiling_dirs={s}",
+            .{ start_path, across_fs, ceiling_dirs },
+        );
+
+        var git_buf = Buf{};
+
+        const ceiling_dirs_temp: [*c]const u8 = if (ceiling_dirs) |slice| slice.ptr else null;
+        try wrapCall("git_repository_discover", .{ Buf.toC(&git_buf), start_path.ptr, @boolToInt(across_fs), ceiling_dirs_temp });
+
+        log.debug("repository discovered - {s}", .{git_buf.slice()});
+
+        return git_buf;
+    }
+
+    pub const RepositoryInitOptions = struct {
         flags: RepositoryInitExtendedFlags = .{},
         mode: InitMode = .shared_umask,
 
@@ -202,7 +310,7 @@ pub const Handle = struct {
             }
         };
 
-        fn toCType(self: RepositoryInitExtendedOptions, c_type: *raw.git_repository_init_options) !void {
+        fn toCType(self: RepositoryInitOptions, c_type: *raw.git_repository_init_options) !void {
             if (old_version) {
                 try wrapCall("git_repository_init_init_options", .{ c_type, raw.GIT_REPOSITORY_INIT_OPTIONS_VERSION });
             } else {
@@ -223,63 +331,7 @@ pub const Handle = struct {
         }
     };
 
-    /// Open a git repository.
-    ///
-    /// The `path` argument must point to either a git repository folder, or an existing work dir.
-    ///
-    /// The method will automatically detect if 'path' is a normal or bare repository or fail is `path` is neither.
-    ///
-    /// ## Parameters
-    /// * `path` - the path to the repository
-    pub fn repositoryOpen(self: Handle, path: [:0]const u8) !Repository {
-        _ = self;
-
-        log.debug("Handle.repositoryOpen called, path={s}", .{path});
-
-        var repo: ?*raw.git_repository = undefined;
-
-        try wrapCall("git_repository_open", .{ &repo, path.ptr });
-
-        log.debug("repository opened successfully", .{});
-
-        return Repository{ .repo = repo.? };
-    }
-
-    /// Find and open a repository with extended controls.
-    ///
-    /// The `path` argument must point to either a git repository folder, or an existing work dir.
-    ///
-    /// The method will automatically detect if 'path' is a normal or bare repository or fail is `path` is neither.
-    ///
-    /// *Note:* `path` can only be null if the `open_from_env` option is used.
-    ///
-    /// ## Parameters
-    /// * `path` - the path to the repository
-    /// * `flags` - A combination of the GIT_REPOSITORY_OPEN flags above.
-    /// * `ceiling_dirs` - A `GIT_PATH_LIST_SEPARATOR` delimited list of path prefixes at which the search for a containing
-    ///                    repository should terminate. `ceiling_dirs` can be `null`.
-    pub fn repositoryOpenExtended(
-        self: Handle,
-        path: ?[:0]const u8,
-        flags: RepositoryOpenExtendedFlags,
-        ceiling_dirs: ?[:0]const u8,
-    ) !Repository {
-        _ = self;
-
-        log.debug("Handle.repositoryOpenExtended called, path={s}, flags={}, ceiling_dirs={s}", .{ path, flags, ceiling_dirs });
-
-        var repo: ?*raw.git_repository = undefined;
-
-        const path_temp: [*c]const u8 = if (path) |slice| slice.ptr else null;
-        const ceiling_dirs_temp: [*c]const u8 = if (ceiling_dirs) |slice| slice.ptr else null;
-        try wrapCall("git_repository_open_ext", .{ &repo, path_temp, flags.toInt(), ceiling_dirs_temp });
-
-        log.debug("repository opened successfully", .{});
-
-        return Repository{ .repo = repo.? };
-    }
-
-    pub const RepositoryOpenExtendedFlags = packed struct {
+    pub const RepositoryOpenOptions = packed struct {
         /// Only open the repository if it can be immediately found in the start_path. Do not walk up from the start_path looking 
         /// at parent directories.
         no_search: bool = false,
@@ -309,12 +361,12 @@ pub const Handle = struct {
 
         z_padding: std.meta.Int(.unsigned, @bitSizeOf(c_uint) - 5) = 0,
 
-        pub fn toInt(self: RepositoryOpenExtendedFlags) c_uint {
+        pub fn toInt(self: RepositoryOpenOptions) c_uint {
             return @bitCast(c_uint, self);
         }
 
         pub fn format(
-            value: RepositoryOpenExtendedFlags,
+            value: RepositoryOpenOptions,
             comptime fmt: []const u8,
             options: std.fmt.FormatOptions,
             writer: anytype,
@@ -329,8 +381,8 @@ pub const Handle = struct {
         }
 
         test {
-            try std.testing.expectEqual(@sizeOf(c_uint), @sizeOf(RepositoryOpenExtendedFlags));
-            try std.testing.expectEqual(@bitSizeOf(c_uint), @bitSizeOf(RepositoryOpenExtendedFlags));
+            try std.testing.expectEqual(@sizeOf(c_uint), @sizeOf(RepositoryOpenOptions));
+            try std.testing.expectEqual(@bitSizeOf(c_uint), @bitSizeOf(RepositoryOpenOptions));
         }
 
         comptime {
@@ -338,77 +390,28 @@ pub const Handle = struct {
         }
     };
 
-    /// Open a bare repository on the serverside.
-    ///
-    /// This is a fast open for bare repositories that will come in handy if you're e.g. hosting git repositories and need to 
-    /// access them efficiently
-    ///
-    /// ## Parameters
-    /// * `path` - the path to the repository
-    pub fn repositoryOpenBare(self: Handle, path: [:0]const u8) !Repository {
-        _ = self;
-
-        log.debug("Handle.repositoryOpenBare called, path={s}", .{path});
-
-        var repo: ?*raw.git_repository = undefined;
-
-        try wrapCall("git_repository_open_bare", .{ &repo, path.ptr });
-
-        log.debug("repository opened successfully", .{});
-
-        return Repository{ .repo = repo.? };
-    }
-
-    /// Look for a git repository and provide its path.
-    ///
-    /// The lookup start from base_path and walk across parent directories if nothing has been found. The lookup ends when the
-    /// first repository is found, or when reaching a directory referenced in ceiling_dirs or when the filesystem changes 
-    /// (in case across_fs is true).
-    ///
-    /// The method will automatically detect if the repository is bare (if there is a repository).
-    ///
-    /// ## Parameters
-    /// * `start_path` - The base path where the lookup starts.
-    /// * `across_fs` - If true, then the lookup will not stop when a filesystem device change is detected while exploring parent 
-    ///                 directories.
-    /// * `ceiling_dirs` - A `GIT_PATH_LIST_SEPARATOR` separated list of absolute symbolic link free paths. The lookup will stop 
-    ///                    when any of this paths is reached. Note that the lookup always performs on `start_path` no matter 
-    ///                    `start_path` appears in `ceiling_dirs`. `ceiling_dirs` can be `null`.
-    pub fn repositoryDiscover(self: Handle, start_path: [:0]const u8, across_fs: bool, ceiling_dirs: ?[:0]const u8) !Buf {
-        _ = self;
-
-        log.debug(
-            "Handle.repositoryDiscover called, start_path={s}, across_fs={}, ceiling_dirs={s}",
-            .{ start_path, across_fs, ceiling_dirs },
-        );
-
-        var git_buf = Buf.zero();
-
-        const ceiling_dirs_temp: [*c]const u8 = if (ceiling_dirs) |slice| slice.ptr else null;
-        try wrapCall("git_repository_discover", .{ &git_buf.buf, start_path.ptr, @boolToInt(across_fs), ceiling_dirs_temp });
-
-        log.debug("repository discovered - {s}", .{git_buf.slice()});
-
-        return git_buf;
-    }
-
     comptime {
         std.testing.refAllDecls(@This());
     }
 };
 
 /// In-memory representation of a reference.
-pub const Reference = struct {
-    ref: *raw.git_reference,
-
+pub const Reference = opaque {
     /// Free the given reference.
     pub fn deinit(self: *Reference) void {
         log.debug("Reference.deinit called", .{});
 
-        raw.git_reference_free(self.ref);
-        self.* = undefined;
+        raw.git_reference_free(self.toC());
 
         log.debug("reference freed successfully", .{});
+    }
+
+    inline fn fromC(self: anytype) *@This() {
+        return @intToPtr(*@This(), @ptrToInt(self));
+    }
+
+    inline fn toC(self: anytype) *raw.git_reference {
+        return @intToPtr(*raw.git_reference, @ptrToInt(self));
     }
 
     comptime {
@@ -416,10 +419,25 @@ pub const Reference = struct {
     }
 };
 
-/// Representation of an existing git repository, including all its object contents
-pub const Repository = struct {
-    repo: *raw.git_repository,
+pub const RepositoryItem = enum(c_uint) {
+    GITDIR,
+    WORKDIR,
+    COMMONDIR,
+    INDEX,
+    OBJECTS,
+    REFS,
+    PACKED_REFS,
+    REMOTES,
+    CONFIG,
+    INFO,
+    HOOKS,
+    LOGS,
+    MODULES,
+    WORKTREES,
+};
 
+/// Representation of an existing git repository, including all its object contents
+pub const Repository = opaque {
     /// Free a previously allocated repository
     ///
     /// *Note:* that after a repository is free'd, all the objects it has spawned will still exist until they are manually closed 
@@ -428,33 +446,16 @@ pub const Repository = struct {
     pub fn deinit(self: *Repository) void {
         log.debug("Repository.deinit called", .{});
 
-        raw.git_repository_free(self.repo);
-        self.* = undefined;
+        raw.git_repository_free(self.toC());
 
         log.debug("repository closed successfully", .{});
     }
 
-    /// These values represent possible states for the repository to be in, based on the current operation which is ongoing.
-    pub const RepositoryState = enum(c_int) {
-        NONE,
-        MERGE,
-        REVERT,
-        REVERT_SEQUENCE,
-        CHERRYPICK,
-        CHERRYPICK_SEQUENCE,
-        BISECT,
-        REBASE,
-        REBASE_INTERACTIVE,
-        REBASE_MERGE,
-        APPLY_MAILBOX,
-        APPLY_MAILBOX_OR_REBASE,
-    };
-
     /// Determines the status of a git repository - ie, whether an operation (merge, cherry-pick, etc) is in progress.
-    pub fn getState(self: Repository) RepositoryState {
+    pub fn getState(self: *const Repository) RepositoryState {
         log.debug("Repository.getState called", .{});
 
-        const ret = @intToEnum(RepositoryState, raw.git_repository_state(self.repo));
+        const ret = @intToEnum(RepositoryState, raw.git_repository_state(self.toC()));
 
         log.debug("repository state: {s}", .{@tagName(ret)});
 
@@ -464,13 +465,13 @@ pub const Repository = struct {
     /// Retrieve the configured identity to use for reflogs
     ///
     /// The memory is owned by the repository and must not be freed by the user.
-    pub fn getIdentity(self: Repository) !Identity {
+    pub fn getIdentity(self: *const Repository) !Identity {
         log.debug("Repository.getIdentity called", .{});
 
         var c_name: [*c]u8 = undefined;
         var c_email: [*c]u8 = undefined;
 
-        try wrapCall("git_repository_ident", .{ &c_name, &c_email, self.repo });
+        try wrapCall("git_repository_ident", .{ &c_name, &c_email, self.toC() });
 
         const name: ?[:0]const u8 = if (c_name) |ptr| std.mem.sliceTo(ptr, 0) else null;
         const email: ?[:0]const u8 = if (c_email) |ptr| std.mem.sliceTo(ptr, 0) else null;
@@ -484,21 +485,21 @@ pub const Repository = struct {
     ///
     /// If both are set, this name and email will be used to write to the reflog. Pass `null` to unset. When unset, the identity
     /// will be taken from the repository's configuration.
-    pub fn setIdentity(self: Repository, identity: Identity) !void {
+    pub fn setIdentity(self: *const Repository, identity: Identity) !void {
         log.debug("Repository.setIdentity called, identity.name={s}, identity.email={s}", .{ identity.name, identity.email });
 
         const name_temp: [*c]const u8 = if (identity.name) |slice| slice.ptr else null;
         const email_temp: [*c]const u8 = if (identity.email) |slice| slice.ptr else null;
-        try wrapCall("git_repository_set_ident", .{ self.repo, name_temp, email_temp });
+        try wrapCall("git_repository_set_ident", .{ self.toC(), name_temp, email_temp });
 
         log.debug("successfully set identity", .{});
     }
 
     /// Get the currently active namespace for this repository
-    pub fn getNamespace(self: Repository) !?[:0]const u8 {
+    pub fn getNamespace(self: *const Repository) !?[:0]const u8 {
         log.debug("Repository.getNamespace called", .{});
 
-        const ret = raw.git_repository_get_namespace(self.repo);
+        const ret = raw.git_repository_get_namespace(self.toC());
 
         if (ret) |ptr| {
             const slice = std.mem.sliceTo(ptr, 0);
@@ -521,7 +522,7 @@ pub const Repository = struct {
     pub fn setNamespace(self: *Repository, namespace: [:0]const u8) !void {
         log.debug("Repository.setNamespace called, namespace={s}", .{namespace});
 
-        try wrapCall("git_repository_set_namespace", .{ self.repo, namespace.ptr });
+        try wrapCall("git_repository_set_namespace", .{ self.toC(), namespace.ptr });
 
         log.debug("successfully set namespace", .{});
     }
@@ -529,10 +530,10 @@ pub const Repository = struct {
     /// Check if a repository's HEAD is detached
     ///
     /// A repository's HEAD is detached when it points directly to a commit instead of a branch.
-    pub fn isHeadDetached(self: Repository) !bool {
+    pub fn isHeadDetached(self: *const Repository) !bool {
         log.debug("Repository.isHeadDetached called", .{});
 
-        const ret = (try wrapCallWithReturn("git_repository_head_detached", .{self.repo})) == 1;
+        const ret = (try wrapCallWithReturn("git_repository_head_detached", .{self.toC()})) == 1;
 
         log.debug("is head detached: {}", .{ret});
 
@@ -540,16 +541,16 @@ pub const Repository = struct {
     }
 
     /// Retrieve and resolve the reference pointed at by HEAD.
-    pub fn getHead(self: Repository) !Reference {
+    pub fn getHead(self: *const Repository) !*Reference {
         log.debug("Repository.head called", .{});
 
         var ref: ?*raw.git_reference = undefined;
 
-        try wrapCall("git_repository_head", .{ &ref, self.repo });
+        try wrapCall("git_repository_head", .{ &ref, self.toC() });
 
         log.debug("reference opened successfully", .{});
 
-        return Reference{ .ref = ref.? };
+        return Reference.fromC(ref.?);
     }
 
     /// Make the repository HEAD point to the specified reference.
@@ -567,7 +568,7 @@ pub const Repository = struct {
     pub fn setHead(self: *Repository, ref_name: [:0]const u8) !void {
         log.debug("Repository.setHead called, workdir={s}", .{ref_name});
 
-        try wrapCall("git_repository_set_head", .{ self.repo, ref_name.ptr });
+        try wrapCall("git_repository_set_head", .{ self.toC(), ref_name.ptr });
 
         log.debug("successfully set head", .{});
     }
@@ -590,7 +591,7 @@ pub const Repository = struct {
             log.debug("Repository.setHeadDetached called, commitish={s}", .{slice});
         }
 
-        try wrapCall("git_repository_set_head_detached", .{ self.repo, commitish.oid });
+        try wrapCall("git_repository_set_head_detached", .{ self.toC(), commitish.toC() });
 
         log.debug("successfully set head", .{});
     }
@@ -601,10 +602,10 @@ pub const Repository = struct {
     /// extended sha syntax string was specified by a user, allowing for more exact reflog messages.
     ///
     /// See the documentation for `Repository.setHeadDetached`.
-    pub fn setHeadDetachedFromAnnotated(self: *Repository, commitish: AnnotatedCommit) !void {
+    pub fn setHeadDetachedFromAnnotated(self: *Repository, commitish: *const AnnotatedCommit) !void {
         log.debug("Repository.setHeadDetachedFromAnnotated called", .{});
 
-        try wrapCall("git_repository_set_head_detached_from_annotated", .{ self.repo, commitish.commit });
+        try wrapCall("git_repository_set_head_detached_from_annotated", .{ self.toC(), commitish.toC() });
 
         log.debug("successfully set head", .{});
     }
@@ -622,7 +623,7 @@ pub const Repository = struct {
     pub fn detachHead(self: *Repository) !void {
         log.debug("Repository.detachHead called", .{});
 
-        try wrapCall("git_repository_detach_head", .{self.repo});
+        try wrapCall("git_repository_detach_head", .{self.toC()});
 
         log.debug("successfully detached the head", .{});
     }
@@ -633,12 +634,12 @@ pub const Repository = struct {
     ///
     /// ## Parameters
     /// * `name` - name of the worktree to retrieve HEAD for
-    pub fn isHeadForWorktreeDetached(self: Repository, name: [:0]const u8) !bool {
+    pub fn isHeadForWorktreeDetached(self: *const Repository, name: [:0]const u8) !bool {
         log.debug("Repository.isHeadForWorktreeDetached called, name={s}", .{name});
 
         const ret = (try wrapCallWithReturn(
             "git_repository_head_detached_for_worktree",
-            .{ self.repo, name.ptr },
+            .{ self.toC(), name.ptr },
         )) == 1;
 
         log.debug("head for worktree {s} is detached: {}", .{ name, ret });
@@ -650,26 +651,26 @@ pub const Repository = struct {
     ///
     /// ## Parameters
     /// * `name` - name of the worktree to retrieve HEAD for
-    pub fn headForWorktree(self: Repository, name: [:0]const u8) !Reference {
+    pub fn headForWorktree(self: *const Repository, name: [:0]const u8) !*Reference {
         log.debug("Repository.headForWorktree called, name={s}", .{name});
 
         var ref: ?*raw.git_reference = undefined;
 
-        try wrapCall("git_repository_head_for_worktree", .{ &ref, self.repo, name.ptr });
+        try wrapCall("git_repository_head_for_worktree", .{ &ref, self.toC(), name.ptr });
 
         log.debug("reference opened successfully", .{});
 
-        return Reference{ .ref = ref.? };
+        return Reference.fromC(ref.?);
     }
 
     /// Check if the current branch is unborn
     ///
     /// An unborn branch is one named from HEAD but which doesn't exist in the refs namespace, because it doesn't have any commit
     /// to point to.
-    pub fn isHeadUnborn(self: Repository) !bool {
+    pub fn isHeadUnborn(self: *const Repository) !bool {
         log.debug("Repository.isHeadUnborn called", .{});
 
-        const ret = (try wrapCallWithReturn("git_repository_head_unborn", .{self.repo})) == 1;
+        const ret = (try wrapCallWithReturn("git_repository_head_unborn", .{self.toC()})) == 1;
 
         log.debug("is head unborn: {}", .{ret});
 
@@ -677,10 +678,10 @@ pub const Repository = struct {
     }
 
     /// Determine if the repository was a shallow clone
-    pub fn isShallow(self: Repository) bool {
+    pub fn isShallow(self: *const Repository) bool {
         log.debug("Repository.isShallow called", .{});
 
-        const ret = raw.git_repository_is_shallow(self.repo) == 1;
+        const ret = raw.git_repository_is_shallow(self.toC()) == 1;
 
         log.debug("is repository a shallow clone: {}", .{ret});
 
@@ -691,10 +692,10 @@ pub const Repository = struct {
     ///
     /// An empty repository has just been initialized and contains no references apart from HEAD, which must be pointing to the
     /// unborn master branch.
-    pub fn isEmpty(self: Repository) !bool {
+    pub fn isEmpty(self: *const Repository) !bool {
         log.debug("Repository.isEmpty called", .{});
 
-        const ret = (try wrapCallWithReturn("git_repository_is_empty", .{self.repo})) == 1;
+        const ret = (try wrapCallWithReturn("git_repository_is_empty", .{self.toC()})) == 1;
 
         log.debug("is repository empty: {}", .{ret});
 
@@ -702,10 +703,10 @@ pub const Repository = struct {
     }
 
     /// Check if a repository is bare
-    pub fn isBare(self: Repository) bool {
+    pub fn isBare(self: *const Repository) bool {
         log.debug("Repository.isBare called", .{});
 
-        const ret = raw.git_repository_is_bare(self.repo) == 1;
+        const ret = raw.git_repository_is_bare(self.toC()) == 1;
 
         log.debug("is repository bare: {}", .{ret});
 
@@ -713,10 +714,10 @@ pub const Repository = struct {
     }
 
     /// Check if a repository is a linked work tree
-    pub fn isWorktree(self: Repository) bool {
+    pub fn isWorktree(self: *const Repository) bool {
         log.debug("Repository.isWorktree called", .{});
 
-        const ret = raw.git_repository_is_worktree(self.repo) == 1;
+        const ret = raw.git_repository_is_worktree(self.toC()) == 1;
 
         log.debug("is repository worktree: {}", .{ret});
 
@@ -728,42 +729,25 @@ pub const Repository = struct {
     /// This function will retrieve the path of a specific repository item. It will thereby honor things like the repository's
     /// common directory, gitdir, etc. In case a file path cannot exist for a given item (e.g. the working directory of a bare
     /// repository), `NOTFOUND` is returned.
-    pub fn getItemPath(self: Repository, item: RepositoryItem) !Buf {
+    pub fn getItemPath(self: *const Repository, item: RepositoryItem) !Buf {
         log.debug("Repository.itemPath called, item={s}", .{item});
 
-        var buf = Buf.zero();
+        var buf = Buf{};
 
-        try wrapCall("git_repository_item_path", .{ &buf.buf, self.repo, @enumToInt(item) });
+        try wrapCall("git_repository_item_path", .{ Buf.toC(&buf), self.toC(), @enumToInt(item) });
 
         log.debug("item path: {s}", .{buf.slice()});
 
         return buf;
     }
 
-    pub const RepositoryItem = enum(c_uint) {
-        GITDIR,
-        WORKDIR,
-        COMMONDIR,
-        INDEX,
-        OBJECTS,
-        REFS,
-        PACKED_REFS,
-        REMOTES,
-        CONFIG,
-        INFO,
-        HOOKS,
-        LOGS,
-        MODULES,
-        WORKTREES,
-    };
-
     /// Get the path of this repository
     ///
     /// This is the path of the `.git` folder for normal repositories, or of the repository itself for bare repositories.
-    pub fn getPath(self: Repository) [:0]const u8 {
+    pub fn getPath(self: *const Repository) [:0]const u8 {
         log.debug("Repository.path called", .{});
 
-        const slice = std.mem.sliceTo(raw.git_repository_path(self.repo), 0);
+        const slice = std.mem.sliceTo(raw.git_repository_path(self.toC()), 0);
 
         log.debug("path: {s}", .{slice});
 
@@ -773,10 +757,10 @@ pub const Repository = struct {
     /// Get the path of the working directory for this repository
     ///
     /// If the repository is bare, this function will always return `null`.
-    pub fn getWorkdir(self: Repository) ?[:0]const u8 {
+    pub fn getWorkdir(self: *const Repository) ?[:0]const u8 {
         log.debug("Repository.workdir called", .{});
 
-        if (raw.git_repository_workdir(self.repo)) |ret| {
+        if (raw.git_repository_workdir(self.toC())) |ret| {
             const slice = std.mem.sliceTo(ret, 0);
 
             log.debug("workdir: {s}", .{slice});
@@ -793,7 +777,7 @@ pub const Repository = struct {
     pub fn setWorkdir(self: *Repository, workdir: [:0]const u8, update_gitlink: bool) !void {
         log.debug("Repository.setWorkdir called, workdir={s}, update_gitlink={}", .{ workdir, update_gitlink });
 
-        try wrapCall("git_repository_set_workdir", .{ self.repo, workdir.ptr, @boolToInt(update_gitlink) });
+        try wrapCall("git_repository_set_workdir", .{ self.toC(), workdir.ptr, @boolToInt(update_gitlink) });
 
         log.debug("successfully set workdir", .{});
     }
@@ -802,10 +786,10 @@ pub const Repository = struct {
     ///
     /// If the repository is bare, it is the root directory for the repository. If the repository is a worktree, it is the parent 
     /// repo's gitdir. Otherwise, it is the gitdir.
-    pub fn getCommondir(self: Repository) ?[:0]const u8 {
+    pub fn getCommondir(self: *const Repository) ?[:0]const u8 {
         log.debug("Repository.commondir called", .{});
 
-        if (raw.git_repository_commondir(self.repo)) |ret| {
+        if (raw.git_repository_commondir(self.toC())) |ret| {
             const slice = std.mem.sliceTo(ret, 0);
 
             log.debug("commondir: {s}", .{slice});
@@ -823,16 +807,16 @@ pub const Repository = struct {
     /// If a configuration file has not been set, the default config set for the repository will be returned, including global 
     /// and system configurations (if they are available). The configuration file must be freed once it's no longer being used by
     /// the user.
-    pub fn getConfig(self: Repository) !Config {
+    pub fn getConfig(self: *const Repository) !*Config {
         log.debug("Repository.getConfig called", .{});
 
         var config: ?*raw.git_config = undefined;
 
-        try wrapCall("git_repository_config", .{ &config, self.repo });
+        try wrapCall("git_repository_config", .{ &config, self.toC() });
 
         log.debug("repository config acquired successfully", .{});
 
-        return Config{ .config = config.? };
+        return Config.fromC(config.?);
     }
 
     /// Get a snapshot of the repository's configuration
@@ -841,16 +825,16 @@ pub const Repository = struct {
     /// change, even if the underlying config files are modified.
     ///
     /// The configuration file must be freed once it's no longer being used by the user.
-    pub fn getConfigSnapshot(self: Repository) !Config {
+    pub fn getConfigSnapshot(self: *const Repository) !*Config {
         log.debug("Repository.getConfigSnapshot called", .{});
 
         var config: ?*raw.git_config = undefined;
 
-        try wrapCall("git_repository_config_snapshot", .{ &config, self.repo });
+        try wrapCall("git_repository_config_snapshot", .{ &config, self.toC() });
 
         log.debug("repository config acquired successfully", .{});
 
-        return Config{ .config = config.? };
+        return Config.fromC(config.?);
     }
 
     /// Get the Object Database for this repository.
@@ -859,16 +843,16 @@ pub const Repository = struct {
     /// `.git/objects`).
     ///
     /// The ODB must be freed once it's no longer being used by the user.
-    pub fn getOdb(self: Repository) !Odb {
+    pub fn getOdb(self: *const Repository) !*Odb {
         log.debug("Repository.getOdb called", .{});
 
         var odb: ?*raw.git_odb = undefined;
 
-        try wrapCall("git_repository_odb", .{ &odb, self.repo });
+        try wrapCall("git_repository_odb", .{ &odb, self.toC() });
 
         log.debug("repository odb acquired successfully", .{});
 
-        return Odb{ .odb = odb.? };
+        return Odb.fromC(odb.?);
     }
 
     /// Get the Reference Database Backend for this repository.
@@ -877,16 +861,16 @@ pub const Repository = struct {
     /// loose and packed references in the `.git` directory).
     /// 
     /// The refdb must be freed once it's no longer being used by the user.
-    pub fn getRefDb(self: Repository) !RefDb {
+    pub fn getRefDb(self: *const Repository) !*RefDb {
         log.debug("Repository.getRefDb called", .{});
 
         var ref_db: ?*raw.git_refdb = undefined;
 
-        try wrapCall("git_repository_refdb", .{ &ref_db, self.repo });
+        try wrapCall("git_repository_refdb", .{ &ref_db, self.toC() });
 
         log.debug("repository refdb acquired successfully", .{});
 
-        return RefDb{ .ref_db = ref_db.? };
+        return RefDb.fromC(ref_db.?);
     }
 
     /// Get the Reference Database Backend for this repository.
@@ -895,16 +879,16 @@ pub const Repository = struct {
     /// loose and packed references in the `.git` directory).
     /// 
     /// The refdb must be freed once it's no longer being used by the user.
-    pub fn getIndex(self: Repository) !Index {
+    pub fn getIndex(self: *const Repository) !*Index {
         log.debug("Repository.getIndex called", .{});
 
         var index: ?*raw.git_index = undefined;
 
-        try wrapCall("git_repository_index", .{ &index, self.repo });
+        try wrapCall("git_repository_index", .{ &index, self.toC() });
 
         log.debug("repository index acquired successfully", .{});
 
-        return Index{ .index = index.? };
+        return Index.fromC(index.?);
     }
 
     /// Retrieve git's prepared message
@@ -914,14 +898,14 @@ pub const Repository = struct {
     /// amend if they wish.
     ///
     /// Use this function to get the contents of this file. Don't forget to remove the file after you create the commit.
-    pub fn getPreparedMessage(self: Repository) !Buf {
+    pub fn getPreparedMessage(self: *const Repository) !Buf {
         // TODO: Change this function and others to return null instead of `GitError.NotFound`
 
         log.debug("Repository.getPreparedMessage called", .{});
 
-        var buf = Buf.zero();
+        var buf = Buf{};
 
-        try wrapCall("git_repository_message", .{ &buf.buf, self.repo });
+        try wrapCall("git_repository_message", .{ Buf.toC(&buf), self.toC() });
 
         log.debug("prepared message: {s}", .{buf.slice()});
 
@@ -934,7 +918,7 @@ pub const Repository = struct {
     pub fn removePreparedMessage(self: *Repository) !void {
         log.debug("Repository.removePreparedMessage called", .{});
 
-        try wrapCall("git_repository_message_remove", .{self.repo});
+        try wrapCall("git_repository_message_remove", .{self.toC()});
 
         log.debug("successfully removed prepared message", .{});
     }
@@ -944,7 +928,7 @@ pub const Repository = struct {
     pub fn stateCleanup(self: *Repository) !void {
         log.debug("Repository.stateCleanup called", .{});
 
-        try wrapCall("git_repository_state_cleanup", .{self.repo});
+        try wrapCall("git_repository_state_cleanup", .{self.toC()});
 
         log.debug("successfully cleaned state", .{});
     }
@@ -962,11 +946,11 @@ pub const Repository = struct {
     /// * `oid` - The reference target OID
     /// * `is_merge` - Was the reference the result of a merge
     pub fn foreachFetchHead(
-        self: Repository,
+        self: *const Repository,
         comptime callback_fn: fn (
             ref_name: [:0]const u8,
             remote_url: [:0]const u8,
-            oid: Oid,
+            oid: *const Oid,
             is_merge: bool,
         ) c_int,
     ) !c_int {
@@ -974,7 +958,7 @@ pub const Repository = struct {
             pub fn cb(
                 ref_name: [:0]const u8,
                 remote_url: [:0]const u8,
-                oid: Oid,
+                oid: *const Oid,
                 is_merge: bool,
                 _: *u8,
             ) c_int {
@@ -1001,12 +985,12 @@ pub const Repository = struct {
     /// * `is_merge` - Was the reference the result of a merge
     /// * `user_data_ptr` - pointer to user data
     pub fn foreachFetchHeadWithUserData(
-        self: Repository,
+        self: *const Repository,
         user_data: anytype,
         comptime callback_fn: fn (
             ref_name: [:0]const u8,
             remote_url: [:0]const u8,
-            oid: Oid,
+            oid: *const Oid,
             is_merge: bool,
             user_data_ptr: @TypeOf(user_data),
         ) c_int,
@@ -1024,7 +1008,7 @@ pub const Repository = struct {
                 return callback_fn(
                     std.mem.sliceTo(c_ref_name, 0),
                     std.mem.sliceTo(c_remote_url, 0),
-                    Oid{ .oid = c_oid.? },
+                    Oid.fromC(c_oid.?),
                     c_is_merge == 1,
                     @ptrCast(UserDataType, payload),
                 );
@@ -1033,7 +1017,7 @@ pub const Repository = struct {
 
         log.debug("Repository.foreachFetchHeadWithUserData called", .{});
 
-        const ret = try wrapCallWithReturn("git_repository_fetchhead_foreach", .{ self.repo, cb, user_data });
+        const ret = try wrapCallWithReturn("git_repository_fetchhead_foreach", .{ self.toC(), cb, user_data });
 
         log.debug("callback returned: {}", .{ret});
 
@@ -1050,11 +1034,11 @@ pub const Repository = struct {
     /// ## Callback Parameters
     /// * `oid` - The merge OID
     pub fn foreachMergeHead(
-        self: Repository,
-        comptime callback_fn: fn (oid: Oid) c_int,
+        self: *const Repository,
+        comptime callback_fn: fn (oid: *const Oid) c_int,
     ) !c_int {
         const cb = struct {
-            pub fn cb(oid: Oid, _: *u8) c_int {
+            pub fn cb(oid: *const Oid, _: *u8) c_int {
                 return callback_fn(oid);
             }
         }.cb;
@@ -1075,10 +1059,10 @@ pub const Repository = struct {
     /// * `oid` - The merge OID
     /// * `user_data_ptr` - pointer to user data
     pub fn foreachMergeHeadWithUserData(
-        self: Repository,
+        self: *const Repository,
         user_data: anytype,
         comptime callback_fn: fn (
-            oid: Oid,
+            oid: *const Oid,
             user_data_ptr: @TypeOf(user_data),
         ) c_int,
     ) !c_int {
@@ -1086,13 +1070,13 @@ pub const Repository = struct {
 
         const cb = struct {
             pub fn cb(c_oid: [*c]const raw.git_oid, payload: ?*c_void) callconv(.C) c_int {
-                return callback_fn(Oid{ .oid = c_oid.? }, @ptrCast(UserDataType, payload));
+                return callback_fn(Oid.fromC(c_oid.?), @ptrCast(UserDataType, payload));
             }
         }.cb;
 
         log.debug("Repository.foreachMergeHeadWithUserData called", .{});
 
-        const ret = try wrapCallWithReturn("git_repository_mergehead_foreach", .{ self.repo, cb, user_data });
+        const ret = try wrapCallWithReturn("git_repository_mergehead_foreach", .{ self.toC(), cb, user_data });
 
         log.debug("callback returned: {}", .{ret});
 
@@ -1113,15 +1097,15 @@ pub const Repository = struct {
     /// * `object_type` - The object type to hash as (e.g. `ObjectType.BLOB`)
     /// * `as_path` - The path to use to look up filtering rules. If this is `null`, then the `path` parameter will be used
     ///               instead. If this is passed as the empty string, then no filters will be applied when calculating the hash.
-    pub fn hashFile(self: Repository, path: [:0]const u8, object_type: ObjectType, as_path: ?[:0]const u8) !Oid {
+    pub fn hashFile(self: *const Repository, path: [:0]const u8, object_type: ObjectType, as_path: ?[:0]const u8) !*const Oid {
         log.debug("Repository.hashFile called, path={s}, object_type={}, as_path={s}", .{ path, object_type, as_path });
 
         var oid: ?*raw.git_oid = undefined;
 
         const as_path_temp: [*c]const u8 = if (as_path) |slice| slice.ptr else null;
-        try wrapCall("git_repository_hashfile", .{ oid, self.repo, path.ptr, @enumToInt(object_type), as_path_temp });
+        try wrapCall("git_repository_hashfile", .{ oid, self.toC(), path.ptr, @enumToInt(object_type), as_path_temp });
 
-        const ret = Oid{ .oid = oid.? };
+        const ret = Oid.fromC(oid.?);
 
         // This check is to prevent formating the oid when we are not going to print anything
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
@@ -1145,12 +1129,12 @@ pub const Repository = struct {
     /// This does not do any sort of rename detection.  Renames require a set of targets and because of the path filtering, there
     /// is not enough information to check renames correctly.  To check file status with rename detection, there is no choice but
     /// to do a full `git_status_list_new` and scan through looking for the path that you are interested in.
-    pub fn fileStatus(self: Repository, path: [:0]const u8) !FileStatus {
+    pub fn fileStatus(self: *const Repository, path: [:0]const u8) !FileStatus {
         log.debug("Repository.fileStatus called, path={s}", .{path});
 
         var flags: c_uint = undefined;
 
-        try wrapCall("git_status_file", .{ &flags, self.repo, path.ptr });
+        try wrapCall("git_status_file", .{ &flags, self.toC(), path.ptr });
 
         const ret = @bitCast(FileStatus, flags);
 
@@ -1170,7 +1154,7 @@ pub const Repository = struct {
     /// * `path` - The file path
     /// * `status` - The status of the file
     pub fn foreachFileStatus(
-        self: Repository,
+        self: *const Repository,
         comptime callback_fn: fn (path: [:0]const u8, status: FileStatus) c_int,
     ) !c_int {
         const cb = struct {
@@ -1196,7 +1180,7 @@ pub const Repository = struct {
     /// * `status` - The status of the file
     /// * `user_data_ptr` - pointer to user data
     pub fn foreachFileStatusWithUserData(
-        self: Repository,
+        self: *const Repository,
         user_data: anytype,
         comptime callback_fn: fn (
             path: [:0]const u8,
@@ -1218,7 +1202,7 @@ pub const Repository = struct {
 
         log.debug("Repository.foreachFileStatusWithUserData called", .{});
 
-        const ret = try wrapCallWithReturn("git_status_foreach", .{ self.repo, cb, user_data });
+        const ret = try wrapCallWithReturn("git_status_foreach", .{ self.toC(), cb, user_data });
 
         log.debug("callback returned: {}", .{ret});
 
@@ -1243,7 +1227,7 @@ pub const Repository = struct {
     /// * `path` - The file path
     /// * `status` - The status of the file
     pub fn foreachFileStatusExtended(
-        self: Repository,
+        self: *const Repository,
         options: FileStatusOptions,
         comptime callback_fn: fn (path: [:0]const u8, status: FileStatus) c_int,
     ) !c_int {
@@ -1277,7 +1261,7 @@ pub const Repository = struct {
     /// * `status` - The status of the file
     /// * `user_data_ptr` - pointer to user data
     pub fn foreachFileStatusExtendedWithUserData(
-        self: Repository,
+        self: *const Repository,
         options: FileStatusOptions,
         user_data: anytype,
         comptime callback_fn: fn (
@@ -1303,9 +1287,53 @@ pub const Repository = struct {
         var opts: raw.git_status_options = undefined;
         try options.toCType(&opts);
 
-        const ret = try wrapCallWithReturn("git_status_foreach_ext", .{ self.repo, &opts, cb, user_data });
+        const ret = try wrapCallWithReturn("git_status_foreach_ext", .{ self.toC(), &opts, cb, user_data });
 
         log.debug("callback returned: {}", .{ret});
+
+        return ret;
+    }
+
+    /// Gather file status information and populate a `StatusList`.
+    ///
+    /// Note that if a `pathspec` is given in the `git_status_options` to filter the status, then the results from rename
+    /// detection (if you enable it) may not be accurate. To do rename detection properly, this must be called with no `pathspec`
+    /// so that all files can be considered.
+    ///
+    /// ## Parameters
+    /// * `options` - options regarding which files to get the status of
+    pub fn getStatusList(self: *const Repository, options: FileStatusOptions) !*StatusList {
+        log.debug("Repository.getStatusList called, options={}", .{options});
+
+        var opts: raw.git_status_options = undefined;
+        try options.toCType(&opts);
+
+        var status_list: ?*raw.git_status_list = undefined;
+        try wrapCall("git_status_list_new", .{ &status_list, self.toC(), &opts });
+
+        log.debug("successfully fetched status list", .{});
+
+        return StatusList.fromC(status_list.?);
+    }
+
+    /// Test if the ignore rules apply to a given file.
+    ///
+    /// This function checks the ignore rules to see if they would apply to the given file. This indicates if the file would be
+    /// ignored regardless of whether the file is already in the index or committed to the repository.
+    ///
+    /// One way to think of this is if you were to do "git add ." on the directory containing the file, would it be added or not?
+    ///
+    /// ## Parameters
+    /// * `path` - The file to check ignores for, rooted at the repo's workdir.
+    pub fn statusShouldIgnore(self: *const Repository, path: [:0]const u8) !bool {
+        log.debug("Repository.statusShouldIgnore called, path={s}", .{path});
+
+        var result: c_int = undefined;
+        try wrapCall("git_status_should_ignore", .{ &result, self.toC(), path.ptr });
+
+        const ret = result == 1;
+
+        log.debug("status should ignore: {}", .{ret});
 
         return ret;
     }
@@ -1315,14 +1343,14 @@ pub const Repository = struct {
         show: Show = .INDEX_AND_WORKDIR,
 
         /// Flags to control status callbacks
-        options: Options = .{},
+        flags: Flags = .{},
 
         /// The `pathspec` is an array of path patterns to match (using fnmatch-style matching), or just an array of paths to 
         /// match exactly if `Options.DISABLE_PATHSPEC_MATCH` is specified in the flags.
-        pathspec: [][:0]const u8 = &[_][:0]const u8{},
+        pathspec: StrArray = .{},
 
         /// The `baseline` is the tree to be used for comparison to the working directory and index; defaults to HEAD.
-        baseline: ?Tree = null,
+        baseline: ?*const Tree = null,
 
         /// Select the files on which to report status.
         pub const Show = enum(c_uint) {
@@ -1339,7 +1367,7 @@ pub const Repository = struct {
         /// Calling `Repository.forEachFileStatus` is like calling the extended version with: `INCLUDE_IGNORED`, 
         /// `INCLUDE_UNTRACKED`, and `RECURSE_UNTRACKED_DIRS`. Those options are bundled together as `Options.DEFAULTS` if
         /// you want them as a baseline.
-        pub const Options = packed struct {
+        pub const Flags = packed struct {
             /// Says that callbacks should be made on untracked files.
             /// These will only be made if the workdir files are included in the status
             /// "show" option.
@@ -1417,8 +1445,8 @@ pub const Repository = struct {
 
             z_padding: u16 = 0,
 
-            pub const DEFAULT: Options = blk: {
-                var opt = Options{};
+            pub const DEFAULT: Flags = blk: {
+                var opt = Flags{};
                 opt.INCLUDE_IGNORED = true;
                 opt.INCLUDE_UNTRACKED = true;
                 opt.RECURSE_UNTRACKED_DIRS = true;
@@ -1426,7 +1454,7 @@ pub const Repository = struct {
             };
 
             pub fn format(
-                value: Options,
+                value: Flags,
                 comptime fmt: []const u8,
                 options: std.fmt.FormatOptions,
                 writer: anytype,
@@ -1441,8 +1469,8 @@ pub const Repository = struct {
             }
 
             test {
-                try std.testing.expectEqual(@sizeOf(c_uint), @sizeOf(Options));
-                try std.testing.expectEqual(@bitSizeOf(c_uint), @bitSizeOf(Options));
+                try std.testing.expectEqual(@sizeOf(c_uint), @sizeOf(Flags));
+                try std.testing.expectEqual(@bitSizeOf(c_uint), @bitSizeOf(Flags));
             }
 
             comptime {
@@ -1458,12 +1486,9 @@ pub const Repository = struct {
             }
 
             c_type.show = @enumToInt(self.show);
-            c_type.flags = @bitCast(c_int, self.options);
-            c_type.pathspec = .{
-                .strings = @intToPtr([*c][*c]u8, @ptrToInt(self.pathspec.ptr)),
-                .count = self.pathspec.len,
-            };
-            c_type.baseline = if (self.baseline) |tree| tree.tree else null;
+            c_type.flags = @bitCast(c_int, self.flags);
+            c_type.pathspec = self.pathspec.toC();
+            c_type.baseline = if (self.baseline) |tree| tree.toC() else null;
         }
 
         comptime {
@@ -1471,48 +1496,63 @@ pub const Repository = struct {
         }
     };
 
-    /// Gather file status information and populate a `StatusList`.
-    ///
-    /// Note that if a `pathspec` is given in the `git_status_options` to filter the status, then the results from rename
-    /// detection (if you enable it) may not be accurate. To do rename detection properly, this must be called with no `pathspec`
-    /// so that all files can be considered.
-    ///
-    /// ## Parameters
-    /// * `options` - options regarding which files to get the status of
-    pub fn getStatusList(self: Repository, options: FileStatusOptions) !StatusList {
-        log.debug("Repository.getStatusList called, options={}", .{options});
+    /// These values represent possible states for the repository to be in, based on the current operation which is ongoing.
+    pub const RepositoryState = enum(c_int) {
+        NONE,
+        MERGE,
+        REVERT,
+        REVERT_SEQUENCE,
+        CHERRYPICK,
+        CHERRYPICK_SEQUENCE,
+        BISECT,
+        REBASE,
+        REBASE_INTERACTIVE,
+        REBASE_MERGE,
+        APPLY_MAILBOX,
+        APPLY_MAILBOX_OR_REBASE,
+    };
 
-        var opts: raw.git_status_options = undefined;
-        try options.toCType(&opts);
-
-        var status_list: ?*raw.git_status_list = undefined;
-        try wrapCall("git_status_list_new", .{ &status_list, self.repo, &opts });
-
-        log.debug("successfully fetched status list", .{});
-
-        return StatusList{ .status_list = status_list.? };
+    inline fn fromC(self: anytype) *@This() {
+        return @intToPtr(*@This(), @ptrToInt(self));
     }
 
-    /// Test if the ignore rules apply to a given file.
-    ///
-    /// This function checks the ignore rules to see if they would apply to the given file. This indicates if the file would be
-    /// ignored regardless of whether the file is already in the index or committed to the repository.
-    ///
-    /// One way to think of this is if you were to do "git add ." on the directory containing the file, would it be added or not?
-    ///
-    /// ## Parameters
-    /// * `path` - The file to check ignores for, rooted at the repo's workdir.
-    pub fn statusShouldIgnore(self: Repository, path: [:0]const u8) !bool {
-        log.debug("Repository.statusShouldIgnore called, path={s}", .{path});
+    inline fn toC(self: anytype) *raw.git_repository {
+        return @intToPtr(*raw.git_repository, @ptrToInt(self));
+    }
 
-        var result: c_int = undefined;
-        try wrapCall("git_status_should_ignore", .{ &result, self.repo, path.ptr });
+    comptime {
+        std.testing.refAllDecls(@This());
+    }
+};
 
-        const ret = result == 1;
+/// Array of strings
+pub const StrArray = extern struct {
+    strings: [*c][*c]u8 = null,
+    count: usize = 0,
 
-        log.debug("status should ignore: {}", .{ret});
+    pub fn fromSlice(slice: []const [*:0]const u8) StrArray {
+        return .{
+            .strings = @intToPtr([*c][*c]u8, @ptrToInt(slice.ptr)),
+            .count = slice.len,
+        };
+    }
 
-        return ret;
+    pub fn toSlice(self: StrArray) []const [*:0]const u8 {
+        if (self.count == 0) return &[_][*:0]const u8{};
+        return @ptrCast([*]const [*:0]const u8, self.strings)[0..self.count];
+    }
+
+    inline fn fromC(self: raw.git_strarray) StrArray {
+        return @bitCast(StrArray, self);
+    }
+
+    inline fn toC(self: StrArray) raw.git_strarray {
+        return @bitCast(raw.git_strarray, self);
+    }
+
+    test {
+        try std.testing.expectEqual(@sizeOf(raw.git_strarray), @sizeOf(StrArray));
+        try std.testing.expectEqual(@bitSizeOf(raw.git_strarray), @bitSizeOf(StrArray));
     }
 
     comptime {
@@ -1521,15 +1561,12 @@ pub const Repository = struct {
 };
 
 /// Representation of a status collection
-pub const StatusList = struct {
-    status_list: *raw.git_status_list,
-
+pub const StatusList = opaque {
     /// Free an existing status list
     pub fn deinit(self: *StatusList) void {
         log.debug("StatusList.deinit called", .{});
 
-        raw.git_status_list_free(self.status_list);
-        self.* = undefined;
+        raw.git_status_list_free(self.toC());
 
         log.debug("status list freed successfully", .{});
     }
@@ -1538,10 +1575,10 @@ pub const StatusList = struct {
     ///
     /// If there are no changes in status (at least according the options given when the status list was created), this can 
     /// return 0.
-    pub fn getEntryCount(self: StatusList) usize {
+    pub fn getEntryCount(self: *const StatusList) usize {
         log.debug("StatusList.getEntryCount called", .{});
 
-        const ret = raw.git_status_list_entrycount(self.status_list);
+        const ret = raw.git_status_list_entrycount(self.toC());
 
         log.debug("status list entry count: {}", .{ret});
 
@@ -1552,10 +1589,10 @@ pub const StatusList = struct {
     ///
     /// ## Parameters
     /// * `index` - Position of the entry
-    pub fn getStatusByIndex(self: StatusList, index: usize) ?*const StatusEntry {
+    pub fn getStatusByIndex(self: *const StatusList, index: usize) ?*const StatusEntry {
         log.debug("StatusList.getStatusByIndex called, index={}", .{index});
 
-        const ret_opt = raw.git_status_byindex(self.status_list, index);
+        const ret_opt = raw.git_status_byindex(self.toC(), index);
 
         if (ret_opt) |ret| {
             const result = @intToPtr(*const StatusEntry, @ptrToInt(ret));
@@ -1576,11 +1613,28 @@ pub const StatusList = struct {
         status: FileStatus,
 
         /// detailed information about the differences between the file in HEAD and the file in the index.
-        head_to_index: DiffDelta,
+        head_to_index: *DiffDelta,
 
         /// detailed information about the differences between the file in the index and the file in the working directory.
-        index_to_workdir: DiffDelta,
+        index_to_workdir: *DiffDelta,
+
+        test {
+            try std.testing.expectEqual(@sizeOf(raw.git_status_entry), @sizeOf(StatusEntry));
+            try std.testing.expectEqual(@bitSizeOf(raw.git_status_entry), @bitSizeOf(StatusEntry));
+        }
+
+        comptime {
+            std.testing.refAllDecls(@This());
+        }
     };
+
+    inline fn fromC(self: anytype) *@This() {
+        return @intToPtr(*@This(), @ptrToInt(self));
+    }
+
+    inline fn toC(self: anytype) *raw.git_status_list {
+        return @intToPtr(*raw.git_status_list, @ptrToInt(self));
+    }
 
     comptime {
         std.testing.refAllDecls(@This());
@@ -1588,26 +1642,184 @@ pub const StatusList = struct {
 };
 
 /// Description of changes to one entry.
+///
+/// A `delta` is a file pair with an old and new revision. The old version may be absent if the file was just created and the new
+///  version may be absent if the file was deleted. A diff is mostly just a list of deltas.
+///
+/// When iterating over a diff, this will be passed to most callbacks and you can use the contents to understand exactly what has
+/// changed.
+///
+/// The `old_file` represents the "from" side of the diff and the `new_file` represents to "to" side of the diff.  What those
+/// means depend on the function that was used to generate the diff and will be documented below.
+/// You can also use the `GIT_DIFF_REVERSE` flag to flip it around.
+///
+/// Although the two sides of the delta are named "old_file" and "new_file", they actually may correspond to entries that
+/// represent a file, a symbolic link, a submodule commit id, or even a tree (if you are tracking type changes or
+/// ignored/untracked directories).
+///
+/// Under some circumstances, in the name of efficiency, not all fields will be filled in, but we generally try to fill in as much
+/// as possible. One example is that the "flags" field may not have either the `BINARY` or the `NOT_BINARY` flag set to avoid
+/// examining file contents if you do not pass in hunk and/or line callbacks to the diff foreach iteration function.  It will just
+/// use the git attributes for those files.
+///
+/// The similarity score is zero unless you call `git_diff_find_similar()` which does a similarity analysis of files in the diff.
+/// Use that function to do rename and copy detection, and to split heavily modified files in add/delete pairs. After that call,
+/// deltas with a status of GIT_DELTA_RENAMED or GIT_DELTA_COPIED will have a similarity score between 0 and 100 indicating how
+/// similar the old and new sides are.
+///
+/// If you ask `git_diff_find_similar` to find heavily modified files to break, but to not *actually* break the records, then
+/// GIT_DELTA_MODIFIED records may have a non-zero similarity score if the self-similarity is below the split threshold. To
+/// display this value like core Git, invert the score (a la `printf("M%03d", 100 - delta->similarity)`).
 pub const DiffDelta = extern struct {
-    diff_delta: *const raw.git_diff_delta,
+    status: DeltaType,
+    flags: DiffFlags,
+    /// for RENAMED and COPIED, value 0-100
+    similarity: u16,
+    number_of_files: u16,
+    old_file: DiffFile,
+    new_file: DiffFile,
+
+    /// What type of change is described by a git_diff_delta?
+    ///
+    /// `GIT_DELTA_RENAMED` and `GIT_DELTA_COPIED` will only show up if you run `git_diff_find_similar()` on the diff object.
+    ///
+    /// `GIT_DELTA_TYPECHANGE` only shows up given `GIT_DIFF_INCLUDE_TYPECHANGE` in the option flags (otherwise type changes will
+    /// be split into ADDED / DELETED pairs).
+    pub const DeltaType = enum(c_uint) {
+        /// no changes
+        UNMODIFIED,
+        /// entry does not exist in old version
+        ADDED,
+        /// entry does not exist in new version
+        DELETED,
+        /// entry content changed between old and new
+        MODIFIED,
+        /// entry was renamed between old and new
+        RENAMED,
+        /// entry was copied from another old entry
+        COPIED,
+        /// entry is ignored item in workdir
+        IGNORED,
+        /// entry is untracked item in workdir
+        UNTRACKED,
+        /// type of entry changed between old and new 
+        TYPECHANGE,
+        /// entry is unreadable
+        UNREADABLE,
+        /// entry in the index is conflicted
+        CONFLICTED,
+    };
+
+    /// Flags for the delta object and the file objects on each side.
+    ///
+    /// These flags are used for both the `flags` value of the `git_diff_delta` and the flags for the `git_diff_file` objects
+    /// representing the old and new sides of the delta.  Values outside of this public range should be considered reserved 
+    /// for internal or future use.
+    pub const DiffFlags = packed struct {
+        /// file(s) treated as binary data
+        BINARY: bool = false,
+        /// file(s) treated as text data
+        NOT_BINARY: bool = false,
+        /// `id` value is known correct
+        VALID_ID: bool = false,
+        /// file exists at this side of the delta
+        EXISTS: bool = false,
+
+        z_padding1: u12 = 0,
+        z_padding2: u16 = 0,
+
+        pub fn format(
+            value: DiffFlags,
+            comptime fmt: []const u8,
+            options: std.fmt.FormatOptions,
+            writer: anytype,
+        ) !void {
+            _ = fmt;
+            return formatWithoutFields(
+                value,
+                options,
+                writer,
+                &.{ "z_padding1", "z_padding2" },
+            );
+        }
+
+        test {
+            try std.testing.expectEqual(@sizeOf(c_uint), @sizeOf(DiffFlags));
+            try std.testing.expectEqual(@bitSizeOf(c_uint), @bitSizeOf(DiffFlags));
+        }
+
+        comptime {
+            std.testing.refAllDecls(@This());
+        }
+    };
+
+    /// Description of one side of a delta.
+    ///
+    /// Although this is called a "file", it could represent a file, a symbolic link, a submodule commit id, or even a tree
+    /// (although that only if you are tracking type changes or ignored/untracked directories).
+    pub const DiffFile = extern struct {
+        /// The `git_oid` of the item.  If the entry represents an absent side of a diff (e.g. the `old_file` of a
+        /// `GIT_DELTA_ADDED` delta), then the oid will be zeroes.
+        id: Oid,
+        /// Path to the entry relative to the working directory of the repository.
+        path: [*:0]const u8,
+        /// The size of the entry in bytes.
+        size: u64,
+        flags: DiffFlags,
+        /// Roughly, the stat() `st_mode` value for the item.
+        mode: FileMode,
+        /// Represents the known length of the `id` field, when converted to a hex string.  It is generally `GIT_OID_HEXSZ`,
+        /// unless this delta was created from reading a patch file, in which case it may be abbreviated to something reasonable,
+        /// like 7 characters.
+        id_abbrev: u16,
+
+        test {
+            try std.testing.expectEqual(@sizeOf(raw.git_diff_file), @sizeOf(DiffFile));
+            try std.testing.expectEqual(@bitSizeOf(raw.git_diff_file), @bitSizeOf(DiffFile));
+        }
+
+        comptime {
+            std.testing.refAllDecls(@This());
+        }
+    };
+
+    test {
+        try std.testing.expectEqual(@sizeOf(raw.git_diff_delta), @sizeOf(DiffDelta));
+        try std.testing.expectEqual(@bitSizeOf(raw.git_diff_delta), @bitSizeOf(DiffDelta));
+    }
 
     comptime {
         std.testing.refAllDecls(@This());
     }
 };
 
-/// Representation of a tree object.
-pub const Tree = struct {
-    tree: *raw.git_tree,
+/// Valid modes for index and tree entries.
+pub const FileMode = enum(u16) {
+    UNREADABLE = 0o000000,
+    TREE = 0o040000,
+    BLOB = 0o100644,
+    BLOB_EXECUTABLE = 0o100755,
+    LINK = 0o120000,
+    COMMIT = 0o160000,
+};
 
+/// Representation of a tree object.
+pub const Tree = opaque {
     /// Close an open tree
     pub fn deinit(self: *Tree) void {
         log.debug("Tree.deinit called", .{});
 
-        raw.git_tree_free(self.tree);
-        self.* = undefined;
+        raw.git_tree_free(self.toC());
 
         log.debug("tree freed successfully", .{});
+    }
+
+    inline fn fromC(self: anytype) *@This() {
+        return @intToPtr(*@This(), @ptrToInt(self));
+    }
+
+    inline fn toC(self: anytype) *raw.git_tree {
+        return @intToPtr(*raw.git_tree, @ptrToInt(self));
     }
 
     comptime {
@@ -1671,24 +1883,21 @@ pub const Identity = struct {
 };
 
 /// Annotated commits, the input to merge and rebase.
-pub const AnnotatedCommit = struct {
-    commit: *raw.git_annotated_commit,
-
+pub const AnnotatedCommit = opaque {
     /// Free the annotated commit
     pub fn deinit(self: *AnnotatedCommit) void {
         log.debug("AnnotatedCommit.deinit called", .{});
 
-        raw.git_annotated_commit_free(self.commit);
-        self.* = undefined;
+        raw.git_annotated_commit_free(self.toC());
 
         log.debug("annotated commit freed successfully", .{});
     }
 
     /// Gets the commit ID that the given `AnnotatedCommit` refers to.
-    pub fn getCommitId(self: AnnotatedCommit) !Oid {
+    pub fn getCommitId(self: *const AnnotatedCommit) !*const Oid {
         log.debug("AnnotatedCommit.getCommitId called", .{});
 
-        const oid = Oid{ .oid = raw.git_annotated_commit_ref(self.commit).? };
+        const oid = Oid.fromC(raw.git_annotated_commit_id(self.toC()).?);
 
         // This check is to prevent formating the oid when we are not going to print anything
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
@@ -1698,6 +1907,18 @@ pub const AnnotatedCommit = struct {
         }
 
         return oid;
+    }
+
+    inline fn fromC(self: anytype) *@This() {
+        return @intToPtr(*@This(), @ptrToInt(self));
+    }
+
+    inline fn toC(self: anytype) *raw.git_annotated_commit {
+        return @intToPtr(*raw.git_annotated_commit, @ptrToInt(self));
+    }
+
+    comptime {
+        std.testing.refAllDecls(@This());
     }
 };
 
@@ -1722,8 +1943,8 @@ pub const ObjectType = enum(c_int) {
 };
 
 /// Unique identity of any object (commit, tree, blob, tag).
-pub const Oid = struct {
-    oid: *const raw.git_oid,
+pub const Oid = extern struct {
+    id: [20]u8,
 
     /// Size (in bytes) of a hex formatted oid
     pub const HEX_BUFFER_SIZE = raw.GIT_OID_HEXSZ;
@@ -1735,7 +1956,7 @@ pub const Oid = struct {
     pub fn formatHex(self: Oid, buf: []u8) ![]const u8 {
         if (buf.len < HEX_BUFFER_SIZE) return error.BufferTooShort;
 
-        try wrapCall("git_oid_fmt", .{ buf.ptr, self.oid });
+        try wrapCall("git_oid_fmt", .{ buf.ptr, self.toC() });
 
         return buf[0..HEX_BUFFER_SIZE];
     }
@@ -1747,10 +1968,23 @@ pub const Oid = struct {
     pub fn formatHexZ(self: Oid, buf: []u8) ![:0]const u8 {
         if (buf.len < (HEX_BUFFER_SIZE + 1)) return error.BufferTooShort;
 
-        try wrapCall("git_oid_fmt", .{ buf.ptr, self.oid });
+        try wrapCall("git_oid_fmt", .{ buf.ptr, self.toC() });
         buf[HEX_BUFFER_SIZE] = 0;
 
         return buf[0..HEX_BUFFER_SIZE :0];
+    }
+
+    inline fn fromC(self: anytype) *@This() {
+        return @intToPtr(*@This(), @ptrToInt(self));
+    }
+
+    inline fn toC(self: anytype) *raw.git_oid {
+        return @intToPtr(*raw.git_oid, @ptrToInt(self));
+    }
+
+    test {
+        try std.testing.expectEqual(@sizeOf(raw.git_oid), @sizeOf(Oid));
+        try std.testing.expectEqual(@bitSizeOf(raw.git_oid), @bitSizeOf(Oid));
     }
 
     comptime {
@@ -1759,17 +1993,22 @@ pub const Oid = struct {
 };
 
 /// Memory representation of an index file.
-pub const Index = struct {
-    index: *raw.git_index,
-
+pub const Index = opaque {
     /// Free an existing index object.
     pub fn deinit(self: *Index) void {
         log.debug("Index.deinit called", .{});
 
-        raw.git_index_free(self.index);
-        self.* = undefined;
+        raw.git_index_free(self.toC());
 
         log.debug("index freed successfully", .{});
+    }
+
+    inline fn fromC(self: anytype) *@This() {
+        return @intToPtr(*@This(), @ptrToInt(self));
+    }
+
+    inline fn toC(self: anytype) *raw.git_index {
+        return @intToPtr(*raw.git_index, @ptrToInt(self));
     }
 
     comptime {
@@ -1778,17 +2017,22 @@ pub const Index = struct {
 };
 
 /// An open refs database handle.
-pub const RefDb = struct {
-    ref_db: *raw.git_refdb,
-
+pub const RefDb = opaque {
     /// Free the configuration and its associated memory and files
     pub fn deinit(self: *RefDb) void {
         log.debug("RefDb.deinit called", .{});
 
-        raw.git_refdb_free(self.ref_db);
-        self.* = undefined;
+        raw.git_refdb_free(self.toC());
 
         log.debug("refdb freed successfully", .{});
+    }
+
+    inline fn fromC(self: anytype) *@This() {
+        return @intToPtr(*@This(), @ptrToInt(self));
+    }
+
+    inline fn toC(self: anytype) *raw.git_refdb {
+        return @intToPtr(*raw.git_refdb, @ptrToInt(self));
     }
 
     comptime {
@@ -1797,17 +2041,22 @@ pub const RefDb = struct {
 };
 
 /// Memory representation of a set of config files
-pub const Config = struct {
-    config: *raw.git_config,
-
+pub const Config = opaque {
     /// Free the configuration and its associated memory and files
     pub fn deinit(self: *Config) void {
         log.debug("Config.deinit called", .{});
 
-        raw.git_config_free(self.config);
-        self.* = undefined;
+        raw.git_config_free(self.toC());
 
         log.debug("config freed successfully", .{});
+    }
+
+    inline fn fromC(self: anytype) *@This() {
+        return @intToPtr(*@This(), @ptrToInt(self));
+    }
+
+    inline fn toC(self: anytype) *raw.git_config {
+        return @intToPtr(*raw.git_config, @ptrToInt(self));
     }
 
     comptime {
@@ -1816,15 +2065,12 @@ pub const Config = struct {
 };
 
 /// Representation of a working tree
-pub const Worktree = struct {
-    worktree: *raw.git_worktree,
-
+pub const Worktree = opaque {
     /// Free a previously allocated worktree
     pub fn deinit(self: *Worktree) void {
         log.debug("Worktree.deinit called", .{});
 
-        raw.git_worktree_free(self.worktree);
-        self.* = undefined;
+        raw.git_worktree_free(self.toC());
 
         log.debug("worktree freed successfully", .{});
     }
@@ -1832,16 +2078,24 @@ pub const Worktree = struct {
     /// Open working tree as a repository
     ///
     /// Open the working directory of the working tree as a normal repository that can then be worked on.
-    pub fn repositoryOpen(self: Worktree) !Repository {
+    pub fn repositoryOpen(self: *Worktree) !*Repository {
         log.debug("Worktree.repositoryOpen called", .{});
 
         var repo: ?*raw.git_repository = undefined;
 
-        try wrapCall("git_repository_open_from_worktree", .{ &repo, self.worktree });
+        try wrapCall("git_repository_open_from_worktree", .{ &repo, self.toC() });
 
         log.debug("repository opened successfully", .{});
 
-        return Repository{ .repo = repo.? };
+        return Repository.fromC(repo.?);
+    }
+
+    inline fn fromC(self: anytype) *@This() {
+        return @intToPtr(*@This(), @ptrToInt(self));
+    }
+
+    inline fn toC(self: anytype) *raw.git_worktree {
+        return @intToPtr(*raw.git_worktree, @ptrToInt(self));
     }
 
     comptime {
@@ -1850,15 +2104,12 @@ pub const Worktree = struct {
 };
 
 /// An open object database handle.
-pub const Odb = struct {
-    odb: *raw.git_odb,
-
+pub const Odb = opaque {
     /// Close an open object database.
     pub fn deinit(self: *Odb) void {
         log.debug("Odb.deinit called", .{});
 
-        raw.git_odb_free(self.odb);
-        self.* = undefined;
+        raw.git_odb_free(self.toC());
 
         log.debug("Odb freed successfully", .{});
     }
@@ -1867,16 +2118,24 @@ pub const Odb = struct {
     ///
     /// Create a repository object to wrap an object database to be used with the API when all you have is an object database. 
     /// This doesn't have any paths associated with it, so use with care.
-    pub fn repositoryOpen(self: Odb) !Repository {
+    pub fn repositoryOpen(self: *Odb) !*Repository {
         log.debug("Odb.repositoryOpen called", .{});
 
         var repo: ?*raw.git_repository = undefined;
 
-        try wrapCall("git_repository_wrap_odb", .{ &repo, self.odb });
+        try wrapCall("git_repository_wrap_odb", .{ &repo, self.toC() });
 
         log.debug("repository opened successfully", .{});
 
-        return Repository{ .repo = repo.? };
+        return Repository.fromC(repo.?);
+    }
+
+    inline fn fromC(self: anytype) *@This() {
+        return @intToPtr(*@This(), @ptrToInt(self));
+    }
+
+    inline fn toC(self: anytype) *raw.git_odb {
+        return @intToPtr(*raw.git_odb, @ptrToInt(self));
     }
 
     comptime {
@@ -1885,25 +2144,36 @@ pub const Odb = struct {
 };
 
 /// A data buffer for exporting data from libgit2
-pub const Buf = struct {
-    buf: raw.git_buf,
+pub const Buf = extern struct {
+    ptr: ?[*]u8 = null,
+    asize: usize = 0,
+    size: usize = 0,
 
-    fn zero() Buf {
-        return .{ .buf = std.mem.zeroInit(raw.git_buf, .{}) };
-    }
-
-    pub fn slice(self: Buf) [:0]const u8 {
-        return self.buf.ptr[0..self.buf.size :0];
+    pub fn slice(self: Buf) []const u8 {
+        if (self.size == 0) return &[_]u8{};
+        return self.ptr.?[0..self.size];
     }
 
     /// Free the memory referred to by the Buf.
     pub fn deinit(self: *Buf) void {
         log.debug("Buf.deinit called", .{});
 
-        raw.git_buf_dispose(&self.buf);
-        self.* = undefined;
+        raw.git_buf_dispose(self.toC());
 
         log.debug("Buf freed successfully", .{});
+    }
+
+    inline fn fromC(self: anytype) *@This() {
+        return @intToPtr(*@This(), @ptrToInt(self));
+    }
+
+    inline fn toC(self: anytype) *raw.git_buf {
+        return @intToPtr(*raw.git_buf, @ptrToInt(self));
+    }
+
+    test {
+        try std.testing.expectEqual(@sizeOf(raw.git_buf), @sizeOf(Buf));
+        try std.testing.expectEqual(@bitSizeOf(raw.git_buf), @bitSizeOf(Buf));
     }
 
     comptime {
@@ -1973,8 +2243,9 @@ pub const GitError = error{
     ApplyFail,
 };
 
-pub const DetailedError = struct {
-    e: *const raw.git_error,
+pub const DetailedError = extern struct {
+    raw_message: [*:0]const u8,
+    class: ErrorClass,
 
     pub const ErrorClass = enum(c_int) {
         NONE = 0,
@@ -2016,11 +2287,20 @@ pub const DetailedError = struct {
     };
 
     pub fn message(self: DetailedError) [:0]const u8 {
-        return std.mem.sliceTo(self.e.message, 0);
+        return std.mem.sliceTo(self.raw_message, 0);
     }
 
-    pub fn errorClass(self: DetailedError) ErrorClass {
-        return @intToEnum(ErrorClass, self.e.klass);
+    inline fn fromC(self: anytype) *@This() {
+        return @intToPtr(*@This(), @ptrToInt(self));
+    }
+
+    inline fn toC(self: anytype) *raw.git_error {
+        return @intToPtr(*raw.git_error, @ptrToInt(self));
+    }
+
+    test {
+        try std.testing.expectEqual(@sizeOf(raw.git_error), @sizeOf(DetailedError));
+        try std.testing.expectEqual(@bitSizeOf(raw.git_error), @bitSizeOf(DetailedError));
     }
 
     comptime {
@@ -2037,7 +2317,7 @@ inline fn wrapCall(comptime name: []const u8, args: anytype) GitError!void {
             if (getDetailedLastError()) |detailed| {
                 log.warn(name ++ " failed with error {s}/{s} - {s}", .{
                     @errorName(err),
-                    @tagName(detailed.errorClass()),
+                    @tagName(detailed.class),
                     detailed.message(),
                 });
             } else {
@@ -2062,7 +2342,7 @@ inline fn wrapCallWithReturn(
             if (getDetailedLastError()) |detailed| {
                 log.warn(name ++ " failed with error {s}/{s} - {s}", .{
                     @errorName(err),
-                    @tagName(detailed.errorClass()),
+                    @tagName(detailed.class),
                     detailed.message(),
                 });
             } else {

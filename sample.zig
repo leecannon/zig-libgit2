@@ -9,7 +9,7 @@ pub fn main() !void {
     const handle = try git.init();
     defer handle.deinit();
 
-    var repo = try handle.repositoryInitExtended(repo_path, .{ .flags = .{ .mkdir = true, .mkpath = true } });
+    const repo = try handle.repositoryInitExtended(repo_path, .{ .flags = .{ .mkdir = true, .mkpath = true } });
     defer repo.deinit();
 
     var git_buf = try handle.repositoryDiscover(repo_path, false, null);
