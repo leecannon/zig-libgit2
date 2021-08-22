@@ -270,6 +270,17 @@ test "fresh repo status list" {
     try std.testing.expectEqual(@as(usize, 0), status_list.getEntryCount());
 }
 
+test "bare index" {
+    var handle = try git.init();
+    defer handle.deinit();
+
+    const path = "./zig-cache/test_repos/bare_index";
+    defer std.fs.cwd().deleteTree(path) catch {};
+
+    const index = try handle.indexOpen(path);
+    defer index.deinit();
+}
+
 const TestHandle = struct {
     handle: git.Handle,
     repo_path: [:0]const u8,

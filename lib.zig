@@ -45,6 +45,22 @@ pub const Handle = struct {
         }
     }
 
+    /// Create a new bare Git index object as a memory representation of the Git index file in `path`, without a repository to
+    /// back it.
+    pub fn indexOpen(self: Handle, path: [:0]const u8) !*Index {
+        _ = self;
+
+        log.debug("Handle.indexOpen called, path={s}", .{path});
+
+        var index: ?*raw.git_index = undefined;
+
+        try wrapCall("git_index_open", .{ &index, path.ptr });
+
+        log.debug("index opened successfully", .{});
+
+        return Index.fromC(index.?);
+    }
+
     /// Create a new repository in the given directory.
     ///
     /// ## Parameters
