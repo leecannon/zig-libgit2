@@ -1901,6 +1901,26 @@ pub const Index = opaque {
         log.debug("index freed successfully", .{});
     }
 
+    pub fn getVersion(self: *const Index) !IndexVersion {
+        log.debug("Index.getVersion called", .{});
+
+        const raw_value = raw.git_index_version(self.toC());
+
+        if (std.meta.intToEnum(IndexVersion, raw_value)) |version| {
+            log.debug("successfully fetched index version={s}", .{@tagName(version)});
+            return version;
+        } else |_| {
+            log.warn("failed to fetch valid index version, recieved={}", .{raw_value});
+            return error.InvalidVersion;
+        }
+    }
+
+    pub const IndexVersion = enum(c_uint) {
+        @"2" = 2,
+        @"3" = 3,
+        @"4" = 4,
+    };
+
     pub fn getRepository(self: *const Index) ?*Repository {
         log.debug("Index.getRepository called", .{});
 
