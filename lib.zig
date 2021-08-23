@@ -1996,6 +1996,14 @@ pub const Index = opaque {
         return ret;
     }
 
+    pub fn setToTree(self: *Index, tree: *const Tree) !void {
+        log.debug("Index.setToTree called, tree={*}", .{tree});
+
+        try wrapCall("git_index_read_tree", .{ self.toC(), tree.toC() });
+
+        log.debug("successfully set index to tree", .{});
+    }
+
     pub fn getIndexCapabilities(self: *const Index) IndexCapabilities {
         log.debug("Index.getIndexCapabilities called", .{});
 
