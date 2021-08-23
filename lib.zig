@@ -2128,6 +2128,18 @@ pub const Index = opaque {
         log.debug("successfully added to index", .{});
     }
 
+    pub fn iterate(self: *const Index) !*IndexIterator {
+        log.debug("Index.iterate called", .{});
+
+        var iterator: ?*raw.git_index_iterator = undefined;
+
+        try wrapCall("git_index_iterator_new", .{ &iterator, self.toC() });
+
+        log.debug("index iterator created successfully", .{});
+
+        return IndexIterator.fromC(iterator.?);
+    }
+
     pub const IndexCapabilities = packed struct {
         IGNORE_CASE: bool = false,
         NO_FILEMODE: bool = false,
@@ -2227,6 +2239,48 @@ pub const Index = opaque {
         test {
             try std.testing.expectEqual(@sizeOf(raw.git_index_entry), @sizeOf(IndexEntry));
             try std.testing.expectEqual(@bitSizeOf(raw.git_index_entry), @bitSizeOf(IndexEntry));
+        }
+
+        comptime {
+            std.testing.refAllDecls(@This());
+        }
+    };
+
+    pub const IndexIterator = opaque {
+        pub fn next(self: *IndexIterator) !?*const IndexEntry {
+            log.debug("IndexIterator.next called", .{});
+
+            var index_entry: [*c]const raw.git_index_entry = undefined;
+
+            wrapCall("git_index_iterator_next", .{ &index_entry, self.toC() }) catch |err| switch (err) {
+                GitError.IterOver => {
+                    log.debug("end of iteration reached", .{});
+                    return null;
+                },
+                else => return err,
+            };
+
+            const ret = IndexEntry.fromC(index_entry);
+
+            log.debug("successfully fetched index entry: {}", .{ret});
+
+            return ret;
+        }
+
+        pub fn deinit(self: *IndexIterator) void {
+            log.debug("IndexIterator.deinit called", .{});
+
+            raw.git_index_iterator_free(self.toC());
+
+            log.debug("index iterator freed successfully", .{});
+        }
+
+        inline fn fromC(self: anytype) *@This() {
+            return @intToPtr(*@This(), @ptrToInt(self));
+        }
+
+        inline fn toC(self: anytype) *raw.git_index_iterator {
+            return @intToPtr(*raw.git_index_iterator, @ptrToInt(self));
         }
 
         comptime {

@@ -86,6 +86,24 @@ test "fresh repo read index" {
     try index.readIndexFromDisk(false);
 }
 
+test "fresh repo iterate index" {
+    var test_handle = try TestHandle.init("fresh_repo_iterate_index");
+    defer test_handle.deinit();
+
+    const index = try test_handle.repo.getIndex();
+    defer index.deinit();
+
+    var iter = try index.iterate();
+    defer iter.deinit();
+
+    var count: usize = 0;
+    while (try iter.next()) |_| {
+        count += 1;
+    }
+
+    try std.testing.expectEqual(@as(usize, 0), count);
+}
+
 test "fresh repo index entry by index is null" {
     var test_handle = try TestHandle.init("fresh_repo_read_index_by_index");
     defer test_handle.deinit();
