@@ -2283,6 +2283,135 @@ pub const Index = opaque {
         }
     }
 
+    /// Add or update index entries matching files in the working directory.
+    ///
+    /// The `pathspec` is a list of file names or shell glob patterns that will be matched against files in the repository's
+    /// working directory. Each file that matches will be added to the index (either updating an existing entry or adding a new
+    /// entry).  You can disable glob expansion and force exact matching with the `AddFlags.DISABLE_PATHSPEC_MATCH` flag.
+    /// Invoke `callback_fn` for each entry in the given FETCH_HEAD file.
+    ///
+    /// Files that are ignored will be skipped (unlike `Index.AddByPath`). If a file is already tracked in the index, then it
+    /// *will* be updated even if it is ignored. Pass the `AddFlags.FORCE` flag to skip the checking of ignore rules.
+    ///
+    /// If you provide a callback function, it will be invoked on each matching item in the working directory immediately *before*
+    /// it is added to/updated in the index.  Returning zero will add the item to the index, greater than zero will skip the item,
+    /// and less than zero will abort the scan and return that value to the caller.
+    ///
+    /// ## Parameters
+    /// * `pathspec` - array of path patterns
+    /// * `flags` - flags controlling how the add is performed
+    /// * `callback_fn` - the callback function; return 0 to add, < 0 to abort, > 0 to skip.
+    ///
+    /// ## Callback Parameters
+    /// * `path` - The reference name
+    /// * `matched_pathspec` - The remote URL
+    pub fn addAll(
+        self: *Index,
+        pathspec: *const StrArray,
+        flags: AddFlags,
+        comptime callback_fn: ?fn (
+            path: [:0]const u8,
+            matched_pathspec: [:0]const u8,
+        ) c_int,
+    ) !c_int {
+        if (callback_fn) |callback| {
+            const cb = struct {
+                pub fn cb(
+                    path: [:0]const u8,
+                    matched_pathspec: [:0]const u8,
+                    _: *u8,
+                ) c_int {
+                    return callback(path, matched_pathspec);
+                }
+            }.cb;
+
+            var dummy_data: u8 = undefined;
+            return self.addAllWithUserData(pathspec, flags, &dummy_data, cb);
+        } else {
+            return self.addAllWithUserData(pathspec, flags, null, null);
+        }
+    }
+
+    /// Add or update index entries matching files in the working directory.
+    ///
+    /// The `pathspec` is a list of file names or shell glob patterns that will be matched against files in the repository's
+    /// working directory. Each file that matches will be added to the index (either updating an existing entry or adding a new
+    /// entry).  You can disable glob expansion and force exact matching with the `AddFlags.DISABLE_PATHSPEC_MATCH` flag.
+    /// Invoke `callback_fn` for each entry in the given FETCH_HEAD file.
+    ///
+    /// Files that are ignored will be skipped (unlike `Index.AddByPath`). If a file is already tracked in the index, then it
+    /// *will* be updated even if it is ignored. Pass the `AddFlags.FORCE` flag to skip the checking of ignore rules.
+    ///
+    /// If you provide a callback function, it will be invoked on each matching item in the working directory immediately *before*
+    /// it is added to/updated in the index.  Returning zero will add the item to the index, greater than zero will skip the item,
+    /// and less than zero will abort the scan and return that value to the caller.
+    ///
+    /// ## Parameters
+    /// * `pathspec` - array of path patterns
+    /// * `flags` - flags controlling how the add is performed
+    /// * `user_data` - pointer to user data to be passed to the callback
+    /// * `callback_fn` - the callback function; return 0 to add, < 0 to abort, > 0 to skip.
+    ///
+    /// ## Callback Parameters
+    /// * `path` - The reference name
+    /// * `matched_pathspec` - The remote URL
+    /// * `user_data_ptr` - The user data
+    pub fn addAllWithUserData(
+        self: *Index,
+        pathspec: *const StrArray,
+        flags: AddFlags,
+        user_data: anytype,
+        comptime callback_fn: ?fn (
+            path: [:0]const u8,
+            matched_pathspec: [:0]const u8,
+            user_data_ptr: @TypeOf(user_data),
+        ) void,
+    ) !c_int {
+        if (callback_fn) |callback| {
+            const UserDataType = @TypeOf(user_data);
+
+            const cb = struct {
+                pub fn cb(
+                    path: [*c]const u8,
+                    matched_pathspec: [*c]const u8,
+                    payload: ?*c_void,
+                ) callconv(.C) c_int {
+                    return callback(
+                        std.mem.sliceTo(path, 0),
+                        std.mem.sliceTo(matched_pathspec, 0),
+                        @ptrCast(UserDataType, payload),
+                    );
+                }
+            }.cb;
+
+            log.debug("Index.addAllWithUserData called", .{});
+
+            const ret = try wrapCallWithReturn("git_index_add_all", .{
+                self.toC(),
+                pathspec.toC(),
+                @bitCast(c_int, flags),
+                cb,
+                user_data,
+            });
+
+            log.debug("callback returned: {}", .{ret});
+
+            return ret;
+        } else {
+            log.debug("Index.addAllWithUserData called", .{});
+
+            try wrapCall("git_index_add_all", .{
+                self.toC(),
+                pathspec.toC(),
+                @bitCast(c_int, flags),
+                null,
+                null,
+            });
+
+            return 0;
+        }
+    }
+
     pub const AddFlags = packed struct {
         FORCE: bool = false,
         DISABLE_PATHSPEC_MATCH: bool = false,
