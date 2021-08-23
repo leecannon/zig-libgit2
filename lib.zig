@@ -2152,6 +2152,14 @@ pub const Index = opaque {
         log.debug("successfully added to index", .{});
     }
 
+    pub fn removeByPath(self: *Index, path: [:0]const u8) !void {
+        log.debug("Index.removeByPath called, path={s}", .{path});
+
+        try wrapCall("git_index_remove_bypath", .{ self.toC(), path.ptr });
+
+        log.debug("successfully remove from index", .{});
+    }
+
     pub fn iterate(self: *const Index) !*IndexIterator {
         log.debug("Index.iterate called", .{});
 
