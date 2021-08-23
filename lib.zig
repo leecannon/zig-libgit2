@@ -2004,6 +2004,18 @@ pub const Index = opaque {
         log.debug("successfully set index to tree", .{});
     }
 
+    pub fn writeToTreeOnDisk(self: *const Index) !Oid {
+        log.debug("Index.writeToTreeOnDisk called", .{});
+
+        var oid: Oid = undefined;
+
+        try wrapCall("git_index_write_tree", .{ Oid.toC(&oid), self.toC() });
+
+        log.debug("successfully wrote index tree to disk", .{});
+
+        return oid;
+    }
+
     pub fn getIndexCapabilities(self: *const Index) IndexCapabilities {
         log.debug("Index.getIndexCapabilities called", .{});
 
