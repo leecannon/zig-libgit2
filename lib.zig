@@ -2087,6 +2087,23 @@ pub const Index = opaque {
         }
     }
 
+    pub fn getEntryByPath(self: *const Index, path: [:0]const u8, stage: c_int) ?*const IndexEntry {
+        log.debug("Index.getEntryByPath called, path={s}, stage={}", .{ path, stage });
+
+        const ret_opt = raw.git_index_get_bypath(self.toC(), path.ptr, stage);
+
+        if (ret_opt) |ret| {
+            const result = IndexEntry.fromC(ret);
+
+            log.debug("successfully fetched index entry: {}", .{result});
+
+            return result;
+        } else {
+            log.debug("path not found", .{});
+            return null;
+        }
+    }
+
     pub const IndexCapabilities = packed struct {
         IGNORE_CASE: bool = false,
         NO_FILEMODE: bool = false,
