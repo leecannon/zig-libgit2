@@ -67,13 +67,25 @@ test "fresh repo index version is 2" {
 }
 
 test "fresh repo read index" {
-    var test_handle = try TestHandle.init("fresh_repo_rean_index");
+    var test_handle = try TestHandle.init("fresh_repo_read_index");
     defer test_handle.deinit();
 
     const index = try test_handle.repo.getIndex();
     defer index.deinit();
 
     try index.readIndexFromDisk(false);
+}
+
+test "fresh repo read then write index" {
+    var test_handle = try TestHandle.init("fresh_repo_read_write_index");
+    defer test_handle.deinit();
+
+    const index = try test_handle.repo.getIndex();
+    defer index.deinit();
+
+    try index.readIndexFromDisk(false);
+
+    try index.writeToDisk();
 }
 
 test "change fresh repo index version" {

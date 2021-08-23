@@ -1940,6 +1940,14 @@ pub const Index = opaque {
         log.debug("successfully read index data from disk", .{});
     }
 
+    pub fn writeToDisk(self: *Index) !void {
+        log.debug("Index.writeToDisk called", .{});
+
+        try wrapCall("git_index_write", .{self.toC()});
+
+        log.debug("successfully wrote index data to disk", .{});
+    }
+
     pub fn getRepository(self: *const Index) ?*Repository {
         log.debug("Index.getRepository called", .{});
 
