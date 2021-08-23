@@ -2147,7 +2147,11 @@ pub const Index = opaque {
             buffer.len,
         });
 
-        try wrapCall("git_index_add_from_buffer", .{ self.toC(), index_entry.toC(), buffer.ptr, buffer.len });
+        if (old_version) {
+            try wrapCall("git_index_add_frombuffer", .{ self.toC(), index_entry.toC(), buffer.ptr, buffer.len });
+        } else {
+            try wrapCall("git_index_add_from_buffer", .{ self.toC(), index_entry.toC(), buffer.ptr, buffer.len });
+        }
 
         log.debug("successfully added to index", .{});
     }
