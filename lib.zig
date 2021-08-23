@@ -1975,6 +1975,27 @@ pub const Index = opaque {
         return null;
     }
 
+    /// Get the checksum of the index
+    ///
+    /// This checksum is the SHA-1 hash over the index file (except the last 20 bytes which are the checksum itself). In cases
+    /// where the index does not exist on-disk, it will be zeroed out.
+    pub fn getChecksum(self: *const Index) !*const Oid {
+        log.debug("Index.getChecksum called", .{});
+
+        const oid = raw.git_index_checksum(self.toC());
+
+        const ret = Oid.fromC(oid.?);
+
+        // This check is to prevent formating the oid when we are not going to print anything
+        if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
+            var buf: [Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            const slice = try ret.formatHex(&buf);
+            log.debug("index checksum acquired successfully, checksum={s}", .{slice});
+        }
+
+        return ret;
+    }
+
     pub fn getIndexCapabilities(self: *const Index) IndexCapabilities {
         log.debug("Index.getIndexCapabilities called", .{});
 
