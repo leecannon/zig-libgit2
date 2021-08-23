@@ -2026,6 +2026,17 @@ pub const Index = opaque {
         return ret;
     }
 
+    /// Clear the contents of this index.
+    ///
+    /// This clears the index in memory; changes must be written to disk for them to be persistent.
+    pub fn clear(self: *Index) !void {
+        log.debug("Index.clear called", .{});
+
+        try wrapCall("git_index_clear", .{self.toC()});
+
+        log.debug("successfully cleared index", .{});
+    }
+
     pub fn writeToTreeInRepository(self: *const Index, repository: *Repository) !Oid {
         log.debug("Index.writeToTreeInRepository called, repository={*}", .{repository});
 

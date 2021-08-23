@@ -108,6 +108,16 @@ test "fresh repo read then write index" {
     try index.writeToDisk();
 }
 
+test "fresh repo index clear" {
+    var test_handle = try TestHandle.init("fresh_repo_read_write_index");
+    defer test_handle.deinit();
+
+    const index = try test_handle.repo.getIndex();
+    defer index.deinit();
+
+    try index.clear();
+}
+
 test "change fresh repo index version" {
     var test_handle = try TestHandle.init("change_fresh_repo_index_version");
     defer test_handle.deinit();
