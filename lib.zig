@@ -2519,6 +2519,18 @@ pub const Index = opaque {
         }
     }
 
+    pub fn find(self: *const Index, path: [:0]const u8) !usize {
+        log.debug("Index.find called, path={s}", .{path});
+
+        var position: usize = 0;
+
+        try wrapCall("git_index_find", .{ &position, self.toC(), path.ptr });
+
+        log.debug("successfully fetched position={}", .{position});
+
+        return position;
+    }
+
     pub const AddFlags = packed struct {
         FORCE: bool = false,
         DISABLE_PATHSPEC_MATCH: bool = false,
