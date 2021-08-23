@@ -2016,6 +2016,18 @@ pub const Index = opaque {
         return oid;
     }
 
+    pub fn writeToTreeInRepository(self: *const Index, repository: *Repository) !Oid {
+        log.debug("Index.writeToTreeInRepository called, repository={*}", .{repository});
+
+        var oid: Oid = undefined;
+
+        try wrapCall("git_index_write_tree_to", .{ Oid.toC(&oid), self.toC(), repository.toC() });
+
+        log.debug("successfully wrote index tree to repository", .{});
+
+        return oid;
+    }
+
     pub fn getIndexCapabilities(self: *const Index) IndexCapabilities {
         log.debug("Index.getIndexCapabilities called", .{});
 
