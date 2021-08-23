@@ -2016,6 +2016,16 @@ pub const Index = opaque {
         return oid;
     }
 
+    pub fn getEntryCount(self: *const Index) usize {
+        log.debug("Index.getEntryCount called", .{});
+
+        const ret = raw.git_index_entrycount(self.toC());
+
+        log.debug("index entry count: {}", .{ret});
+
+        return ret;
+    }
+
     pub fn writeToTreeInRepository(self: *const Index, repository: *Repository) !Oid {
         log.debug("Index.writeToTreeInRepository called, repository={*}", .{repository});
 
