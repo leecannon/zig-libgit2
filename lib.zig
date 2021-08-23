@@ -1,5 +1,6 @@
 const std = @import("std");
 const raw = @import("raw.zig");
+const bitjuggle = @import("bitjuggle.zig");
 
 const log = std.log.scoped(.git);
 const old_version: bool = @import("build_options").old_version;
@@ -1511,7 +1512,7 @@ pub const StatusList = opaque {
 
             return result;
         } else {
-            log.warn("index out of bounds", .{});
+            log.debug("index out of bounds", .{});
             return null;
         }
     }
@@ -2069,6 +2070,23 @@ pub const Index = opaque {
         log.debug("successfully set index capabilities", .{});
     }
 
+    pub fn getEntryByIndex(self: *const Index, index: usize) ?*const IndexEntry {
+        log.debug("Index.getEntryByIndex called, index={}", .{index});
+
+        const ret_opt = raw.git_index_get_byindex(self.toC(), index);
+
+        if (ret_opt) |ret| {
+            const result = IndexEntry.fromC(ret);
+
+            log.debug("successfully fetched index entry: {}", .{result});
+
+            return result;
+        } else {
+            log.debug("index out of bounds", .{});
+            return null;
+        }
+    }
+
     pub const IndexCapabilities = packed struct {
         IGNORE_CASE: bool = false,
         NO_FILEMODE: bool = false,
@@ -2097,6 +2115,69 @@ pub const Index = opaque {
         test {
             try std.testing.expectEqual(@sizeOf(c_int), @sizeOf(IndexCapabilities));
             try std.testing.expectEqual(@bitSizeOf(c_int), @bitSizeOf(IndexCapabilities));
+        }
+
+        comptime {
+            std.testing.refAllDecls(@This());
+        }
+    };
+
+    pub const IndexEntry = extern struct {
+        ctime: IndexTime,
+        mtime: IndexTime,
+        dev: u32,
+        ino: u32,
+        mode: u32,
+        uid: u32,
+        gid: u32,
+        file_size: u32,
+        id: Oid,
+        flags: Flags,
+        flags_extended: ExtendedFlags,
+        raw_path: [*:0]const u8,
+
+        pub fn path(self: IndexEntry) [:0]const u8 {
+            return std.mem.sliceTo(self.raw_path, 0);
+        }
+
+        pub const IndexTime = extern struct {
+            seconds: i32,
+            nanoseconds: u32,
+
+            test {
+                try std.testing.expectEqual(@sizeOf(raw.git_index_time), @sizeOf(IndexTime));
+                try std.testing.expectEqual(@bitSizeOf(raw.git_index_time), @bitSizeOf(IndexTime));
+            }
+
+            comptime {
+                std.testing.refAllDecls(@This());
+            }
+        };
+
+        pub const Flags = extern union {
+            name: bitjuggle.Bitfield(u16, 0, 12),
+            stage: bitjuggle.Bitfield(u16, 12, 2),
+            extended: bitjuggle.Bit(u16, 14),
+            valid: bitjuggle.Bit(u16, 15),
+        };
+
+        pub const ExtendedFlags = extern union {
+            intent_to_add: bitjuggle.Bit(u16, 13),
+            skip_worktree: bitjuggle.Bit(u16, 14),
+            uptodate: bitjuggle.Bit(u16, 2),
+        };
+
+        inline fn fromC(self: anytype) *@This() {
+            return @intToPtr(*@This(), @ptrToInt(self));
+        }
+
+        inline fn toC(self: anytype) *raw.git_index_entry {
+            return @intToPtr(*raw.git_index_entry, @ptrToInt(self));
+        }
+
+        test {
+            try std.testing.expectEqual(@sizeOf(raw.git_index_entry), @sizeOf(IndexEntry));
+            try std.testing.expectEqual(@bitSizeOf(raw.git_index_entry), @bitSizeOf(IndexEntry));
         }
 
         comptime {

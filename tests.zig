@@ -86,6 +86,16 @@ test "fresh repo read index" {
     try index.readIndexFromDisk(false);
 }
 
+test "fresh repo index entry by index is null" {
+    var test_handle = try TestHandle.init("fresh_repo_read_index_by_index");
+    defer test_handle.deinit();
+
+    const index = try test_handle.repo.getIndex();
+    defer index.deinit();
+
+    try std.testing.expect(index.getEntryByIndex(0) == null);
+}
+
 test "fresh repo index path is not null" {
     var test_handle = try TestHandle.init("fresh_repo_read_index");
     defer test_handle.deinit();
