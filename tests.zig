@@ -66,6 +66,16 @@ test "fresh repo index version is 2" {
     try std.testing.expectEqual(git.Index.IndexVersion.@"2", try index.getVersion());
 }
 
+test "fresh repo read index" {
+    var test_handle = try TestHandle.init("fresh_repo_rean_index");
+    defer test_handle.deinit();
+
+    const index = try test_handle.repo.getIndex();
+    defer index.deinit();
+
+    try index.readIndexFromDisk(false);
+}
+
 test "change fresh repo index version" {
     var test_handle = try TestHandle.init("change_fresh_repo_index_version");
     defer test_handle.deinit();

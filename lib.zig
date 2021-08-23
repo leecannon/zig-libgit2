@@ -1929,6 +1929,17 @@ pub const Index = opaque {
         @"4" = 4,
     };
 
+    /// Update the contents of this index by reading from the hard disk.
+    ///
+    /// If `force` is true, in-memory changes are discarded.
+    pub fn readIndexFromDisk(self: *Index, force: bool) !void {
+        log.debug("Index.readIndexFromDisk called, force={}", .{force});
+
+        try wrapCall("git_index_read", .{ self.toC(), @boolToInt(force) });
+
+        log.debug("successfully read index data from disk", .{});
+    }
+
     pub fn getRepository(self: *const Index) ?*Repository {
         log.debug("Index.getRepository called", .{});
 
