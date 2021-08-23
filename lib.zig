@@ -2128,11 +2128,26 @@ pub const Index = opaque {
         log.debug("successfully added to index", .{});
     }
 
-    /// The `path` must be relative to the repository's working folder and must be readable.
+    /// The `path` must be relative to the repository's working folder.
+    ///
+    /// This forces the file to be added to the index, not looking at gitignore rules. Those rules can be evaluated using
+    /// `Repository.statusShouldIgnore`.
     pub fn addByPath(self: *Index, path: [:0]const u8) !void {
         log.debug("Index.addByPath called, path={s}", .{path});
 
         try wrapCall("git_index_add_bypath", .{ self.toC(), path.ptr });
+
+        log.debug("successfully added to index", .{});
+    }
+
+    pub fn addFromBuffer(self: *Index, index_entry: *const IndexEntry, buffer: []const u8) !void {
+        log.debug("Index.addFromBuffer called, index_entry={*}, buffer.ptr={*}, buffer.len={}", .{
+            index_entry,
+            buffer.ptr,
+            buffer.len,
+        });
+
+        try wrapCall("git_index_add_from_buffer", .{ self.toC(), index_entry.toC(), buffer.ptr, buffer.len });
 
         log.debug("successfully added to index", .{});
     }
