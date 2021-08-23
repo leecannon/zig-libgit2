@@ -2181,6 +2181,14 @@ pub const Index = opaque {
             return std.mem.sliceTo(self.raw_path, 0);
         }
 
+        pub fn stage(self: IndexEntry) c_int {
+            return @intCast(c_int, self.flags.stage.read());
+        }
+
+        pub fn isConflict(self: IndexEntry) bool {
+            return self.stage() > 0;
+        }
+
         pub const IndexTime = extern struct {
             seconds: i32,
             nanoseconds: u32,
