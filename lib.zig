@@ -2283,6 +2283,113 @@ pub const Index = opaque {
         }
     }
 
+    /// Update all index entries to match the working directory
+    ///
+    /// If you provide a callback function, it will be invoked on each matching item in the working directory immediately *before*
+    /// it is updated.  Returning zero will update the item, greater than zero will skip the item, and less than zero will abort
+    /// the scan and return that value to the caller.
+    ///
+    /// ## Parameters
+    /// * `pathspec` - array of path patterns
+    /// * `callback_fn` - the callback function; return 0 to update, < 0 to abort, > 0 to skip.
+    ///
+    /// ## Callback Parameters
+    /// * `path` - The reference name
+    /// * `matched_pathspec` - The remote URL
+    pub fn updateAll(
+        self: *Index,
+        pathspec: *const StrArray,
+        comptime callback_fn: ?fn (
+            path: [:0]const u8,
+            matched_pathspec: [:0]const u8,
+        ) c_int,
+    ) !c_int {
+        if (callback_fn) |callback| {
+            const cb = struct {
+                pub fn cb(
+                    path: [:0]const u8,
+                    matched_pathspec: [:0]const u8,
+                    _: *u8,
+                ) c_int {
+                    return callback(path, matched_pathspec);
+                }
+            }.cb;
+
+            var dummy_data: u8 = undefined;
+            return self.updateAllWithUserData(pathspec, &dummy_data, cb);
+        } else {
+            return self.updateAllWithUserData(pathspec, null, null);
+        }
+    }
+
+    /// Update all index entries to match the working directory
+    ///
+    /// If you provide a callback function, it will be invoked on each matching item in the working directory immediately *before*
+    /// it is updated.  Returning zero will update the item, greater than zero will skip the item, and less than zero will abort
+    /// the scan and return that value to the caller.
+    ///
+    /// ## Parameters
+    /// * `pathspec` - array of path patterns
+    /// * `user_data` - pointer to user data to be passed to the callback
+    /// * `callback_fn` - the callback function; return 0 to update, < 0 to abort, > 0 to skip.
+    ///
+    /// ## Callback Parameters
+    /// * `path` - The reference name
+    /// * `matched_pathspec` - The remote URL
+    /// * `user_data_ptr` - The user data
+    pub fn updateAllWithUserData(
+        self: *Index,
+        pathspec: *const StrArray,
+        user_data: anytype,
+        comptime callback_fn: ?fn (
+            path: [:0]const u8,
+            matched_pathspec: [:0]const u8,
+            user_data_ptr: @TypeOf(user_data),
+        ) void,
+    ) !c_int {
+        if (callback_fn) |callback| {
+            const UserDataType = @TypeOf(user_data);
+
+            const cb = struct {
+                pub fn cb(
+                    path: [*c]const u8,
+                    matched_pathspec: [*c]const u8,
+                    payload: ?*c_void,
+                ) callconv(.C) c_int {
+                    return callback(
+                        std.mem.sliceTo(path, 0),
+                        std.mem.sliceTo(matched_pathspec, 0),
+                        @ptrCast(UserDataType, payload),
+                    );
+                }
+            }.cb;
+
+            log.debug("Index.updateAllWithUserData called", .{});
+
+            const ret = try wrapCallWithReturn("git_index_update_all", .{
+                self.toC(),
+                pathspec.toC(),
+                cb,
+                user_data,
+            });
+
+            log.debug("callback returned: {}", .{ret});
+
+            return ret;
+        } else {
+            log.debug("Index.updateAllWithUserData called", .{});
+
+            try wrapCall("git_index_update_all", .{
+                self.toC(),
+                pathspec.toC(),
+                null,
+                null,
+            });
+
+            return 0;
+        }
+    }
+
     /// Add or update index entries matching files in the working directory.
     ///
     /// The `pathspec` is a list of file names or shell glob patterns that will be matched against files in the repository's
