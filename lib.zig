@@ -2128,6 +2128,15 @@ pub const Index = opaque {
         log.debug("successfully added to index", .{});
     }
 
+    /// The `path` must be relative to the repository's working folder and must be readable.
+    pub fn addByPath(self: *Index, path: [:0]const u8) !void {
+        log.debug("Index.addByPath called, path={s}", .{path});
+
+        try wrapCall("git_index_add_bypath", .{ self.toC(), path.ptr });
+
+        log.debug("successfully added to index", .{});
+    }
+
     pub fn iterate(self: *const Index) !*IndexIterator {
         log.debug("Index.iterate called", .{});
 
