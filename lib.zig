@@ -1915,6 +1915,14 @@ pub const Index = opaque {
         }
     }
 
+    pub fn setVersion(self: *Index, version: IndexVersion) !void {
+        log.debug("Index.setVersion called, version={s}", .{@tagName(version)});
+
+        try wrapCall("git_index_set_version", .{ self.toC(), @enumToInt(version) });
+
+        log.debug("successfully set index version", .{});
+    }
+
     pub const IndexVersion = enum(c_uint) {
         @"2" = 2,
         @"3" = 3,

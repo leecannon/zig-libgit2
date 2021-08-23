@@ -66,6 +66,18 @@ test "fresh repo index version is 2" {
     try std.testing.expectEqual(git.Index.IndexVersion.@"2", try index.getVersion());
 }
 
+test "change fresh repo index version" {
+    var test_handle = try TestHandle.init("change_fresh_repo_index_version");
+    defer test_handle.deinit();
+
+    const index = try test_handle.repo.getIndex();
+    defer index.deinit();
+    try std.testing.expectEqual(git.Index.IndexVersion.@"2", try index.getVersion());
+
+    try index.setVersion(.@"3");
+    try std.testing.expectEqual(git.Index.IndexVersion.@"3", try index.getVersion());
+}
+
 test "bare repo is bare" {
     const repo_path = "./zig-cache/test_repos/bare_repo_is_bare";
 
