@@ -2172,32 +2172,22 @@ pub const Index = opaque {
         return IndexIterator.fromC(iterator.?);
     }
 
-    /// Add or update index entries matching files in the working directory.
-    ///
-    /// The `pathspec` is a list of file names or shell glob patterns that will be matched against files in the repository's
-    /// working directory. Each file that matches will be added to the index (either updating an existing entry or adding a new
-    /// entry).  You can disable glob expansion and force exact matching with the `AddFlags.DISABLE_PATHSPEC_MATCH` flag.
-    /// Invoke `callback_fn` for each entry in the given FETCH_HEAD file.
-    ///
-    /// Files that are ignored will be skipped (unlike `Index.AddByPath`). If a file is already tracked in the index, then it
-    /// *will* be updated even if it is ignored. Pass the `AddFlags.FORCE` flag to skip the checking of ignore rules.
+    /// Remove all matching index entries.
     ///
     /// If you provide a callback function, it will be invoked on each matching item in the working directory immediately *before*
-    /// it is added to/updated in the index.  Returning zero will add the item to the index, greater than zero will skip the item,
-    /// and less than zero will abort the scan and return that value to the caller.
+    /// it is removed.  Returning zero will remove the item, greater than zero will skip the item, and less than zero will abort
+    /// the scan and return that value to the caller.
     ///
     /// ## Parameters
     /// * `pathspec` - array of path patterns
-    /// * `flags` - flags controlling how the add is performed
-    /// * `callback_fn` - the callback function; return 0 to add, < 0 to abort, > 0 to skip.
+    /// * `callback_fn` - the callback function; return 0 to remove, < 0 to abort, > 0 to skip.
     ///
     /// ## Callback Parameters
     /// * `path` - The reference name
     /// * `matched_pathspec` - The remote URL
-    pub fn addAll(
+    pub fn removeAll(
         self: *Index,
         pathspec: *const StrArray,
-        flags: AddFlags,
         comptime callback_fn: ?fn (
             path: [:0]const u8,
             matched_pathspec: [:0]const u8,
@@ -2215,40 +2205,30 @@ pub const Index = opaque {
             }.cb;
 
             var dummy_data: u8 = undefined;
-            return self.addAllWithUserData(pathspec, flags, &dummy_data, cb);
+            return self.removeAllWithUserData(pathspec, &dummy_data, cb);
         } else {
-            return self.addAllWithUserData(pathspec, flags, null, null);
+            return self.removeAllWithUserData(pathspec, null, null);
         }
     }
 
-    /// Add or update index entries matching files in the working directory.
-    ///
-    /// The `pathspec` is a list of file names or shell glob patterns that will be matched against files in the repository's
-    /// working directory. Each file that matches will be added to the index (either updating an existing entry or adding a new
-    /// entry).  You can disable glob expansion and force exact matching with the `AddFlags.DISABLE_PATHSPEC_MATCH` flag.
-    /// Invoke `callback_fn` for each entry in the given FETCH_HEAD file.
-    ///
-    /// Files that are ignored will be skipped (unlike `Index.AddByPath`). If a file is already tracked in the index, then it
-    /// *will* be updated even if it is ignored. Pass the `AddFlags.FORCE` flag to skip the checking of ignore rules.
+    /// Remove all matching index entries.
     ///
     /// If you provide a callback function, it will be invoked on each matching item in the working directory immediately *before*
-    /// it is added to/updated in the index.  Returning zero will add the item to the index, greater than zero will skip the item,
-    /// and less than zero will abort the scan and return that value to the caller.
+    /// it is removed.  Returning zero will remove the item, greater than zero will skip the item, and less than zero will abort
+    /// the scan and return that value to the caller.
     ///
     /// ## Parameters
     /// * `pathspec` - array of path patterns
-    /// * `flags` - flags controlling how the add is performed
     /// * `user_data` - pointer to user data to be passed to the callback
-    /// * `callback_fn` - the callback function; return 0 to add, < 0 to abort, > 0 to skip.
+    /// * `callback_fn` - the callback function; return 0 to remove, < 0 to abort, > 0 to skip.
     ///
     /// ## Callback Parameters
     /// * `path` - The reference name
     /// * `matched_pathspec` - The remote URL
     /// * `user_data_ptr` - The user data
-    pub fn addAllWithUserData(
+    pub fn removeAllWithUserData(
         self: *Index,
         pathspec: *const StrArray,
-        flags: AddFlags,
         user_data: anytype,
         comptime callback_fn: ?fn (
             path: [:0]const u8,
@@ -2273,12 +2253,11 @@ pub const Index = opaque {
                 }
             }.cb;
 
-            log.debug("Index.addAllWithUserData called", .{});
+            log.debug("Index.removeAllWithUserData called", .{});
 
-            const ret = try wrapCallWithReturn("git_index_add_all", .{
+            const ret = try wrapCallWithReturn("git_index_remove_all", .{
                 self.toC(),
                 pathspec.toC(),
-                @bitCast(c_int, flags),
                 cb,
                 user_data,
             });
@@ -2287,12 +2266,11 @@ pub const Index = opaque {
 
             return ret;
         } else {
-            log.debug("Index.addAllWithUserData called", .{});
+            log.debug("Index.removeAllWithUserData called", .{});
 
-            try wrapCall("git_index_add_all", .{
+            try wrapCall("git_index_remove_all", .{
                 self.toC(),
                 pathspec.toC(),
-                @bitCast(c_int, flags),
                 null,
                 null,
             });
