@@ -2104,10 +2104,18 @@ pub const Index = opaque {
         }
     }
 
-    pub fn removeFromIndex(self: *Index, path: [:0]const u8, stage: c_int) !void {
-        log.debug("Index.removeFromIndex called, path={s}, stage={}", .{ path, stage });
+    pub fn remove(self: *Index, path: [:0]const u8, stage: c_int) !void {
+        log.debug("Index.remove called, path={s}, stage={}", .{ path, stage });
 
         try wrapCall("git_index_remove", .{ self.toC(), path.ptr, stage });
+
+        log.debug("successfully removed from index", .{});
+    }
+
+    pub fn removeDirectory(self: *Index, path: [:0]const u8, stage: c_int) !void {
+        log.debug("Index.removeDirectory called, path={s}, stage={}", .{ path, stage });
+
+        try wrapCall("git_index_remove_directory", .{ self.toC(), path.ptr, stage });
 
         log.debug("successfully removed from index", .{});
     }
