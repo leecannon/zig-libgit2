@@ -2120,6 +2120,14 @@ pub const Index = opaque {
         log.debug("successfully removed from index", .{});
     }
 
+    pub fn add(self: *Index, entry: *const IndexEntry) !void {
+        log.debug("Index.add called, entry={*}", .{entry});
+
+        try wrapCall("git_index_add", .{ self.toC(), entry.toC() });
+
+        log.debug("successfully added to index", .{});
+    }
+
     pub const IndexCapabilities = packed struct {
         IGNORE_CASE: bool = false,
         NO_FILEMODE: bool = false,
