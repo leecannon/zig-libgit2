@@ -2104,6 +2104,14 @@ pub const Index = opaque {
         }
     }
 
+    pub fn removeFromIndex(self: *Index, path: [:0]const u8, stage: c_int) !void {
+        log.debug("Index.removeFromIndex called, path={s}, stage={}", .{ path, stage });
+
+        try wrapCall("git_index_remove", .{ self.toC(), path.ptr, stage });
+
+        log.debug("successfully removed from index", .{});
+    }
+
     pub const IndexCapabilities = packed struct {
         IGNORE_CASE: bool = false,
         NO_FILEMODE: bool = false,
