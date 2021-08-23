@@ -1948,6 +1948,19 @@ pub const Index = opaque {
         log.debug("successfully wrote index data to disk", .{});
     }
 
+    pub fn getPath(self: *const Index) ?[:0]const u8 {
+        log.debug("Index.getPath called", .{});
+
+        if (raw.git_index_path(self.toC())) |ptr| {
+            const slice = std.mem.sliceTo(ptr, 0);
+            log.debug("successfully fetched index path={s}", .{slice});
+            return slice;
+        }
+
+        log.debug("in-memory index has no path", .{});
+        return null;
+    }
+
     pub fn getRepository(self: *const Index) ?*Repository {
         log.debug("Index.getRepository called", .{});
 
