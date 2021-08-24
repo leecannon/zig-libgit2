@@ -621,7 +621,12 @@ pub const Repository = opaque {
     /// * `object_type` - The object type to hash as (e.g. `ObjectType.BLOB`)
     /// * `as_path` - The path to use to look up filtering rules. If this is `null`, then the `path` parameter will be used
     ///               instead. If this is passed as the empty string, then no filters will be applied when calculating the hash.
-    pub fn hashFile(self: *const Repository, path: [:0]const u8, object_type: ObjectType, as_path: ?[:0]const u8) !*const git.Oid {
+    pub fn hashFile(
+        self: *const Repository,
+        path: [:0]const u8,
+        object_type: ObjectType,
+        as_path: ?[:0]const u8,
+    ) !*const git.Oid {
         log.debug("Repository.hashFile called, path={s}, object_type={}, as_path={s}", .{ path, object_type, as_path });
 
         var oid: ?*raw.git_oid = undefined;

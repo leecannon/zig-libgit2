@@ -18,7 +18,7 @@ pub const AnnotatedCommit = opaque {
     pub fn getCommitId(self: *const AnnotatedCommit) !*const git.Oid {
         log.debug("AnnotatedCommit.getCommitId called", .{});
 
-        const oid = internal.fromC(raw.git_annotated_commit_id(internal.toC(self)).?);
+        const oid = internal.fromC(raw.git_annotated_commit_id(internal.toC(self)));
 
         // This check is to prevent formating the oid when we are not going to print anything
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
