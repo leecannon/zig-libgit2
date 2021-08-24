@@ -6,7 +6,7 @@ pub fn build(b: *std.build.Builder) void {
 
     // Tests
     {
-        const lib_test = b.addTest("tests.zig");
+        const lib_test = b.addTest("src/tests.zig");
         lib_test.setTarget(target);
         lib_test.setBuildMode(mode);
         linkLibGit(lib_test, target);
@@ -55,7 +55,7 @@ pub fn addLibGit(exe: *std.build.LibExeObjStep, target: std.build.Target, compti
 
     const git_pkg = std.build.Pkg{
         .name = "git",
-        .path = .{ .path = prefix_path ++ "lib.zig" },
+        .path = .{ .path = prefix_path ++ "src/git.zig" },
         .dependencies = &[_]std.build.Pkg{
             .{ .name = "build_options", .path = .{ .path = build_option_file } },
         },

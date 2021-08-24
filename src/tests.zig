@@ -1,5 +1,5 @@
 const std = @import("std");
-const git = @import("lib.zig");
+const git = @import("git.zig");
 
 test "simple repository init" {
     const repo_path = "./zig-cache/test_repos/simple_repository_init";
