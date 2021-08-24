@@ -750,6 +750,33 @@ pub const Index = opaque {
         log.debug("successfully wrote index data to disk", .{});
     }
 
+    /// Get the index entries that represent a conflict of a single file.
+    ///
+    /// *IMPORTANT*: These entries should *not* be freed.
+    pub fn conflictGet(index: *const Index, path: [:0]const u8) !ConflictGetResult {
+        log.debug("Index.conflictGet called, path={s}", .{path});
+
+        var ancestor_out: [*c]raw.git_index_entry = undefined;
+        var our_out: [*c]raw.git_index_entry = undefined;
+        var their_out: [*c]raw.git_index_entry = undefined;
+
+        try internal.wrapCall("git_index_conflict_get", .{ &ancestor_out, &our_out, &their_out, internal.toC(index), path.ptr });
+
+        log.debug("successfully fetched conflict entries", .{});
+
+        return ConflictGetResult{
+            .ancestor = internal.fromC(ancestor_out),
+            .our = internal.fromC(our_out),
+            .their = internal.fromC(their_out),
+        };
+    }
+
+    pub const ConflictGetResult = struct {
+        ancestor: *const IndexEntry,
+        our: *const IndexEntry,
+        their: *const IndexEntry,
+    };
+
     pub const IndexEntry = extern struct {
         ctime: IndexTime,
         mtime: IndexTime,
