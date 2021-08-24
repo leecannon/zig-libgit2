@@ -711,6 +711,18 @@ pub const Index = opaque {
         return position;
     }
 
+    pub fn findPrefix(self: *const Index, prefix: [:0]const u8) !usize {
+        log.debug("Index.find called, prefix={s}", .{prefix});
+
+        var position: usize = 0;
+
+        try internal.wrapCall("git_index_find_prefix", .{ &position, internal.toC(self), prefix.ptr });
+
+        log.debug("successfully fetched position={}", .{position});
+
+        return position;
+    }
+
     pub const IndexEntry = extern struct {
         ctime: IndexTime,
         mtime: IndexTime,
