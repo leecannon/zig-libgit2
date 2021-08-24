@@ -150,12 +150,28 @@ const type_mappings = &[_]TypeMapping{
 const TypeMapping = std.meta.Tuple(&.{ type, type });
 
 fn toCType(comptime value_type: type) type {
-    const type_info: std.builtin.TypeInfo = @typeInfo(value_type);
+    comptime var is_optional: bool = false;
+
+    const type_info: std.builtin.TypeInfo = comptime blk: {
+        const info = @typeInfo(value_type);
+        if (info == .Optional) {
+            is_optional = true;
+            break :blk @typeInfo(info.Optional.child);
+        } else {
+            break :blk info;
+        }
+    };
 
     switch (type_info) {
         .Pointer => |ptr_type| {
             inline for (type_mappings) |mapping| {
-                if (ptr_type.child == mapping.@"0") return *mapping.@"1";
+                if (ptr_type.child == mapping.@"0") {
+                    if (is_optional) {
+                        return ?*mapping.@"1";
+                    } else {
+                        return *mapping.@"1";
+                    }
+                }
             }
 
             @compileError("unsupported type " ++ @typeName(value_type));
@@ -172,12 +188,28 @@ fn toCType(comptime value_type: type) type {
 }
 
 fn fromCType(comptime value_type: type) type {
-    const type_info: std.builtin.TypeInfo = @typeInfo(value_type);
+    comptime var is_optional: bool = false;
+
+    const type_info: std.builtin.TypeInfo = comptime blk: {
+        const info = @typeInfo(value_type);
+        if (info == .Optional) {
+            is_optional = true;
+            break :blk @typeInfo(info.Optional.child);
+        } else {
+            break :blk info;
+        }
+    };
 
     switch (type_info) {
         .Pointer => |ptr_type| {
             inline for (type_mappings) |mapping| {
-                if (ptr_type.child == mapping.@"1") return *mapping.@"0";
+                if (ptr_type.child == mapping.@"1") {
+                    if (is_optional) {
+                        return ?*mapping.@"0";
+                    } else {
+                        return *mapping.@"0";
+                    }
+                }
             }
 
             @compileError("unsupported type " ++ @typeName(value_type));
@@ -197,7 +229,14 @@ fn MakeCTypeFunction(comptime func: fn (type) type) type {
     return struct {
         pub fn func(value: anytype) func(@TypeOf(value)) {
             const value_type = @TypeOf(value);
-            const type_info: std.builtin.TypeInfo = @typeInfo(value_type);
+            const type_info: std.builtin.TypeInfo = comptime blk: {
+                const info = @typeInfo(value_type);
+                if (info == .Optional) {
+                    break :blk @typeInfo(info.Optional.child);
+                } else {
+                    break :blk info;
+                }
+            };
 
             switch (type_info) {
                 .Pointer => {
