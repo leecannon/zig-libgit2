@@ -723,6 +723,33 @@ pub const Index = opaque {
         return position;
     }
 
+    /// Add or update index entries to represent a conflict.  Any staged entries that exist at the given paths will be removed.
+    ///
+    /// The entries are the entries from the tree included in the merge.  Any entry may be null to indicate that that file was not
+    /// present in the trees during the merge. For example, `ancestor_entry` may be `null` to indicate that a file was added in
+    /// both branches and must be resolved.
+    pub fn conflictAdd(
+        self: *Index,
+        ancestor_entry: ?*const IndexEntry,
+        our_entry: ?*const IndexEntry,
+        their_entry: ?*const IndexEntry,
+    ) !void {
+        log.debug("Index.conflictAdd called, ancestor_entry={*}, our_entry={*}, their_entry={*}", .{
+            ancestor_entry,
+            our_entry,
+            their_entry,
+        });
+
+        try internal.wrapCall("git_index_conflict_add", .{
+            internal.toC(self),
+            internal.toC(ancestor_entry),
+            internal.toC(our_entry),
+            internal.toC(their_entry),
+        });
+
+        log.debug("successfully wrote index data to disk", .{});
+    }
+
     pub const IndexEntry = extern struct {
         ctime: IndexTime,
         mtime: IndexTime,
