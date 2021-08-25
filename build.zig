@@ -18,7 +18,7 @@ pub fn build(b: *std.build.Builder) void {
             build_options.addBuildOption(bool, "old_version", old_version);
             lib_test.addPackage(.{ .name = "build_options", .path = build_options.getSource() });
         } else {
-            lib_test.addBuildOptions(bool, "old_version", old_version);
+            lib_test.addBuildOption(bool, "old_version", old_version);
         }
 
         const lib_test_step = b.step("test_lib", "Run the lib tests");
@@ -51,7 +51,7 @@ pub fn build(b: *std.build.Builder) void {
             build_options.addBuildOption(bool, "old_version", old_version);
             sample_exe.addPackage(.{ .name = "build_options", .path = build_options.getSource() });
         } else {
-            sample_exe.addBuildOptions(bool, "old_version", old_version);
+            sample_exe.addBuildOption(bool, "old_version", old_version);
         }
 
         const run_cmd = sample_exe.run();
@@ -85,6 +85,7 @@ pub fn addLibGit(
             },
         };
     } else blk: {
+        exe.addBuildOption(bool, "old_version", old_version_of_libgit);
         const build_option_file = std.fmt.allocPrint(exe.builder.allocator, "zig-cache/{s}_build_options.zig", .{exe.name}) catch unreachable;
         break :blk .{
             .name = "git",
