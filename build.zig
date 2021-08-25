@@ -14,7 +14,7 @@ pub fn build(b: *std.build.Builder) void {
         linkLibGit(lib_test, target);
 
         if (@hasDecl(std.build.Builder, "addBuildOptions")) {
-            const build_options = b.addBuildOptions(b.fmt("libgit2_build_options_{s}", .{lib_test.name}));
+            const build_options = b.addBuildOptions(b.fmt("libgit2_build_options_lib_test"));
             build_options.addBuildOption(bool, "old_version", old_version);
             lib_test.addPackage(.{ .name = "build_options", .path = build_options.getSource() });
         } else {
