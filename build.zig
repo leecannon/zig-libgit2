@@ -1,10 +1,18 @@
 const std = @import("std");
 
+const new_zig_build_options = @hasDecl(std.build.Builder, "addOptions");
+
 pub fn build(b: *std.build.Builder) void {
     const target = b.standardTargetOptions(.{});
     const mode = b.standardReleaseOptions();
 
     const old_version = b.option(bool, "old_version", "Is the available version of libgit2 older than v1.0.0") orelse false;
+
+    const build_options = if (new_zig_build_options) blk: {
+        const build_options = b.addOptions();
+        build_options.addOption(bool, "old_version", old_version);
+        break :blk build_options;
+    } else void;
 
     // Tests
     {
@@ -13,10 +21,8 @@ pub fn build(b: *std.build.Builder) void {
         lib_test.setBuildMode(mode);
         linkLibGit(lib_test, target);
 
-        if (@hasDecl(std.build.Builder, "addBuildOptions")) {
-            const build_options = b.addBuildOptions(b.fmt("libgit2_build_options_lib_test"));
-            build_options.addBuildOption(bool, "old_version", old_version);
-            lib_test.addPackage(.{ .name = "build_options", .path = build_options.getSource() });
+        if (new_zig_build_options) {
+            lib_test.addOptions("build_options", build_options);
         } else {
             lib_test.addBuildOption(bool, "old_version", old_version);
         }
@@ -46,10 +52,8 @@ pub fn build(b: *std.build.Builder) void {
         sample_exe.install();
         addLibGit(sample_exe, target, "", old_version);
 
-        if (@hasDecl(std.build.Builder, "addBuildOptions")) {
-            const build_options = b.addBuildOptions(b.fmt("libgit2_build_options_{s}", .{sample_exe.name}));
-            build_options.addBuildOption(bool, "old_version", old_version);
-            sample_exe.addPackage(.{ .name = "build_options", .path = build_options.getSource() });
+        if (new_zig_build_options) {
+            sample_exe.addOptions("build_options", build_options);
         } else {
             sample_exe.addBuildOption(bool, "old_version", old_version);
         }
@@ -73,30 +77,26 @@ pub fn addLibGit(
 ) void {
     if (prefix_path.len > 0 and !std.mem.endsWith(u8, prefix_path, "/")) @panic("prefix-path must end with '/' if it is not empty");
 
-    const pkg: std.build.Pkg = if (@hasDecl(std.build.Builder, "addBuildOptions")) blk: {
-        const build_options = exe.builder.addBuildOptions(exe.builder.fmt("libgit2_build_options_{s}", .{exe.name}));
-        build_options.addBuildOption(bool, "old_version", old_version_of_libgit);
-
-        break :blk .{
+    if (new_zig_build_options) {
+        const build_options = exe.builder.addOptions();
+        build_options.addOption(bool, "old_version", old_version_of_libgit);
+        exe.addPackage(.{
             .name = "git",
             .path = .{ .path = prefix_path ++ "src/git.zig" },
-            .dependencies = &[_]std.build.Pkg{
-                .{ .name = "build_options", .path = build_options.getSource() },
-            },
-        };
-    } else blk: {
+            .dependencies = &[_]std.build.Pkg{build_options.getPackage("build_options")},
+        });
+    } else {
         exe.addBuildOption(bool, "old_version", old_version_of_libgit);
         const build_option_file = std.fmt.allocPrint(exe.builder.allocator, "zig-cache/{s}_build_options.zig", .{exe.name}) catch unreachable;
-        break :blk .{
+        exe.addPackage(.{
             .name = "git",
             .path = .{ .path = prefix_path ++ "src/git.zig" },
             .dependencies = &[_]std.build.Pkg{
                 .{ .name = "build_options", .path = .{ .path = build_option_file } },
             },
-        };
-    };
+        });
+    }
 
-    exe.addPackage(pkg);
     linkLibGit(exe, target);
 }
 
