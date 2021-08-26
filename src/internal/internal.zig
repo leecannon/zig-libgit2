@@ -145,6 +145,7 @@ const type_mappings = &[_]TypeMapping{
     .{ git.StatusList, raw.git_status_list },
     .{ git.Reference, raw.git_reference },
     .{ git.StrArray, raw.git_strarray },
+    .{ git.Index.IndexConflictIterator, raw.git_index_conflict_iterator },
 };
 
 const TypeMapping = std.meta.Tuple(&.{ type, type });

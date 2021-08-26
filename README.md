@@ -31,7 +31,7 @@ As Github Actions uses Ubuntu LTS (20.04) as `ubuntu-latest` which has a version
 - [ ] global.h
 - [ ] graph.h
 - [ ] ignore.h
-- [ ] index.h
+- [x] index.h
 - [ ] indexer.h
 - [ ] mailmap.h
 - [ ] merge.h

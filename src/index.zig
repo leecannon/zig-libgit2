@@ -324,6 +324,40 @@ pub const Index = opaque {
         return internal.fromC(iterator.?);
     }
 
+    pub const IndexIterator = opaque {
+        pub fn next(self: *IndexIterator) !?*const IndexEntry {
+            log.debug("IndexIterator.next called", .{});
+
+            var index_entry: [*c]const raw.git_index_entry = undefined;
+
+            internal.wrapCall("git_index_iterator_next", .{ &index_entry, internal.toC(self) }) catch |err| switch (err) {
+                git.GitError.IterOver => {
+                    log.debug("end of iteration reached", .{});
+                    return null;
+                },
+                else => return err,
+            };
+
+            const ret = internal.fromC(index_entry);
+
+            log.debug("successfully fetched index entry: {}", .{ret});
+
+            return ret;
+        }
+
+        pub fn deinit(self: *IndexIterator) void {
+            log.debug("IndexIterator.deinit called", .{});
+
+            raw.git_index_iterator_free(internal.toC(self));
+
+            log.debug("index iterator freed successfully", .{});
+        }
+
+        comptime {
+            std.testing.refAllDecls(@This());
+        }
+    };
+
     /// Remove all matching index entries.
     ///
     /// If you provide a callback function, it will be invoked on each matching item in the working directory immediately *before*
@@ -753,7 +787,7 @@ pub const Index = opaque {
     /// Get the index entries that represent a conflict of a single file.
     ///
     /// *IMPORTANT*: These entries should *not* be freed.
-    pub fn conflictGet(index: *const Index, path: [:0]const u8) !ConflictGetResult {
+    pub fn conflictGet(index: *const Index, path: [:0]const u8) !Conflicts {
         log.debug("Index.conflictGet called, path={s}", .{path});
 
         var ancestor_out: [*c]raw.git_index_entry = undefined;
@@ -764,18 +798,12 @@ pub const Index = opaque {
 
         log.debug("successfully fetched conflict entries", .{});
 
-        return ConflictGetResult{
+        return Conflicts{
             .ancestor = internal.fromC(ancestor_out),
             .our = internal.fromC(our_out),
             .their = internal.fromC(their_out),
         };
     }
-
-    pub const ConflictGetResult = struct {
-        ancestor: *const IndexEntry,
-        our: *const IndexEntry,
-        their: *const IndexEntry,
-    };
 
     pub fn conlfictRemove(self: *Index, path: [:0]const u8) !void {
         log.debug("Index.conlfictRemove called, path={s}", .{path});
@@ -797,12 +825,61 @@ pub const Index = opaque {
     pub fn hasConflicts(self: *const Index) bool {
         log.debug("Index.hasConflicts called", .{});
 
-        const ret = try internal.wrapCallWithReturn("git_index_has_conflicts", .{internal.toC(self)}) == 1;
+        const ret = raw.git_index_has_conflicts(internal.toC(self)) == 1;
 
         log.debug("index had conflicts: {}", .{ret});
 
         return ret;
     }
+
+    pub const IndexConflictIterator = opaque {
+        pub fn next(self: *IndexConflictIterator) !?Conflicts {
+            log.debug("IndexConflictIterator.next called", .{});
+
+            var ancestor_out: [*c]raw.git_index_entry = undefined;
+            var our_out: [*c]raw.git_index_entry = undefined;
+            var their_out: [*c]raw.git_index_entry = undefined;
+
+            internal.wrapCall("git_index_conflict_next", .{
+                &ancestor_out,
+                &our_out,
+                &their_out,
+                internal.toC(self),
+            }) catch |err| switch (err) {
+                git.GitError.IterOver => {
+                    log.debug("end of iteration reached", .{});
+                    return null;
+                },
+                else => return err,
+            };
+
+            log.debug("successfully fetched conflicts", .{});
+
+            return Conflicts{
+                .ancestor = internal.fromC(ancestor_out),
+                .our = internal.fromC(our_out),
+                .their = internal.fromC(their_out),
+            };
+        }
+
+        pub fn deinit(self: *IndexConflictIterator) void {
+            log.debug("IndexConflictIterator.deinit called", .{});
+
+            raw.git_index_conflict_iterator_free(internal.toC(self));
+
+            log.debug("index conflict iterator freed successfully", .{});
+        }
+
+        comptime {
+            std.testing.refAllDecls(@This());
+        }
+    };
+
+    pub const Conflicts = struct {
+        ancestor: *const IndexEntry,
+        our: *const IndexEntry,
+        their: *const IndexEntry,
+    };
 
     pub const IndexEntry = extern struct {
         ctime: IndexTime,
@@ -860,40 +937,6 @@ pub const Index = opaque {
         test {
             try std.testing.expectEqual(@sizeOf(raw.git_index_entry), @sizeOf(IndexEntry));
             try std.testing.expectEqual(@bitSizeOf(raw.git_index_entry), @bitSizeOf(IndexEntry));
-        }
-
-        comptime {
-            std.testing.refAllDecls(@This());
-        }
-    };
-
-    pub const IndexIterator = opaque {
-        pub fn next(self: *IndexIterator) !?*const IndexEntry {
-            log.debug("IndexIterator.next called", .{});
-
-            var index_entry: [*c]const raw.git_index_entry = undefined;
-
-            internal.wrapCall("git_index_iterator_next", .{ &index_entry, internal.toC(self) }) catch |err| switch (err) {
-                git.GitError.IterOver => {
-                    log.debug("end of iteration reached", .{});
-                    return null;
-                },
-                else => return err,
-            };
-
-            const ret = internal.fromC(index_entry);
-
-            log.debug("successfully fetched index entry: {}", .{ret});
-
-            return ret;
-        }
-
-        pub fn deinit(self: *IndexIterator) void {
-            log.debug("IndexIterator.deinit called", .{});
-
-            raw.git_index_iterator_free(internal.toC(self));
-
-            log.debug("index iterator freed successfully", .{});
         }
 
         comptime {
