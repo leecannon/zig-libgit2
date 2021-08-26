@@ -40,7 +40,7 @@ pub const Repository = opaque {
     };
 
     /// Retrieve the configured identity to use for reflogs
-    pub fn getIdentity(self: *const Repository) !git.Identity {
+    pub fn getIdentity(self: *const Repository) !Identity {
         log.debug("Repository.getIdentity called", .{});
 
         var c_name: [*c]u8 = undefined;
@@ -53,14 +53,14 @@ pub const Repository = opaque {
 
         log.debug("identity acquired: name={s}, email={s}", .{ name, email });
 
-        return git.Identity{ .name = name, .email = email };
+        return Identity{ .name = name, .email = email };
     }
 
     /// Set the identity to be used for writing reflogs
     ///
     /// If both are set, this name and email will be used to write to the reflog.
     /// Set to `null` to unset; When unset, the identity will be taken from the repository's configuration.
-    pub fn setIdentity(self: *const Repository, identity: git.Identity) !void {
+    pub fn setIdentity(self: *const Repository, identity: Identity) !void {
         log.debug("Repository.setIdentity called, identity.name={s}, identity.email={s}", .{ identity.name, identity.email });
 
         const name_temp: [*c]const u8 = if (identity.name) |slice| slice.ptr else null;
@@ -69,6 +69,11 @@ pub const Repository = opaque {
 
         log.debug("successfully set identity", .{});
     }
+
+    pub const Identity = struct {
+        name: ?[:0]const u8,
+        email: ?[:0]const u8,
+    };
 
     pub fn getNamespace(self: *const Repository) !?[:0]const u8 {
         log.debug("Repository.getNamespace called", .{});

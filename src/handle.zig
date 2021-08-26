@@ -254,7 +254,7 @@ pub const Handle = struct {
     /// ## Parameters
     /// * `path` - the path to the repository
     /// * `flags` - options controlling how the repository is opened
-    /// * `ceiling_dirs` - A `GIT_PATH_LIST_SEPARATOR` delimited list of path prefixes at which the search for a containing
+    /// * `ceiling_dirs` - A `PATH_LIST_SEPARATOR` delimited list of path prefixes at which the search for a containing
     ///                    repository should terminate.
     pub fn repositoryOpenExtended(
         self: Handle,
@@ -353,7 +353,7 @@ pub const Handle = struct {
     /// ## Parameters
     /// * `start_path` - The path where the lookup starts.
     /// * `across_fs` - If true, then the lookup will not stop when a filesystem device change is encountered.
-    /// * `ceiling_dirs` - A `GIT_PATH_LIST_SEPARATOR` separated list of absolute symbolic link free paths. The lookup will stop 
+    /// * `ceiling_dirs` - A `PATH_LIST_SEPARATOR` separated list of absolute symbolic link free paths. The lookup will stop 
     ///                    when any of this paths is reached.
     pub fn repositoryDiscover(self: Handle, start_path: [:0]const u8, across_fs: bool, ceiling_dirs: ?[:0]const u8) !git.Buf {
         _ = self;

@@ -346,7 +346,7 @@ test "set identity" {
     const email = "test email";
 
     {
-        const ident = git.Identity{
+        const ident = git.Repository.Identity{
             .name = name,
             .email = email,
         };

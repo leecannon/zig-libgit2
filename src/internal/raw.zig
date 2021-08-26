@@ -3773,7 +3773,7 @@ pub inline fn GIT_CALLBACK(name: anytype) @TypeOf(name.*) {
 pub inline fn GIT_FORMAT_PRINTF(a: anytype, b: anytype) @TypeOf(__attribute__(format(printf, a, b))) {
     return __attribute__(format(printf, a, b));
 }
-pub const GIT_PATH_LIST_SEPARATOR = ':';
+pub const PATH_LIST_SEPARATOR = ':';
 pub const GIT_PATH_MAX = @as(c_int, 4096);
 pub const GIT_OID_HEX_ZERO = "0000000000000000000000000000000000000000";
 pub const GIT_OID_RAWSZ = @as(c_int, 20);

@@ -5,7 +5,7 @@ This is an in-progress zig binding to libgit2, unfortunately libgit2 doesn't ful
 
 As Github Actions uses Ubuntu LTS (20.04) as `ubuntu-latest` which has a version of libgit2 before 1.0 we need to handle an API breaking change of renamed functions this is the use case of the `-Dold_version` option.
 
-## File fully wrapped (other maybe partially complete)
+## Files fully wrapped (others maybe partially complete)
 - [ ] annotated_commit.h
 - [ ] apply.h
 - [ ] attr.h

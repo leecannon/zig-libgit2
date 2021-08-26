@@ -5,8 +5,6 @@ const log = std.log.scoped(.git);
 const old_version: bool = @import("build_options").old_version;
 const git = @import("git.zig");
 
-pub const GIT_PATH_LIST_SEPARATOR = raw.GIT_PATH_LIST_SEPARATOR;
-
 pub const GitError = error{
     /// Generic error
     GenericError,
@@ -67,110 +65,6 @@ pub const GitError = error{
     IndexDirty,
     /// Patch application failed
     ApplyFail,
-};
-
-pub const StrArray = extern struct {
-    strings: [*c][*c]u8 = null,
-    count: usize = 0,
-
-    pub fn fromSlice(slice: []const [*:0]const u8) StrArray {
-        return .{
-            .strings = @intToPtr([*c][*c]u8, @ptrToInt(slice.ptr)),
-            .count = slice.len,
-        };
-    }
-
-    pub fn toSlice(self: StrArray) []const [*:0]const u8 {
-        if (self.count == 0) return &[_][*:0]const u8{};
-        return @ptrCast([*]const [*:0]const u8, self.strings)[0..self.count];
-    }
-
-    test {
-        try std.testing.expectEqual(@sizeOf(raw.git_strarray), @sizeOf(StrArray));
-        try std.testing.expectEqual(@bitSizeOf(raw.git_strarray), @bitSizeOf(StrArray));
-    }
-
-    comptime {
-        std.testing.refAllDecls(@This());
-    }
-};
-
-/// A data buffer for exporting data from libgit2
-pub const Buf = extern struct {
-    ptr: ?[*]u8 = null,
-    asize: usize = 0,
-    size: usize = 0,
-
-    pub fn slice(self: Buf) []const u8 {
-        if (self.size == 0) return &[_]u8{};
-        return self.ptr.?[0..self.size];
-    }
-
-    pub fn deinit(self: *Buf) void {
-        log.debug("Buf.deinit called", .{});
-
-        raw.git_buf_dispose(internal.toC(self));
-
-        log.debug("Buf freed successfully", .{});
-    }
-
-    test {
-        try std.testing.expectEqual(@sizeOf(raw.git_buf), @sizeOf(Buf));
-        try std.testing.expectEqual(@bitSizeOf(raw.git_buf), @bitSizeOf(Buf));
-    }
-
-    comptime {
-        std.testing.refAllDecls(@This());
-    }
-};
-
-pub const FileStatus = packed struct {
-    CURRENT: bool = false,
-    INDEX_NEW: bool = false,
-    INDEX_MODIFIED: bool = false,
-    INDEX_DELETED: bool = false,
-    INDEX_RENAMED: bool = false,
-    INDEX_TYPECHANGE: bool = false,
-    WT_NEW: bool = false,
-    WT_MODIFIED: bool = false,
-    WT_DELETED: bool = false,
-    WT_TYPECHANGE: bool = false,
-    WT_RENAMED: bool = false,
-    WT_UNREADABLE: bool = false,
-    IGNORED: bool = false,
-    CONFLICTED: bool = false,
-
-    z_padding1: u2 = 0,
-    z_padding2: u16 = 0,
-
-    pub fn format(
-        value: FileStatus,
-        comptime fmt: []const u8,
-        options: std.fmt.FormatOptions,
-        writer: anytype,
-    ) !void {
-        _ = fmt;
-        return internal.formatWithoutFields(
-            value,
-            options,
-            writer,
-            &.{ "z_padding1", "z_padding2" },
-        );
-    }
-
-    test {
-        try std.testing.expectEqual(@sizeOf(c_uint), @sizeOf(FileStatus));
-        try std.testing.expectEqual(@bitSizeOf(c_uint), @bitSizeOf(FileStatus));
-    }
-
-    comptime {
-        std.testing.refAllDecls(@This());
-    }
-};
-
-pub const Identity = struct {
-    name: ?[:0]const u8,
-    email: ?[:0]const u8,
 };
 
 /// Get detailed information regarding the last error that occured on this thread.
