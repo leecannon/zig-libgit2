@@ -785,6 +785,15 @@ pub const Index = opaque {
         log.debug("successfully removed conflict", .{});
     }
 
+    /// Remove all conflicts in the index (entries with a stage greater than 0)
+    pub fn conflictCleanup(self: *Index) !void {
+        log.debug("Index.conflictCleanup called", .{});
+
+        try internal.wrapCall("git_index_conflict_cleanup", .{internal.toC(self)});
+
+        log.debug("successfully cleaned up all conflicts", .{});
+    }
+
     pub const IndexEntry = extern struct {
         ctime: IndexTime,
         mtime: IndexTime,
