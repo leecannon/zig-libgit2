@@ -777,6 +777,14 @@ pub const Index = opaque {
         their: *const IndexEntry,
     };
 
+    pub fn conlfictRemove(self: *Index, path: [:0]const u8) !void {
+        log.debug("Index.conlfictRemove called, path={s}", .{path});
+
+        try internal.wrapCall("git_index_conflict_remove", .{ internal.toC(self), path.ptr });
+
+        log.debug("successfully removed conflict", .{});
+    }
+
     pub const IndexEntry = extern struct {
         ctime: IndexTime,
         mtime: IndexTime,
