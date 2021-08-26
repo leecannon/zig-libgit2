@@ -183,7 +183,7 @@ test "item paths" {
     const expected = try std.fmt.allocPrintZ(std.testing.allocator, "{s}/.git/config", .{test_handle.repo_path[1..]});
     defer std.testing.allocator.free(expected);
 
-    try std.testing.expectStringEndsWith(buf.slice(), expected);
+    try std.testing.expectStringEndsWith(buf.toSlice(), expected);
 }
 
 test "get config" {

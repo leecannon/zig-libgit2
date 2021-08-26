@@ -285,7 +285,7 @@ pub const Repository = opaque {
 
         try internal.wrapCall("git_repository_item_path", .{ internal.toC(&buf), internal.toC(self), @enumToInt(item) });
 
-        log.debug("item path: {s}", .{buf.slice()});
+        log.debug("item path: {s}", .{buf.toSlice()});
 
         return buf;
     }
@@ -438,7 +438,7 @@ pub const Repository = opaque {
 
         try internal.wrapCall("git_repository_message", .{ internal.toC(&buf), internal.toC(self) });
 
-        log.debug("prepared message: {s}", .{buf.slice()});
+        log.debug("prepared message: {s}", .{buf.toSlice()});
 
         return buf;
     }

@@ -12,7 +12,7 @@ As Github Actions uses Ubuntu LTS (20.04) as `ubuntu-latest` which has a version
 - [ ] blame.h
 - [ ] blob.h
 - [ ] branch.h
-- [ ] buffer.h
+- [x] buffer.h
 - [ ] cert.h
 - [ ] checkout.h
 - [ ] cherrypick.h

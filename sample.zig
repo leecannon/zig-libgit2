@@ -14,7 +14,7 @@ pub fn main() !void {
 
     var git_buf = try handle.repositoryDiscover(repo_path, false, null);
     defer git_buf.deinit();
-    std.log.info("found repo @ {s}", .{git_buf.slice()});
+    std.log.info("found repo @ {s}", .{git_buf.toSlice()});
 }
 
 comptime {

@@ -368,7 +368,7 @@ pub const Handle = struct {
         const ceiling_dirs_temp: [*c]const u8 = if (ceiling_dirs) |slice| slice.ptr else null;
         try internal.wrapCall("git_repository_discover", .{ internal.toC(&git_buf), start_path.ptr, @boolToInt(across_fs), ceiling_dirs_temp });
 
-        log.debug("repository discovered - {s}", .{git_buf.slice()});
+        log.debug("repository discovered - {s}", .{git_buf.toSlice()});
 
         return git_buf;
     }
