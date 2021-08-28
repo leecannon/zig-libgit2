@@ -2,12 +2,12 @@ const std = @import("std");
 const raw = @import("internal/raw.zig");
 const internal = @import("internal/internal.zig");
 const log = std.log.scoped(.git);
-const old_version: bool = @import("build_options").old_version;
 
 pub const PATH_LIST_SEPARATOR = raw.PATH_LIST_SEPARATOR;
 
 pub usingnamespace @import("errors.zig");
 
+pub const GitAllocator = @import("alloc.zig").GitAllocator;
 pub const AnnotatedCommit = @import("annotated_commit.zig").AnnotatedCommit;
 pub const Buf = @import("buffer.zig").Buf;
 pub const Config = @import("config.zig").Config;
@@ -39,6 +39,64 @@ pub fn init() !Handle {
 
     return Handle{};
 }
+
+pub fn availableLibGit2Features() LibGit2Features {
+    return @bitCast(LibGit2Features, raw.git_libgit2_features());
+}
+
+pub const LibGit2Features = packed struct {
+    /// If set, libgit2 was built thread-aware and can be safely used from multiple threads.
+    THREADS: bool = false,
+    /// If set, libgit2 was built with and linked against a TLS implementation.
+    /// Custom TLS streams may still be added by the user to support HTTPS regardless of this.
+    HTTPS: bool = false,
+    /// If set, libgit2 was built with and linked against libssh2. A custom transport may still be added by the user to support
+    /// libssh2 regardless of this.
+    SSH: bool = false,
+    /// If set, libgit2 was built with support for sub-second resolution in file modification times.
+    NSEC: bool = false,
+
+    z_padding: u28 = 0,
+
+    pub fn format(
+        value: LibGit2Features,
+        comptime fmt: []const u8,
+        options: std.fmt.FormatOptions,
+        writer: anytype,
+    ) !void {
+        _ = fmt;
+        return internal.formatWithoutFields(value, options, writer, &.{"z_padding"});
+    }
+
+    test {
+        try std.testing.expectEqual(@sizeOf(c_uint), @sizeOf(LibGit2Features));
+        try std.testing.expectEqual(@bitSizeOf(c_uint), @bitSizeOf(LibGit2Features));
+    }
+
+    comptime {
+        std.testing.refAllDecls(@This());
+    }
+};
+
+/// Basic type (loose or packed) of any Git object.
+pub const ObjectType = enum(c_int) {
+    /// Object can be any of the following
+    ANY = -2,
+    /// Object is invalid.
+    INVALID = -1,
+    /// A commit object.
+    COMMIT = 1,
+    /// A tree (directory listing) object.
+    TREE = 2,
+    /// A file revision object.
+    BLOB = 3,
+    /// An annotated tag object.
+    TAG = 4,
+    /// A delta, base is given by an offset.
+    OFS_DELTA = 6,
+    /// A delta, base is given by object id.
+    REF_DELTA = 7,
+};
 
 pub const FileStatus = packed struct {
     CURRENT: bool = false,

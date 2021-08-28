@@ -2,7 +2,7 @@ const std = @import("std");
 const raw = @import("internal/raw.zig");
 const internal = @import("internal/internal.zig");
 const log = std.log.scoped(.git);
-const old_version: bool = @import("build_options").old_version;
+
 const git = @import("git.zig");
 const bitjuggle = @import("internal/bitjuggle.zig");
 
@@ -295,10 +295,10 @@ pub const Index = opaque {
             buffer.len,
         });
 
-        if (old_version) {
-            try internal.wrapCall("git_index_add_frombuffer", .{ internal.toC(self), internal.toC(index_entry), buffer.ptr, buffer.len });
-        } else {
+        if (internal.available(.@"1.0.0")) {
             try internal.wrapCall("git_index_add_from_buffer", .{ internal.toC(self), internal.toC(index_entry), buffer.ptr, buffer.len });
+        } else {
+            try internal.wrapCall("git_index_add_frombuffer", .{ internal.toC(self), internal.toC(index_entry), buffer.ptr, buffer.len });
         }
 
         log.debug("successfully added to index", .{});

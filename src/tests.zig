@@ -416,6 +416,14 @@ test "new index capabilities" {
     try std.testing.expect(!cap.NO_SYMLINKS);
 }
 
+test "set maximum mmap window size" {
+    var handle = try git.init();
+    defer handle.deinit();
+
+    try handle.optionSetMaximumMmapWindowSize(1024);
+    try std.testing.expectEqual(@as(usize, 1024), try handle.optionGetMaximumMmapWindowSize());
+}
+
 const TestHandle = struct {
     handle: git.Handle,
     repo_path: [:0]const u8,

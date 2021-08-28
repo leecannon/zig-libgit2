@@ -2,7 +2,7 @@ const std = @import("std");
 const raw = @import("internal/raw.zig");
 const internal = @import("internal/internal.zig");
 const log = std.log.scoped(.git);
-const old_version: bool = @import("build_options").old_version;
+
 const git = @import("git.zig");
 
 pub const Repository = opaque {
@@ -629,7 +629,7 @@ pub const Repository = opaque {
     pub fn hashFile(
         self: *const Repository,
         path: [:0]const u8,
-        object_type: ObjectType,
+        object_type: git.ObjectType,
         as_path: ?[:0]const u8,
     ) !*const git.Oid {
         log.debug("Repository.hashFile called, path={s}, object_type={}, as_path={s}", .{ path, object_type, as_path });
@@ -650,26 +650,6 @@ pub const Repository = opaque {
 
         return ret;
     }
-
-    /// Basic type (loose or packed) of any Git object.
-    pub const ObjectType = enum(c_int) {
-        /// Object can be any of the following
-        ANY = -2,
-        /// Object is invalid.
-        INVALID = -1,
-        /// A commit object.
-        COMMIT = 1,
-        /// A tree (directory listing) object.
-        TREE = 2,
-        /// A file revision object.
-        BLOB = 3,
-        /// An annotated tag object.
-        TAG = 4,
-        /// A delta, base is given by an offset.
-        OFS_DELTA = 6,
-        /// A delta, base is given by object id.
-        REF_DELTA = 7,
-    };
 
     /// Get file status for a single file.
     ///
@@ -1009,10 +989,10 @@ pub const Repository = opaque {
         };
 
         fn toCType(self: FileStatusOptions, c_type: *raw.git_status_options) !void {
-            if (old_version) {
-                try internal.wrapCall("git_status_init_options", .{ c_type, raw.GIT_REPOSITORY_INIT_OPTIONS_VERSION });
-            } else {
+            if (internal.available(.@"1.0.0")) {
                 try internal.wrapCall("git_status_options_init", .{ c_type, raw.GIT_REPOSITORY_INIT_OPTIONS_VERSION });
+            } else {
+                try internal.wrapCall("git_status_init_options", .{ c_type, raw.GIT_REPOSITORY_INIT_OPTIONS_VERSION });
             }
 
             c_type.show = @enumToInt(self.show);

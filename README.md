@@ -18,7 +18,7 @@ As Github Actions uses Ubuntu LTS (20.04) as `ubuntu-latest` which has a version
 - [ ] cherrypick.h
 - [ ] clone.h
 - [ ] commit.h
-- [ ] common.h
+- [x] common.h
 - [ ] config.h
 - [ ] cred_helpers.h
 - [ ] credential_helpers.h

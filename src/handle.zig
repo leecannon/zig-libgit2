@@ -4,7 +4,7 @@ const std = @import("std");
 const raw = @import("internal/raw.zig");
 const internal = @import("internal/internal.zig");
 const log = std.log.scoped(.git);
-const old_version: bool = @import("build_options").old_version;
+
 const git = @import("git.zig");
 
 pub const Handle = struct {
@@ -209,10 +209,10 @@ pub const Handle = struct {
         };
 
         fn toCType(self: RepositoryInitOptions, c_type: *raw.git_repository_init_options) !void {
-            if (old_version) {
-                try internal.wrapCall("git_repository_init_init_options", .{ c_type, raw.GIT_REPOSITORY_INIT_OPTIONS_VERSION });
-            } else {
+            if (internal.available(.@"1.0.0")) {
                 try internal.wrapCall("git_repository_init_options_init", .{ c_type, raw.GIT_REPOSITORY_INIT_OPTIONS_VERSION });
+            } else {
+                try internal.wrapCall("git_repository_init_init_options", .{ c_type, raw.GIT_REPOSITORY_INIT_OPTIONS_VERSION });
             }
 
             c_type.flags = self.flags.toInt();
@@ -372,6 +372,380 @@ pub const Handle = struct {
 
         return git_buf;
     }
+
+    pub fn optionGetMaximumMmapWindowSize(self: Handle) !usize {
+        _ = self;
+
+        log.debug("Handle.optionGetMmapWindowSize called", .{});
+
+        var result: usize = undefined;
+        try internal.wrapCall("git_libgit2_opts", .{ raw.GIT_OPT_GET_MWINDOW_SIZE, &result });
+
+        log.debug("maximum mmap window size: {}", .{result});
+
+        return result;
+    }
+
+    pub fn optionSetMaximumMmapWindowSize(self: Handle, value: usize) !void {
+        _ = self;
+
+        log.debug("Handle.optionSetMaximumMmapWindowSize called, value={}", .{value});
+
+        try internal.wrapCall("git_libgit2_opts", .{ raw.GIT_OPT_SET_MWINDOW_SIZE, value });
+
+        log.debug("successfully set maximum mmap window size", .{});
+    }
+
+    pub fn optionGetMaximumMmapLimit(self: Handle) !usize {
+        _ = self;
+
+        log.debug("Handle.optionGetMaximumMmapLimit called", .{});
+
+        var result: usize = undefined;
+        try internal.wrapCall("git_libgit2_opts", .{ raw.GIT_OPT_GET_MWINDOW_MAPPED_LIMIT, &result });
+
+        log.debug("maximum mmap limit: {}", .{result});
+
+        return result;
+    }
+
+    pub fn optionSetMaximumMmapLimit(self: Handle, value: usize) !void {
+        _ = self;
+
+        log.debug("Handle.optionSetMaximumMmapLimit called, value={}", .{value});
+
+        try internal.wrapCall("git_libgit2_opts", .{ raw.GIT_OPT_SET_MWINDOW_MAPPED_LIMIT, value });
+
+        log.debug("successfully set maximum mmap limit", .{});
+    }
+
+    /// zero means unlimited
+    pub fn optionGetMaximumMappedFiles(self: Handle) !usize {
+        _ = self;
+
+        log.debug("Handle.optionGetMaximumMappedFiles called", .{});
+
+        var result: usize = undefined;
+        try internal.wrapCall("git_libgit2_opts", .{ raw.GIT_OPT_GET_MWINDOW_FILE_LIMIT, &result });
+
+        log.debug("maximum mapped files: {}", .{result});
+
+        return result;
+    }
+
+    /// zero means unlimited
+    pub fn optionSetMaximumMmapFiles(self: Handle, value: usize) !void {
+        _ = self;
+
+        log.debug("Handle.optionSetMaximumMmapFiles called, value={}", .{value});
+
+        try internal.wrapCall("git_libgit2_opts", .{ raw.GIT_OPT_SET_MWINDOW_FILE_LIMIT, value });
+
+        log.debug("successfully set maximum mapped files", .{});
+    }
+
+    pub fn optionGetSearchPath(self: Handle, level: git.Config.Level) !git.Buf {
+        _ = self;
+
+        log.debug("Handle.optionGetSearchPath called, level={s}", .{@tagName(level)});
+
+        var buf: git.Buf = .{};
+        try internal.wrapCall("git_libgit2_opts", .{ raw.GIT_OPT_GET_SEARCH_PATH, @enumToInt(level), internal.toC(&buf) });
+
+        log.debug("got search path: {s}", .{buf.toSlice()});
+
+        return buf;
+    }
+
+    /// `path` should be a list of directories delimited by PATH_LIST_SEPARATOR.
+    /// Pass `null` to reset to the default (generally based on environment variables). Use magic path `$PATH` to include the old
+    /// value of the path (if you want to prepend or append, for instance).
+    pub fn optionSetSearchPath(self: Handle, level: git.Config.Level, path: ?[:0]const u8) !void {
+        _ = self;
+
+        log.debug("Handle.optionSetSearchPath called, path={s}", .{path});
+
+        const path_c: [*c]const u8 = if (path) |slice| slice.ptr else null;
+        try internal.wrapCall("git_libgit2_opts", .{ raw.GIT_OPT_SET_SEARCH_PATH, @enumToInt(level), path_c });
+
+        log.debug("successfully set search path", .{});
+    }
+
+    pub fn optionSetCacheObjectLimit(self: Handle, object_type: git.ObjectType, value: usize) !void {
+        _ = self;
+
+        log.debug("Handle.optionSetCacheObjectLimit called, object_type={s}, value={}", .{ @tagName(object_type), value });
+
+        try internal.wrapCall("git_libgit2_opts", .{ raw.GIT_OPT_SET_CACHE_OBJECT_LIMIT, @enumToInt(object_type), value });
+
+        log.debug("successfully set cache object limit", .{});
+    }
+
+    pub fn optionSetMaximumCacheSize(self: Handle, value: usize) !void {
+        _ = self;
+
+        log.debug("Handle.optionSetCacheMaximumSize called, value={}", .{value});
+
+        try internal.wrapCall("git_libgit2_opts", .{ raw.GIT_OPT_SET_CACHE_MAX_SIZE, value });
+
+        log.debug("successfully set maximum cache size", .{});
+    }
+
+    pub fn optionSetCaching(self: Handle, enabled: bool) !void {
+        _ = self;
+
+        log.debug("Handle.optionSetCaching called, enabled={}", .{enabled});
+
+        try internal.wrapCall("git_libgit2_opts", .{ raw.GIT_OPT_ENABLE_CACHING, enabled });
+
+        log.debug("successfully set caching status", .{});
+    }
+
+    pub fn optionGetCachedMemory(self: Handle) !CachedMemory {
+        _ = self;
+
+        log.debug("Handle.optionGetCachedMemory called", .{});
+
+        var result: CachedMemory = undefined;
+        try internal.wrapCall("git_libgit2_opts", .{ raw.GIT_OPT_GET_CACHED_MEMORY, &result.current, &result.allowed });
+
+        log.debug("cached memory: {}", .{result});
+
+        return result;
+    }
+
+    pub const CachedMemory = struct {
+        current: usize,
+        allowed: usize,
+    };
+
+    pub fn optionGetTemplatePath(self: Handle) !git.Buf {
+        _ = self;
+
+        log.debug("Handle.optionGetTemplatePath called", .{});
+
+        var result: git.Buf = .{};
+        try internal.wrapCall("git_libgit2_opts", .{ raw.GIT_OPT_GET_TEMPLATE_PATH, internal.toC(&result) });
+
+        log.debug("got template path: {s}", .{result.toSlice()});
+
+        return result;
+    }
+
+    pub fn optionSetTemplatePath(self: Handle, path: [:0]const u8) !void {
+        _ = self;
+
+        log.debug("Handle.optionSetTemplatePath called, path={s}", .{path});
+
+        try internal.wrapCall("git_libgit2_opts", .{ raw.GIT_OPT_SET_TEMPLATE_PATH, path.ptr });
+
+        log.debug("successfully set template path", .{});
+    }
+
+    /// Either parameter may be `null`, but not both.
+    pub fn optionSetSslCertLocations(self: Handle, file: ?[:0]const u8, path: ?[:0]const u8) !void {
+        _ = self;
+
+        log.debug("Handle.optionSetSslCertLocations called, file={s}, path={s}", .{ file, path });
+
+        const file_c: [*c]const u8 = if (file) |ptr| ptr.ptr else null;
+        const path_c: [*c]const u8 = if (path) |ptr| ptr.ptr else null;
+        try internal.wrapCall("git_libgit2_opts", .{ raw.GIT_OPT_SET_SSL_CERT_LOCATIONS, file_c, path_c });
+
+        log.debug("successfully set ssl certificate location", .{});
+    }
+
+    pub fn optionSetUserAgent(self: Handle, user_agent: [:0]const u8) !void {
+        _ = self;
+
+        log.debug("Handle.optionSetUserAgent called, user_agent={s}", .{user_agent});
+
+        try internal.wrapCall("git_libgit2_opts", .{ raw.GIT_OPT_SET_USER_AGENT, user_agent.ptr });
+
+        log.debug("successfully set user agent", .{});
+    }
+
+    pub fn optionGetUserAgent(self: Handle) !git.Buf {
+        _ = self;
+
+        log.debug("Handle.optionGetUserAgent called", .{});
+
+        var result: git.Buf = .{};
+        try internal.wrapCall("git_libgit2_opts", .{ raw.GIT_OPT_GET_USER_AGENT, internal.toC(&result) });
+
+        log.debug("got user agent: {s}", .{result.toSlice()});
+
+        return result;
+    }
+
+    pub fn optionSetWindowsSharemode(self: Handle, value: c_uint) !void {
+        _ = self;
+
+        log.debug("Handle.optionSetWindowsSharemode called, value={}", .{value});
+
+        try internal.wrapCall("git_libgit2_opts", .{ raw.GIT_OPT_SET_WINDOWS_SHAREMODE, value });
+
+        log.debug("successfully set windows share mode", .{});
+    }
+
+    pub fn optionGetWindowSharemode(self: Handle) !c_uint {
+        _ = self;
+
+        log.debug("Handle.optionGetWindowSharemode called", .{});
+
+        var result: c_uint = undefined;
+        try internal.wrapCall("git_libgit2_opts", .{ raw.GIT_OPT_GET_WINDOWS_SHAREMODE, &result });
+
+        log.debug("got windows share mode: {}", .{result});
+
+        return result;
+    }
+
+    pub fn optionSetStrictObjectCreation(self: Handle, enabled: bool) !void {
+        _ = self;
+
+        log.debug("Handle.optionSetStrictObjectCreation called, enabled={}", .{enabled});
+
+        try internal.wrapCall("git_libgit2_opts", .{ raw.GIT_OPT_ENABLE_STRICT_OBJECT_CREATION, @boolToInt(enabled) });
+
+        log.debug("successfully set strict object creation mode", .{});
+    }
+
+    pub fn optionSetStrictSymbolicRefCreations(self: Handle, enabled: bool) !void {
+        _ = self;
+
+        log.debug("Handle.optionSetStrictSymbolicRefCreations called, enabled={}", .{enabled});
+
+        try internal.wrapCall("git_libgit2_opts", .{ raw.GIT_OPT_ENABLE_STRICT_SYMBOLIC_REF_CREATION, @boolToInt(enabled) });
+
+        log.debug("successfully set strict symbolic ref creation mode", .{});
+    }
+
+    pub fn optionSetSslCiphers(self: Handle, ciphers: [:0]const u8) !void {
+        _ = self;
+
+        log.debug("Handle.optionSetSslCiphers called, ciphers={s}", .{ciphers});
+
+        try internal.wrapCall("git_libgit2_opts", .{ raw.GIT_OPT_SET_SSL_CIPHERS, ciphers.ptr });
+
+        log.debug("successfully set SSL ciphers", .{});
+    }
+
+    pub fn optionSetOffsetDeltas(self: Handle, enabled: bool) !void {
+        _ = self;
+
+        log.debug("Handle.optionSetOffsetDeltas called, enabled={}", .{enabled});
+
+        try internal.wrapCall("git_libgit2_opts", .{ raw.GIT_OPT_ENABLE_OFS_DELTA, @boolToInt(enabled) });
+
+        log.debug("successfully set offset deltas mode", .{});
+    }
+
+    pub fn optionSetFsyncDir(self: Handle, enabled: bool) !void {
+        _ = self;
+
+        log.debug("Handle.optionSetFsyncDir called, enabled={}", .{enabled});
+
+        try internal.wrapCall("git_libgit2_opts", .{ raw.GIT_OPT_ENABLE_FSYNC_GITDIR, @boolToInt(enabled) });
+
+        log.debug("successfully set fsync dir mode", .{});
+    }
+
+    pub fn optionSetStrictHashVerification(self: Handle, enabled: bool) !void {
+        _ = self;
+
+        log.debug("Handle.optionSetStrictHashVerification called, enabled={}", .{enabled});
+
+        try internal.wrapCall("git_libgit2_opts", .{ raw.GIT_OPT_ENABLE_STRICT_HASH_VERIFICATION, @boolToInt(enabled) });
+
+        log.debug("successfully set strict hash verification mode", .{});
+    }
+
+    /// If the given `allocator` is `null`, then the system default will be restored.
+    pub fn optionSetAllocator(self: Handle, allocator: ?*git.GitAllocator) !void {
+        _ = self;
+
+        log.debug("Handle.optionSetAllocator called, allocator={*}", .{allocator});
+
+        try internal.wrapCall("git_libgit2_opts", .{ raw.GIT_OPT_SET_ALLOCATOR, allocator });
+
+        log.debug("successfully set allocator", .{});
+    }
+
+    pub fn optionSetUnsafedIndexSafety(self: Handle, enabled: bool) !void {
+        _ = self;
+
+        log.debug("Handle.optionSetUnsafedIndexSafety called, enabled={}", .{enabled});
+
+        try internal.wrapCall("git_libgit2_opts", .{ raw.GIT_OPT_ENABLE_UNSAVED_INDEX_SAFETY, @boolToInt(enabled) });
+
+        log.debug("successfully set unsaved index safety mode", .{});
+    }
+
+    pub fn optionGetMaximumPackObjects(self: Handle) !usize {
+        _ = self;
+
+        log.debug("Handle.optionGetMaximumPackObjects called", .{});
+
+        var result: usize = undefined;
+        try internal.wrapCall("git_libgit2_opts", .{ raw.GIT_OPT_GET_PACK_MAX_OBJECTS, &result });
+
+        log.debug("maximum pack objects: {}", .{result});
+
+        return result;
+    }
+
+    pub fn optionSetMaximumPackObjects(self: Handle, value: usize) !void {
+        _ = self;
+
+        log.debug("Handle.optionSetMaximumPackObjects called, value={}", .{value});
+
+        try internal.wrapCall("git_libgit2_opts", .{ raw.GIT_OPT_SET_PACK_MAX_OBJECTS, value });
+
+        log.debug("successfully set maximum pack objects", .{});
+    }
+
+    pub fn optionSetDisablePackKeepFileChecks(self: Handle, enabled: bool) !void {
+        _ = self;
+
+        log.debug("Handle.optionSetDisablePackKeepFileChecks called, enabled={}", .{enabled});
+
+        try internal.wrapCall("git_libgit2_opts", .{ raw.GIT_OPT_DISABLE_PACK_KEEP_FILE_CHECKS, @boolToInt(enabled) });
+
+        log.debug("successfully set unsaved index safety mode", .{});
+    }
+
+    pub fn optionSetHTTPExpectContinue(self: Handle, enabled: bool) !void {
+        _ = self;
+
+        log.debug("Handle.optionSetHTTPExpectContinue called, enabled={}", .{enabled});
+
+        try internal.wrapCall("git_libgit2_opts", .{ raw.GIT_OPT_ENABLE_HTTP_EXPECT_CONTINUE, @boolToInt(enabled) });
+
+        log.debug("successfully set HTTP expect continue mode", .{});
+    }
+
+    usingnamespace if (internal.available(.master)) struct {
+        pub fn optionSetOdbPackedPriority(self: Handle, value: usize) !void {
+            _ = self;
+
+            log.debug("Handle.optionSetOdbPackedPriority called, value={}", .{value});
+
+            try internal.wrapCall("git_libgit2_opts", .{ raw.GIT_OPT_SET_ODB_PACKED_PRIORITY, value });
+
+            log.debug("successfully set odb packed priority", .{});
+        }
+
+        pub fn optionSetOdbLoosePriority(self: Handle, value: usize) !void {
+            _ = self;
+
+            log.debug("Handle.optionSetOdbLoosePriority called, value={}", .{value});
+
+            try internal.wrapCall("git_libgit2_opts", .{ raw.GIT_OPT_SET_ODB_LOOSE_PRIORITY, value });
+
+            log.debug("successfully set odb loose priority", .{});
+        }
+    } else struct {};
 
     comptime {
         std.testing.refAllDecls(@This());

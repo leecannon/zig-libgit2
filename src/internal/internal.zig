@@ -2,7 +2,13 @@ const std = @import("std");
 const raw = @import("raw.zig");
 const git = @import("../git.zig");
 const log = std.log.scoped(.git);
-const old_version: bool = @import("build_options").old_version;
+pub const LibraryVersion = @import("version.zig").LibraryVersion;
+
+pub const version: LibraryVersion = @intToEnum(LibraryVersion, @import("build_options").raw_version);
+
+pub fn available(minimum_version: LibraryVersion) bool {
+    return @enumToInt(minimum_version) <= @import("build_options").raw_version;
+}
 
 pub inline fn wrapCall(comptime name: []const u8, args: anytype) git.GitError!void {
     checkForError(@call(.{}, @field(raw, name), args)) catch |err| {
