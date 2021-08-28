@@ -295,7 +295,7 @@ pub const Index = opaque {
             buffer.len,
         });
 
-        if (internal.available(.@"1.0.0")) {
+        if (comptime internal.available(.@"1.0.0")) {
             try internal.wrapCall("git_index_add_from_buffer", .{ internal.toC(self), internal.toC(index_entry), buffer.ptr, buffer.len });
         } else {
             try internal.wrapCall("git_index_add_frombuffer", .{ internal.toC(self), internal.toC(index_entry), buffer.ptr, buffer.len });

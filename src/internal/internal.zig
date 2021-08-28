@@ -6,7 +6,7 @@ pub const LibraryVersion = @import("version.zig").LibraryVersion;
 
 pub const version: LibraryVersion = @intToEnum(LibraryVersion, @import("build_options").raw_version);
 
-pub fn available(minimum_version: LibraryVersion) bool {
+pub inline fn available(comptime minimum_version: LibraryVersion) bool {
     return @enumToInt(minimum_version) <= @import("build_options").raw_version;
 }
 

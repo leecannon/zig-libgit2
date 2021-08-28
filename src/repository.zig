@@ -989,7 +989,7 @@ pub const Repository = opaque {
         };
 
         fn toCType(self: FileStatusOptions, c_type: *raw.git_status_options) !void {
-            if (internal.available(.@"1.0.0")) {
+            if (comptime internal.available(.@"1.0.0")) {
                 try internal.wrapCall("git_status_options_init", .{ c_type, raw.GIT_REPOSITORY_INIT_OPTIONS_VERSION });
             } else {
                 try internal.wrapCall("git_status_init_options", .{ c_type, raw.GIT_REPOSITORY_INIT_OPTIONS_VERSION });
