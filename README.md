@@ -21,10 +21,9 @@ This is an in-progress zig binding to libgit2, unfortunately libgit2 doesn't ful
 - [ ] cred_helpers.h
 - [ ] credential_helpers.h
 - [ ] credential.h
-- [ ] deprecated.h
 - [ ] describe.h
 - [ ] diff.h
-- [ ] errors.h
+- [x] errors.h
 - [ ] filter.h
 - [ ] global.h
 - [ ] graph.h

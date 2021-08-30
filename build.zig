@@ -5,7 +5,8 @@ pub fn build(b: *std.build.Builder) void {
     const target = b.standardTargetOptions(.{});
     const mode = b.standardReleaseOptions();
 
-    const version = b.option(LibraryVersion, "library_version", "What is the available version of libgit2?") orelse LibraryVersion.@"1.1.1";
+    // We assume the latest stable version of libgit2 is available if none is given
+    const version = b.option(LibraryVersion, "library_version", "Available version of libgit2") orelse LibraryVersion.@"1.1.1";
 
     const build_options = b.addOptions();
     build_options.addOption(u8, "raw_version", @enumToInt(version));

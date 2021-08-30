@@ -67,9 +67,14 @@ pub const GitError = error{
     ApplyFail,
 };
 
-/// Get detailed information regarding the last error that occured on this thread.
+/// Get detailed information regarding the last error that occured on *this* thread.
 pub fn getDetailedLastError() ?*const DetailedError {
     return internal.fromC(raw.git_error_last() orelse return null);
+}
+
+/// Clear the last error that occured on *this* thread.
+pub fn clearLastError() void {
+    raw.git_error_clear();
 }
 
 pub const DetailedError = extern struct {
