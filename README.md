@@ -1,9 +1,11 @@
 # zig-libgit2
+
 Zig bindings to [libgit2](https://github.com/libgit2/libgit2)
 
 This is an in-progress zig binding to libgit2, unfortunately libgit2 doesn't full document all possible errors so every errorable function returns the full errorset.
 
 ## Files fully wrapped (others maybe partially complete)
+
 - [ ] annotated_commit.h
 - [ ] apply.h
 - [ ] attr.h
@@ -38,7 +40,7 @@ This is an in-progress zig binding to libgit2, unfortunately libgit2 doesn't ful
 - [ ] object.h
 - [ ] odb_backend.h
 - [ ] odb.h
-- [ ] oid.h
+- [x] oid.h
 - [ ] oidarray.h
 - [ ] pack.h
 - [ ] patch.h

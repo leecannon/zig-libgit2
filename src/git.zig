@@ -16,6 +16,7 @@ pub const Handle = @import("handle.zig").Handle;
 pub const Index = @import("index.zig").Index;
 pub const Odb = @import("odb.zig").Odb;
 pub const Oid = @import("oid.zig").Oid;
+pub const OidShortener = @import("oid.zig").OidShortener;
 pub const RefDb = @import("ref_db.zig").RefDb;
 pub const Reference = @import("reference.zig").Reference;
 pub const Repository = @import("repository.zig").Repository;

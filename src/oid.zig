@@ -12,10 +12,13 @@ pub const Oid = extern struct {
     /// Size (in bytes) of a hex formatted oid
     pub const HEX_BUFFER_SIZE = raw.GIT_OID_HEXSZ;
 
-    /// Format a git_oid into a hex string.
-    ///
-    /// ## Parameters
-    /// * `buf` - Slice to format the oid into, must be atleast `HEX_BUFFER_SIZE` long.
+    pub fn formatHexAlloc(self: Oid, allocator: *std.mem.Allocator) ![]const u8 {
+        const buf = try allocator.alloc(u8, HEX_BUFFER_SIZE);
+        errdefer allocator.free(buf);
+        return try self.formatHex(buf);
+    }
+
+    /// `buf` must be atleast `HEX_BUFFER_SIZE` long.
     pub fn formatHex(self: Oid, buf: []u8) ![]const u8 {
         if (buf.len < HEX_BUFFER_SIZE) return error.BufferTooShort;
 
@@ -24,10 +27,13 @@ pub const Oid = extern struct {
         return buf[0..HEX_BUFFER_SIZE];
     }
 
-    /// Format a git_oid into a zero-terminated hex string.
-    ///
-    /// ## Parameters
-    /// * `buf` - Slice to format the oid into, must be atleast `HEX_BUFFER_SIZE` + 1 long.
+    pub fn formatHexAllocZ(self: Oid, allocator: *std.mem.Allocator) ![:0]const u8 {
+        const buf = try allocator.allocSentinel(u8, HEX_BUFFER_SIZE, 0);
+        errdefer allocator.free(buf);
+        return (try self.formatHex(buf))[0.. :0];
+    }
+
+    /// `buf` must be atleast `HEX_BUFFER_SIZE + 1` long.
     pub fn formatHexZ(self: Oid, buf: []u8) ![:0]const u8 {
         if (buf.len < (HEX_BUFFER_SIZE + 1)) return error.BufferTooShort;
 
@@ -37,9 +43,166 @@ pub const Oid = extern struct {
         return buf[0..HEX_BUFFER_SIZE :0];
     }
 
+    /// Allows partial output
+    pub fn formatHexCountAlloc(self: Oid, allocator: *std.mem.Allocator, length: usize) ![]const u8 {
+        const buf = try allocator.alloc(u8, length);
+        errdefer allocator.free(buf);
+        return try self.formatHexCount(buf, length);
+    }
+
+    /// Allows partial output
+    pub fn formatHexCount(self: Oid, buf: []u8, length: usize) ![]const u8 {
+        if (buf.len < length) return error.BufferTooShort;
+
+        try internal.wrapCall("git_oid_nfmt", .{ buf.ptr, length, internal.toC(&self) });
+
+        return buf[0..length];
+    }
+
+    /// Allows partial output
+    pub fn formatHexCountAllocZ(self: Oid, allocator: *std.mem.Allocator, length: usize) ![:0]const u8 {
+        const buf = try allocator.allocSentinel(u8, length, 0);
+        errdefer allocator.free(buf);
+        return (try self.formatHexCount(buf, length))[0.. :0];
+    }
+
+    /// Allows partial output
+    pub fn formatHexCountZ(self: Oid, buf: []u8, length: usize) ![:0]const u8 {
+        if (buf.len < (length + 1)) return error.BufferTooShort;
+
+        try internal.wrapCall("git_oid_nfmt", .{ buf.ptr, length, internal.toC(&self) });
+        buf[length] = 0;
+
+        return buf[0..length :0];
+    }
+
+    pub fn formatHexPathAlloc(self: Oid, allocator: *std.mem.Allocator) ![]const u8 {
+        const buf = try allocator.alloc(u8, HEX_BUFFER_SIZE + 1);
+        errdefer allocator.free(buf);
+        return try self.formatHexPath(buf);
+    }
+
+    /// `buf` must be atleast `HEX_BUFFER_SIZE + 1` long.
+    pub fn formatHexPath(self: Oid, buf: []u8) ![]const u8 {
+        if (buf.len < HEX_BUFFER_SIZE + 1) return error.BufferTooShort;
+
+        try internal.wrapCall("git_oid_pathfmt", .{ buf.ptr, internal.toC(&self) });
+
+        return buf[0..HEX_BUFFER_SIZE];
+    }
+
+    pub fn formatHexPathAllocZ(self: Oid, allocator: *std.mem.Allocator) ![:0]const u8 {
+        const buf = try allocator.allocSentinel(u8, HEX_BUFFER_SIZE + 1, 0);
+        errdefer allocator.free(buf);
+        return (try self.formatHexPath(buf))[0.. :0];
+    }
+
+    /// `buf` must be atleast `HEX_BUFFER_SIZE + 2` long.
+    pub fn formatHexPathZ(self: Oid, buf: []u8) ![:0]const u8 {
+        if (buf.len < (HEX_BUFFER_SIZE + 2)) return error.BufferTooShort;
+
+        try internal.wrapCall("git_oid_pathfmt", .{ buf.ptr, internal.toC(&self) });
+        buf[HEX_BUFFER_SIZE] = 0;
+
+        return buf[0..HEX_BUFFER_SIZE :0];
+    }
+
+    pub fn tryParse(str: [:0]const u8) ?Oid {
+        return tryParsePtr(str.ptr);
+    }
+
+    pub fn tryParsePtr(str: [*:0]const u8) ?Oid {
+        var result: Oid = undefined;
+        internal.wrapCall("git_oid_fromstrp", .{ internal.toC(&result), str }) catch {
+            return null;
+        };
+        return result;
+    }
+
+    /// Parse `length` characters of a hex formatted object id into a `Oid`
+    ///
+    /// If `length` is odd, the last byte's high nibble will be read in and the low nibble set to zero.
+    pub fn parseCount(buf: []const u8, length: usize) !Oid {
+        if (buf.len < length) return error.BufferTooShort;
+
+        var result: Oid = undefined;
+        try internal.wrapCall("git_oid_fromstrn", .{ internal.toC(&result), buf.ptr, length });
+        return result;
+    }
+
+    /// <0 if a < b; 0 if a == b; >0 if a > b
+    pub fn compare(a: Oid, b: Oid) c_int {
+        return raw.git_oid_cmp(internal.toC(&a), internal.toC(&b));
+    }
+
+    pub fn equal(self: Oid, other: Oid) bool {
+        return raw.git_oid_equal(internal.toC(&self), internal.toC(&other)) == 1;
+    }
+
+    pub fn compareCount(self: Oid, other: Oid, count: usize) bool {
+        return raw.git_oid_ncmp(internal.toC(&self), internal.toC(&other), count) == 0;
+    }
+
+    pub fn equalStr(self: Oid, str: [:0]const u8) bool {
+        return raw.git_oid_streq(internal.toC(&self), str.ptr) == 0;
+    }
+
+    /// <0 if a < str; 0 if a == str; >0 if a > str
+    pub fn compareStr(a: Oid, str: [:0]const u8) c_int {
+        return raw.git_oid_strcmp(internal.toC(&a), str.ptr);
+    }
+
+    pub fn allZeros(self: Oid) bool {
+        for (self.id) |i| if (i != 0) return false;
+        return true;
+    }
+
     test {
         try std.testing.expectEqual(@sizeOf(raw.git_oid), @sizeOf(Oid));
         try std.testing.expectEqual(@bitSizeOf(raw.git_oid), @bitSizeOf(Oid));
+    }
+
+    comptime {
+        std.testing.refAllDecls(@This());
+    }
+};
+
+/// The OID shortener is used to process a list of OIDs in text form and return the shortest length that would uniquely identify
+/// all of them.
+///
+/// E.g. look at the result of `git log --abbrev-commit`.
+pub const OidShortener = opaque {
+
+    /// `min_length` is the minimal length for all identifiers, which will be used even if shorter OIDs would still be unique.
+    pub fn init(min_length: usize) !*OidShortener {
+        log.debug("OidShortener.init called, min_length={}", .{min_length});
+
+        if (raw.git_oid_shorten_new(min_length)) |ret| {
+            log.debug("Oid shortener created successfully", .{});
+
+            return internal.fromC(ret);
+        }
+
+        return error.OutOfMemory;
+    }
+
+    pub fn add(self: *OidShortener, str: []const u8) !c_uint {
+        log.debug("OidShortener.add called, str={s}", .{str});
+
+        if (str.len < Oid.HEX_BUFFER_SIZE) return error.BufferTooShort;
+        const ret = try internal.wrapCallWithReturn("git_oid_shorten_add", .{ internal.toC(self), str.ptr });
+
+        log.debug("shortest unique Oid length: {}", .{ret});
+
+        return @bitCast(c_uint, ret);
+    }
+
+    pub fn deinit(self: *OidShortener) void {
+        log.debug("OidShortener.deinit called", .{});
+
+        raw.git_oid_shorten_free(internal.toC(self));
+
+        log.debug("Oid shortener freed successfully", .{});
     }
 
     comptime {

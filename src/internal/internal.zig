@@ -152,6 +152,7 @@ const type_mappings = &[_]TypeMapping{
     .{ git.Reference, raw.git_reference },
     .{ git.StrArray, raw.git_strarray },
     .{ git.Index.IndexConflictIterator, raw.git_index_conflict_iterator },
+    .{ git.OidShortener, raw.struct_git_oid_shorten },
 };
 
 const TypeMapping = std.meta.Tuple(&.{ type, type });
@@ -234,7 +235,7 @@ fn fromCType(comptime value_type: type) type {
 
 fn MakeCTypeFunction(comptime func: fn (type) type) type {
     return struct {
-        pub fn func(value: anytype) func(@TypeOf(value)) {
+        pub inline fn func(value: anytype) func(@TypeOf(value)) {
             const value_type = @TypeOf(value);
             const type_info: std.builtin.TypeInfo = comptime blk: {
                 const info = @typeInfo(value_type);
