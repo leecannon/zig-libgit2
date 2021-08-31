@@ -1092,6 +1092,372 @@ pub const Repository = opaque {
         return internal.fromC(result.?);
     }
 
+    /// Apply a `Diff` to the given repository, making changes directly in the working directory, the index, or both.
+    ///
+    /// ## Parameters
+    /// * `diff` - the diff to apply
+    /// * `location` - the location to apply (workdir, index or both)
+    /// * `options` - the options for the apply (or null for defaults)
+    pub fn applyDiff(
+        self: *Repository,
+        diff: *git.Diff,
+        location: ApplyLocation,
+        comptime options: ?ApplyOptions,
+    ) !void {
+        log.debug("Repository.applyDiff called, diff={*}, location={}, options={}", .{ diff, location, options });
+
+        const opts = if (options) |user_options| opts_blk: {
+            const delta_cb = if (user_options.delta_cb) |delta_cb| blk: {
+                break :blk struct {
+                    pub fn cb(delta: [*c]raw.git_diff_delta, payload: ?*c_void) callconv(.C) c_int {
+                        _ = payload;
+                        return delta_cb(internal.toC(delta));
+                    }
+                }.cb;
+            } else null;
+
+            const hunk_cb = if (user_options.hunk_cb) |hunk_cb| blk: {
+                break :blk struct {
+                    pub fn cb(hunk: [*c]raw.git_diff_hunk, payload: ?*c_void) callconv(.C) c_int {
+                        _ = payload;
+                        return hunk_cb(internal.toC(hunk));
+                    }
+                }.cb;
+            } else null;
+
+            var opts: raw.git_apply_options = undefined;
+            try internal.wrapCall("git_apply_options_init", .{ &opts, raw.GIT_APPLY_OPTIONS_VERSION });
+
+            opts.delta_cb = delta_cb;
+            opts.hunk_cb = hunk_cb;
+            opts.payload = null;
+            opts.flags = @bitCast(c_uint, user_options.flags);
+
+            break :opts_blk opts;
+        } else null;
+
+        try internal.wrapCall("git_apply", .{
+            internal.toC(self),
+            internal.toC(diff),
+            internal.toC(location),
+            opts,
+        });
+
+        log.debug("apply completed", .{});
+    }
+
+    /// Apply a `Diff` to the given repository, making changes directly in the working directory, the index, or both.
+    ///
+    /// ## Parameters
+    /// * `diff` - the diff to apply
+    /// * `location` - the location to apply (workdir, index or both)
+    /// * `user_data` - user data to be passed to callbacks
+    /// * `options` - the options for the apply (or null for defaults)
+    pub fn applyDiffWithUserData(
+        self: *Repository,
+        diff: *git.Diff,
+        location: ApplyLocation,
+        user_data: anytype,
+        comptime options: ?ApplyOptionsWithUserData(@TypeOf(user_data)),
+    ) !void {
+        const UserDataType = @TypeOf(user_data);
+
+        log.debug("Repository.applyDiffWithUserData called, diff={*}, location={}, options={}", .{ diff, location, options });
+
+        const opts = if (options) |user_options| opts_blk: {
+            const delta_cb = if (user_options.delta_cb) |delta_cb| blk: {
+                break :blk struct {
+                    pub fn cb(delta: [*c]raw.git_diff_delta, payload: ?*c_void) callconv(.C) c_int {
+                        return delta_cb(
+                            internal.toC(delta.?),
+                            @intToPtr(UserDataType, @ptrToInt(payload)),
+                        );
+                    }
+                }.cb;
+            } else null;
+
+            const hunk_cb = if (user_options.hunk_cb) |hunk_cb| blk: {
+                break :blk struct {
+                    pub fn cb(hunk: [*c]raw.git_diff_hunk, payload: ?*c_void) callconv(.C) c_int {
+                        return hunk_cb(
+                            internal.toC(hunk.?),
+                            @intToPtr(UserDataType, @ptrToInt(payload)),
+                        );
+                    }
+                }.cb;
+            } else null;
+
+            var opts: raw.git_apply_options = undefined;
+            try internal.wrapCall("git_apply_options_init", .{ &opts, raw.GIT_APPLY_OPTIONS_VERSION });
+
+            opts.delta_cb = delta_cb;
+            opts.hunk_cb = hunk_cb;
+            opts.payload = user_data;
+            opts.flags = @bitCast(c_uint, user_options.flags);
+
+            break :opts_blk opts;
+        } else null;
+
+        try internal.wrapCall("git_apply", .{
+            internal.toC(self),
+            internal.toC(diff),
+            internal.toC(location),
+            opts,
+        });
+
+        log.debug("apply completed", .{});
+    }
+
+    /// Apply a `Diff` to a `Tree`, and return the resulting image as an index.
+    ///
+    /// ## Parameters
+    /// * `diff` - the diff to apply`
+    /// * `preimage` - the tree to apply the diff to
+    /// * `options` - the options for the apply (or null for defaults)
+    pub fn applyDiffToTree(
+        self: *Repository,
+        diff: *git.Diff,
+        preimage: *git.Tree,
+        user_data: anytype,
+        comptime options: ?ApplyOptionsWithUserData(@TypeOf(user_data)),
+    ) !*git.Index {
+        log.debug(
+            "Repository.applyDiffToTree called, diff={*}, preimage={*}, options={}",
+            .{ diff, preimage, options },
+        );
+
+        const opts = if (options) |user_options| opts_blk: {
+            const delta_cb = if (user_options.delta_cb) |delta_cb| blk: {
+                break :blk struct {
+                    pub fn cb(delta: [*c]raw.git_diff_delta, payload: ?*c_void) callconv(.C) c_int {
+                        _ = payload;
+                        return delta_cb(internal.toC(delta.?));
+                    }
+                }.cb;
+            } else null;
+
+            const hunk_cb = if (user_options.hunk_cb) |hunk_cb| blk: {
+                break :blk struct {
+                    pub fn cb(hunk: [*c]raw.git_diff_hunk, payload: ?*c_void) callconv(.C) c_int {
+                        _ = payload;
+                        return hunk_cb(internal.toC(hunk.?));
+                    }
+                }.cb;
+            } else null;
+
+            var opts: raw.git_apply_options = undefined;
+            try internal.wrapCall("git_apply_options_init", .{ &opts, raw.GIT_APPLY_OPTIONS_VERSION });
+
+            opts.delta_cb = delta_cb;
+            opts.hunk_cb = hunk_cb;
+            opts.payload = null;
+            opts.flags = @bitCast(c_uint, user_options.flags);
+
+            break :opts_blk opts;
+        } else null;
+
+        var ret: [*c]raw.git_index = undefined;
+
+        try internal.wrapCall("git_apply_to_tree", .{
+            &ret,
+            internal.toC(self),
+            internal.toC(preimage),
+            internal.toC(diff),
+            opts,
+        });
+
+        const result = internal.fromC(ret.?);
+
+        log.debug("apply completed, index={*}", .{result});
+
+        return result;
+    }
+
+    /// Apply a `Diff` to a `Tree`, and return the resulting image as an index.
+    ///
+    /// ## Parameters
+    /// * `diff` - the diff to apply`
+    /// * `preimage` - the tree to apply the diff to
+    /// * `user_data` - user data to be passed to callbacks
+    /// * `options` - the options for the apply (or null for defaults)
+    pub fn applyDiffToTreeWithUserData(
+        self: *Repository,
+        diff: *git.Diff,
+        preimage: *git.Tree,
+        user_data: anytype,
+        comptime options: ?ApplyOptionsWithUserData(@TypeOf(user_data)),
+    ) !*git.Index {
+        const UserDataType = @TypeOf(user_data);
+
+        log.debug(
+            "Repository.applyDiffToTreeWithUserData called, diff={*}, preimage={*}, options={}",
+            .{ diff, preimage, options },
+        );
+
+        const opts = if (options) |user_options| opts_blk: {
+            const delta_cb = if (user_options.delta_cb) |delta_cb| blk: {
+                break :blk struct {
+                    pub fn cb(delta: [*c]raw.git_diff_delta, payload: ?*c_void) callconv(.C) c_int {
+                        return delta_cb(
+                            internal.toC(delta.?),
+                            @intToPtr(UserDataType, @ptrToInt(payload)),
+                        );
+                    }
+                }.cb;
+            } else null;
+
+            const hunk_cb = if (user_options.hunk_cb) |hunk_cb| blk: {
+                break :blk struct {
+                    pub fn cb(hunk: [*c]raw.git_diff_hunk, payload: ?*c_void) callconv(.C) c_int {
+                        return hunk_cb(
+                            internal.toC(hunk.?),
+                            @intToPtr(UserDataType, @ptrToInt(payload)),
+                        );
+                    }
+                }.cb;
+            } else null;
+
+            var opts: raw.git_apply_options = undefined;
+            try internal.wrapCall("git_apply_options_init", .{ &opts, raw.GIT_APPLY_OPTIONS_VERSION });
+
+            opts.delta_cb = delta_cb;
+            opts.hunk_cb = hunk_cb;
+            opts.payload = user_data;
+            opts.flags = @bitCast(c_uint, user_options.flags);
+
+            break :opts_blk opts;
+        } else null;
+
+        var ret: [*c]raw.git_index = undefined;
+
+        try internal.wrapCall("git_apply_to_tree", .{
+            &ret,
+            internal.toC(self),
+            internal.toC(preimage),
+            internal.toC(diff),
+            opts,
+        });
+
+        const result = internal.fromC(ret.?);
+
+        log.debug("apply completed, index={*}", .{result});
+
+        return result;
+    }
+
+    pub const ApplyOptions = struct {
+        /// callback that will be made per delta (file)
+        ///
+        /// When the callback:
+        ///   - returns < 0, the apply process will be aborted.
+        ///   - returns > 0, the delta will not be applied, but the apply process continues
+        ///   - returns 0, the delta is applied, and the apply process continues.
+        delta_cb: ?fn (delta: *const git.DiffDelta) c_int = null,
+
+        /// callback that will be made per hunk
+        ///
+        /// When the callback:
+        ///   - returns < 0, the apply process will be aborted.
+        ///   - returns > 0, the hunk will not be applied, but the apply process continues
+        ///   - returns 0, the hunk is applied, and the apply process continues.
+        hunk_cb: ?fn (hunk: *const git.DiffHunk) c_int = null,
+
+        flags: ApplyOptionsFlags = .{},
+
+        comptime {
+            std.testing.refAllDecls(@This());
+        }
+    };
+
+    pub fn ApplyOptionsWithUserData(comptime T: type) type {
+        return struct {
+            /// callback that will be made per delta (file)
+            ///
+            /// When the callback:
+            ///   - returns < 0, the apply process will be aborted.
+            ///   - returns > 0, the delta will not be applied, but the apply process continues
+            ///   - returns 0, the delta is applied, and the apply process continues.
+            delta_cb: ?fn (delta: *const git.DiffDelta, user_data: T) c_int = null,
+
+            /// callback that will be made per hunk
+            ///
+            /// When the callback:
+            ///   - returns < 0, the apply process will be aborted.
+            ///   - returns > 0, the hunk will not be applied, but the apply process continues
+            ///   - returns 0, the hunk is applied, and the apply process continues.
+            hunk_cb: ?fn (hunk: *const git.DiffHunk, user_data: T) c_int = null,
+
+            flags: ApplyOptionsFlags = .{},
+
+            comptime {
+                std.testing.refAllDecls(@This());
+            }
+        };
+    }
+
+    pub const ApplyOptionsFlags = packed struct {
+        /// Don't actually make changes, just test that the patch applies. This is the equivalent of `git apply --check`.
+        CHECK: bool = false,
+
+        z_padding: u31 = 0,
+
+        pub fn format(
+            value: ApplyOptionsFlags,
+            comptime fmt: []const u8,
+            options: std.fmt.FormatOptions,
+            writer: anytype,
+        ) !void {
+            _ = fmt;
+            return internal.formatWithoutFields(
+                value,
+                options,
+                writer,
+                &.{"z_padding"},
+            );
+        }
+
+        test {
+            try std.testing.expectEqual(@sizeOf(c_uint), @sizeOf(ApplyOptionsFlags));
+            try std.testing.expectEqual(@bitSizeOf(c_uint), @bitSizeOf(ApplyOptionsFlags));
+        }
+
+        comptime {
+            std.testing.refAllDecls(@This());
+        }
+    };
+
+    // pub const ApplyOptions = struct {
+    //     fn toCType(self: ApplyOptions, c_type: *raw.git_apply_options) !void {
+    //         try internal.wrapCall("git_apply_options_init", .{ c_type, raw.GIT_APPLY_OPTIONS_VERSION });
+
+    //         c_type.flags = self.flags.toInt();
+    //         c_type.mode = self.mode.toInt();
+    //         c_type.workdir_path = if (self.workdir_path) |slice| slice.ptr else null;
+    //         c_type.description = if (self.description) |slice| slice.ptr else null;
+    //         c_type.template_path = if (self.template_path) |slice| slice.ptr else null;
+    //         c_type.initial_head = if (self.initial_head) |slice| slice.ptr else null;
+    //         c_type.origin_url = if (self.origin_url) |slice| slice.ptr else null;
+    //     }
+
+    //     comptime {
+    //         std.testing.refAllDecls(@This());
+    //     }
+    // };
+
+    pub const ApplyLocation = enum(c_uint) {
+        /// Apply the patch to the workdir, leaving the index untouched.
+        /// This is the equivalent of `git apply` with no location argument.
+        WORKDIR = 0,
+
+        /// Apply the patch to the index, leaving the working directory
+        /// untouched.  This is the equivalent of `git apply --cached`.
+        INDEX = 1,
+
+        /// Apply the patch to both the working directory and the index.
+        /// This is the equivalent of `git apply --index`.
+        BOTH = 2,
+    };
+
     comptime {
         std.testing.refAllDecls(@This());
     }

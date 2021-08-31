@@ -7,7 +7,7 @@ This is an in-progress zig binding to libgit2, unfortunately libgit2 doesn't ful
 ## Files fully wrapped (others maybe partially complete)
 
 - [x] annotated_commit.h
-- [ ] apply.h
+- [x] apply.h
 - [ ] attr.h
 - [ ] blame.h
 - [ ] blob.h

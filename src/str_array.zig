@@ -25,7 +25,11 @@ pub const StrArray = extern struct {
     pub fn deinit(self: *StrArray) void {
         log.debug("StrArray.deinit called", .{});
 
-        raw.git_strarray_dispose(internal.toC(self));
+        if (comptime internal.available(.@"1.0.1")) {
+            raw.git_strarray_dispose(internal.toC(self));
+        } else {
+            raw.git_strarray_free(internal.toC(self));
+        }
 
         log.debug("StrArray freed successfully", .{});
     }

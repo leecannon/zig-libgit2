@@ -5,6 +5,66 @@ const log = std.log.scoped(.git);
 
 const git = @import("git.zig");
 
+/// The diff object that contains all individual file deltas.
+/// A `diff` represents the cumulative list of differences between two snapshots of a repository (possibly filtered by a set of
+/// file name patterns).
+///
+/// Calculating diffs is generally done in two phases: building a list of diffs then traversing it. This makes is easier to share
+/// logic across the various types of diffs (tree vs tree, workdir vs index, etc.), and also allows you to insert optional diff
+/// post-processing phases, such as rename detection, in between the steps. When you are done with a diff object, it must be
+/// freed.
+pub const Diff = opaque {
+    pub fn deinit(self: *Diff) void {
+        log.debug("Diff.deinit called", .{});
+
+        raw.git_diff_free(internal.toC(self));
+
+        log.debug("diff freed successfully", .{});
+    }
+
+    comptime {
+        std.testing.refAllDecls(@This());
+    }
+};
+
+/// Structure describing a hunk of a diff.
+///
+/// A `hunk` is a span of modified lines in a delta along with some stable surrounding context. You can configure the amount of
+/// context and other properties of how hunks are generated. Each hunk also comes with a header that described where it starts and
+/// ends in both the old and new versions in the delta.
+pub const DiffHunk = extern struct {
+    pub const HEADER_SIZE: usize = raw.GIT_DIFF_HUNK_HEADER_SIZE;
+
+    /// Starting line number in old_file
+    old_start: c_int,
+    /// Number of lines in old_file
+    old_lines: c_int,
+    /// Starting line number in new_file
+    new_start: c_int,
+    /// Number of lines in new_file
+    new_lines: c_int,
+    /// Number of bytes in header text
+    header_len: usize,
+    /// Header text, NUL-byte terminated
+    /// Use `getHeader`
+    z_header: [HEADER_SIZE]u8,
+
+    pub fn getHeader(self: DiffHunk) [:0]const u8 {
+        // for some reason this gives `expected type '[:0]const u8', found '[]const u8'`
+        // return std.mem.sliceTo(&self.z_header, 0);
+        return std.mem.sliceTo(@ptrCast([*:0]const u8, &self.z_header), 0);
+    }
+
+    test {
+        try std.testing.expectEqual(@sizeOf(raw.git_diff_hunk), @sizeOf(DiffHunk));
+        try std.testing.expectEqual(@bitSizeOf(raw.git_diff_hunk), @bitSizeOf(DiffHunk));
+    }
+
+    comptime {
+        std.testing.refAllDecls(@This());
+    }
+};
+
 /// Description of changes to one entry.
 ///
 /// A `delta` is a file pair with an old and new revision. The old version may be absent if the file was just created and the new
