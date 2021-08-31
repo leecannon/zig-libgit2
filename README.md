@@ -60,8 +60,7 @@ This is an in-progress zig binding to libgit2, unfortunately libgit2 doesn't ful
 - [ ] signature.h
 - [ ] stash.h
 - [x] status.h
-- [ ] stdint.h
-- [ ] strarray.h
+- [x] strarray.h
 - [ ] submodule.h
 - [ ] tag.h
 - [ ] trace.h
