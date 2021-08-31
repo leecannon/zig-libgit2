@@ -1023,6 +1023,75 @@ pub const Repository = opaque {
         return ret;
     }
 
+    pub fn createAnnotatedCommitFromFetchHead(
+        self: *git.Repository,
+        branch_name: [:0]const u8,
+        remote_url: [:0]const u8,
+        id: git.Oid,
+    ) !*git.AnnotatedCommit {
+        // This check is to prevent formating the oid when we are not going to print anything
+        if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
+            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            const slice = try id.formatHex(&buf);
+            log.debug(
+                "Reference.createAnnotatedCommitFromFetchHead called, branch_name={s}, remote_url={s}, id={s}",
+                .{
+                    branch_name,
+                    remote_url,
+                    slice,
+                },
+            );
+        }
+
+        var result: ?*raw.git_annotated_commit = undefined;
+        try internal.wrapCall("git_annotated_commit_from_fetchhead", .{
+            &result,
+            internal.toC(self),
+            branch_name.ptr,
+            remote_url.ptr,
+            internal.toC(&id),
+        });
+
+        log.debug("successfully created annotated commit", .{});
+
+        return internal.fromC(result.?);
+    }
+
+    pub fn createAnnotatedCommitFromLookup(self: *Repository, id: git.Oid) !*git.AnnotatedCommit {
+        // This check is to prevent formating the oid when we are not going to print anything
+        if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
+            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            const slice = try id.formatHex(&buf);
+            log.debug("Reference.createAnnotatedCommitFromLookup called, id={s}", .{slice});
+        }
+
+        var result: ?*raw.git_annotated_commit = undefined;
+        try internal.wrapCall("git_annotated_commit_lookup", .{
+            &result,
+            internal.toC(self),
+            internal.toC(&id),
+        });
+
+        log.debug("successfully created annotated commit", .{});
+
+        return internal.fromC(result.?);
+    }
+
+    pub fn createAnnotatedCommitFromRevisionString(self: *Repository, revspec: [:0]const u8) !*git.AnnotatedCommit {
+        log.debug("Reference.createAnnotatedCommitFromRevisionString called, revspec={s}", .{revspec});
+
+        var result: ?*raw.git_annotated_commit = undefined;
+        try internal.wrapCall("git_annotated_commit_from_revspec", .{
+            &result,
+            internal.toC(self),
+            revspec.ptr,
+        });
+
+        log.debug("successfully created annotated commit", .{});
+
+        return internal.fromC(result.?);
+    }
+
     comptime {
         std.testing.refAllDecls(@This());
     }

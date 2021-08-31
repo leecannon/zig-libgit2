@@ -30,6 +30,17 @@ pub const AnnotatedCommit = opaque {
         return oid;
     }
 
+    /// Gets the refname that the given `AnnotatedCommit` refers to.
+    pub fn getRefname(self: *const AnnotatedCommit) ![:0]const u8 {
+        log.debug("AnnotatedCommit.getRefname called", .{});
+
+        const slice = std.mem.sliceTo(raw.git_annotated_commit_ref(internal.toC(self)), 0);
+
+        log.debug("annotated commit refname acquired: {s}", .{slice});
+
+        return slice;
+    }
+
     comptime {
         std.testing.refAllDecls(@This());
     }

@@ -14,6 +14,17 @@ pub const Reference = opaque {
         log.debug("reference freed successfully", .{});
     }
 
+    pub fn createAnnotatedCommit(self: *const Reference, repository: *git.Repository) !*git.AnnotatedCommit {
+        log.debug("Reference.getAnnotatedCommit called, repository={*}", .{repository});
+
+        var result: ?*raw.git_annotated_commit = undefined;
+        try internal.wrapCall("git_annotated_commit_from_ref", .{ &result, internal.toC(repository), internal.toC(self) });
+
+        log.debug("successfully created annotated commit", .{});
+
+        return internal.fromC(result.?);
+    }
+
     comptime {
         std.testing.refAllDecls(@This());
     }
