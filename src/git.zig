@@ -9,11 +9,13 @@ pub usingnamespace @import("errors.zig");
 
 pub const GitAllocator = @import("alloc.zig").GitAllocator;
 pub const AnnotatedCommit = @import("annotated_commit.zig").AnnotatedCommit;
+pub const Attribute = @import("attribute.zig").Attribute;
 pub const Buf = @import("buffer.zig").Buf;
 pub const Config = @import("config.zig").Config;
-pub const Diff = @import("diff.zig").Diff;
-pub const DiffDelta = @import("diff.zig").DiffDelta;
-pub const DiffHunk = @import("diff.zig").DiffHunk;
+const diff = @import("diff.zig");
+pub const Diff = diff.Diff;
+pub const DiffDelta = diff.DiffDelta;
+pub const DiffHunk = diff.DiffHunk;
 pub const Handle = @import("handle.zig").Handle;
 pub const Index = @import("index.zig").Index;
 pub const Odb = @import("odb.zig").Odb;

@@ -1034,7 +1034,7 @@ pub const Repository = opaque {
             var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
             const slice = try id.formatHex(&buf);
             log.debug(
-                "Reference.createAnnotatedCommitFromFetchHead called, branch_name={s}, remote_url={s}, id={s}",
+                "Repository.createAnnotatedCommitFromFetchHead called, branch_name={s}, remote_url={s}, id={s}",
                 .{
                     branch_name,
                     remote_url,
@@ -1062,7 +1062,7 @@ pub const Repository = opaque {
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
             var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
             const slice = try id.formatHex(&buf);
-            log.debug("Reference.createAnnotatedCommitFromLookup called, id={s}", .{slice});
+            log.debug("Repository.createAnnotatedCommitFromLookup called, id={s}", .{slice});
         }
 
         var result: ?*raw.git_annotated_commit = undefined;
@@ -1078,7 +1078,7 @@ pub const Repository = opaque {
     }
 
     pub fn createAnnotatedCommitFromRevisionString(self: *Repository, revspec: [:0]const u8) !*git.AnnotatedCommit {
-        log.debug("Reference.createAnnotatedCommitFromRevisionString called, revspec={s}", .{revspec});
+        log.debug("Repository.createAnnotatedCommitFromRevisionString called, revspec={s}", .{revspec});
 
         var result: ?*raw.git_annotated_commit = undefined;
         try internal.wrapCall("git_annotated_commit_from_revspec", .{
@@ -1426,24 +1426,6 @@ pub const Repository = opaque {
         }
     };
 
-    // pub const ApplyOptions = struct {
-    //     fn toCType(self: ApplyOptions, c_type: *raw.git_apply_options) !void {
-    //         try internal.wrapCall("git_apply_options_init", .{ c_type, raw.GIT_APPLY_OPTIONS_VERSION });
-
-    //         c_type.flags = self.flags.toInt();
-    //         c_type.mode = self.mode.toInt();
-    //         c_type.workdir_path = if (self.workdir_path) |slice| slice.ptr else null;
-    //         c_type.description = if (self.description) |slice| slice.ptr else null;
-    //         c_type.template_path = if (self.template_path) |slice| slice.ptr else null;
-    //         c_type.initial_head = if (self.initial_head) |slice| slice.ptr else null;
-    //         c_type.origin_url = if (self.origin_url) |slice| slice.ptr else null;
-    //     }
-
-    //     comptime {
-    //         std.testing.refAllDecls(@This());
-    //     }
-    // };
-
     pub const ApplyLocation = enum(c_uint) {
         /// Apply the patch to the workdir, leaving the index untouched.
         /// This is the equivalent of `git apply` with no location argument.
@@ -1456,6 +1438,114 @@ pub const Repository = opaque {
         /// Apply the patch to both the working directory and the index.
         /// This is the equivalent of `git apply --index`.
         BOTH = 2,
+    };
+
+    /// Look up the value of one git attribute for path.
+    ///
+    /// ## Parameters
+    /// * `flags` - options for fetching attributes
+    /// * `path` - The path to check for attributes.  Relative paths are interpreted relative to the repo root. The file does not
+    /// have to exist, but if it does not, then it will be treated as a plain file (not a directory).
+    /// * `name` - The name of the attribute to look up.
+    pub fn attributeGet(self: *const Repository, flags: AttributeFlags, path: [:0]const u8, name: [:0]const u8) !git.Attribute {
+        log.debug("Repository.attributeGet called, flags={}, path={s}, name={s}", .{ flags, path, name });
+
+        var result: [*c]const u8 = undefined;
+        try internal.wrapCall("git_attr_get", .{
+            &result,
+            internal.toC(self),
+            flags.toC(),
+            path.ptr,
+            name.ptr,
+        });
+
+        log.debug("fetched attribute", .{});
+
+        return git.Attribute{
+            .z_attr = result,
+        };
+    }
+
+    pub const AttributeFlags = struct {
+        location: Location = .FILE_THEN_INDEX,
+
+        /// Controls extended attribute behavior
+        extended: Extended = .{},
+
+        pub const Location = enum(u32) {
+            FILE_THEN_INDEX = 0,
+            INDEX_THEN_FILE = 1,
+            INDEX_ONLY = 2,
+        };
+
+        pub const Extended = packed struct {
+            z_padding1: u2 = 0,
+
+            /// Normally, attribute checks include looking in the /etc (or system equivalent) directory for a `gitattributes`
+            /// file. Passing this flag will cause attribute checks to ignore that file. Setting the `NO_SYSTEM` flag will cause
+            /// attribute checks to ignore that file.
+            NO_SYSTEM: bool = false,
+
+            /// Passing the `INCLUDE_HEAD` flag will use attributes from a `.gitattributes` file in the repository
+            /// at the HEAD revision.
+            INCLUDE_HEAD: bool = false,
+
+            /// Passing the `INCLUDE_COMMIT` flag will use attributes from a `.gitattributes` file in a specific
+            /// commit.
+            INCLUDE_COMMIT: bool = false,
+
+            z_padding2: u27 = 0,
+
+            pub fn format(
+                value: Extended,
+                comptime fmt: []const u8,
+                options: std.fmt.FormatOptions,
+                writer: anytype,
+            ) !void {
+                _ = fmt;
+                return internal.formatWithoutFields(
+                    value,
+                    options,
+                    writer,
+                    &.{ "z_padding1", "z_padding2" },
+                );
+            }
+
+            test {
+                try std.testing.expectEqual(@sizeOf(u32), @sizeOf(Extended));
+                try std.testing.expectEqual(@bitSizeOf(u32), @bitSizeOf(Extended));
+            }
+
+            comptime {
+                std.testing.refAllDecls(@This());
+            }
+        };
+
+        fn toC(self: AttributeFlags) u32 {
+            var result: u32 = 0;
+
+            switch (self.location) {
+                .FILE_THEN_INDEX => {},
+                .INDEX_THEN_FILE => result |= raw.GIT_ATTR_CHECK_INDEX_THEN_FILE,
+                .INDEX_ONLY => result |= raw.GIT_ATTR_CHECK_INDEX_ONLY,
+            }
+
+            if (self.extended.NO_SYSTEM) {
+                result |= raw.GIT_ATTR_CHECK_NO_SYSTEM;
+            }
+            if (self.extended.INCLUDE_HEAD) {
+                result |= raw.GIT_ATTR_CHECK_INCLUDE_HEAD;
+            }
+            if (self.extended.INCLUDE_COMMIT) {
+                result |= raw.GIT_ATTR_CHECK_INCLUDE_COMMIT;
+            }
+
+            return result;
+        }
+
+        comptime {
+            std.testing.refAllDecls(@This());
+        }
     };
 
     comptime {
