@@ -46,10 +46,10 @@ pub const DiffHunk = extern struct {
     /// Number of bytes in header text
     header_len: usize,
     /// Header text, NUL-byte terminated
-    /// Use `getHeader`
+    /// Use `header`
     z_header: [HEADER_SIZE]u8,
 
-    pub fn getHeader(self: DiffHunk) [:0]const u8 {
+    pub fn header(self: DiffHunk) [:0]const u8 {
         // for some reason this gives `expected type '[:0]const u8', found '[]const u8'`
         // return std.mem.sliceTo(&self.z_header, 0);
         return std.mem.sliceTo(@ptrCast([*:0]const u8, &self.z_header), 0);

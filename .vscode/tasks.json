@@ -24,11 +24,12 @@
                 "applyTo": "allDocuments",
                 "fileLocation": "autoDetect",
                 "pattern": {
-                    "regexp": "^([^\\s]*):(\\d+):(\\d+):.*?:\\s*(.*)$",
+                    "regexp": "^(.*?):(\\d+):(\\d+):.*?(error):?\\s+(.*)$",
                     "file": 1,
                     "line": 2,
                     "column": 3,
-                    "message": 4
+                    "severity": 4,
+                    "message": 5
                 },
             }
         }

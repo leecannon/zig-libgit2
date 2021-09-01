@@ -14,8 +14,8 @@ pub const StatusList = opaque {
         log.debug("status list freed successfully", .{});
     }
 
-    pub fn getEntryCount(self: *const StatusList) usize {
-        log.debug("StatusList.getEntryCount called", .{});
+    pub fn entryCount(self: *const StatusList) usize {
+        log.debug("StatusList.entryCount called", .{});
 
         const ret = raw.git_status_list_entrycount(internal.toC(self));
 
@@ -24,8 +24,8 @@ pub const StatusList = opaque {
         return ret;
     }
 
-    pub fn getStatusByIndex(self: *const StatusList, index: usize) ?*const StatusEntry {
-        log.debug("StatusList.getStatusByIndex called, index={}", .{index});
+    pub fn statusByIndex(self: *const StatusList, index: usize) ?*const StatusEntry {
+        log.debug("StatusList.statusByIndex called, index={}", .{index});
 
         const ret_opt = raw.git_status_byindex(internal.toC(self), index);
 

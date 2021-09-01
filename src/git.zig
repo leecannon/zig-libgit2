@@ -3,7 +3,7 @@ const raw = @import("internal/raw.zig");
 const internal = @import("internal/internal.zig");
 const log = std.log.scoped(.git);
 
-pub const PATH_LIST_SEPARATOR = raw.PATH_LIST_SEPARATOR;
+pub const PATH_LIST_SEPARATOR = raw.GIT_PATH_LIST_SEPARATOR;
 
 pub usingnamespace @import("errors.zig");
 

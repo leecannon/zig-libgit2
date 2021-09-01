@@ -92,8 +92,16 @@ pub const Handle = struct {
 
         log.debug("Handle.repositoryInitExtended called, path={s}, options={}", .{ path, options });
 
-        var opts: raw.git_repository_init_options = undefined;
-        try options.toCType(&opts);
+        var opts: raw.git_repository_init_options = .{
+            .version = raw.GIT_REPOSITORY_INIT_OPTIONS_VERSION,
+            .flags = options.flags.toInt(),
+            .mode = options.mode.toInt(),
+            .workdir_path = if (options.workdir_path) |slice| slice.ptr else null,
+            .description = if (options.description) |slice| slice.ptr else null,
+            .template_path = if (options.template_path) |slice| slice.ptr else null,
+            .initial_head = if (options.initial_head) |slice| slice.ptr else null,
+            .origin_url = if (options.origin_url) |slice| slice.ptr else null,
+        };
 
         var repo: ?*raw.git_repository = undefined;
 
@@ -207,22 +215,6 @@ pub const Handle = struct {
                 };
             }
         };
-
-        fn toCType(self: RepositoryInitOptions, c_type: *raw.git_repository_init_options) !void {
-            if (comptime internal.available(.@"1.0.0")) {
-                try internal.wrapCall("git_repository_init_options_init", .{ c_type, raw.GIT_REPOSITORY_INIT_OPTIONS_VERSION });
-            } else {
-                try internal.wrapCall("git_repository_init_init_options", .{ c_type, raw.GIT_REPOSITORY_INIT_OPTIONS_VERSION });
-            }
-
-            c_type.flags = self.flags.toInt();
-            c_type.mode = self.mode.toInt();
-            c_type.workdir_path = if (self.workdir_path) |slice| slice.ptr else null;
-            c_type.description = if (self.description) |slice| slice.ptr else null;
-            c_type.template_path = if (self.template_path) |slice| slice.ptr else null;
-            c_type.initial_head = if (self.initial_head) |slice| slice.ptr else null;
-            c_type.origin_url = if (self.origin_url) |slice| slice.ptr else null;
-        }
 
         comptime {
             std.testing.refAllDecls(@This());
@@ -725,7 +717,7 @@ pub const Handle = struct {
         log.debug("successfully set HTTP expect continue mode", .{});
     }
 
-    usingnamespace if (internal.available(.master)) struct {
+    pub usingnamespace if (internal.available(.master)) struct {
         pub fn optionSetOdbPackedPriority(self: Handle, value: usize) !void {
             _ = self;
 

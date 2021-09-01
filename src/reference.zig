@@ -14,8 +14,8 @@ pub const Reference = opaque {
         log.debug("reference freed successfully", .{});
     }
 
-    pub fn createAnnotatedCommit(self: *const Reference, repository: *git.Repository) !*git.AnnotatedCommit {
-        log.debug("Reference.getAnnotatedCommit called, repository={*}", .{repository});
+    pub fn annotatedCommitCreate(self: *const Reference, repository: *git.Repository) !*git.AnnotatedCommit {
+        log.debug("Reference.annotatedCommitCreate called, repository={*}", .{repository});
 
         var result: ?*raw.git_annotated_commit = undefined;
         try internal.wrapCall("git_annotated_commit_from_ref", .{ &result, internal.toC(repository), internal.toC(self) });

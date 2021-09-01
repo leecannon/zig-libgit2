@@ -39,7 +39,7 @@ test "fresh repo has head reference to unborn branch" {
     var test_handle = try TestHandle.init("head_reference_unborn_error");
     defer test_handle.deinit();
 
-    try std.testing.expectError(git.GitError.UnbornBranch, test_handle.repo.getHead());
+    try std.testing.expectError(git.GitError.UnbornBranch, test_handle.repo.head());
 }
 
 test "fresh repo has unborn head reference" {
@@ -60,27 +60,27 @@ test "fresh repo index version is 2" {
     var test_handle = try TestHandle.init("fresh_repo_index_version");
     defer test_handle.deinit();
 
-    const index = try test_handle.repo.getIndex();
+    const index = try test_handle.repo.indexGet();
     defer index.deinit();
 
-    try std.testing.expectEqual(git.Index.IndexVersion.@"2", try index.getVersion());
+    try std.testing.expectEqual(git.Index.IndexVersion.@"2", try index.versionGet());
 }
 
 test "fresh repo index is empty" {
     var test_handle = try TestHandle.init("fresh_repo_index_version");
     defer test_handle.deinit();
 
-    const index = try test_handle.repo.getIndex();
+    const index = try test_handle.repo.indexGet();
     defer index.deinit();
 
-    try std.testing.expectEqual(@as(usize, 0), index.getEntryCount());
+    try std.testing.expectEqual(@as(usize, 0), index.entryCount());
 }
 
 test "fresh repo read index" {
     var test_handle = try TestHandle.init("fresh_repo_read_index");
     defer test_handle.deinit();
 
-    const index = try test_handle.repo.getIndex();
+    const index = try test_handle.repo.indexGet();
     defer index.deinit();
 
     try index.readIndexFromDisk(false);
@@ -90,7 +90,7 @@ test "fresh repo iterate index" {
     var test_handle = try TestHandle.init("fresh_repo_iterate_index");
     defer test_handle.deinit();
 
-    const index = try test_handle.repo.getIndex();
+    const index = try test_handle.repo.indexGet();
     defer index.deinit();
 
     var iter = try index.iterate();
@@ -108,27 +108,27 @@ test "fresh repo index entry by index is null" {
     var test_handle = try TestHandle.init("fresh_repo_read_index_by_index");
     defer test_handle.deinit();
 
-    const index = try test_handle.repo.getIndex();
+    const index = try test_handle.repo.indexGet();
     defer index.deinit();
 
-    try std.testing.expect(index.getEntryByIndex(0) == null);
+    try std.testing.expect(index.entryByIndex(0) == null);
 }
 
 test "fresh repo index path is not null" {
     var test_handle = try TestHandle.init("fresh_repo_read_index");
     defer test_handle.deinit();
 
-    const index = try test_handle.repo.getIndex();
+    const index = try test_handle.repo.indexGet();
     defer index.deinit();
 
-    try std.testing.expect(index.getPath() != null);
+    try std.testing.expect(index.pathGet() != null);
 }
 
 test "fresh repo read then write index" {
     var test_handle = try TestHandle.init("fresh_repo_read_write_index");
     defer test_handle.deinit();
 
-    const index = try test_handle.repo.getIndex();
+    const index = try test_handle.repo.indexGet();
     defer index.deinit();
 
     try index.readIndexFromDisk(false);
@@ -140,7 +140,7 @@ test "fresh repo index clear" {
     var test_handle = try TestHandle.init("fresh_repo_read_write_index");
     defer test_handle.deinit();
 
-    const index = try test_handle.repo.getIndex();
+    const index = try test_handle.repo.indexGet();
     defer index.deinit();
 
     try index.clear();
@@ -150,12 +150,12 @@ test "change fresh repo index version" {
     var test_handle = try TestHandle.init("change_fresh_repo_index_version");
     defer test_handle.deinit();
 
-    const index = try test_handle.repo.getIndex();
+    const index = try test_handle.repo.indexGet();
     defer index.deinit();
-    try std.testing.expectEqual(git.Index.IndexVersion.@"2", try index.getVersion());
+    try std.testing.expectEqual(git.Index.IndexVersion.@"2", try index.versionGet());
 
-    try index.setVersion(.@"3");
-    try std.testing.expectEqual(git.Index.IndexVersion.@"3", try index.getVersion());
+    try index.versionSet(.@"3");
+    try std.testing.expectEqual(git.Index.IndexVersion.@"3", try index.versionGet());
 }
 
 test "bare repo is bare" {
@@ -177,7 +177,7 @@ test "item paths" {
     var test_handle = try TestHandle.init("item_paths");
     defer test_handle.deinit();
 
-    var buf = try test_handle.repo.getItemPath(.CONFIG);
+    var buf = try test_handle.repo.itemPath(.CONFIG);
     defer buf.deinit();
 
     const expected = try std.fmt.allocPrintZ(std.testing.allocator, "{s}/.git/config", .{test_handle.repo_path[1..]});
@@ -190,7 +190,7 @@ test "get config" {
     var test_handle = try TestHandle.init("get_config");
     defer test_handle.deinit();
 
-    const config = try test_handle.repo.getConfig();
+    const config = try test_handle.repo.configGet();
     defer config.deinit();
 }
 
@@ -198,7 +198,7 @@ test "get config snapshot" {
     var test_handle = try TestHandle.init("get_config_snapshot");
     defer test_handle.deinit();
 
-    const config = try test_handle.repo.getConfigSnapshot();
+    const config = try test_handle.repo.configSnapshot();
     defer config.deinit();
 }
 
@@ -206,7 +206,7 @@ test "get odb" {
     var test_handle = try TestHandle.init("get_odb");
     defer test_handle.deinit();
 
-    const odb = try test_handle.repo.getOdb();
+    const odb = try test_handle.repo.odbGet();
     defer odb.deinit();
 }
 
@@ -214,7 +214,7 @@ test "get ref db" {
     var test_handle = try TestHandle.init("get_refdb");
     defer test_handle.deinit();
 
-    const ref_db = try test_handle.repo.getRefDb();
+    const ref_db = try test_handle.repo.refDb();
     defer ref_db.deinit();
 }
 
@@ -222,7 +222,7 @@ test "get index" {
     var test_handle = try TestHandle.init("get_index");
     defer test_handle.deinit();
 
-    const index = try test_handle.repo.getIndex();
+    const index = try test_handle.repo.indexGet();
     defer index.deinit();
 }
 
@@ -238,7 +238,7 @@ test "foreach fetch head fails on fresh repository" {
     var test_handle = try TestHandle.init("foreach_fetch_head_fails_on_fresh");
     defer test_handle.deinit();
 
-    try std.testing.expectError(git.GitError.NotFound, test_handle.repo.foreachFetchHead(dummyFetchHeadCallback));
+    try std.testing.expectError(git.GitError.NotFound, test_handle.repo.fetchHeadForeach(dummyFetchHeadCallback));
 }
 
 fn dummyFetchMergeCallback(oid: *const git.Oid) c_int {
@@ -252,7 +252,7 @@ test "foreach file status on fresh repository" {
 
     var count: usize = 0;
 
-    _ = try test_handle.repo.foreachFileStatusWithUserData(&count, dummyFileStatusCallback);
+    _ = try test_handle.repo.fileStatusForeachWithUserData(&count, dummyFileStatusCallback);
 
     try std.testing.expectEqual(@as(usize, 0), count);
 }
@@ -263,7 +263,7 @@ test "foreach file status extended on fresh repository" {
 
     var count: usize = 0;
 
-    _ = try test_handle.repo.foreachFileStatusExtendedWithUserData(
+    _ = try test_handle.repo.fileStatusForeachExtendedWithUserData(
         .{ .flags = git.Repository.FileStatusOptions.Flags.DEFAULT },
         &count,
         dummyFileStatusCallback,
@@ -283,32 +283,32 @@ test "foreach merge head fails on fresh repository" {
     var test_handle = try TestHandle.init("foreach_merge_head_fails_on_fresh");
     defer test_handle.deinit();
 
-    try std.testing.expectError(git.GitError.NotFound, test_handle.repo.foreachMergeHead(dummyFetchMergeCallback));
+    try std.testing.expectError(git.GitError.NotFound, test_handle.repo.mergeHeadForeach(dummyFetchMergeCallback));
 }
 
 test "fresh repo state is none" {
     var test_handle = try TestHandle.init("fresh_repo_state_none");
     defer test_handle.deinit();
 
-    try std.testing.expectEqual(git.Repository.RepositoryState.NONE, test_handle.repo.getState());
+    try std.testing.expectEqual(git.Repository.RepositoryState.NONE, test_handle.repo.state());
 }
 
 test "fresh repo has no namespace" {
     var test_handle = try TestHandle.init("fresh_repo_no_namespace");
     defer test_handle.deinit();
 
-    try std.testing.expect((try test_handle.repo.getNamespace()) == null);
+    try std.testing.expect((try test_handle.repo.namespaceGet()) == null);
 }
 
 test "set namespace" {
     var test_handle = try TestHandle.init("set_namespace");
     defer test_handle.deinit();
 
-    try std.testing.expect((try test_handle.repo.getNamespace()) == null);
+    try std.testing.expect((try test_handle.repo.namespaceGet()) == null);
 
-    try test_handle.repo.setNamespace("namespace");
+    try test_handle.repo.namespaceSet("namespace");
 
-    const result = try test_handle.repo.getNamespace();
+    const result = try test_handle.repo.namespaceGet();
     try std.testing.expect(result != null);
 
     try std.testing.expectEqualStrings("namespace", result.?);
@@ -325,7 +325,7 @@ test "fresh repo has no identity set" {
     var test_handle = try TestHandle.init("fresh_no_identity");
     defer test_handle.deinit();
 
-    const ident = try test_handle.repo.getIdentity();
+    const ident = try test_handle.repo.identityGet();
 
     try std.testing.expect(ident.name == null);
     try std.testing.expect(ident.email == null);
@@ -336,7 +336,7 @@ test "set identity" {
     defer test_handle.deinit();
 
     {
-        const ident = try test_handle.repo.getIdentity();
+        const ident = try test_handle.repo.identityGet();
 
         try std.testing.expect(ident.name == null);
         try std.testing.expect(ident.email == null);
@@ -351,11 +351,11 @@ test "set identity" {
             .email = email,
         };
 
-        try test_handle.repo.setIdentity(ident);
+        try test_handle.repo.identitySet(ident);
     }
 
     {
-        const ident = try test_handle.repo.getIdentity();
+        const ident = try test_handle.repo.identityGet();
 
         try std.testing.expectEqualStrings(name, ident.name.?);
         try std.testing.expectEqualStrings(email, ident.email.?);
@@ -363,13 +363,13 @@ test "set identity" {
 }
 
 test "fresh repo status list" {
-    var test_handle = try TestHandle.init("set_identity");
+    var test_handle = try TestHandle.init("status_list");
     defer test_handle.deinit();
 
-    const status_list = try test_handle.repo.getStatusList(.{});
+    const status_list = try test_handle.repo.statusList(.{});
     defer status_list.deinit();
 
-    try std.testing.expectEqual(@as(usize, 0), status_list.getEntryCount());
+    try std.testing.expectEqual(@as(usize, 0), status_list.entryCount());
 }
 
 test "bare index" {
@@ -398,7 +398,7 @@ test "new index has no repository" {
     const index = try handle.indexNew();
     defer index.deinit();
 
-    try std.testing.expect(index.getRepository() == null);
+    try std.testing.expect(index.repositoryGet() == null);
 }
 
 test "new index capabilities" {
@@ -408,7 +408,7 @@ test "new index capabilities" {
     const index = try handle.indexNew();
     defer index.deinit();
 
-    const cap = index.getIndexCapabilities();
+    const cap = index.indexCapabilities();
 
     try std.testing.expect(!cap.FROM_OWNER);
     try std.testing.expect(!cap.IGNORE_CASE);

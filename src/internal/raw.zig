@@ -1,5 +1,3 @@
-// echo "#include <git2.h>" > temp.h; zig translate-c temp.h -lc -lgit2 > raw.zig; rm -f temp.h;
-
 pub usingnamespace @import("std").zig.c_builtins;
 pub const __u_char = u8;
 pub const __u_short = c_ushort;
@@ -552,6 +550,8 @@ pub const GIT_OPT_DISABLE_PACK_KEEP_FILE_CHECKS: c_int = 27;
 pub const GIT_OPT_ENABLE_HTTP_EXPECT_CONTINUE: c_int = 28;
 pub const GIT_OPT_GET_MWINDOW_FILE_LIMIT: c_int = 29;
 pub const GIT_OPT_SET_MWINDOW_FILE_LIMIT: c_int = 30;
+pub const GIT_OPT_SET_ODB_PACKED_PRIORITY: c_int = 31;
+pub const GIT_OPT_SET_ODB_LOOSE_PRIORITY: c_int = 32;
 pub const git_libgit2_opt_t = c_uint;
 pub extern fn git_libgit2_opts(option: c_int, ...) c_int;
 pub const git_off_t = i64;
@@ -640,6 +640,8 @@ pub const struct_git_refdb = opaque {};
 pub const git_refdb = struct_git_refdb;
 pub const struct_git_refdb_backend = opaque {};
 pub const git_refdb_backend = struct_git_refdb_backend;
+pub const struct_git_commit_graph = opaque {};
+pub const git_commit_graph = struct_git_commit_graph;
 pub const struct_git_repository = opaque {};
 pub const git_repository = struct_git_repository;
 pub const struct_git_worktree = opaque {};
@@ -886,7 +888,7 @@ pub const git_repository_fetchhead_foreach_cb = ?fn ([*c]const u8, [*c]const u8,
 pub extern fn git_repository_fetchhead_foreach(repo: ?*git_repository, callback: git_repository_fetchhead_foreach_cb, payload: ?*c_void) c_int;
 pub const git_repository_mergehead_foreach_cb = ?fn ([*c]const git_oid, ?*c_void) callconv(.C) c_int;
 pub extern fn git_repository_mergehead_foreach(repo: ?*git_repository, callback: git_repository_mergehead_foreach_cb, payload: ?*c_void) c_int;
-pub extern fn git_repository_hashfile(out: [*c]git_oid, repo: ?*git_repository, path: [*c]const u8, type: git_object_t, as_path: [*c]const u8) c_int;
+pub extern fn git_repository_hashfile(out: [*c]git_oid, repo: ?*git_repository, path: [*c]const u8, @"type": git_object_t, as_path: [*c]const u8) c_int;
 pub extern fn git_repository_set_head(repo: ?*git_repository, refname: [*c]const u8) c_int;
 pub extern fn git_repository_set_head_detached(repo: ?*git_repository, commitish: [*c]const git_oid) c_int;
 pub extern fn git_repository_set_head_detached_from_annotated(repo: ?*git_repository, commitish: ?*const git_annotated_commit) c_int;
@@ -917,17 +919,17 @@ pub extern fn git_annotated_commit_from_revspec(out: [*c]?*git_annotated_commit,
 pub extern fn git_annotated_commit_id(commit: ?*const git_annotated_commit) [*c]const git_oid;
 pub extern fn git_annotated_commit_ref(commit: ?*const git_annotated_commit) [*c]const u8;
 pub extern fn git_annotated_commit_free(commit: ?*git_annotated_commit) void;
-pub extern fn git_object_lookup(object: [*c]?*git_object, repo: ?*git_repository, id: [*c]const git_oid, type: git_object_t) c_int;
-pub extern fn git_object_lookup_prefix(object_out: [*c]?*git_object, repo: ?*git_repository, id: [*c]const git_oid, len: usize, type: git_object_t) c_int;
-pub extern fn git_object_lookup_bypath(out: [*c]?*git_object, treeish: ?*const git_object, path: [*c]const u8, type: git_object_t) c_int;
+pub extern fn git_object_lookup(object: [*c]?*git_object, repo: ?*git_repository, id: [*c]const git_oid, @"type": git_object_t) c_int;
+pub extern fn git_object_lookup_prefix(object_out: [*c]?*git_object, repo: ?*git_repository, id: [*c]const git_oid, len: usize, @"type": git_object_t) c_int;
+pub extern fn git_object_lookup_bypath(out: [*c]?*git_object, treeish: ?*const git_object, path: [*c]const u8, @"type": git_object_t) c_int;
 pub extern fn git_object_id(obj: ?*const git_object) [*c]const git_oid;
 pub extern fn git_object_short_id(out: [*c]git_buf, obj: ?*const git_object) c_int;
 pub extern fn git_object_type(obj: ?*const git_object) git_object_t;
 pub extern fn git_object_owner(obj: ?*const git_object) ?*git_repository;
 pub extern fn git_object_free(object: ?*git_object) void;
-pub extern fn git_object_type2string(type: git_object_t) [*c]const u8;
+pub extern fn git_object_type2string(@"type": git_object_t) [*c]const u8;
 pub extern fn git_object_string2type(str: [*c]const u8) git_object_t;
-pub extern fn git_object_typeisloose(type: git_object_t) c_int;
+pub extern fn git_object_typeisloose(@"type": git_object_t) c_int;
 pub extern fn git_object_peel(peeled: [*c]?*git_object, object: ?*const git_object, target_type: git_object_t) c_int;
 pub extern fn git_object_dup(dest: [*c]?*git_object, source: ?*git_object) c_int;
 pub extern fn git_tree_lookup(out: [*c]?*git_tree, repo: ?*git_repository, id: [*c]const git_oid) c_int;
@@ -959,7 +961,6 @@ pub extern fn git_treebuilder_remove(bld: ?*git_treebuilder, filename: [*c]const
 pub const git_treebuilder_filter_cb = ?fn (?*const git_tree_entry, ?*c_void) callconv(.C) c_int;
 pub extern fn git_treebuilder_filter(bld: ?*git_treebuilder, filter: git_treebuilder_filter_cb, payload: ?*c_void) c_int;
 pub extern fn git_treebuilder_write(id: [*c]git_oid, bld: ?*git_treebuilder) c_int;
-pub extern fn git_treebuilder_write_with_buffer(oid: [*c]git_oid, bld: ?*git_treebuilder, tree: [*c]git_buf) c_int;
 pub const git_treewalk_cb = ?fn ([*c]const u8, ?*const git_tree_entry, ?*c_void) callconv(.C) c_int;
 pub const GIT_TREEWALK_PRE: c_int = 0;
 pub const GIT_TREEWALK_POST: c_int = 1;
@@ -1028,8 +1029,8 @@ pub const GIT_REFERENCE_FORMAT_REFSPEC_PATTERN: c_int = 2;
 pub const GIT_REFERENCE_FORMAT_REFSPEC_SHORTHAND: c_int = 4;
 pub const git_reference_format_t = c_uint;
 pub extern fn git_reference_normalize_name(buffer_out: [*c]u8, buffer_size: usize, name: [*c]const u8, flags: c_uint) c_int;
-pub extern fn git_reference_peel(out: [*c]?*git_object, ref: ?*const git_reference, type: git_object_t) c_int;
-pub extern fn git_reference_is_valid_name(refname: [*c]const u8) c_int;
+pub extern fn git_reference_peel(out: [*c]?*git_object, ref: ?*const git_reference, @"type": git_object_t) c_int;
+pub extern fn git_reference_name_is_valid(valid: [*c]c_int, refname: [*c]const u8) c_int;
 pub extern fn git_reference_shorthand(ref: ?*const git_reference) [*c]const u8;
 pub const GIT_DIFF_NORMAL: c_int = 0;
 pub const GIT_DIFF_REVERSE: c_int = 1;
@@ -1061,6 +1062,7 @@ pub const GIT_DIFF_SHOW_UNMODIFIED: c_int = 67108864;
 pub const GIT_DIFF_PATIENCE: c_int = 268435456;
 pub const GIT_DIFF_MINIMAL: c_int = 536870912;
 pub const GIT_DIFF_SHOW_BINARY: c_int = 1073741824;
+pub const GIT_DIFF_IGNORE_BLANK_LINES: c_uint = 2147483648;
 pub const git_diff_option_t = c_uint;
 pub const struct_git_diff = opaque {};
 pub const git_diff = struct_git_diff;
@@ -1206,7 +1208,7 @@ pub extern fn git_diff_index_to_index(diff: [*c]?*git_diff, repo: ?*git_reposito
 pub extern fn git_diff_merge(onto: ?*git_diff, from: ?*const git_diff) c_int;
 pub extern fn git_diff_find_similar(diff: ?*git_diff, options: [*c]const git_diff_find_options) c_int;
 pub extern fn git_diff_num_deltas(diff: ?*const git_diff) usize;
-pub extern fn git_diff_num_deltas_of_type(diff: ?*const git_diff, type: git_delta_t) usize;
+pub extern fn git_diff_num_deltas_of_type(diff: ?*const git_diff, @"type": git_delta_t) usize;
 pub extern fn git_diff_get_delta(diff: ?*const git_diff, idx: usize) [*c]const git_diff_delta;
 pub extern fn git_diff_is_sorted_icase(diff: ?*const git_diff) c_int;
 pub extern fn git_diff_foreach(diff: ?*git_diff, file_cb: git_diff_file_cb, binary_cb: git_diff_binary_cb, hunk_cb: git_diff_hunk_cb, line_cb: git_diff_line_cb, payload: ?*c_void) c_int;
@@ -1284,10 +1286,18 @@ pub const GIT_ATTR_VALUE_FALSE: c_int = 2;
 pub const GIT_ATTR_VALUE_STRING: c_int = 3;
 pub const git_attr_value_t = c_uint;
 pub extern fn git_attr_value(attr: [*c]const u8) git_attr_value_t;
+pub const git_attr_options = extern struct {
+    version: c_uint,
+    flags: c_uint,
+    commit_id: [*c]git_oid,
+};
 pub extern fn git_attr_get(value_out: [*c][*c]const u8, repo: ?*git_repository, flags: u32, path: [*c]const u8, name: [*c]const u8) c_int;
+pub extern fn git_attr_get_ext(value_out: [*c][*c]const u8, repo: ?*git_repository, opts: [*c]git_attr_options, path: [*c]const u8, name: [*c]const u8) c_int;
 pub extern fn git_attr_get_many(values_out: [*c][*c]const u8, repo: ?*git_repository, flags: u32, path: [*c]const u8, num_attr: usize, names: [*c][*c]const u8) c_int;
+pub extern fn git_attr_get_many_ext(values_out: [*c][*c]const u8, repo: ?*git_repository, opts: [*c]git_attr_options, path: [*c]const u8, num_attr: usize, names: [*c][*c]const u8) c_int;
 pub const git_attr_foreach_cb = ?fn ([*c]const u8, [*c]const u8, ?*c_void) callconv(.C) c_int;
 pub extern fn git_attr_foreach(repo: ?*git_repository, flags: u32, path: [*c]const u8, callback: git_attr_foreach_cb, payload: ?*c_void) c_int;
+pub extern fn git_attr_foreach_ext(repo: ?*git_repository, opts: [*c]git_attr_options, path: [*c]const u8, callback: git_attr_foreach_cb, payload: ?*c_void) c_int;
 pub extern fn git_attr_cache_flush(repo: ?*git_repository) c_int;
 pub extern fn git_attr_add_macro(repo: ?*git_repository, name: [*c]const u8, values: [*c]const u8) c_int;
 pub extern fn git_blob_lookup(blob: [*c]?*git_blob, repo: ?*git_repository, id: [*c]const git_oid) c_int;
@@ -1299,12 +1309,15 @@ pub extern fn git_blob_rawcontent(blob: ?*const git_blob) ?*const c_void;
 pub extern fn git_blob_rawsize(blob: ?*const git_blob) git_object_size_t;
 pub const GIT_BLOB_FILTER_CHECK_FOR_BINARY: c_int = 1;
 pub const GIT_BLOB_FILTER_NO_SYSTEM_ATTRIBUTES: c_int = 2;
-pub const GIT_BLOB_FILTER_ATTTRIBUTES_FROM_HEAD: c_int = 4;
+pub const GIT_BLOB_FILTER_ATTRIBUTES_FROM_HEAD: c_int = 4;
+pub const GIT_BLOB_FILTER_ATTRIBUTES_FROM_COMMIT: c_int = 8;
 pub const git_blob_filter_flag_t = c_uint;
 pub const git_blob_filter_options = extern struct {
     version: c_int,
     flags: u32,
+    commit_id: [*c]git_oid,
 };
+pub extern fn git_blob_filter_options_init(opts: [*c]git_blob_filter_options, version: c_uint) c_int;
 pub extern fn git_blob_filter(out: [*c]git_buf, blob: ?*git_blob, as_path: [*c]const u8, opts: [*c]git_blob_filter_options) c_int;
 pub extern fn git_blob_create_from_workdir(id: [*c]git_oid, repo: ?*git_repository, relative_path: [*c]const u8) c_int;
 pub extern fn git_blob_create_from_disk(id: [*c]git_oid, repo: ?*git_repository, path: [*c]const u8) c_int;
@@ -1371,16 +1384,30 @@ pub extern fn git_branch_is_head(branch: ?*const git_reference) c_int;
 pub extern fn git_branch_is_checked_out(branch: ?*const git_reference) c_int;
 pub extern fn git_branch_remote_name(out: [*c]git_buf, repo: ?*git_repository, refname: [*c]const u8) c_int;
 pub extern fn git_branch_upstream_remote(buf: [*c]git_buf, repo: ?*git_repository, refname: [*c]const u8) c_int;
+pub extern fn git_branch_upstream_merge(buf: [*c]git_buf, repo: ?*git_repository, refname: [*c]const u8) c_int;
+pub extern fn git_branch_name_is_valid(valid: [*c]c_int, name: [*c]const u8) c_int;
 pub const GIT_CERT_SSH_MD5: c_int = 1;
 pub const GIT_CERT_SSH_SHA1: c_int = 2;
 pub const GIT_CERT_SSH_SHA256: c_int = 4;
+pub const GIT_CERT_SSH_RAW: c_int = 8;
 pub const git_cert_ssh_t = c_uint;
+pub const GIT_CERT_SSH_RAW_TYPE_UNKNOWN: c_int = 0;
+pub const GIT_CERT_SSH_RAW_TYPE_RSA: c_int = 1;
+pub const GIT_CERT_SSH_RAW_TYPE_DSS: c_int = 2;
+pub const GIT_CERT_SSH_RAW_TYPE_KEY_ECDSA_256: c_int = 3;
+pub const GIT_CERT_SSH_RAW_TYPE_KEY_ECDSA_384: c_int = 4;
+pub const GIT_CERT_SSH_RAW_TYPE_KEY_ECDSA_521: c_int = 5;
+pub const GIT_CERT_SSH_RAW_TYPE_KEY_ED25519: c_int = 6;
+pub const git_cert_ssh_raw_type_t = c_uint;
 pub const git_cert_hostkey = extern struct {
     parent: git_cert,
     type: git_cert_ssh_t,
     hash_md5: [16]u8,
     hash_sha1: [20]u8,
     hash_sha256: [32]u8,
+    raw_type: git_cert_ssh_raw_type_t,
+    hostkey: [*c]const u8,
+    hostkey_len: usize,
 };
 pub const git_cert_x509 = extern struct {
     parent: git_cert,
@@ -1842,7 +1869,7 @@ pub extern fn git_remote_autotag(remote: ?*const git_remote) git_remote_autotag_
 pub extern fn git_remote_set_autotag(repo: ?*git_repository, remote: [*c]const u8, value: git_remote_autotag_option_t) c_int;
 pub extern fn git_remote_prune_refs(remote: ?*const git_remote) c_int;
 pub extern fn git_remote_rename(problems: [*c]git_strarray, repo: ?*git_repository, name: [*c]const u8, new_name: [*c]const u8) c_int;
-pub extern fn git_remote_is_valid_name(remote_name: [*c]const u8) c_int;
+pub extern fn git_remote_name_is_valid(valid: [*c]c_int, remote_name: [*c]const u8) c_int;
 pub extern fn git_remote_delete(repo: ?*git_repository, name: [*c]const u8) c_int;
 pub extern fn git_remote_default_branch(out: [*c]git_buf, remote: ?*git_remote) c_int;
 pub const GIT_CLONE_LOCAL_AUTO: c_int = 0;
@@ -2075,6 +2102,36 @@ pub extern fn git_error_last() [*c]const git_error;
 pub extern fn git_error_clear() void;
 pub extern fn git_error_set_str(error_class: c_int, string: [*c]const u8) c_int;
 pub extern fn git_error_set_oom() void;
+pub const GIT_FILTER_TO_WORKTREE: c_int = 0;
+pub const GIT_FILTER_SMUDGE: c_int = 0;
+pub const GIT_FILTER_TO_ODB: c_int = 1;
+pub const GIT_FILTER_CLEAN: c_int = 1;
+pub const git_filter_mode_t = c_uint;
+pub const GIT_FILTER_DEFAULT: c_int = 0;
+pub const GIT_FILTER_ALLOW_UNSAFE: c_int = 1;
+pub const GIT_FILTER_NO_SYSTEM_ATTRIBUTES: c_int = 2;
+pub const GIT_FILTER_ATTRIBUTES_FROM_HEAD: c_int = 4;
+pub const GIT_FILTER_ATTRIBUTES_FROM_COMMIT: c_int = 8;
+pub const git_filter_flag_t = c_uint;
+pub const git_filter_options = extern struct {
+    version: c_uint,
+    flags: u32,
+    commit_id: [*c]git_oid,
+};
+pub const struct_git_filter = opaque {};
+pub const git_filter = struct_git_filter;
+pub const struct_git_filter_list = opaque {};
+pub const git_filter_list = struct_git_filter_list;
+pub extern fn git_filter_list_load(filters: [*c]?*git_filter_list, repo: ?*git_repository, blob: ?*git_blob, path: [*c]const u8, mode: git_filter_mode_t, flags: u32) c_int;
+pub extern fn git_filter_list_load_ext(filters: [*c]?*git_filter_list, repo: ?*git_repository, blob: ?*git_blob, path: [*c]const u8, mode: git_filter_mode_t, opts: [*c]git_filter_options) c_int;
+pub extern fn git_filter_list_contains(filters: ?*git_filter_list, name: [*c]const u8) c_int;
+pub extern fn git_filter_list_apply_to_buffer(out: [*c]git_buf, filters: ?*git_filter_list, in: [*c]const u8, in_len: usize) c_int;
+pub extern fn git_filter_list_apply_to_file(out: [*c]git_buf, filters: ?*git_filter_list, repo: ?*git_repository, path: [*c]const u8) c_int;
+pub extern fn git_filter_list_apply_to_blob(out: [*c]git_buf, filters: ?*git_filter_list, blob: ?*git_blob) c_int;
+pub extern fn git_filter_list_stream_buffer(filters: ?*git_filter_list, buffer: [*c]const u8, len: usize, target: [*c]git_writestream) c_int;
+pub extern fn git_filter_list_stream_file(filters: ?*git_filter_list, repo: ?*git_repository, path: [*c]const u8, target: [*c]git_writestream) c_int;
+pub extern fn git_filter_list_stream_blob(filters: ?*git_filter_list, blob: ?*git_blob, target: [*c]git_writestream) c_int;
+pub extern fn git_filter_list_free(filters: ?*git_filter_list) void;
 pub const git_rebase_options = extern struct {
     version: c_uint,
     quiet: c_int,
@@ -2132,6 +2189,18 @@ pub const git_revert_options = extern struct {
 pub extern fn git_revert_options_init(opts: [*c]git_revert_options, version: c_uint) c_int;
 pub extern fn git_revert_commit(out: [*c]?*git_index, repo: ?*git_repository, revert_commit: ?*git_commit, our_commit: ?*git_commit, mainline: c_uint, merge_options: [*c]const git_merge_options) c_int;
 pub extern fn git_revert(repo: ?*git_repository, commit: ?*git_commit, given_opts: [*c]const git_revert_options) c_int;
+pub extern fn git_revparse_single(out: [*c]?*git_object, repo: ?*git_repository, spec: [*c]const u8) c_int;
+pub extern fn git_revparse_ext(object_out: [*c]?*git_object, reference_out: [*c]?*git_reference, repo: ?*git_repository, spec: [*c]const u8) c_int;
+pub const GIT_REVSPEC_SINGLE: c_int = 1;
+pub const GIT_REVSPEC_RANGE: c_int = 2;
+pub const GIT_REVSPEC_MERGE_BASE: c_int = 4;
+pub const git_revspec_t = c_uint;
+pub const git_revspec = extern struct {
+    from: ?*git_object,
+    to: ?*git_object,
+    flags: c_uint,
+};
+pub extern fn git_revparse(revspec: [*c]git_revspec, repo: ?*git_repository, spec: [*c]const u8) c_int;
 pub const GIT_STASH_DEFAULT: c_int = 0;
 pub const GIT_STASH_KEEP_INDEX: c_int = 1;
 pub const GIT_STASH_INCLUDE_UNTRACKED: c_int = 2;
@@ -2249,6 +2318,7 @@ pub const git_submodule_update_options = struct_git_submodule_update_options;
 pub extern fn git_submodule_update_options_init(opts: [*c]git_submodule_update_options, version: c_uint) c_int;
 pub extern fn git_submodule_update(submodule: ?*git_submodule, init: c_int, options: [*c]git_submodule_update_options) c_int;
 pub extern fn git_submodule_lookup(out: [*c]?*git_submodule, repo: ?*git_repository, name: [*c]const u8) c_int;
+pub extern fn git_submodule_dup(out: [*c]?*git_submodule, source: ?*git_submodule) c_int;
 pub extern fn git_submodule_free(submodule: ?*git_submodule) void;
 pub extern fn git_submodule_foreach(repo: ?*git_repository, callback: git_submodule_cb, payload: ?*c_void) c_int;
 pub extern fn git_submodule_add_setup(out: [*c]?*git_submodule, repo: ?*git_repository, url: [*c]const u8, path: [*c]const u8, use_gitlink: c_int) c_int;
@@ -2322,6 +2392,9 @@ pub extern fn git_blob_create_fromstream(out: [*c][*c]git_writestream, repo: ?*g
 pub extern fn git_blob_create_fromstream_commit(out: [*c]git_oid, stream: [*c]git_writestream) c_int;
 pub extern fn git_blob_create_frombuffer(id: [*c]git_oid, repo: ?*git_repository, buffer: ?*const c_void, len: usize) c_int;
 pub extern fn git_blob_filtered_content(out: [*c]git_buf, blob: ?*git_blob, as_path: [*c]const u8, check_for_binary_data: c_int) c_int;
+pub extern fn git_filter_list_stream_data(filters: ?*git_filter_list, data: [*c]git_buf, target: [*c]git_writestream) c_int;
+pub extern fn git_filter_list_apply_to_data(out: [*c]git_buf, filters: ?*git_filter_list, in: [*c]git_buf) c_int;
+pub extern fn git_treebuilder_write_with_buffer(oid: [*c]git_oid, bld: ?*git_treebuilder, tree: [*c]git_buf) c_int;
 pub extern fn git_buf_free(buffer: [*c]git_buf) void;
 pub const git_cvar_map = git_configmap;
 pub extern fn giterr_last() [*c]const git_error;
@@ -2329,8 +2402,11 @@ pub extern fn giterr_clear() void;
 pub extern fn giterr_set_str(error_class: c_int, string: [*c]const u8) void;
 pub extern fn giterr_set_oom() void;
 pub extern fn git_index_add_frombuffer(index: ?*git_index, entry: [*c]const git_index_entry, buffer: ?*const c_void, len: usize) c_int;
-pub extern fn git_object__size(type: git_object_t) usize;
+pub extern fn git_object__size(@"type": git_object_t) usize;
+pub extern fn git_remote_is_valid_name(remote_name: [*c]const u8) c_int;
+pub extern fn git_reference_is_valid_name(refname: [*c]const u8) c_int;
 pub extern fn git_tag_create_frombuffer(oid: [*c]git_oid, repo: ?*git_repository, buffer: [*c]const u8, force: c_int) c_int;
+pub const git_revparse_mode_t = git_revspec_t;
 pub const git_cred = git_credential;
 pub const git_cred_userpass_plaintext = git_credential_userpass_plaintext;
 pub const git_cred_username = git_credential_username;
@@ -2389,33 +2465,11 @@ pub extern fn git_status_init_options(opts: [*c]git_status_options, version: c_u
 pub extern fn git_submodule_update_init_options(opts: [*c]git_submodule_update_options, version: c_uint) c_int;
 pub extern fn git_worktree_add_init_options(opts: [*c]git_worktree_add_options, version: c_uint) c_int;
 pub extern fn git_worktree_prune_init_options(opts: [*c]git_worktree_prune_options, version: c_uint) c_int;
-pub const GIT_FILTER_TO_WORKTREE: c_int = 0;
-pub const GIT_FILTER_SMUDGE: c_int = 0;
-pub const GIT_FILTER_TO_ODB: c_int = 1;
-pub const GIT_FILTER_CLEAN: c_int = 1;
-pub const git_filter_mode_t = c_uint;
-pub const GIT_FILTER_DEFAULT: c_int = 0;
-pub const GIT_FILTER_ALLOW_UNSAFE: c_int = 1;
-pub const GIT_FILTER_NO_SYSTEM_ATTRIBUTES: c_int = 2;
-pub const GIT_FILTER_ATTRIBUTES_FROM_HEAD: c_int = 4;
-pub const git_filter_flag_t = c_uint;
-pub const struct_git_filter = opaque {};
-pub const git_filter = struct_git_filter;
-pub const struct_git_filter_list = opaque {};
-pub const git_filter_list = struct_git_filter_list;
-pub extern fn git_filter_list_load(filters: [*c]?*git_filter_list, repo: ?*git_repository, blob: ?*git_blob, path: [*c]const u8, mode: git_filter_mode_t, flags: u32) c_int;
-pub extern fn git_filter_list_contains(filters: ?*git_filter_list, name: [*c]const u8) c_int;
-pub extern fn git_filter_list_apply_to_data(out: [*c]git_buf, filters: ?*git_filter_list, in: [*c]git_buf) c_int;
-pub extern fn git_filter_list_apply_to_file(out: [*c]git_buf, filters: ?*git_filter_list, repo: ?*git_repository, path: [*c]const u8) c_int;
-pub extern fn git_filter_list_apply_to_blob(out: [*c]git_buf, filters: ?*git_filter_list, blob: ?*git_blob) c_int;
-pub extern fn git_filter_list_stream_data(filters: ?*git_filter_list, data: [*c]git_buf, target: [*c]git_writestream) c_int;
-pub extern fn git_filter_list_stream_file(filters: ?*git_filter_list, repo: ?*git_repository, path: [*c]const u8, target: [*c]git_writestream) c_int;
-pub extern fn git_filter_list_stream_blob(filters: ?*git_filter_list, blob: ?*git_blob, target: [*c]git_writestream) c_int;
-pub extern fn git_filter_list_free(filters: ?*git_filter_list) void;
 pub extern fn git_libgit2_init() c_int;
 pub extern fn git_libgit2_shutdown() c_int;
 pub extern fn git_graph_ahead_behind(ahead: [*c]usize, behind: [*c]usize, repo: ?*git_repository, local: [*c]const git_oid, upstream: [*c]const git_oid) c_int;
 pub extern fn git_graph_descendant_of(repo: ?*git_repository, commit: [*c]const git_oid, ancestor: [*c]const git_oid) c_int;
+pub extern fn git_graph_reachable_from_any(repo: ?*git_repository, commit: [*c]const git_oid, descendant_array: [*c]const git_oid, length: usize) c_int;
 pub extern fn git_ignore_add_rule(repo: ?*git_repository, rules: [*c]const u8) c_int;
 pub extern fn git_ignore_clear_internal_rules(repo: ?*git_repository) c_int;
 pub extern fn git_ignore_path_is_ignored(ignored: [*c]c_int, repo: ?*git_repository, path: [*c]const u8) c_int;
@@ -2477,16 +2531,16 @@ pub const git_odb_expand_id = struct_git_odb_expand_id;
 pub extern fn git_odb_expand_ids(db: ?*git_odb, ids: [*c]git_odb_expand_id, count: usize) c_int;
 pub extern fn git_odb_refresh(db: ?*struct_git_odb) c_int;
 pub extern fn git_odb_foreach(db: ?*git_odb, cb: git_odb_foreach_cb, payload: ?*c_void) c_int;
-pub extern fn git_odb_write(out: [*c]git_oid, odb: ?*git_odb, data: ?*const c_void, len: usize, type: git_object_t) c_int;
-pub extern fn git_odb_open_wstream(out: [*c][*c]git_odb_stream, db: ?*git_odb, size: git_object_size_t, type: git_object_t) c_int;
+pub extern fn git_odb_write(out: [*c]git_oid, odb: ?*git_odb, data: ?*const c_void, len: usize, @"type": git_object_t) c_int;
+pub extern fn git_odb_open_wstream(out: [*c][*c]git_odb_stream, db: ?*git_odb, size: git_object_size_t, @"type": git_object_t) c_int;
 pub extern fn git_odb_stream_write(stream: [*c]git_odb_stream, buffer: [*c]const u8, len: usize) c_int;
 pub extern fn git_odb_stream_finalize_write(out: [*c]git_oid, stream: [*c]git_odb_stream) c_int;
 pub extern fn git_odb_stream_read(stream: [*c]git_odb_stream, buffer: [*c]u8, len: usize) c_int;
 pub extern fn git_odb_stream_free(stream: [*c]git_odb_stream) void;
-pub extern fn git_odb_open_rstream(out: [*c][*c]git_odb_stream, len: [*c]usize, type: [*c]git_object_t, db: ?*git_odb, oid: [*c]const git_oid) c_int;
+pub extern fn git_odb_open_rstream(out: [*c][*c]git_odb_stream, len: [*c]usize, @"type": [*c]git_object_t, db: ?*git_odb, oid: [*c]const git_oid) c_int;
 pub extern fn git_odb_write_pack(out: [*c][*c]git_odb_writepack, db: ?*git_odb, progress_cb: git_indexer_progress_cb, progress_payload: ?*c_void) c_int;
-pub extern fn git_odb_hash(out: [*c]git_oid, data: ?*const c_void, len: usize, type: git_object_t) c_int;
-pub extern fn git_odb_hashfile(out: [*c]git_oid, path: [*c]const u8, type: git_object_t) c_int;
+pub extern fn git_odb_hash(out: [*c]git_oid, data: ?*const c_void, len: usize, @"type": git_object_t) c_int;
+pub extern fn git_odb_hashfile(out: [*c]git_oid, path: [*c]const u8, @"type": git_object_t) c_int;
 pub extern fn git_odb_object_dup(dest: [*c]?*git_odb_object, source: ?*git_odb_object) c_int;
 pub extern fn git_odb_object_free(object: ?*git_odb_object) void;
 pub extern fn git_odb_object_id(object: ?*git_odb_object) [*c]const git_oid;
@@ -2497,6 +2551,7 @@ pub extern fn git_odb_add_backend(odb: ?*git_odb, backend: ?*git_odb_backend, pr
 pub extern fn git_odb_add_alternate(odb: ?*git_odb, backend: ?*git_odb_backend, priority: c_int) c_int;
 pub extern fn git_odb_num_backends(odb: ?*git_odb) usize;
 pub extern fn git_odb_get_backend(out: [*c]?*git_odb_backend, odb: ?*git_odb, pos: usize) c_int;
+pub extern fn git_odb_set_commit_graph(odb: ?*git_odb, cgraph: ?*git_commit_graph) c_int;
 pub extern fn git_odb_backend_pack(out: [*c]?*git_odb_backend, objects_dir: [*c]const u8) c_int;
 pub extern fn git_odb_backend_loose(out: [*c]?*git_odb_backend, objects_dir: [*c]const u8, compression_level: c_int, do_fsync: c_int, dir_mode: c_uint, file_mode: c_uint) c_int;
 pub extern fn git_odb_backend_one_pack(out: [*c]?*git_odb_backend, index_file: [*c]const u8) c_int;
@@ -2506,6 +2561,7 @@ pub const GIT_STREAM_RW: c_int = 6;
 pub const git_odb_stream_t = c_uint;
 pub const struct_git_patch = opaque {};
 pub const git_patch = struct_git_patch;
+pub extern fn git_patch_owner(patch: ?*const git_patch) ?*git_repository;
 pub extern fn git_patch_from_diff(out: [*c]?*git_patch, diff: ?*git_diff, idx: usize) c_int;
 pub extern fn git_patch_from_blobs(out: [*c]?*git_patch, old_blob: ?*const git_blob, old_as_path: [*c]const u8, new_blob: ?*const git_blob, new_as_path: [*c]const u8, opts: [*c]const git_diff_options) c_int;
 pub extern fn git_patch_from_blob_and_buffer(out: [*c]?*git_patch, old_blob: ?*const git_blob, old_as_path: [*c]const u8, buffer: ?*const c_void, buffer_len: usize, buffer_as_path: [*c]const u8, opts: [*c]const git_diff_options) c_int;
@@ -2569,18 +2625,6 @@ pub const git_reset_t = c_uint;
 pub extern fn git_reset(repo: ?*git_repository, target: ?*const git_object, reset_type: git_reset_t, checkout_opts: [*c]const git_checkout_options) c_int;
 pub extern fn git_reset_from_annotated(repo: ?*git_repository, commit: ?*const git_annotated_commit, reset_type: git_reset_t, checkout_opts: [*c]const git_checkout_options) c_int;
 pub extern fn git_reset_default(repo: ?*git_repository, target: ?*const git_object, pathspecs: [*c]const git_strarray) c_int;
-pub extern fn git_revparse_single(out: [*c]?*git_object, repo: ?*git_repository, spec: [*c]const u8) c_int;
-pub extern fn git_revparse_ext(object_out: [*c]?*git_object, reference_out: [*c]?*git_reference, repo: ?*git_repository, spec: [*c]const u8) c_int;
-pub const GIT_REVPARSE_SINGLE: c_int = 1;
-pub const GIT_REVPARSE_RANGE: c_int = 2;
-pub const GIT_REVPARSE_MERGE_BASE: c_int = 4;
-pub const git_revparse_mode_t = c_uint;
-pub const git_revspec = extern struct {
-    from: ?*git_object,
-    to: ?*git_object,
-    flags: c_uint,
-};
-pub extern fn git_revparse(revspec: [*c]git_revspec, repo: ?*git_repository, spec: [*c]const u8) c_int;
 pub const GIT_SORT_NONE: c_int = 0;
 pub const GIT_SORT_TOPOLOGICAL: c_int = 1;
 pub const GIT_SORT_TIME: c_int = 2;
@@ -2632,6 +2676,7 @@ pub const git_tag_foreach_cb = ?fn ([*c]const u8, [*c]git_oid, ?*c_void) callcon
 pub extern fn git_tag_foreach(repo: ?*git_repository, callback: git_tag_foreach_cb, payload: ?*c_void) c_int;
 pub extern fn git_tag_peel(tag_target_out: [*c]?*git_object, tag: ?*const git_tag) c_int;
 pub extern fn git_tag_dup(out: [*c]?*git_tag, source: ?*git_tag) c_int;
+pub extern fn git_tag_name_is_valid(valid: [*c]c_int, name: [*c]const u8) c_int;
 pub extern fn git_transaction_new(out: [*c]?*git_transaction, repo: ?*git_repository) c_int;
 pub extern fn git_transaction_lock_ref(tx: ?*git_transaction, refname: [*c]const u8) c_int;
 pub extern fn git_transaction_set_target(tx: ?*git_transaction, refname: [*c]const u8, target: [*c]const git_oid, sig: [*c]const git_signature, msg: [*c]const u8) c_int;
@@ -2641,52 +2686,52 @@ pub extern fn git_transaction_remove(tx: ?*git_transaction, refname: [*c]const u
 pub extern fn git_transaction_commit(tx: ?*git_transaction) c_int;
 pub extern fn git_transaction_free(tx: ?*git_transaction) void;
 pub const __GLIBC_USE = @compileError("unable to translate C expr: unexpected token .HashHash"); // /usr/include/features.h:179:9
-pub const __NTH = @compileError("unable to translate C expr: unexpected token .Identifier"); // /usr/include/x86_64-linux-gnu/sys/cdefs.h:57:11
-pub const __NTHNL = @compileError("unable to translate C expr: unexpected token .Identifier"); // /usr/include/x86_64-linux-gnu/sys/cdefs.h:58:11
-pub const __CONCAT = @compileError("unable to translate C expr: unexpected token .HashHash"); // /usr/include/x86_64-linux-gnu/sys/cdefs.h:109:9
-pub const __STRING = @compileError("unable to translate C expr: unexpected token .Hash"); // /usr/include/x86_64-linux-gnu/sys/cdefs.h:110:9
-pub const __warnattr = @compileError("unable to translate C expr: unexpected token .Eof"); // /usr/include/x86_64-linux-gnu/sys/cdefs.h:144:10
-pub const __errordecl = @compileError("unable to translate C expr: unexpected token .Keyword_extern"); // /usr/include/x86_64-linux-gnu/sys/cdefs.h:145:10
-pub const __flexarr = @compileError("unable to translate C expr: unexpected token .LBracket"); // /usr/include/x86_64-linux-gnu/sys/cdefs.h:153:10
-pub const __REDIRECT = @compileError("unable to translate C expr: unexpected token .Hash"); // /usr/include/x86_64-linux-gnu/sys/cdefs.h:184:10
-pub const __REDIRECT_NTH = @compileError("unable to translate C expr: unexpected token .Hash"); // /usr/include/x86_64-linux-gnu/sys/cdefs.h:191:11
-pub const __REDIRECT_NTHNL = @compileError("unable to translate C expr: unexpected token .Hash"); // /usr/include/x86_64-linux-gnu/sys/cdefs.h:193:11
-pub const __ASMNAME2 = @compileError("unable to translate C expr: unexpected token .Identifier"); // /usr/include/x86_64-linux-gnu/sys/cdefs.h:197:10
-pub const __attribute_alloc_size__ = @compileError("unable to translate C expr: unexpected token .Eof"); // /usr/include/x86_64-linux-gnu/sys/cdefs.h:229:10
-pub const __extern_inline = @compileError("unable to translate C expr: unexpected token .Keyword_extern"); // /usr/include/x86_64-linux-gnu/sys/cdefs.h:356:11
-pub const __extern_always_inline = @compileError("unable to translate C expr: unexpected token .Keyword_extern"); // /usr/include/x86_64-linux-gnu/sys/cdefs.h:357:11
-pub const __attribute_copy__ = @compileError("unable to translate C expr: unexpected token .Eof"); // /usr/include/x86_64-linux-gnu/sys/cdefs.h:451:10
-pub const __LDBL_REDIR2_DECL = @compileError("unable to translate C expr: unexpected token .Eof"); // /usr/include/x86_64-linux-gnu/sys/cdefs.h:522:10
-pub const __LDBL_REDIR_DECL = @compileError("unable to translate C expr: unexpected token .Eof"); // /usr/include/x86_64-linux-gnu/sys/cdefs.h:523:10
-pub const __glibc_macro_warning1 = @compileError("unable to translate C expr: unexpected token .Hash"); // /usr/include/x86_64-linux-gnu/sys/cdefs.h:537:10
-pub const __attr_access = @compileError("unable to translate C expr: unexpected token .Eof"); // /usr/include/x86_64-linux-gnu/sys/cdefs.h:569:11
-pub const __STD_TYPE = @compileError("unable to translate C expr: unexpected token .Keyword_typedef"); // /usr/include/x86_64-linux-gnu/bits/types.h:137:10
-pub const __FSID_T_TYPE = @compileError("unable to translate C expr: expected Identifier instead got: LBrace"); // /usr/include/x86_64-linux-gnu/bits/typesizes.h:73:9
-pub const __f32 = @compileError("unable to translate C expr: unexpected token .HashHash"); // /usr/include/x86_64-linux-gnu/bits/floatn-common.h:91:12
-pub const __f64x = @compileError("unable to translate C expr: unexpected token .HashHash"); // /usr/include/x86_64-linux-gnu/bits/floatn-common.h:120:13
-pub const __CFLOAT32 = @compileError("unable to translate: TODO _Complex"); // /usr/include/x86_64-linux-gnu/bits/floatn-common.h:149:12
-pub const __CFLOAT64 = @compileError("unable to translate: TODO _Complex"); // /usr/include/x86_64-linux-gnu/bits/floatn-common.h:160:13
-pub const __CFLOAT32X = @compileError("unable to translate: TODO _Complex"); // /usr/include/x86_64-linux-gnu/bits/floatn-common.h:169:12
-pub const __CFLOAT64X = @compileError("unable to translate: TODO _Complex"); // /usr/include/x86_64-linux-gnu/bits/floatn-common.h:178:13
-pub const __builtin_nansf32 = @compileError("TODO implement function '__builtin_nansf' in std.zig.c_builtins"); // /usr/include/x86_64-linux-gnu/bits/floatn-common.h:221:12
-pub const __builtin_huge_valf64 = @compileError("TODO implement function '__builtin_huge_val' in std.zig.c_builtins"); // /usr/include/x86_64-linux-gnu/bits/floatn-common.h:255:13
-pub const __builtin_inff64 = @compileError("TODO implement function '__builtin_inf' in std.zig.c_builtins"); // /usr/include/x86_64-linux-gnu/bits/floatn-common.h:256:13
-pub const __builtin_nanf64 = @compileError("TODO implement function '__builtin_nan' in std.zig.c_builtins"); // /usr/include/x86_64-linux-gnu/bits/floatn-common.h:257:13
-pub const __builtin_nansf64 = @compileError("TODO implement function '__builtin_nans' in std.zig.c_builtins"); // /usr/include/x86_64-linux-gnu/bits/floatn-common.h:258:13
-pub const __builtin_huge_valf32x = @compileError("TODO implement function '__builtin_huge_val' in std.zig.c_builtins"); // /usr/include/x86_64-linux-gnu/bits/floatn-common.h:272:12
-pub const __builtin_inff32x = @compileError("TODO implement function '__builtin_inf' in std.zig.c_builtins"); // /usr/include/x86_64-linux-gnu/bits/floatn-common.h:273:12
-pub const __builtin_nanf32x = @compileError("TODO implement function '__builtin_nan' in std.zig.c_builtins"); // /usr/include/x86_64-linux-gnu/bits/floatn-common.h:274:12
-pub const __builtin_nansf32x = @compileError("TODO implement function '__builtin_nans' in std.zig.c_builtins"); // /usr/include/x86_64-linux-gnu/bits/floatn-common.h:275:12
-pub const __builtin_huge_valf64x = @compileError("TODO implement function '__builtin_huge_vall' in std.zig.c_builtins"); // /usr/include/x86_64-linux-gnu/bits/floatn-common.h:289:13
-pub const __builtin_inff64x = @compileError("TODO implement function '__builtin_infl' in std.zig.c_builtins"); // /usr/include/x86_64-linux-gnu/bits/floatn-common.h:290:13
-pub const __builtin_nanf64x = @compileError("TODO implement function '__builtin_nanl' in std.zig.c_builtins"); // /usr/include/x86_64-linux-gnu/bits/floatn-common.h:291:13
-pub const __builtin_nansf64x = @compileError("TODO implement function '__builtin_nansl' in std.zig.c_builtins"); // /usr/include/x86_64-linux-gnu/bits/floatn-common.h:292:13
-pub const __FD_ZERO = @compileError("unable to translate C expr: unexpected token .Keyword_do"); // /usr/include/x86_64-linux-gnu/bits/select.h:25:9
-pub const __FD_SET = @compileError("unable to translate C expr: expected ')' instead got: PipeEqual"); // /usr/include/x86_64-linux-gnu/bits/select.h:32:9
-pub const __FD_CLR = @compileError("unable to translate C expr: expected ')' instead got: AmpersandEqual"); // /usr/include/x86_64-linux-gnu/bits/select.h:34:9
-pub const __PTHREAD_MUTEX_INITIALIZER = @compileError("unable to translate C expr: unexpected token .LBrace"); // /usr/include/x86_64-linux-gnu/bits/struct_mutex.h:56:10
-pub const __PTHREAD_RWLOCK_ELISION_EXTRA = @compileError("unable to translate C expr: unexpected token .LBrace"); // /usr/include/x86_64-linux-gnu/bits/struct_rwlock.h:40:11
-pub const __ONCE_FLAG_INIT = @compileError("unable to translate C expr: unexpected token .LBrace"); // /usr/include/x86_64-linux-gnu/bits/thread-shared-types.h:127:9
+pub const __NTH = @compileError("unable to translate C expr: unexpected token .Identifier"); // /usr/include/sys/cdefs.h:57:11
+pub const __NTHNL = @compileError("unable to translate C expr: unexpected token .Identifier"); // /usr/include/sys/cdefs.h:58:11
+pub const __CONCAT = @compileError("unable to translate C expr: unexpected token .HashHash"); // /usr/include/sys/cdefs.h:109:9
+pub const __STRING = @compileError("unable to translate C expr: unexpected token .Hash"); // /usr/include/sys/cdefs.h:110:9
+pub const __warnattr = @compileError("unable to translate C expr: unexpected token .Eof"); // /usr/include/sys/cdefs.h:144:10
+pub const __errordecl = @compileError("unable to translate C expr: unexpected token .Keyword_extern"); // /usr/include/sys/cdefs.h:145:10
+pub const __flexarr = @compileError("unable to translate C expr: unexpected token .LBracket"); // /usr/include/sys/cdefs.h:153:10
+pub const __REDIRECT = @compileError("unable to translate C expr: unexpected token .Hash"); // /usr/include/sys/cdefs.h:184:10
+pub const __REDIRECT_NTH = @compileError("unable to translate C expr: unexpected token .Hash"); // /usr/include/sys/cdefs.h:191:11
+pub const __REDIRECT_NTHNL = @compileError("unable to translate C expr: unexpected token .Hash"); // /usr/include/sys/cdefs.h:193:11
+pub const __ASMNAME2 = @compileError("unable to translate C expr: unexpected token .Identifier"); // /usr/include/sys/cdefs.h:197:10
+pub const __attribute_alloc_size__ = @compileError("unable to translate C expr: unexpected token .Eof"); // /usr/include/sys/cdefs.h:229:10
+pub const __extern_inline = @compileError("unable to translate C expr: unexpected token .Keyword_extern"); // /usr/include/sys/cdefs.h:356:11
+pub const __extern_always_inline = @compileError("unable to translate C expr: unexpected token .Keyword_extern"); // /usr/include/sys/cdefs.h:357:11
+pub const __attribute_copy__ = @compileError("unable to translate C expr: unexpected token .Eof"); // /usr/include/sys/cdefs.h:451:10
+pub const __LDBL_REDIR2_DECL = @compileError("unable to translate C expr: unexpected token .Eof"); // /usr/include/sys/cdefs.h:522:10
+pub const __LDBL_REDIR_DECL = @compileError("unable to translate C expr: unexpected token .Eof"); // /usr/include/sys/cdefs.h:523:10
+pub const __glibc_macro_warning1 = @compileError("unable to translate C expr: unexpected token .Hash"); // /usr/include/sys/cdefs.h:537:10
+pub const __attr_access = @compileError("unable to translate C expr: unexpected token .Eof"); // /usr/include/sys/cdefs.h:569:11
+pub const __STD_TYPE = @compileError("unable to translate C expr: unexpected token .Keyword_typedef"); // /usr/include/bits/types.h:137:10
+pub const __FSID_T_TYPE = @compileError("unable to translate C expr: expected Identifier instead got: LBrace"); // /usr/include/bits/typesizes.h:73:9
+pub const __f32 = @compileError("unable to translate C expr: unexpected token .HashHash"); // /usr/include/bits/floatn-common.h:91:12
+pub const __f64x = @compileError("unable to translate C expr: unexpected token .HashHash"); // /usr/include/bits/floatn-common.h:120:13
+pub const __CFLOAT32 = @compileError("unable to translate: TODO _Complex"); // /usr/include/bits/floatn-common.h:149:12
+pub const __CFLOAT64 = @compileError("unable to translate: TODO _Complex"); // /usr/include/bits/floatn-common.h:160:13
+pub const __CFLOAT32X = @compileError("unable to translate: TODO _Complex"); // /usr/include/bits/floatn-common.h:169:12
+pub const __CFLOAT64X = @compileError("unable to translate: TODO _Complex"); // /usr/include/bits/floatn-common.h:178:13
+pub const __builtin_nansf32 = @compileError("TODO implement function '__builtin_nansf' in std.zig.c_builtins"); // /usr/include/bits/floatn-common.h:221:12
+pub const __builtin_huge_valf64 = @compileError("TODO implement function '__builtin_huge_val' in std.zig.c_builtins"); // /usr/include/bits/floatn-common.h:255:13
+pub const __builtin_inff64 = @compileError("TODO implement function '__builtin_inf' in std.zig.c_builtins"); // /usr/include/bits/floatn-common.h:256:13
+pub const __builtin_nanf64 = @compileError("TODO implement function '__builtin_nan' in std.zig.c_builtins"); // /usr/include/bits/floatn-common.h:257:13
+pub const __builtin_nansf64 = @compileError("TODO implement function '__builtin_nans' in std.zig.c_builtins"); // /usr/include/bits/floatn-common.h:258:13
+pub const __builtin_huge_valf32x = @compileError("TODO implement function '__builtin_huge_val' in std.zig.c_builtins"); // /usr/include/bits/floatn-common.h:272:12
+pub const __builtin_inff32x = @compileError("TODO implement function '__builtin_inf' in std.zig.c_builtins"); // /usr/include/bits/floatn-common.h:273:12
+pub const __builtin_nanf32x = @compileError("TODO implement function '__builtin_nan' in std.zig.c_builtins"); // /usr/include/bits/floatn-common.h:274:12
+pub const __builtin_nansf32x = @compileError("TODO implement function '__builtin_nans' in std.zig.c_builtins"); // /usr/include/bits/floatn-common.h:275:12
+pub const __builtin_huge_valf64x = @compileError("TODO implement function '__builtin_huge_vall' in std.zig.c_builtins"); // /usr/include/bits/floatn-common.h:289:13
+pub const __builtin_inff64x = @compileError("TODO implement function '__builtin_infl' in std.zig.c_builtins"); // /usr/include/bits/floatn-common.h:290:13
+pub const __builtin_nanf64x = @compileError("TODO implement function '__builtin_nanl' in std.zig.c_builtins"); // /usr/include/bits/floatn-common.h:291:13
+pub const __builtin_nansf64x = @compileError("TODO implement function '__builtin_nansl' in std.zig.c_builtins"); // /usr/include/bits/floatn-common.h:292:13
+pub const __FD_ZERO = @compileError("unable to translate C expr: unexpected token .Keyword_do"); // /usr/include/bits/select.h:25:9
+pub const __FD_SET = @compileError("unable to translate C expr: expected ')' instead got: PipeEqual"); // /usr/include/bits/select.h:32:9
+pub const __FD_CLR = @compileError("unable to translate C expr: expected ')' instead got: AmpersandEqual"); // /usr/include/bits/select.h:34:9
+pub const __PTHREAD_MUTEX_INITIALIZER = @compileError("unable to translate C expr: unexpected token .LBrace"); // /usr/include/bits/struct_mutex.h:56:10
+pub const __PTHREAD_RWLOCK_ELISION_EXTRA = @compileError("unable to translate C expr: unexpected token .LBrace"); // /usr/include/bits/struct_rwlock.h:40:11
+pub const __ONCE_FLAG_INIT = @compileError("unable to translate C expr: unexpected token .LBrace"); // /usr/include/bits/thread-shared-types.h:127:9
 pub const __INT64_C = @compileError("unable to translate C expr: unexpected token .HashHash"); // /usr/include/stdint.h:106:11
 pub const __UINT64_C = @compileError("unable to translate C expr: unexpected token .HashHash"); // /usr/include/stdint.h:107:11
 pub const INT64_C = @compileError("unable to translate C expr: unexpected token .HashHash"); // /usr/include/stdint.h:252:11
@@ -2694,45 +2739,47 @@ pub const UINT32_C = @compileError("unable to translate C expr: unexpected token
 pub const UINT64_C = @compileError("unable to translate C expr: unexpected token .HashHash"); // /usr/include/stdint.h:262:11
 pub const INTMAX_C = @compileError("unable to translate C expr: unexpected token .HashHash"); // /usr/include/stdint.h:269:11
 pub const UINTMAX_C = @compileError("unable to translate C expr: unexpected token .HashHash"); // /usr/include/stdint.h:270:11
-pub const GIT_EXTERN = @compileError("unable to translate C expr: unexpected token .Keyword_extern"); // /usr/include/git2/common.h:39:10
-pub const GIT_DEPRECATED = @compileError("unable to translate C expr: unexpected token .Identifier"); // /usr/include/git2/common.h:57:10
-pub const GIT_BUF_INIT_CONST = @compileError("unable to translate C expr: unexpected token .LBrace"); // /usr/include/git2/buffer.h:66:9
-pub const GIT_REPOSITORY_INIT_OPTIONS_INIT = @compileError("unable to translate C expr: unexpected token .LBrace"); // /usr/include/git2/repository.h:314:9
-pub const GIT_DIFF_OPTIONS_INIT = @compileError("unable to translate C expr: unexpected token .LBrace"); // /usr/include/git2/diff.h:441:9
-pub const GIT_DIFF_FIND_OPTIONS_INIT = @compileError("unable to translate C expr: unexpected token .LBrace"); // /usr/include/git2/diff.h:775:9
-pub const GIT_DIFF_FORMAT_EMAIL_OPTIONS_INIT = @compileError("unable to translate C expr: unexpected token .LBrace"); // /usr/include/git2/diff.h:1405:9
-pub const GIT_DIFF_PATCHID_OPTIONS_INIT = @compileError("unable to translate C expr: unexpected token .LBrace"); // /usr/include/git2/diff.h:1469:9
-pub const GIT_APPLY_OPTIONS_INIT = @compileError("unable to translate C expr: unexpected token .LBrace"); // /usr/include/git2/apply.h:90:9
-pub const GIT_BLOB_FILTER_OPTIONS_INIT = @compileError("unable to translate C expr: unexpected token .LBrace"); // /usr/include/git2/blob.h:130:9
-pub const GIT_BLAME_OPTIONS_INIT = @compileError("unable to translate C expr: unexpected token .LBrace"); // /usr/include/git2/blame.h:93:9
-pub const GIT_CHECKOUT_OPTIONS_INIT = @compileError("unable to translate C expr: unexpected token .LBrace"); // /usr/include/git2/checkout.h:329:9
-pub const GIT_INDEXER_OPTIONS_INIT = @compileError("unable to translate C expr: unexpected token .LBrace"); // /usr/include/git2/indexer.h:75:9
-pub const GIT_INDEX_ENTRY_STAGE_SET = @compileError("unable to translate C expr: unexpected token .Keyword_do"); // /usr/include/git2/index.h:95:9
-pub const GIT_MERGE_FILE_INPUT_INIT = @compileError("unable to translate C expr: unexpected token .LBrace"); // /usr/include/git2/merge.h:49:9
-pub const GIT_MERGE_FILE_OPTIONS_INIT = @compileError("unable to translate C expr: unexpected token .LBrace"); // /usr/include/git2/merge.h:203:9
-pub const GIT_MERGE_OPTIONS_INIT = @compileError("unable to translate C expr: unexpected token .LBrace"); // /usr/include/git2/merge.h:298:9
-pub const GIT_CHERRYPICK_OPTIONS_INIT = @compileError("unable to translate C expr: unexpected token .LBrace"); // /usr/include/git2/cherrypick.h:37:9
-pub const GIT_PROXY_OPTIONS_INIT = @compileError("unable to translate C expr: unexpected token .LBrace"); // /usr/include/git2/proxy.h:82:9
-pub const GIT_REMOTE_CREATE_OPTIONS_INIT = @compileError("unable to translate C expr: unexpected token .LBrace"); // /usr/include/git2/remote.h:85:9
-pub const GIT_REMOTE_CALLBACKS_INIT = @compileError("unable to translate C expr: unexpected token .LBrace"); // /usr/include/git2/remote.h:591:9
-pub const GIT_FETCH_OPTIONS_INIT = @compileError("unable to translate C expr: unexpected token .LBrace"); // /usr/include/git2/remote.h:694:9
-pub const GIT_PUSH_OPTIONS_INIT = @compileError("unable to translate C expr: unexpected token .LBrace"); // /usr/include/git2/remote.h:745:9
-pub const GIT_CLONE_OPTIONS_INIT = @compileError("unable to translate C expr: unexpected token .LBrace"); // /usr/include/git2/clone.h:167:9
-pub const GIT_DESCRIBE_OPTIONS_INIT = @compileError("unable to translate C expr: unexpected token .LBrace"); // /usr/include/git2/describe.h:67:9
-pub const GIT_DESCRIBE_FORMAT_OPTIONS_INIT = @compileError("unable to translate C expr: unexpected token .LBrace"); // /usr/include/git2/describe.h:114:9
-pub const GIT_REBASE_OPTIONS_INIT = @compileError("unable to translate C expr: unexpected token .LBrace"); // /usr/include/git2/rebase.h:135:9
-pub const GIT_REVERT_OPTIONS_INIT = @compileError("unable to translate C expr: unexpected token .LBrace"); // /usr/include/git2/revert.h:37:9
-pub const GIT_STASH_APPLY_OPTIONS_INIT = @compileError("unable to translate C expr: unexpected token .LBrace"); // /usr/include/git2/stash.h:141:9
-pub const GIT_STATUS_OPTIONS_INIT = @compileError("unable to translate C expr: unexpected token .LBrace"); // /usr/include/git2/status.h:200:9
-pub const GIT_SUBMODULE_UPDATE_OPTIONS_INIT = @compileError("unable to translate C expr: unexpected token .LBrace"); // /usr/include/git2/submodule.h:156:9
-pub const GIT_WORKTREE_ADD_OPTIONS_INIT = @compileError("unable to translate C expr: unexpected token .LBrace"); // /usr/include/git2/worktree.h:92:9
-pub const GIT_WORKTREE_PRUNE_OPTIONS_INIT = @compileError("unable to translate C expr: unexpected token .LBrace"); // /usr/include/git2/worktree.h:205:9
+pub const GIT_EXTERN = @compileError("unable to translate C expr: unexpected token .Keyword_extern"); // ./git2/common.h:39:10
+pub const GIT_DEPRECATED = @compileError("unable to translate C expr: unexpected token .Identifier"); // ./git2/common.h:57:10
+pub const GIT_BUF_INIT_CONST = @compileError("unable to translate C expr: unexpected token .LBrace"); // ./git2/buffer.h:66:9
+pub const GIT_REPOSITORY_INIT_OPTIONS_INIT = @compileError("unable to translate C expr: unexpected token .LBrace"); // ./git2/repository.h:357:9
+pub const GIT_DIFF_OPTIONS_INIT = @compileError("unable to translate C expr: unexpected token .LBrace"); // ./git2/diff.h:456:9
+pub const GIT_DIFF_FIND_OPTIONS_INIT = @compileError("unable to translate C expr: unexpected token .LBrace"); // ./git2/diff.h:790:9
+pub const GIT_DIFF_FORMAT_EMAIL_OPTIONS_INIT = @compileError("unable to translate C expr: unexpected token .LBrace"); // ./git2/diff.h:1420:9
+pub const GIT_DIFF_PATCHID_OPTIONS_INIT = @compileError("unable to translate C expr: unexpected token .LBrace"); // ./git2/diff.h:1484:9
+pub const GIT_APPLY_OPTIONS_INIT = @compileError("unable to translate C expr: unexpected token .LBrace"); // ./git2/apply.h:90:9
+pub const GIT_ATTR_OPTIONS_INIT = @compileError("unable to translate C expr: unexpected token .LBrace"); // ./git2/attr.h:158:9
+pub const GIT_BLOB_FILTER_OPTIONS_INIT = @compileError("unable to translate C expr: unexpected token .LBrace"); // ./git2/blob.h:146:9
+pub const GIT_BLAME_OPTIONS_INIT = @compileError("unable to translate C expr: unexpected token .LBrace"); // ./git2/blame.h:126:9
+pub const GIT_CHECKOUT_OPTIONS_INIT = @compileError("unable to translate C expr: unexpected token .LBrace"); // ./git2/checkout.h:339:9
+pub const GIT_INDEXER_OPTIONS_INIT = @compileError("unable to translate C expr: unexpected token .LBrace"); // ./git2/indexer.h:76:9
+pub const GIT_INDEX_ENTRY_STAGE_SET = @compileError("unable to translate C expr: unexpected token .Keyword_do"); // ./git2/index.h:95:9
+pub const GIT_MERGE_FILE_INPUT_INIT = @compileError("unable to translate C expr: unexpected token .LBrace"); // ./git2/merge.h:49:9
+pub const GIT_MERGE_FILE_OPTIONS_INIT = @compileError("unable to translate C expr: unexpected token .LBrace"); // ./git2/merge.h:203:9
+pub const GIT_MERGE_OPTIONS_INIT = @compileError("unable to translate C expr: unexpected token .LBrace"); // ./git2/merge.h:298:9
+pub const GIT_CHERRYPICK_OPTIONS_INIT = @compileError("unable to translate C expr: unexpected token .LBrace"); // ./git2/cherrypick.h:37:9
+pub const GIT_PROXY_OPTIONS_INIT = @compileError("unable to translate C expr: unexpected token .LBrace"); // ./git2/proxy.h:82:9
+pub const GIT_REMOTE_CREATE_OPTIONS_INIT = @compileError("unable to translate C expr: unexpected token .LBrace"); // ./git2/remote.h:85:9
+pub const GIT_REMOTE_CALLBACKS_INIT = @compileError("unable to translate C expr: unexpected token .LBrace"); // ./git2/remote.h:592:9
+pub const GIT_FETCH_OPTIONS_INIT = @compileError("unable to translate C expr: unexpected token .LBrace"); // ./git2/remote.h:695:9
+pub const GIT_PUSH_OPTIONS_INIT = @compileError("unable to translate C expr: unexpected token .LBrace"); // ./git2/remote.h:746:9
+pub const GIT_CLONE_OPTIONS_INIT = @compileError("unable to translate C expr: unexpected token .LBrace"); // ./git2/clone.h:167:9
+pub const GIT_DESCRIBE_OPTIONS_INIT = @compileError("unable to translate C expr: unexpected token .LBrace"); // ./git2/describe.h:67:9
+pub const GIT_DESCRIBE_FORMAT_OPTIONS_INIT = @compileError("unable to translate C expr: unexpected token .LBrace"); // ./git2/describe.h:114:9
+pub const GIT_FILTER_OPTIONS_INIT = @compileError("unable to translate C expr: unexpected token .LBrace"); // ./git2/filter.h:77:10
+pub const GIT_REBASE_OPTIONS_INIT = @compileError("unable to translate C expr: unexpected token .LBrace"); // ./git2/rebase.h:135:9
+pub const GIT_REVERT_OPTIONS_INIT = @compileError("unable to translate C expr: unexpected token .LBrace"); // ./git2/revert.h:37:9
+pub const GIT_STASH_APPLY_OPTIONS_INIT = @compileError("unable to translate C expr: unexpected token .LBrace"); // ./git2/stash.h:141:9
+pub const GIT_STATUS_OPTIONS_INIT = @compileError("unable to translate C expr: unexpected token .LBrace"); // ./git2/status.h:256:9
+pub const GIT_SUBMODULE_UPDATE_OPTIONS_INIT = @compileError("unable to translate C expr: unexpected token .LBrace"); // ./git2/submodule.h:156:9
+pub const GIT_WORKTREE_ADD_OPTIONS_INIT = @compileError("unable to translate C expr: unexpected token .LBrace"); // ./git2/worktree.h:92:9
+pub const GIT_WORKTREE_PRUNE_OPTIONS_INIT = @compileError("unable to translate C expr: unexpected token .LBrace"); // ./git2/worktree.h:206:9
 pub const __llvm__ = @as(c_int, 1);
 pub const __clang__ = @as(c_int, 1);
 pub const __clang_major__ = @as(c_int, 12);
 pub const __clang_minor__ = @as(c_int, 0);
 pub const __clang_patchlevel__ = @as(c_int, 1);
-pub const __clang_version__ = "12.0.1 (git@github.com:ziglang/zig-bootstrap.git c6c068e0c3c9488e4118438fa132358948f23d0a)";
+pub const __clang_version__ = "12.0.1 (git@github.com:ziglang/zig-bootstrap.git 39314a97a5d81d46a584397158d7ec8bbbef9214)";
 pub const __GNUC__ = @as(c_int, 4);
 pub const __GNUC_MINOR__ = @as(c_int, 2);
 pub const __GNUC_PATCHLEVEL__ = @as(c_int, 1);
@@ -2749,7 +2796,7 @@ pub const __OPENCL_MEMORY_SCOPE_DEVICE = @as(c_int, 2);
 pub const __OPENCL_MEMORY_SCOPE_ALL_SVM_DEVICES = @as(c_int, 3);
 pub const __OPENCL_MEMORY_SCOPE_SUB_GROUP = @as(c_int, 4);
 pub const __PRAGMA_REDEFINE_EXTNAME = @as(c_int, 1);
-pub const __VERSION__ = "Clang 12.0.1 (git@github.com:ziglang/zig-bootstrap.git c6c068e0c3c9488e4118438fa132358948f23d0a)";
+pub const __VERSION__ = "Clang 12.0.1 (git@github.com:ziglang/zig-bootstrap.git 39314a97a5d81d46a584397158d7ec8bbbef9214)";
 pub const __OBJC_BOOL_IS_BOOL = @as(c_int, 0);
 pub const __CONSTANT_CFSTRINGS__ = @as(c_int, 1);
 pub const __OPTIMIZE__ = @as(c_int, 1);
@@ -3034,9 +3081,9 @@ pub const __SEG_GS = @as(c_int, 1);
 pub const __SEG_FS = @as(c_int, 1);
 pub const __seg_gs = __attribute__(address_space(@as(c_int, 256)));
 pub const __seg_fs = __attribute__(address_space(@as(c_int, 257)));
-pub const __corei7 = @as(c_int, 1);
-pub const __corei7__ = @as(c_int, 1);
-pub const __tune_corei7__ = @as(c_int, 1);
+pub const __znver1 = @as(c_int, 1);
+pub const __znver1__ = @as(c_int, 1);
+pub const __tune_znver1__ = @as(c_int, 1);
 pub const __NO_MATH_INLINES = @as(c_int, 1);
 pub const __AES__ = @as(c_int, 1);
 pub const __PCLMUL__ = @as(c_int, 1);
@@ -3047,13 +3094,22 @@ pub const __FSGSBASE__ = @as(c_int, 1);
 pub const __BMI__ = @as(c_int, 1);
 pub const __BMI2__ = @as(c_int, 1);
 pub const __POPCNT__ = @as(c_int, 1);
+pub const __PRFCHW__ = @as(c_int, 1);
+pub const __RDSEED__ = @as(c_int, 1);
+pub const __ADX__ = @as(c_int, 1);
+pub const __MWAITX__ = @as(c_int, 1);
 pub const __MOVBE__ = @as(c_int, 1);
+pub const __SSE4A__ = @as(c_int, 1);
 pub const __FMA__ = @as(c_int, 1);
 pub const __F16C__ = @as(c_int, 1);
+pub const __SHA__ = @as(c_int, 1);
 pub const __FXSR__ = @as(c_int, 1);
 pub const __XSAVE__ = @as(c_int, 1);
 pub const __XSAVEOPT__ = @as(c_int, 1);
-pub const __INVPCID__ = @as(c_int, 1);
+pub const __XSAVEC__ = @as(c_int, 1);
+pub const __XSAVES__ = @as(c_int, 1);
+pub const __CLFLUSHOPT__ = @as(c_int, 1);
+pub const __CLZERO__ = @as(c_int, 1);
 pub const __AVX2__ = @as(c_int, 1);
 pub const __AVX__ = @as(c_int, 1);
 pub const __SSE4_2__ = @as(c_int, 1);
@@ -3773,7 +3829,7 @@ pub inline fn GIT_CALLBACK(name: anytype) @TypeOf(name.*) {
 pub inline fn GIT_FORMAT_PRINTF(a: anytype, b: anytype) @TypeOf(__attribute__(format(printf, a, b))) {
     return __attribute__(format(printf, a, b));
 }
-pub const PATH_LIST_SEPARATOR = ':';
+pub const GIT_PATH_LIST_SEPARATOR = ':';
 pub const GIT_PATH_MAX = @as(c_int, 4096);
 pub const GIT_OID_HEX_ZERO = "0000000000000000000000000000000000000000";
 pub const GIT_OID_RAWSZ = @as(c_int, 20);
@@ -3804,6 +3860,8 @@ pub const GIT_ATTR_CHECK_INDEX_THEN_FILE = @as(c_int, 1);
 pub const GIT_ATTR_CHECK_INDEX_ONLY = @as(c_int, 2);
 pub const GIT_ATTR_CHECK_NO_SYSTEM = @as(c_int, 1) << @as(c_int, 2);
 pub const GIT_ATTR_CHECK_INCLUDE_HEAD = @as(c_int, 1) << @as(c_int, 3);
+pub const GIT_ATTR_CHECK_INCLUDE_COMMIT = @as(c_int, 1) << @as(c_int, 4);
+pub const GIT_ATTR_OPTIONS_VERSION = @as(c_int, 1);
 pub const GIT_BLOB_FILTER_OPTIONS_VERSION = @as(c_int, 1);
 pub const GIT_BLAME_OPTIONS_VERSION = @as(c_int, 1);
 pub const GIT_CHECKOUT_OPTIONS_VERSION = @as(c_int, 1);
@@ -3830,6 +3888,7 @@ pub const GIT_DESCRIBE_DEFAULT_MAX_CANDIDATES_TAGS = @as(c_int, 10);
 pub const GIT_DESCRIBE_DEFAULT_ABBREVIATED_SIZE = @as(c_int, 7);
 pub const GIT_DESCRIBE_OPTIONS_VERSION = @as(c_int, 1);
 pub const GIT_DESCRIBE_FORMAT_OPTIONS_VERSION = @as(c_int, 1);
+pub const GIT_FILTER_OPTIONS_VERSION = @as(c_int, 1);
 pub const GIT_REBASE_OPTIONS_VERSION = @as(c_int, 1);
 pub const GIT_REBASE_NO_OPERATION = SIZE_MAX;
 pub const GIT_REVERT_OPTIONS_VERSION = @as(c_int, 1);
@@ -3867,6 +3926,7 @@ pub inline fn GIT_ATTR_FALSE(attr: anytype) @TypeOf(GIT_ATTR_IS_FALSE(attr)) {
 pub inline fn GIT_ATTR_UNSPECIFIED(attr: anytype) @TypeOf(GIT_ATTR_IS_UNSPECIFIED(attr)) {
     return GIT_ATTR_IS_UNSPECIFIED(attr);
 }
+pub const GIT_BLOB_FILTER_ATTTRIBUTES_FROM_HEAD = GIT_BLOB_FILTER_ATTRIBUTES_FROM_HEAD;
 pub const GIT_CVAR_FALSE = GIT_CONFIGMAP_FALSE;
 pub const GIT_CVAR_TRUE = GIT_CONFIGMAP_TRUE;
 pub const GIT_CVAR_INT32 = GIT_CONFIGMAP_INT32;
@@ -3955,6 +4015,9 @@ pub const GIT_REF_FORMAT_NORMAL = GIT_REFERENCE_FORMAT_NORMAL;
 pub const GIT_REF_FORMAT_ALLOW_ONELEVEL = GIT_REFERENCE_FORMAT_ALLOW_ONELEVEL;
 pub const GIT_REF_FORMAT_REFSPEC_PATTERN = GIT_REFERENCE_FORMAT_REFSPEC_PATTERN;
 pub const GIT_REF_FORMAT_REFSPEC_SHORTHAND = GIT_REFERENCE_FORMAT_REFSPEC_SHORTHAND;
+pub const GIT_REVPARSE_SINGLE = GIT_REVSPEC_SINGLE;
+pub const GIT_REVPARSE_RANGE = GIT_REVSPEC_RANGE;
+pub const GIT_REVPARSE_MERGE_BASE = GIT_REVSPEC_MERGE_BASE;
 pub const git_credtype_t = git_credential_t;
 pub const GIT_CREDTYPE_USERPASS_PLAINTEXT = GIT_CREDENTIAL_USERPASS_PLAINTEXT;
 pub const GIT_CREDTYPE_SSH_KEY = GIT_CREDENTIAL_SSH_KEY;

@@ -15,8 +15,8 @@ pub const AnnotatedCommit = opaque {
     }
 
     /// Gets the commit ID that the given `AnnotatedCommit` refers to.
-    pub fn getCommitId(self: *const AnnotatedCommit) !*const git.Oid {
-        log.debug("AnnotatedCommit.getCommitId called", .{});
+    pub fn commitId(self: *const AnnotatedCommit) !*const git.Oid {
+        log.debug("AnnotatedCommit.commitId called", .{});
 
         const oid = internal.fromC(raw.git_annotated_commit_id(internal.toC(self)));
 
@@ -31,8 +31,8 @@ pub const AnnotatedCommit = opaque {
     }
 
     /// Gets the refname that the given `AnnotatedCommit` refers to.
-    pub fn getRefname(self: *const AnnotatedCommit) ![:0]const u8 {
-        log.debug("AnnotatedCommit.getRefname called", .{});
+    pub fn refname(self: *const AnnotatedCommit) ![:0]const u8 {
+        log.debug("AnnotatedCommit.refname called", .{});
 
         const slice = std.mem.sliceTo(raw.git_annotated_commit_ref(internal.toC(self)), 0);
 

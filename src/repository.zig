@@ -14,8 +14,8 @@ pub const Repository = opaque {
         log.debug("repository closed successfully", .{});
     }
 
-    pub fn getState(self: *const Repository) RepositoryState {
-        log.debug("Repository.getState called", .{});
+    pub fn state(self: *const Repository) RepositoryState {
+        log.debug("Repository.state called", .{});
 
         const ret = @intToEnum(RepositoryState, raw.git_repository_state(internal.toC(self)));
 
@@ -40,8 +40,8 @@ pub const Repository = opaque {
     };
 
     /// Retrieve the configured identity to use for reflogs
-    pub fn getIdentity(self: *const Repository) !Identity {
-        log.debug("Repository.getIdentity called", .{});
+    pub fn identityGet(self: *const Repository) !Identity {
+        log.debug("Repository.identityGet called", .{});
 
         var c_name: [*c]u8 = undefined;
         var c_email: [*c]u8 = undefined;
@@ -60,8 +60,8 @@ pub const Repository = opaque {
     ///
     /// If both are set, this name and email will be used to write to the reflog.
     /// Set to `null` to unset; When unset, the identity will be taken from the repository's configuration.
-    pub fn setIdentity(self: *const Repository, identity: Identity) !void {
-        log.debug("Repository.setIdentity called, identity.name={s}, identity.email={s}", .{ identity.name, identity.email });
+    pub fn identitySet(self: *const Repository, identity: Identity) !void {
+        log.debug("Repository.identitySet called, identity.name={s}, identity.email={s}", .{ identity.name, identity.email });
 
         const name_temp: [*c]const u8 = if (identity.name) |slice| slice.ptr else null;
         const email_temp: [*c]const u8 = if (identity.email) |slice| slice.ptr else null;
@@ -75,8 +75,8 @@ pub const Repository = opaque {
         email: ?[:0]const u8,
     };
 
-    pub fn getNamespace(self: *const Repository) !?[:0]const u8 {
-        log.debug("Repository.getNamespace called", .{});
+    pub fn namespaceGet(self: *const Repository) !?[:0]const u8 {
+        log.debug("Repository.namespaceGet called", .{});
 
         const ret = raw.git_repository_get_namespace(internal.toC(self));
 
@@ -98,8 +98,8 @@ pub const Repository = opaque {
     /// ## Parameters
     /// * `namespace` - The namespace. This should not include the refs folder, e.g. to namespace all references under 
     ///                 "refs/namespaces/foo/", use "foo" as the namespace.
-    pub fn setNamespace(self: *Repository, namespace: [:0]const u8) !void {
-        log.debug("Repository.setNamespace called, namespace={s}", .{namespace});
+    pub fn namespaceSet(self: *Repository, namespace: [:0]const u8) !void {
+        log.debug("Repository.namespaceSet called, namespace={s}", .{namespace});
 
         try internal.wrapCall("git_repository_set_namespace", .{ internal.toC(self), namespace.ptr });
 
@@ -116,7 +116,7 @@ pub const Repository = opaque {
         return ret;
     }
 
-    pub fn getHead(self: *const Repository) !*git.Reference {
+    pub fn head(self: *const Repository) !*git.Reference {
         log.debug("Repository.head called", .{});
 
         var ref: ?*raw.git_reference = undefined;
@@ -139,8 +139,8 @@ pub const Repository = opaque {
     ///
     /// ## Parameters
     /// * `ref_name` - Canonical name of the reference the HEAD should point at
-    pub fn setHead(self: *Repository, ref_name: [:0]const u8) !void {
-        log.debug("Repository.setHead called, workdir={s}", .{ref_name});
+    pub fn headSet(self: *Repository, ref_name: [:0]const u8) !void {
+        log.debug("Repository.headSet called, workdir={s}", .{ref_name});
 
         try internal.wrapCall("git_repository_set_head", .{ internal.toC(self), ref_name.ptr });
 
@@ -155,12 +155,12 @@ pub const Repository = opaque {
     ///
     /// ## Parameters
     /// * `commit` - Object id of the commit the HEAD should point to
-    pub fn setHeadDetached(self: *Repository, commit: git.Oid) !void {
+    pub fn headDetachedSet(self: *Repository, commit: git.Oid) !void {
         // This check is to prevent formating the oid when we are not going to print anything
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
             var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
             const slice = try commit.formatHex(&buf);
-            log.debug("Repository.setHeadDetached called, commit={s}", .{slice});
+            log.debug("Repository.headDetachedSet called, commit={s}", .{slice});
         }
 
         try internal.wrapCall("git_repository_set_head_detached", .{ internal.toC(self), internal.toC(&commit) });
@@ -178,7 +178,7 @@ pub const Repository = opaque {
         // This check is to prevent formating the oid when we are not going to print anything
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
             var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
-            const oid = try commitish.getCommitId();
+            const oid = try commitish.commitId();
             const slice = try oid.formatHex(&buf);
             log.debug("Repository.setHeadDetachedFromAnnotated called, commitish={s}", .{slice});
         }
@@ -278,7 +278,7 @@ pub const Repository = opaque {
     }
 
     /// Get the location of a specific repository file or directory
-    pub fn getItemPath(self: *const Repository, item: RepositoryItem) !git.Buf {
+    pub fn itemPath(self: *const Repository, item: RepositoryItem) !git.Buf {
         log.debug("Repository.itemPath called, item={s}", .{item});
 
         var buf = git.Buf{};
@@ -307,8 +307,8 @@ pub const Repository = opaque {
         WORKTREES,
     };
 
-    pub fn getPath(self: *const Repository) [:0]const u8 {
-        log.debug("Repository.path called", .{});
+    pub fn pathGet(self: *const Repository) [:0]const u8 {
+        log.debug("Repository.pathGet called", .{});
 
         const slice = std.mem.sliceTo(raw.git_repository_path(internal.toC(self)), 0);
 
@@ -317,8 +317,8 @@ pub const Repository = opaque {
         return slice;
     }
 
-    pub fn getWorkdir(self: *const Repository) ?[:0]const u8 {
-        log.debug("Repository.workdir called", .{});
+    pub fn workdirGet(self: *const Repository) ?[:0]const u8 {
+        log.debug("Repository.workdirGet called", .{});
 
         if (raw.git_repository_workdir(internal.toC(self))) |ret| {
             const slice = std.mem.sliceTo(ret, 0);
@@ -333,15 +333,15 @@ pub const Repository = opaque {
         return null;
     }
 
-    pub fn setWorkdir(self: *Repository, workdir: [:0]const u8, update_gitlink: bool) !void {
-        log.debug("Repository.setWorkdir called, workdir={s}, update_gitlink={}", .{ workdir, update_gitlink });
+    pub fn workdirSet(self: *Repository, workdir: [:0]const u8, update_gitlink: bool) !void {
+        log.debug("Repository.workdirSet called, workdir={s}, update_gitlink={}", .{ workdir, update_gitlink });
 
         try internal.wrapCall("git_repository_set_workdir", .{ internal.toC(self), workdir.ptr, @boolToInt(update_gitlink) });
 
         log.debug("successfully set workdir", .{});
     }
 
-    pub fn getCommondir(self: *const Repository) ?[:0]const u8 {
+    pub fn commondir(self: *const Repository) ?[:0]const u8 {
         log.debug("Repository.commondir called", .{});
 
         if (raw.git_repository_commondir(internal.toC(self))) |ret| {
@@ -361,8 +361,8 @@ pub const Repository = opaque {
     ///
     /// If a configuration file has not been set, the default config set for the repository will be returned, including any global 
     /// and system configurations.
-    pub fn getConfig(self: *const Repository) !*git.Config {
-        log.debug("Repository.getConfig called", .{});
+    pub fn configGet(self: *const Repository) !*git.Config {
+        log.debug("Repository.configGet called", .{});
 
         var config: ?*raw.git_config = undefined;
 
@@ -376,8 +376,8 @@ pub const Repository = opaque {
     /// Get a snapshot of the repository's configuration
     ///
     /// The contents of this snapshot will not change, even if the underlying config files are modified.
-    pub fn getConfigSnapshot(self: *const Repository) !*git.Config {
-        log.debug("Repository.getConfigSnapshot called", .{});
+    pub fn configSnapshot(self: *const Repository) !*git.Config {
+        log.debug("Repository.configSnapshot called", .{});
 
         var config: ?*raw.git_config = undefined;
 
@@ -388,8 +388,8 @@ pub const Repository = opaque {
         return internal.fromC(config.?);
     }
 
-    pub fn getOdb(self: *const Repository) !*git.Odb {
-        log.debug("Repository.getOdb called", .{});
+    pub fn odbGet(self: *const Repository) !*git.Odb {
+        log.debug("Repository.odbGet called", .{});
 
         var odb: ?*raw.git_odb = undefined;
 
@@ -400,8 +400,8 @@ pub const Repository = opaque {
         return internal.fromC(odb.?);
     }
 
-    pub fn getRefDb(self: *const Repository) !*git.RefDb {
-        log.debug("Repository.getRefDb called", .{});
+    pub fn refDb(self: *const Repository) !*git.RefDb {
+        log.debug("Repository.refDb called", .{});
 
         var ref_db: ?*raw.git_refdb = undefined;
 
@@ -412,8 +412,8 @@ pub const Repository = opaque {
         return internal.fromC(ref_db.?);
     }
 
-    pub fn getIndex(self: *const Repository) !*git.Index {
-        log.debug("Repository.getIndex called", .{});
+    pub fn indexGet(self: *const Repository) !*git.Index {
+        log.debug("Repository.indexGet called", .{});
 
         var index: ?*raw.git_index = undefined;
 
@@ -431,8 +431,8 @@ pub const Repository = opaque {
     /// amend if they wish.
     ///
     /// Use this function to get the contents of this file. Don't forget to remove the file after you create the commit.
-    pub fn getPreparedMessage(self: *const Repository) !git.Buf {
-        log.debug("Repository.getPreparedMessage called", .{});
+    pub fn preparedMessage(self: *const Repository) !git.Buf {
+        log.debug("Repository.preparedMessage called", .{});
 
         var buf = git.Buf{};
 
@@ -444,8 +444,8 @@ pub const Repository = opaque {
     }
 
     /// Remove git's prepared message file.
-    pub fn removePreparedMessage(self: *Repository) !void {
-        log.debug("Repository.removePreparedMessage called", .{});
+    pub fn preparedMessageRemove(self: *Repository) !void {
+        log.debug("Repository.preparedMessageRemove called", .{});
 
         try internal.wrapCall("git_repository_message_remove", .{internal.toC(self)});
 
@@ -474,7 +474,7 @@ pub const Repository = opaque {
     /// * `remote_url` - The remote URL
     /// * `oid` - The reference OID
     /// * `is_merge` - Was the reference the result of a merge
-    pub fn foreachFetchHead(
+    pub fn fetchHeadForeach(
         self: *const Repository,
         comptime callback_fn: fn (
             ref_name: [:0]const u8,
@@ -496,7 +496,7 @@ pub const Repository = opaque {
         }.cb;
 
         var dummy_data: u8 = undefined;
-        return self.foreachFetchHeadWithUserData(&dummy_data, cb);
+        return self.fetchHeadForeachWithUserData(&dummy_data, cb);
     }
 
     /// Invoke `callback_fn` for each entry in the given FETCH_HEAD file.
@@ -513,7 +513,7 @@ pub const Repository = opaque {
     /// * `oid` - The reference OID
     /// * `is_merge` - Was the reference the result of a merge
     /// * `user_data_ptr` - pointer to user data
-    pub fn foreachFetchHeadWithUserData(
+    pub fn fetchHeadForeachWithUserData(
         self: *const Repository,
         user_data: anytype,
         comptime callback_fn: fn (
@@ -544,7 +544,7 @@ pub const Repository = opaque {
             }
         }.cb;
 
-        log.debug("Repository.foreachFetchHeadWithUserData called", .{});
+        log.debug("Repository.fetchHeadForeachWithUserData called", .{});
 
         const ret = try internal.wrapCallWithReturn("git_repository_fetchhead_foreach", .{ internal.toC(self), cb, user_data });
 
@@ -562,7 +562,7 @@ pub const Repository = opaque {
     ///
     /// ## Callback Parameters
     /// * `oid` - The merge OID
-    pub fn foreachMergeHead(
+    pub fn mergeHeadForeach(
         self: *const Repository,
         comptime callback_fn: fn (oid: *const git.Oid) c_int,
     ) !c_int {
@@ -573,7 +573,7 @@ pub const Repository = opaque {
         }.cb;
 
         var dummy_data: u8 = undefined;
-        return self.foreachMergeHeadWithUserData(&dummy_data, cb);
+        return self.mergeHeadForeachWithUserData(&dummy_data, cb);
     }
 
     /// If a merge is in progress, invoke 'callback' for each commit ID in the MERGE_HEAD file.
@@ -587,7 +587,7 @@ pub const Repository = opaque {
     /// ## Callback Parameters
     /// * `oid` - The merge OID
     /// * `user_data_ptr` - pointer to user data
-    pub fn foreachMergeHeadWithUserData(
+    pub fn mergeHeadForeachWithUserData(
         self: *const Repository,
         user_data: anytype,
         comptime callback_fn: fn (
@@ -603,7 +603,7 @@ pub const Repository = opaque {
             }
         }.cb;
 
-        log.debug("Repository.foreachMergeHeadWithUserData called", .{});
+        log.debug("Repository.mergeHeadForeachWithUserData called", .{});
 
         const ret = try internal.wrapCallWithReturn("git_repository_mergehead_foreach", .{ internal.toC(self), cb, user_data });
 
@@ -684,7 +684,7 @@ pub const Repository = opaque {
     /// ## Callback Parameters
     /// * `path` - The file path
     /// * `status` - The status of the file
-    pub fn foreachFileStatus(
+    pub fn fileStatusForeach(
         self: *const Repository,
         comptime callback_fn: fn (path: [:0]const u8, status: git.FileStatus) c_int,
     ) !c_int {
@@ -710,7 +710,7 @@ pub const Repository = opaque {
     /// * `path` - The file path
     /// * `status` - The status of the file
     /// * `user_data_ptr` - pointer to user data
-    pub fn foreachFileStatusWithUserData(
+    pub fn fileStatusForeachWithUserData(
         self: *const Repository,
         user_data: anytype,
         comptime callback_fn: fn (
@@ -731,7 +731,7 @@ pub const Repository = opaque {
             }
         }.cb;
 
-        log.debug("Repository.foreachFileStatusWithUserData called", .{});
+        log.debug("Repository.fileStatusForeachWithUserData called", .{});
 
         const ret = try internal.wrapCallWithReturn("git_status_foreach", .{ internal.toC(self), cb, user_data });
 
@@ -758,7 +758,7 @@ pub const Repository = opaque {
     /// ## Callback Parameters
     /// * `path` - The file path
     /// * `status` - The status of the file
-    pub fn foreachFileStatusExtended(
+    pub fn fileStatusForeachExtended(
         self: *const Repository,
         options: FileStatusOptions,
         comptime callback_fn: fn (path: [:0]const u8, status: git.FileStatus) c_int,
@@ -793,7 +793,7 @@ pub const Repository = opaque {
     /// * `path` - The file path
     /// * `status` - The status of the file
     /// * `user_data_ptr` - pointer to user data
-    pub fn foreachFileStatusExtendedWithUserData(
+    pub fn fileStatusForeachExtendedWithUserData(
         self: *const Repository,
         options: FileStatusOptions,
         user_data: anytype,
@@ -815,10 +815,15 @@ pub const Repository = opaque {
             }
         }.cb;
 
-        log.debug("Repository.foreachFileStatusExtendedWithUserData called, options={}", .{options});
+        log.debug("Repository.fileStatusForeachExtendedWithUserData called, options={}", .{options});
 
-        var opts: raw.git_status_options = undefined;
-        try options.toCType(&opts);
+        var opts: raw.git_status_options = .{
+            .version = raw.GIT_REPOSITORY_INIT_OPTIONS_VERSION,
+            .show = @enumToInt(options.show),
+            .flags = @bitCast(c_int, options.flags),
+            .pathspec = internal.toC(options.pathspec),
+            .baseline = if (options.baseline) |tree| internal.toC(tree) else null,
+        };
 
         const ret = try internal.wrapCallWithReturn("git_status_foreach_ext", .{ internal.toC(self), &opts, cb, user_data });
 
@@ -835,11 +840,16 @@ pub const Repository = opaque {
     ///
     /// ## Parameters
     /// * `options` - options regarding which files to get the status of
-    pub fn getStatusList(self: *const Repository, options: FileStatusOptions) !*git.StatusList {
-        log.debug("Repository.getStatusList called, options={}", .{options});
+    pub fn statusList(self: *const Repository, options: FileStatusOptions) !*git.StatusList {
+        log.debug("Repository.statusList called, options={}", .{options});
 
-        var opts: raw.git_status_options = undefined;
-        try options.toCType(&opts);
+        var opts: raw.git_status_options = .{
+            .version = raw.GIT_REPOSITORY_INIT_OPTIONS_VERSION,
+            .show = @enumToInt(options.show),
+            .flags = @bitCast(c_int, options.flags),
+            .pathspec = internal.toC(options.pathspec),
+            .baseline = if (options.baseline) |tree| internal.toC(tree) else null,
+        };
 
         var status_list: ?*raw.git_status_list = undefined;
         try internal.wrapCall("git_status_list_new", .{ &status_list, internal.toC(self), &opts });
@@ -988,19 +998,6 @@ pub const Repository = opaque {
             }
         };
 
-        fn toCType(self: FileStatusOptions, c_type: *raw.git_status_options) !void {
-            if (comptime internal.available(.@"1.0.0")) {
-                try internal.wrapCall("git_status_options_init", .{ c_type, raw.GIT_REPOSITORY_INIT_OPTIONS_VERSION });
-            } else {
-                try internal.wrapCall("git_status_init_options", .{ c_type, raw.GIT_REPOSITORY_INIT_OPTIONS_VERSION });
-            }
-
-            c_type.show = @enumToInt(self.show);
-            c_type.flags = @bitCast(c_int, self.flags);
-            c_type.pathspec = internal.toC(self.pathspec);
-            c_type.baseline = if (self.baseline) |tree| internal.toC(tree) else null;
-        }
-
         comptime {
             std.testing.refAllDecls(@This());
         }
@@ -1023,7 +1020,7 @@ pub const Repository = opaque {
         return ret;
     }
 
-    pub fn createAnnotatedCommitFromFetchHead(
+    pub fn annotatedCommitCreateFromFetchHead(
         self: *git.Repository,
         branch_name: [:0]const u8,
         remote_url: [:0]const u8,
@@ -1034,7 +1031,7 @@ pub const Repository = opaque {
             var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
             const slice = try id.formatHex(&buf);
             log.debug(
-                "Repository.createAnnotatedCommitFromFetchHead called, branch_name={s}, remote_url={s}, id={s}",
+                "Repository.annotatedCommitCreateFromFetchHead called, branch_name={s}, remote_url={s}, id={s}",
                 .{
                     branch_name,
                     remote_url,
@@ -1057,12 +1054,12 @@ pub const Repository = opaque {
         return internal.fromC(result.?);
     }
 
-    pub fn createAnnotatedCommitFromLookup(self: *Repository, id: git.Oid) !*git.AnnotatedCommit {
+    pub fn annotatedCommitCreateFromLookup(self: *Repository, id: git.Oid) !*git.AnnotatedCommit {
         // This check is to prevent formating the oid when we are not going to print anything
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
             var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
             const slice = try id.formatHex(&buf);
-            log.debug("Repository.createAnnotatedCommitFromLookup called, id={s}", .{slice});
+            log.debug("Repository.annotatedCommitCreateFromLookup called, id={s}", .{slice});
         }
 
         var result: ?*raw.git_annotated_commit = undefined;
@@ -1077,8 +1074,8 @@ pub const Repository = opaque {
         return internal.fromC(result.?);
     }
 
-    pub fn createAnnotatedCommitFromRevisionString(self: *Repository, revspec: [:0]const u8) !*git.AnnotatedCommit {
-        log.debug("Repository.createAnnotatedCommitFromRevisionString called, revspec={s}", .{revspec});
+    pub fn annotatedCommitCreateFromRevisionString(self: *Repository, revspec: [:0]const u8) !*git.AnnotatedCommit {
+        log.debug("Repository.annotatedCommitCreateFromRevisionString called, revspec={s}", .{revspec});
 
         var result: ?*raw.git_annotated_commit = undefined;
         try internal.wrapCall("git_annotated_commit_from_revspec", .{
@@ -1447,8 +1444,8 @@ pub const Repository = opaque {
     /// * `path` - The path to check for attributes.  Relative paths are interpreted relative to the repo root. The file does not
     /// have to exist, but if it does not, then it will be treated as a plain file (not a directory).
     /// * `name` - The name of the attribute to look up.
-    pub fn attributeGet(self: *const Repository, flags: AttributeFlags, path: [:0]const u8, name: [:0]const u8) !git.Attribute {
-        log.debug("Repository.attributeGet called, flags={}, path={s}, name={s}", .{ flags, path, name });
+    pub fn attribute(self: *const Repository, flags: AttributeFlags, path: [:0]const u8, name: [:0]const u8) !git.Attribute {
+        log.debug("Repository.attribute called, flags={}, path={s}, name={s}", .{ flags, path, name });
 
         var result: [*c]const u8 = undefined;
         try internal.wrapCall("git_attr_get", .{
@@ -1464,6 +1461,148 @@ pub const Repository = opaque {
         return git.Attribute{
             .z_attr = result,
         };
+    }
+
+    /// Look up a list of git attributes for path.
+    ///
+    /// Use this if you have a known list of attributes that you want to look up in a single call. This is somewhat more efficient
+    /// than calling `attributeGet` multiple times.
+    ///
+    /// ## Parameters
+    /// * `output_buffer` - output buffer, *must* be atleast as long as `names`
+    /// * `flags` - options for fetching attributes
+    /// * `path` - The path to check for attributes.  Relative paths are interpreted relative to the repo root. The file does not
+    /// have to exist, but if it does not, then it will be treated as a plain file (not a directory).
+    /// * `names` - The names of the attributes to look up.
+    pub fn attributeMany(
+        self: *const Repository,
+        output_buffer: [][*:0]const u8,
+        flags: AttributeFlags,
+        path: [:0]const u8,
+        names: [][*:0]const u8,
+    ) ![]const [*:0]const u8 {
+        if (output_buffer.len < names.len) return error.BufferTooShort;
+
+        log.debug("Repository.attributeMany called, flags={}, path={s}", .{ flags, path });
+
+        try internal.wrapCall("git_attr_get_many", .{
+            @ptrCast([*c][*c]const u8, output_buffer.ptr),
+            internal.toC(self),
+            flags.toC(),
+            path.ptr,
+            names.len,
+            @ptrCast([*c][*c]const u8, names.ptr),
+        });
+
+        log.debug("fetched attributes", .{});
+
+        return output_buffer[0..names.len];
+    }
+
+    /// Invoke `callback_fn` for all the git attributes for a path.
+    ///
+    ///
+    /// ## Parameters
+    /// * `flags` - options for fetching attributes
+    /// * `path` - The path to check for attributes.  Relative paths are interpreted relative to the repo root. The file does not
+    /// have to exist, but if it does not, then it will be treated as a plain file (not a directory).
+    /// * `callback_fn` - the callback function
+    ///
+    /// ## Callback Parameters
+    /// * `name` - The attribute name
+    /// * `value` - The attribute value. May be `null` if the attribute is explicitly set to UNSPECIFIED using the '!' sign.
+    pub fn attributeForeach(
+        self: *const Repository,
+        flags: AttributeFlags,
+        path: [:0]const u8,
+        comptime callback_fn: fn (
+            name: [:0]const u8,
+            value: ?[:0]const u8,
+        ) c_int,
+    ) !c_int {
+        const cb = struct {
+            pub fn cb(
+                name: [*c]const u8,
+                value: [*c]const u8,
+                payload: ?*c_void,
+            ) callconv(.C) c_int {
+                _ = payload;
+                return callback_fn(
+                    std.mem.sliceTo(name, 0),
+                    if (value) |ptr| std.mem.sliceTo(ptr, 0) else null,
+                );
+            }
+        }.cb;
+
+        log.debug("Repository.attributeForeach called, flags={}, path={s}", .{ flags, path });
+
+        const ret = try internal.wrapCallWithReturn("git_attr_foreach", .{
+            internal.toC(self),
+            flags.toC(),
+            path.ptr,
+            cb,
+            null,
+        });
+
+        log.debug("callback returned: {}", .{ret});
+
+        return ret;
+    }
+
+    /// Invoke `callback_fn` for all the git attributes for a path.
+    ///
+    /// Return a non-zero value from the callback to stop the loop. This non-zero value is returned by the function.
+    ///
+    /// ## Parameters
+    /// * `flags` - options for fetching attributes
+    /// * `path` - The path to check for attributes.  Relative paths are interpreted relative to the repo root. The file does not
+    /// have to exist, but if it does not, then it will be treated as a plain file (not a directory).
+    /// * `callback_fn` - the callback function
+    ///
+    /// ## Callback Parameters
+    /// * `name` - The attribute name
+    /// * `value` - The attribute value. May be `null` if the attribute is explicitly set to UNSPECIFIED using the '!' sign.
+    /// * `user_data_ptr` - pointer to user data
+    pub fn attributeForeachWithUserData(
+        self: *const Repository,
+        flags: AttributeFlags,
+        path: [:0]const u8,
+        user_data: anytype,
+        comptime callback_fn: fn (
+            name: [:0]const u8,
+            value: ?[:0]const u8,
+            user_data_ptr: @TypeOf(user_data),
+        ) c_int,
+    ) !c_int {
+        const UserDataType = @TypeOf(user_data);
+
+        const cb = struct {
+            pub fn cb(
+                name: [*c]const u8,
+                value: [*c]const u8,
+                payload: ?*c_void,
+            ) callconv(.C) c_int {
+                return callback_fn(
+                    std.mem.sliceTo(name, 0),
+                    if (value) |ptr| std.mem.sliceTo(ptr, 0) else null,
+                    @ptrCast(UserDataType, payload),
+                );
+            }
+        }.cb;
+
+        log.debug("Repository.attributeForeachWithUserData called, flags={}, path={s}", .{ flags, path });
+
+        const ret = try internal.wrapCallWithReturn("git_attr_foreach", .{
+            internal.toC(self),
+            flags.toC(),
+            path.ptr,
+            cb,
+            user_data,
+        });
+
+        log.debug("callback returned: {}", .{ret});
+
+        return ret;
     }
 
     pub const AttributeFlags = struct {
@@ -1492,9 +1631,9 @@ pub const Repository = opaque {
 
             /// Passing the `INCLUDE_COMMIT` flag will use attributes from a `.gitattributes` file in a specific
             /// commit.
-            INCLUDE_COMMIT: bool = false,
+            INCLUDE_COMMIT: if (internal.available(.master)) bool else void = if (internal.available(.master)) false else {},
 
-            z_padding2: u27 = 0,
+            z_padding2: if (internal.available(.master)) u27 else u28 = 0,
 
             pub fn format(
                 value: Extended,
@@ -1533,11 +1672,15 @@ pub const Repository = opaque {
             if (self.extended.NO_SYSTEM) {
                 result |= raw.GIT_ATTR_CHECK_NO_SYSTEM;
             }
+
             if (self.extended.INCLUDE_HEAD) {
                 result |= raw.GIT_ATTR_CHECK_INCLUDE_HEAD;
             }
-            if (self.extended.INCLUDE_COMMIT) {
-                result |= raw.GIT_ATTR_CHECK_INCLUDE_COMMIT;
+
+            if (comptime internal.available(.master)) {
+                if (self.extended.INCLUDE_COMMIT) {
+                    result |= raw.GIT_ATTR_CHECK_INCLUDE_COMMIT;
+                }
             }
 
             return result;
@@ -1547,6 +1690,230 @@ pub const Repository = opaque {
             std.testing.refAllDecls(@This());
         }
     };
+
+    pub fn attributeCacheFlush(self: *Repository) !void {
+        log.debug("Repository.attributeCacheFlush called", .{});
+
+        try internal.wrapCall("git_attr_cache_flush", .{internal.toC(self)});
+
+        log.debug("successfully flushed attribute cache", .{});
+    }
+
+    pub fn attributeAddMacro(self: *Repository, name: [:0]const u8, values: [:0]const u8) !void {
+        log.debug("Repository.attributeCacheFlush called, name={s}, values={s}", .{ name, values });
+
+        try internal.wrapCall("git_attr_add_macro", .{ internal.toC(self), name.ptr, values.ptr });
+
+        log.debug("successfully added macro", .{});
+    }
+
+    pub usingnamespace if (internal.available(.master)) struct {
+        /// Look up the value of one git attribute for path with extended options.
+        ///
+        /// ## Parameters
+        /// * `options` - options for fetching attributes
+        /// * `path` - The path to check for attributes.  Relative paths are interpreted relative to the repo root. The file does not
+        /// have to exist, but if it does not, then it will be treated as a plain file (not a directory).
+        /// * `name` - The name of the attribute to look up.
+        pub fn attributeExtended(
+            self: *const Repository,
+            options: AttributeOptions,
+            path: [:0]const u8,
+            name: [:0]const u8,
+        ) !git.Attribute {
+            log.debug("Repository.attributeExtended called, options={}, path={s}, name={s}", .{ options, path, name });
+
+            var opts: raw.git_attr_options = .{
+                .version = raw.GIT_ATTR_OPTIONS_VERSION,
+                .flags = options.flags.toC(),
+                .commit_id = internal.toC(options.commit_id),
+            };
+
+            var result: [*c]const u8 = undefined;
+            try internal.wrapCall("git_attr_get_ext", .{
+                &result,
+                internal.toC(self),
+                &opts,
+                path.ptr,
+                name.ptr,
+            });
+
+            log.debug("fetched attribute", .{});
+
+            return git.Attribute{
+                .z_attr = result,
+            };
+        }
+
+        /// Look up a list of git attributes for path with extended options.
+        ///
+        /// Use this if you have a known list of attributes that you want to look up in a single call. This is somewhat more efficient
+        /// than calling `attributeGet` multiple times.
+        ///
+        /// ## Parameters
+        /// * `output_buffer` - output buffer, *must* be atleast as long as `names`
+        /// * `options` - options for fetching attributes
+        /// * `path` - The path to check for attributes.  Relative paths are interpreted relative to the repo root. The file does not
+        /// have to exist, but if it does not, then it will be treated as a plain file (not a directory).
+        /// * `names` - The names of the attributes to look up.
+        pub fn attributeManyExtended(
+            self: *const Repository,
+            output_buffer: [][*:0]const u8,
+            options: AttributeOptions,
+            path: [:0]const u8,
+            names: [][*:0]const u8,
+        ) ![]const [*:0]const u8 {
+            if (output_buffer.len < names.len) return error.BufferTooShort;
+
+            log.debug("Repository.attributeManyExtended called, options={}, path={s}", .{ options, path });
+
+            var opts: raw.git_attr_options = .{
+                .version = raw.GIT_ATTR_OPTIONS_VERSION,
+                .flags = options.flags.toC(),
+                .commit_id = internal.toC(options.commit_id),
+            };
+
+            try internal.wrapCall("git_attr_get_many_ext", .{
+                @ptrCast([*c][*c]const u8, output_buffer.ptr),
+                internal.toC(self),
+                &opts,
+                path.ptr,
+                names.len,
+                @ptrCast([*c][*c]const u8, names.ptr),
+            });
+
+            log.debug("fetched attributes", .{});
+
+            return output_buffer[0..names.len];
+        }
+
+        /// Invoke `callback_fn` for all the git attributes for a path with extended options.
+        ///
+        ///
+        /// ## Parameters
+        /// * `options` - options for fetching attributes
+        /// * `path` - The path to check for attributes.  Relative paths are interpreted relative to the repo root. The file does not
+        /// have to exist, but if it does not, then it will be treated as a plain file (not a directory).
+        /// * `callback_fn` - the callback function
+        ///
+        /// ## Callback Parameters
+        /// * `name` - The attribute name
+        /// * `value` - The attribute value. May be `null` if the attribute is explicitly set to UNSPECIFIED using the '!' sign.
+        pub fn attributeForeachExtended(
+            self: *const Repository,
+            options: AttributeOptions,
+            path: [:0]const u8,
+            comptime callback_fn: fn (
+                name: [:0]const u8,
+                value: ?[:0]const u8,
+            ) c_int,
+        ) !c_int {
+            const cb = struct {
+                pub fn cb(
+                    name: [*c]const u8,
+                    value: [*c]const u8,
+                    payload: ?*c_void,
+                ) callconv(.C) c_int {
+                    _ = payload;
+                    return callback_fn(
+                        std.mem.sliceTo(name, 0),
+                        if (value) |ptr| std.mem.sliceTo(ptr, 0) else null,
+                    );
+                }
+            }.cb;
+
+            log.debug("Repository.attributeForeach called, flags={}, path={s}", .{ flags, path });
+
+            var opts: raw.git_attr_options = .{
+                .version = raw.GIT_ATTR_OPTIONS_VERSION,
+                .flags = options.flags.toC(),
+                .commit_id = internal.toC(options.commit_id),
+            };
+
+            const ret = try internal.wrapCallWithReturn("git_attr_foreach_ext", .{
+                internal.toC(self),
+                &opts,
+                path.ptr,
+                cb,
+                null,
+            });
+
+            log.debug("callback returned: {}", .{ret});
+
+            return ret;
+        }
+
+        /// Invoke `callback_fn` for all the git attributes for a path with extended options.
+        ///
+        /// Return a non-zero value from the callback to stop the loop. This non-zero value is returned by the function.
+        ///
+        /// ## Parameters
+        /// * `options` - options for fetching attributes
+        /// * `path` - The path to check for attributes.  Relative paths are interpreted relative to the repo root. The file does not
+        /// have to exist, but if it does not, then it will be treated as a plain file (not a directory).
+        /// * `callback_fn` - the callback function
+        ///
+        /// ## Callback Parameters
+        /// * `name` - The attribute name
+        /// * `value` - The attribute value. May be `null` if the attribute is explicitly set to UNSPECIFIED using the '!' sign.
+        /// * `user_data_ptr` - pointer to user data
+        pub fn attributeForeachWithUserDataExtended(
+            self: *const Repository,
+            options: AttributeOptions,
+            path: [:0]const u8,
+            user_data: anytype,
+            comptime callback_fn: fn (
+                name: [:0]const u8,
+                value: ?[:0]const u8,
+                user_data_ptr: @TypeOf(user_data),
+            ) c_int,
+        ) !c_int {
+            const UserDataType = @TypeOf(user_data);
+
+            const cb = struct {
+                pub fn cb(
+                    name: [*c]const u8,
+                    value: [*c]const u8,
+                    payload: ?*c_void,
+                ) callconv(.C) c_int {
+                    return callback_fn(
+                        std.mem.sliceTo(name, 0),
+                        if (value) |ptr| std.mem.sliceTo(ptr, 0) else null,
+                        @ptrCast(UserDataType, payload),
+                    );
+                }
+            }.cb;
+
+            log.debug("Repository.attributeForeachWithUserData called, flags={}, path={s}", .{ flags, path });
+
+            var opts: raw.git_attr_options = .{
+                .version = raw.GIT_ATTR_OPTIONS_VERSION,
+                .flags = options.flags.toC(),
+                .commit_id = internal.toC(options.commit_id),
+            };
+
+            const ret = try internal.wrapCallWithReturn("git_attr_foreach_ext", .{
+                internal.toC(self),
+                &opts,
+                path.ptr,
+                cb,
+                user_data,
+            });
+
+            log.debug("callback returned: {}", .{ret});
+
+            return ret;
+        }
+
+        pub const AttributeOptions = struct {
+            flags: AttributeFlags,
+            commit_id: *git.Oid,
+
+            comptime {
+                std.testing.refAllDecls(@This());
+            }
+        };
+    } else struct {};
 
     comptime {
         std.testing.refAllDecls(@This());

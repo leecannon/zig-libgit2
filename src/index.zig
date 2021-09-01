@@ -15,8 +15,8 @@ pub const Index = opaque {
         log.debug("index freed successfully", .{});
     }
 
-    pub fn getVersion(self: *const Index) !IndexVersion {
-        log.debug("Index.getVersion called", .{});
+    pub fn versionGet(self: *const Index) !IndexVersion {
+        log.debug("Index.versionGet called", .{});
 
         const raw_value = raw.git_index_version(internal.toC(self));
 
@@ -29,7 +29,7 @@ pub const Index = opaque {
         }
     }
 
-    pub fn setVersion(self: *Index, version: IndexVersion) !void {
+    pub fn versionSet(self: *Index, version: IndexVersion) !void {
         log.debug("Index.setVersion called, version={s}", .{@tagName(version)});
 
         try internal.wrapCall("git_index_set_version", .{ internal.toC(self), @enumToInt(version) });
@@ -62,8 +62,8 @@ pub const Index = opaque {
         log.debug("successfully wrote index data to disk", .{});
     }
 
-    pub fn getPath(self: *const Index) ?[:0]const u8 {
-        log.debug("Index.getPath called", .{});
+    pub fn pathGet(self: *const Index) ?[:0]const u8 {
+        log.debug("Index.pathGet called", .{});
 
         if (raw.git_index_path(internal.toC(self))) |ptr| {
             const slice = std.mem.sliceTo(ptr, 0);
@@ -75,8 +75,8 @@ pub const Index = opaque {
         return null;
     }
 
-    pub fn getRepository(self: *const Index) ?*git.Repository {
-        log.debug("Index.getgit.Repository called", .{});
+    pub fn repositoryGet(self: *const Index) ?*git.Repository {
+        log.debug("Index.repositoryGet called", .{});
 
         const ret = raw.git_index_owner(internal.toC(self));
 
@@ -93,8 +93,8 @@ pub const Index = opaque {
     ///
     /// This checksum is the SHA-1 hash over the index file (except the last 20 bytes which are the checksum itself). In cases
     /// where the index does not exist on-disk, it will be zeroed out.
-    pub fn getChecksum(self: *const Index) !*const git.Oid {
-        log.debug("Index.getChecksum called", .{});
+    pub fn checksum(self: *const Index) !*const git.Oid {
+        log.debug("Index.checksum called", .{});
 
         const oid = raw.git_index_checksum(internal.toC(self));
 
@@ -130,8 +130,8 @@ pub const Index = opaque {
         return oid;
     }
 
-    pub fn getEntryCount(self: *const Index) usize {
-        log.debug("Index.getEntryCount called", .{});
+    pub fn entryCount(self: *const Index) usize {
+        log.debug("Index.entryCount called", .{});
 
         const ret = raw.git_index_entrycount(internal.toC(self));
 
@@ -163,8 +163,8 @@ pub const Index = opaque {
         return oid;
     }
 
-    pub fn getIndexCapabilities(self: *const Index) IndexCapabilities {
-        log.debug("Index.getIndexCapabilities called", .{});
+    pub fn indexCapabilities(self: *const Index) IndexCapabilities {
+        log.debug("Index.indexCapabilities called", .{});
 
         const cap = @bitCast(IndexCapabilities, raw.git_index_caps(internal.toC(self)));
 
@@ -175,7 +175,7 @@ pub const Index = opaque {
 
     /// If you pass `IndexCapabilities.FROM_OWNER` for the capabilities, then capabilities will be read from the config of the
     /// owner object, looking at `core.ignorecase`, `core.filemode`, `core.symlinks`.
-    pub fn setIndexCapabilities(self: *Index, capabilities: IndexCapabilities) !void {
+    pub fn indexCapabilitiesSet(self: *Index, capabilities: IndexCapabilities) !void {
         log.debug("Index.getIndexCapabilities called, capabilities={}", .{capabilities});
 
         try internal.wrapCall("git_index_set_caps", .{ internal.toC(self), @bitCast(c_int, capabilities) });
@@ -218,8 +218,8 @@ pub const Index = opaque {
         }
     };
 
-    pub fn getEntryByIndex(self: *const Index, index: usize) ?*const IndexEntry {
-        log.debug("Index.getEntryByIndex called, index={}", .{index});
+    pub fn entryByIndex(self: *const Index, index: usize) ?*const IndexEntry {
+        log.debug("Index.entryByIndex called, index={}", .{index});
 
         const ret_opt = raw.git_index_get_byindex(internal.toC(self), index);
 
@@ -235,8 +235,8 @@ pub const Index = opaque {
         }
     }
 
-    pub fn getEntryByPath(self: *const Index, path: [:0]const u8, stage: c_int) ?*const IndexEntry {
-        log.debug("Index.getEntryByPath called, path={s}, stage={}", .{ path, stage });
+    pub fn entryByPath(self: *const Index, path: [:0]const u8, stage: c_int) ?*const IndexEntry {
+        log.debug("Index.entryByPath called, path={s}, stage={}", .{ path, stage });
 
         const ret_opt = raw.git_index_get_bypath(internal.toC(self), path.ptr, stage);
 
@@ -260,8 +260,8 @@ pub const Index = opaque {
         log.debug("successfully removed from index", .{});
     }
 
-    pub fn removeDirectory(self: *Index, path: [:0]const u8, stage: c_int) !void {
-        log.debug("Index.removeDirectory called, path={s}, stage={}", .{ path, stage });
+    pub fn directoryRemove(self: *Index, path: [:0]const u8, stage: c_int) !void {
+        log.debug("Index.directoryRemove called, path={s}, stage={}", .{ path, stage });
 
         try internal.wrapCall("git_index_remove_directory", .{ internal.toC(self), path.ptr, stage });
 
@@ -296,9 +296,15 @@ pub const Index = opaque {
         });
 
         if (comptime internal.available(.@"1.0.0")) {
-            try internal.wrapCall("git_index_add_from_buffer", .{ internal.toC(self), internal.toC(index_entry), buffer.ptr, buffer.len });
+            try internal.wrapCall(
+                "git_index_add_from_buffer",
+                .{ internal.toC(self), internal.toC(index_entry), buffer.ptr, buffer.len },
+            );
         } else {
-            try internal.wrapCall("git_index_add_frombuffer", .{ internal.toC(self), internal.toC(index_entry), buffer.ptr, buffer.len });
+            try internal.wrapCall(
+                "git_index_add_frombuffer",
+                .{ internal.toC(self), internal.toC(index_entry), buffer.ptr, buffer.len },
+            );
         }
 
         log.debug("successfully added to index", .{});
