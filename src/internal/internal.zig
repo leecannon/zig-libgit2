@@ -154,6 +154,8 @@ const type_mappings = &[_]TypeMapping{
     .{ git.Index.IndexConflictIterator, raw.git_index_conflict_iterator },
     .{ git.OidShortener, raw.struct_git_oid_shorten },
     .{ git.Diff, raw.struct_git_diff },
+    .{ git.Blame, raw.struct_git_blame },
+    .{ git.BlameHunk, raw.struct_git_blame_hunk },
 };
 
 const TypeMapping = std.meta.Tuple(&.{ type, type });

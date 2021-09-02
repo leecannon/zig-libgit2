@@ -1,0 +1,9 @@
+3f02b5b95e90d6be25aedf3f861e173182e815d7
+
+1.1.1 2021-06-30
+1.1.0 2020-10-13
+1.0.1 2020-06-04
+1.0.0 2020-04-01
+
+Check options (e.g. do defaults match upstream)
+make functions take options nullable as this equates with the defaults

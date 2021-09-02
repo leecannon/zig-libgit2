@@ -157,6 +157,10 @@ pub const Oid = extern struct {
         return true;
     }
 
+    pub fn zero() Oid {
+        return .{ .id = [_]u8{0} ** 20 };
+    }
+
     test {
         try std.testing.expectEqual(@sizeOf(raw.git_oid), @sizeOf(Oid));
         try std.testing.expectEqual(@bitSizeOf(raw.git_oid), @bitSizeOf(Oid));

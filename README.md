@@ -9,7 +9,7 @@ This is an in-progress zig binding to libgit2, unfortunately libgit2 doesn't ful
 - [x] annotated_commit.h
 - [x] apply.h
 - [x] attr.h
-- [ ] blame.h
+- [x] blame.h
 - [ ] blob.h
 - [ ] branch.h
 - [x] buffer.h

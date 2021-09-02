@@ -1915,6 +1915,125 @@ pub const Repository = opaque {
         };
     } else struct {};
 
+    pub fn blameFile(self: *const Repository, path: [:0]const u8, options: ?BlameOptions) !*git.Blame {
+        log.debug("Repository.blameFile called, path={s}, options={}", .{ path, options });
+
+        var blame: ?*raw.git_blame = undefined;
+
+        if (options) |user_options| {
+            var opts: raw.git_blame_options = .{
+                .version = raw.GIT_BLAME_OPTIONS_VERSION,
+                .flags = @bitCast(u32, user_options.flags),
+                .min_match_characters = user_options.min_match_characters,
+                .newest_commit = internal.toC(user_options.newest_commit),
+                .oldest_commit = internal.toC(user_options.oldest_commit),
+                .min_line = user_options.min_line,
+                .max_line = user_options.max_line,
+            };
+
+            try internal.wrapCall("git_blame_file", .{ &blame, internal.toC(self), path.ptr, &opts });
+        } else {
+            try internal.wrapCall("git_blame_file", .{ &blame, internal.toC(self), path.ptr, null });
+        }
+
+        log.debug("successfully fetched file blame", .{});
+
+        return internal.fromC(blame.?);
+    }
+
+    pub const BlameOptions = struct {
+        flags: BlameFlags = .{},
+
+        /// The lower bound on the number of alphanumeric characters that must be detected as moving/copying within a file for it
+        /// to associate those lines with the parent commit. The default value is 20.
+        ///
+        /// This value only takes effect if any of the `BlameFlags.TRACK_COPIES_*` flags are specified.
+        min_match_characters: u16 = 0,
+
+        /// The id of the newest commit to consider. The default is HEAD.
+        newest_commit: git.Oid = git.Oid.zero(),
+
+        /// The id of the oldest commit to consider. The default is the first commit encountered with a NULL parent.
+        oldest_commit: git.Oid = git.Oid.zero(),
+
+        /// The first line in the file to blame. The default is 1 (line numbers start with 1).
+        min_line: usize = 0,
+
+        /// The last line in the file to blame. The default is the last line of the file.
+        max_line: usize = 0,
+
+        pub const BlameFlags = packed struct {
+            NORMAL: bool = false,
+
+            /// Track lines that have moved within a file (like `git blame -M`).
+            ///
+            /// This is not yet implemented and reserved for future use.
+            TRACK_COPIES_SAME_FILE: bool = false,
+
+            /// Track lines that have moved across files in the same commit (like `git blame -C`).
+            ///
+            /// This is not yet implemented and reserved for future use.
+            TRACK_COPIES_SAME_COMMIT_MOVES: bool = false,
+
+            /// Track lines that have been copied from another file that exists in the same commit (like `git blame -CC`). 
+            /// Implies SAME_FILE.
+            ///
+            /// This is not yet implemented and reserved for future use.
+            TRACK_COPIES_SAME_COMMIT_COPIES: bool = false,
+
+            /// Track lines that have been copied from another file that exists in *any* commit (like `git blame -CCC`). Implies
+            /// SAME_COMMIT_COPIES.
+            ///
+            /// This is not yet implemented and reserved for future use.
+            TRACK_COPIES_ANY_COMMIT_COPIES: bool = false,
+
+            /// Restrict the search of commits to those reachable following only the first parents.
+            FIRST_PARENT: bool = false,
+
+            /// Use mailmap file to map author and committer names and email addresses to canonical real names and email
+            /// addresses. The mailmap will be read from the working directory, or HEAD in a bare repository.
+            USE_MAILMAP: bool = false,
+
+            /// Ignore whitespace differences 
+            IGNORE_WHITESPACE: bool = false,
+
+            z_padding1: u8 = 0,
+            z_padding2: u16 = 0,
+
+            pub fn format(
+                value: BlameFlags,
+                comptime fmt: []const u8,
+                options: std.fmt.FormatOptions,
+                writer: anytype,
+            ) !void {
+                _ = fmt;
+                return internal.formatWithoutFields(
+                    value,
+                    options,
+                    writer,
+                    &.{ "z_padding1", "z_padding2" },
+                );
+            }
+
+            test {
+                try std.testing.expectEqual(@sizeOf(u32), @sizeOf(BlameFlags));
+                try std.testing.expectEqual(@bitSizeOf(u32), @bitSizeOf(BlameFlags));
+            }
+
+            comptime {
+                std.testing.refAllDecls(@This());
+            }
+
+            comptime {
+                std.testing.refAllDecls(@This());
+            }
+        };
+
+        comptime {
+            std.testing.refAllDecls(@This());
+        }
+    };
+
     comptime {
         std.testing.refAllDecls(@This());
     }
