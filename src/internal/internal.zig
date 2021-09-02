@@ -156,6 +156,7 @@ const type_mappings = &[_]TypeMapping{
     .{ git.Diff, raw.struct_git_diff },
     .{ git.Blame, raw.struct_git_blame },
     .{ git.BlameHunk, raw.struct_git_blame_hunk },
+    .{ git.Blob, raw.git_blob },
 };
 
 const TypeMapping = std.meta.Tuple(&.{ type, type });

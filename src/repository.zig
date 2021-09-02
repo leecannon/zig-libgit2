@@ -2023,16 +2023,87 @@ pub const Repository = opaque {
             comptime {
                 std.testing.refAllDecls(@This());
             }
-
-            comptime {
-                std.testing.refAllDecls(@This());
-            }
         };
 
         comptime {
             std.testing.refAllDecls(@This());
         }
     };
+
+    pub fn blobLookup(self: *const Repository, id: *const git.Oid) !*git.Blob {
+        // This check is to prevent formating the oid when we are not going to print anything
+        if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
+            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            const slice = try id.formatHex(&buf);
+            log.debug("Repository.blobLookup called, id={s}", .{slice});
+        }
+
+        var blob: ?*raw.git_blob = undefined;
+
+        try internal.wrapCall("git_blob_lookup", .{ &blob, internal.toC(self), internal.toC(id) });
+
+        log.debug("successfully fetched blob {*}", .{blob});
+
+        return internal.fromC(blob.?);
+    }
+
+    /// Lookup a blob object from a repository, given a prefix of its identifier (short id).
+    pub fn blobLookupPrefix(self: *const Repository, id: *const git.Oid, len: usize) !*git.Blob {
+        // This check is to prevent formating the oid when we are not going to print anything
+        if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
+            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            const slice = try id.formatHex(&buf);
+            log.debug("Repository.blobLookup called, id={s}, len={}", .{ slice, len });
+        }
+
+        var blob: ?*raw.git_blob = undefined;
+
+        try internal.wrapCall("git_blob_lookup_prefix", .{ &blob, internal.toC(self), internal.toC(id), len });
+
+        log.debug("successfully fetched blob {*}", .{blob});
+
+        return internal.fromC(blob.?);
+    }
+
+    /// Read a file from the working folder of a repository and write it to the Object Database as a loose blob
+    pub fn blobFromWorkdir(self: *Repository, relative_path: [:0]const u8) !*git.Oid {
+        log.debug("Repository.blobFromWorkdir called, relative_path={s}", .{relative_path});
+
+        var oid: *raw.git_oid = undefined;
+
+        try internal.wrapCall("git_blob_create_from_workdir", .{ oid, internal.toC(self), relative_path.ptr });
+
+        const ret = internal.fromC(oid);
+
+        // This check is to prevent formating the oid when we are not going to print anything
+        if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
+            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            const slice = try ret.formatHex(&buf);
+            log.debug("successfully read blob: {s}", .{slice});
+        }
+
+        return ret;
+    }
+
+    /// Read a file from the filesystem and write its content to the Object Database as a loose blob
+    pub fn blobFromDisk(self: *Repository, path: [:0]const u8) !*git.Oid {
+        log.debug("Repository.blobFromDisk called, path={s}", .{path});
+
+        var oid: *raw.git_oid = undefined;
+
+        try internal.wrapCall("git_blob_create_from_disk", .{ oid, internal.toC(self), path.ptr });
+
+        const ret = internal.fromC(oid);
+
+        // This check is to prevent formating the oid when we are not going to print anything
+        if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
+            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            const slice = try ret.formatHex(&buf);
+            log.debug("successfully read blob: {s}", .{slice});
+        }
+
+        return ret;
+    }
 
     comptime {
         std.testing.refAllDecls(@This());
