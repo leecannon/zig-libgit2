@@ -1822,7 +1822,7 @@ pub const Repository = opaque {
                 }
             }.cb;
 
-            log.debug("Repository.attributeForeach called, flags={}, path={s}", .{ flags, path });
+            log.debug("Repository.attributeForeach called, options={}, path={s}", .{ options, path });
 
             var opts: raw.git_attr_options = .{
                 .version = raw.GIT_ATTR_OPTIONS_VERSION,
@@ -1884,7 +1884,7 @@ pub const Repository = opaque {
                 }
             }.cb;
 
-            log.debug("Repository.attributeForeachWithUserData called, flags={}, path={s}", .{ flags, path });
+            log.debug("Repository.attributeForeachWithUserData called, options={}, path={s}", .{ options, path });
 
             var opts: raw.git_attr_options = .{
                 .version = raw.GIT_ATTR_OPTIONS_VERSION,
