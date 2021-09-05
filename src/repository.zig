@@ -2065,91 +2065,93 @@ pub const Repository = opaque {
         return internal.fromC(blob.?);
     }
 
-    /// Read a file from the working folder of a repository and write it to the Object Database as a loose blob
-    pub fn blobFromWorkdir(self: *Repository, relative_path: [:0]const u8) !git.Oid {
-        log.debug("Repository.blobFromWorkdir called, relative_path={s}", .{relative_path});
+    pub usingnamespace if (internal.available(.@"0.99.0")) struct {
+        /// Read a file from the filesystem and write its content to the Object Database as a loose blob
+        pub fn blobFromBuffer(self: *Repository, buffer: []const u8) !git.Oid {
+            log.debug("Repository.blobFromBuffer called, buffer={s}", .{buffer});
 
-        var oid: raw.git_oid = undefined;
+            var oid: raw.git_oid = undefined;
 
-        try internal.wrapCall("git_blob_create_from_workdir", .{ &oid, internal.toC(self), relative_path.ptr });
+            try internal.wrapCall("git_blob_create_from_buffer", .{ &oid, internal.toC(self), buffer.ptr, buffer.len });
 
-        const ret = internal.fromC(oid);
+            const ret = internal.fromC(oid);
 
-        // This check is to prevent formating the oid when we are not going to print anything
-        if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
-            const slice = try ret.formatHex(&buf);
-            log.debug("successfully read blob: {s}", .{slice});
+            // This check is to prevent formating the oid when we are not going to print anything
+            if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
+                var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+                const slice = try ret.formatHex(&buf);
+                log.debug("successfully read blob: {s}", .{slice});
+            }
+
+            return ret;
         }
 
-        return ret;
-    }
+        /// Create a stream to write a new blob into the object db
+        ///
+        /// This function may need to buffer the data on disk and will in general not be the right choice if you know the size of the
+        /// data to write. If you have data in memory, use `blobFromBuffer()`. If you do not, but know the size of the contents
+        /// (and don't want/need to perform filtering), use `Odb.openWriteStream()`.
+        ///
+        /// Don't close this stream yourself but pass it to `WriteStream.commit()` to commit the write to the object db and get the
+        /// object id.
+        ///
+        /// If the `hintpath` parameter is filled, it will be used to determine what git filters should be applied to the object
+        /// before it is written to the object database.
+        pub fn blobFromStream(self: *Repository, hint_path: ?[:0]const u8) !*git.WriteStream {
+            log.debug("Repository.blobFromDisk called, hint_path={s}", .{hint_path});
 
-    /// Read a file from the filesystem and write its content to the Object Database as a loose blob
-    pub fn blobFromDisk(self: *Repository, path: [:0]const u8) !git.Oid {
-        log.debug("Repository.blobFromDisk called, path={s}", .{path});
+            var write_stream: [*c]raw.git_writestream = undefined;
 
-        var oid: raw.git_oid = undefined;
+            const hint_path_c = if (hint_path) |ptr| ptr.ptr else null;
+            try internal.wrapCall("git_blob_create_from_stream", .{ &write_stream, internal.toC(self), hint_path_c });
 
-        try internal.wrapCall("git_blob_create_from_disk", .{ &oid, internal.toC(self), path.ptr });
+            const ret = internal.fromC(write_stream);
 
-        const ret = internal.fromC(oid);
+            log.debug("successfully created writestream {*}", .{write_stream});
 
-        // This check is to prevent formating the oid when we are not going to print anything
-        if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
-            const slice = try ret.formatHex(&buf);
-            log.debug("successfully read blob: {s}", .{slice});
+            return ret;
         }
 
-        return ret;
-    }
+        /// Read a file from the filesystem and write its content to the Object Database as a loose blob
+        pub fn blobFromDisk(self: *Repository, path: [:0]const u8) !git.Oid {
+            log.debug("Repository.blobFromDisk called, path={s}", .{path});
 
-    /// Create a stream to write a new blob into the object db
-    ///
-    /// This function may need to buffer the data on disk and will in general not be the right choice if you know the size of the
-    /// data to write. If you have data in memory, use `blobFromBuffer()`. If you do not, but know the size of the contents
-    /// (and don't want/need to perform filtering), use `Odb.openWriteStream()`.
-    ///
-    /// Don't close this stream yourself but pass it to `WriteStream.commit()` to commit the write to the object db and get the
-    /// object id.
-    ///
-    /// If the `hintpath` parameter is filled, it will be used to determine what git filters should be applied to the object
-    /// before it is written to the object database.
-    pub fn blobFromStream(self: *Repository, hint_path: ?[:0]const u8) !*git.WriteStream {
-        log.debug("Repository.blobFromDisk called, hint_path={s}", .{hint_path});
+            var oid: raw.git_oid = undefined;
 
-        var write_stream: [*c]raw.git_writestream = undefined;
+            try internal.wrapCall("git_blob_create_from_disk", .{ &oid, internal.toC(self), path.ptr });
 
-        const hint_path_c = if (hint_path) |ptr| ptr.ptr else null;
-        try internal.wrapCall("git_blob_create_from_stream", .{ &write_stream, internal.toC(self), hint_path_c });
+            const ret = internal.fromC(oid);
 
-        const ret = internal.fromC(write_stream);
+            // This check is to prevent formating the oid when we are not going to print anything
+            if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
+                var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+                const slice = try ret.formatHex(&buf);
+                log.debug("successfully read blob: {s}", .{slice});
+            }
 
-        log.debug("successfully created writestream {*}", .{write_stream});
-
-        return ret;
-    }
-
-    /// Read a file from the filesystem and write its content to the Object Database as a loose blob
-    pub fn blobFromBuffer(self: *Repository, buffer: []const u8) !git.Oid {
-        log.debug("Repository.blobFromBuffer called, buffer={s}", .{buffer});
-
-        var oid: raw.git_oid = undefined;
-
-        try internal.wrapCall("git_blob_create_from_buffer", .{ &oid, internal.toC(self), buffer.ptr, buffer.len });
-
-        const ret = internal.fromC(oid);
-
-        // This check is to prevent formating the oid when we are not going to print anything
-        if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
-            const slice = try ret.formatHex(&buf);
-            log.debug("successfully read blob: {s}", .{slice});
+            return ret;
         }
 
-        return ret;
-    }
+        /// Read a file from the working folder of a repository and write it to the Object Database as a loose blob
+        pub fn blobFromWorkdir(self: *Repository, relative_path: [:0]const u8) !git.Oid {
+            log.debug("Repository.blobFromWorkdir called, relative_path={s}", .{relative_path});
+
+            var oid: raw.git_oid = undefined;
+
+            try internal.wrapCall("git_blob_create_from_workdir", .{ &oid, internal.toC(self), relative_path.ptr });
+
+            const ret = internal.fromC(oid);
+
+            // This check is to prevent formating the oid when we are not going to print anything
+            if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
+                var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+                const slice = try ret.formatHex(&buf);
+                log.debug("successfully read blob: {s}", .{slice});
+            }
+
+            return ret;
+        }
+    } else struct {};
 
     comptime {
         std.testing.refAllDecls(@This());

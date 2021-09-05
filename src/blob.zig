@@ -64,78 +64,6 @@ pub const Blob = opaque {
         return ret;
     }
 
-    pub fn filter(self: *Blob, as_path: [:0]const u8, options: ?FilterOptions) !git.Buf {
-        log.debug("Blob.filter called, as_path={s}, options={}", .{ as_path, options });
-
-        var buf: raw.git_buf = undefined;
-
-        if (options) |user_options| {
-            var opts: raw.git_blob_filter_options = .{
-                .version = raw.GIT_BLOB_FILTER_OPTIONS_VERSION,
-                .flags = @bitCast(u32, user_options.flags),
-                .commit_id = if (user_options.commit_id) |commit| internal.toC(commit) else null,
-            };
-
-            try internal.wrapCall("git_blob_filter", .{ &buf, internal.toC(self), as_path.ptr, &opts });
-        } else {
-            try internal.wrapCall("git_blob_filter", .{ &buf, internal.toC(self), as_path.ptr, null });
-        }
-
-        log.debug("successfully filtered blob", .{});
-
-        return internal.fromC(buf);
-    }
-
-    pub const FilterOptions = struct {
-        flags: FilterFlags = .{},
-        /// The commit to load attributes from, when `FilterFlags.ATTRIBUTES_FROM_COMMIT` is specified.
-        commit_id: ?*git.Oid = null,
-
-        pub const FilterFlags = packed struct {
-            /// When set, filters will not be applied to binary files.
-            CHECK_FOR_BINARY: bool = false,
-
-            /// When set, filters will not load configuration from the system-wide `gitattributes` in `/etc` (or system equivalent).
-            NO_SYSTEM_ATTRIBUTES: bool = false,
-
-            /// When set, filters will be loaded from a `.gitattributes` file in the HEAD commit.
-            ATTRIBUTES_FROM_HEAD: bool = false,
-
-            /// When set, filters will be loaded from a `.gitattributes` file in the specified commit.
-            ATTRIBUTES_FROM_COMMIT: bool = false,
-
-            z_padding: u28 = 0,
-
-            pub fn format(
-                value: FilterFlags,
-                comptime fmt: []const u8,
-                options: std.fmt.FormatOptions,
-                writer: anytype,
-            ) !void {
-                _ = fmt;
-                return internal.formatWithoutFields(
-                    value,
-                    options,
-                    writer,
-                    &.{"z_padding"},
-                );
-            }
-
-            test {
-                try std.testing.expectEqual(@sizeOf(u32), @sizeOf(FilterFlags));
-                try std.testing.expectEqual(@bitSizeOf(u32), @bitSizeOf(FilterFlags));
-            }
-
-            comptime {
-                std.testing.refAllDecls(@This());
-            }
-        };
-
-        comptime {
-            std.testing.refAllDecls(@This());
-        }
-    };
-
     pub fn isBinary(self: *const Blob) bool {
         return raw.git_blob_is_binary(internal.toC(self)) == 1;
     }
@@ -146,6 +74,80 @@ pub const Blob = opaque {
         _ = raw.git_blob_dup(&new_blob, internal.toC(self));
         return internal.fromC(new_blob.?);
     }
+
+    pub usingnamespace if (internal.available(.@"0.99.0")) struct {
+        pub fn filter(self: *Blob, as_path: [:0]const u8, options: ?FilterOptions) !git.Buf {
+            log.debug("Blob.filter called, as_path={s}, options={}", .{ as_path, options });
+
+            var buf: raw.git_buf = undefined;
+
+            if (options) |user_options| {
+                var opts: raw.git_blob_filter_options = .{
+                    .version = raw.GIT_BLOB_FILTER_OPTIONS_VERSION,
+                    .flags = @bitCast(u32, user_options.flags),
+                    .commit_id = if (user_options.commit_id) |commit| internal.toC(commit) else null,
+                };
+
+                try internal.wrapCall("git_blob_filter", .{ &buf, internal.toC(self), as_path.ptr, &opts });
+            } else {
+                try internal.wrapCall("git_blob_filter", .{ &buf, internal.toC(self), as_path.ptr, null });
+            }
+
+            log.debug("successfully filtered blob", .{});
+
+            return internal.fromC(buf);
+        }
+
+        pub const FilterOptions = struct {
+            flags: FilterFlags = .{},
+            /// The commit to load attributes from, when `FilterFlags.ATTRIBUTES_FROM_COMMIT` is specified.
+            commit_id: ?*git.Oid = null,
+
+            pub const FilterFlags = packed struct {
+                /// When set, filters will not be applied to binary files.
+                CHECK_FOR_BINARY: bool = false,
+
+                /// When set, filters will not load configuration from the system-wide `gitattributes` in `/etc` (or system equivalent).
+                NO_SYSTEM_ATTRIBUTES: bool = false,
+
+                /// When set, filters will be loaded from a `.gitattributes` file in the HEAD commit.
+                ATTRIBUTES_FROM_HEAD: bool = false,
+
+                /// When set, filters will be loaded from a `.gitattributes` file in the specified commit.
+                ATTRIBUTES_FROM_COMMIT: bool = false,
+
+                z_padding: u28 = 0,
+
+                pub fn format(
+                    value: FilterFlags,
+                    comptime fmt: []const u8,
+                    options: std.fmt.FormatOptions,
+                    writer: anytype,
+                ) !void {
+                    _ = fmt;
+                    return internal.formatWithoutFields(
+                        value,
+                        options,
+                        writer,
+                        &.{"z_padding"},
+                    );
+                }
+
+                test {
+                    try std.testing.expectEqual(@sizeOf(u32), @sizeOf(FilterFlags));
+                    try std.testing.expectEqual(@bitSizeOf(u32), @bitSizeOf(FilterFlags));
+                }
+
+                comptime {
+                    std.testing.refAllDecls(@This());
+                }
+            };
+
+            comptime {
+                std.testing.refAllDecls(@This());
+            }
+        };
+    } else struct {};
 
     comptime {
         std.testing.refAllDecls(@This());
