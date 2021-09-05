@@ -31,6 +31,7 @@ pub const StatusList = @import("status_list.zig").StatusList;
 pub const StrArray = @import("str_array.zig").StrArray;
 pub const Tree = @import("tree.zig").Tree;
 pub const Worktree = @import("worktree.zig").Worktree;
+pub const WriteStream = @import("writestream.zig").WriteStream;
 
 /// Initialize global state. This function must be called before any other function.
 /// *NOTE*: This function can called multiple times.

@@ -136,6 +136,17 @@ pub const Blob = opaque {
         }
     };
 
+    pub fn isBinary(self: *const Blob) bool {
+        return raw.git_blob_is_binary(internal.toC(self)) == 1;
+    }
+
+    pub fn copy(self: *const Blob) !*Blob {
+        var new_blob: ?*raw.git_blob = undefined;
+        // This always returns 0
+        _ = raw.git_blob_dup(&new_blob, internal.toC(self));
+        return internal.fromC(new_blob.?);
+    }
+
     comptime {
         std.testing.refAllDecls(@This());
     }

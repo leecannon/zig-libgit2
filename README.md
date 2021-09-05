@@ -10,7 +10,7 @@ This is an in-progress zig binding to libgit2, unfortunately libgit2 doesn't ful
 - [x] apply.h
 - [x] attr.h
 - [x] blame.h
-- [ ] blob.h
+- [x] blob.h
 - [ ] branch.h
 - [x] buffer.h
 - [ ] cert.h
