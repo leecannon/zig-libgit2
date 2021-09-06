@@ -158,6 +158,8 @@ const type_mappings = &[_]TypeMapping{
     .{ git.BlameHunk, raw.struct_git_blame_hunk },
     .{ git.Blob, raw.git_blob },
     .{ git.WriteStream, raw.git_writestream },
+    .{ git.Commit, raw.git_commit },
+    .{ git.Repository.BranchIterator, raw.git_branch_iterator },
 };
 
 const TypeMapping = std.meta.Tuple(&.{ type, type });

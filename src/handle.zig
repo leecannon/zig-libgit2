@@ -718,6 +718,19 @@ pub const Handle = struct {
     }
 
     pub usingnamespace if (internal.available(.master)) struct {
+        pub fn branchNameIsValid(name: [:0]const u8) !bool {
+            log.debug("Handle.branchNameIsValid, name={s}", .{name});
+
+            var valid: c_int = undefined;
+            try internal.wrapCall("git_branch_name_is_valid", .{ &valid, name.ptr });
+
+            const ret = valid == 1;
+
+            log.debug("branch name valid: {}", .{ret});
+
+            return ret;
+        }
+
         pub fn optionSetOdbPackedPriority(self: Handle, value: usize) !void {
             _ = self;
 

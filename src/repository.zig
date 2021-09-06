@@ -1707,7 +1707,370 @@ pub const Repository = opaque {
         log.debug("successfully added macro", .{});
     }
 
+    pub fn blameFile(self: *const Repository, path: [:0]const u8, options: ?BlameOptions) !*git.Blame {
+        log.debug("Repository.blameFile called, path={s}, options={}", .{ path, options });
+
+        var blame: ?*raw.git_blame = undefined;
+
+        if (options) |user_options| {
+            var opts: raw.git_blame_options = .{
+                .version = raw.GIT_BLAME_OPTIONS_VERSION,
+                .flags = @bitCast(u32, user_options.flags),
+                .min_match_characters = user_options.min_match_characters,
+                .newest_commit = internal.toC(user_options.newest_commit),
+                .oldest_commit = internal.toC(user_options.oldest_commit),
+                .min_line = user_options.min_line,
+                .max_line = user_options.max_line,
+            };
+
+            try internal.wrapCall("git_blame_file", .{ &blame, internal.toC(self), path.ptr, &opts });
+        } else {
+            try internal.wrapCall("git_blame_file", .{ &blame, internal.toC(self), path.ptr, null });
+        }
+
+        log.debug("successfully fetched file blame", .{});
+
+        return internal.fromC(blame.?);
+    }
+
+    pub const BlameOptions = struct {
+        flags: BlameFlags = .{},
+
+        /// The lower bound on the number of alphanumeric characters that must be detected as moving/copying within a file for it
+        /// to associate those lines with the parent commit. The default value is 20.
+        ///
+        /// This value only takes effect if any of the `BlameFlags.TRACK_COPIES_*` flags are specified.
+        min_match_characters: u16 = 0,
+
+        /// The id of the newest commit to consider. The default is HEAD.
+        newest_commit: git.Oid = git.Oid.zero(),
+
+        /// The id of the oldest commit to consider. The default is the first commit encountered with a NULL parent.
+        oldest_commit: git.Oid = git.Oid.zero(),
+
+        /// The first line in the file to blame. The default is 1 (line numbers start with 1).
+        min_line: usize = 0,
+
+        /// The last line in the file to blame. The default is the last line of the file.
+        max_line: usize = 0,
+
+        pub const BlameFlags = packed struct {
+            NORMAL: bool = false,
+
+            /// Track lines that have moved within a file (like `git blame -M`).
+            ///
+            /// This is not yet implemented and reserved for future use.
+            TRACK_COPIES_SAME_FILE: bool = false,
+
+            /// Track lines that have moved across files in the same commit (like `git blame -C`).
+            ///
+            /// This is not yet implemented and reserved for future use.
+            TRACK_COPIES_SAME_COMMIT_MOVES: bool = false,
+
+            /// Track lines that have been copied from another file that exists in the same commit (like `git blame -CC`). 
+            /// Implies SAME_FILE.
+            ///
+            /// This is not yet implemented and reserved for future use.
+            TRACK_COPIES_SAME_COMMIT_COPIES: bool = false,
+
+            /// Track lines that have been copied from another file that exists in *any* commit (like `git blame -CCC`). Implies
+            /// SAME_COMMIT_COPIES.
+            ///
+            /// This is not yet implemented and reserved for future use.
+            TRACK_COPIES_ANY_COMMIT_COPIES: bool = false,
+
+            /// Restrict the search of commits to those reachable following only the first parents.
+            FIRST_PARENT: bool = false,
+
+            /// Use mailmap file to map author and committer names and email addresses to canonical real names and email
+            /// addresses. The mailmap will be read from the working directory, or HEAD in a bare repository.
+            USE_MAILMAP: bool = false,
+
+            /// Ignore whitespace differences 
+            IGNORE_WHITESPACE: bool = false,
+
+            z_padding1: u8 = 0,
+            z_padding2: u16 = 0,
+
+            pub fn format(
+                value: BlameFlags,
+                comptime fmt: []const u8,
+                options: std.fmt.FormatOptions,
+                writer: anytype,
+            ) !void {
+                _ = fmt;
+                return internal.formatWithoutFields(
+                    value,
+                    options,
+                    writer,
+                    &.{ "z_padding1", "z_padding2" },
+                );
+            }
+
+            test {
+                try std.testing.expectEqual(@sizeOf(u32), @sizeOf(BlameFlags));
+                try std.testing.expectEqual(@bitSizeOf(u32), @bitSizeOf(BlameFlags));
+            }
+
+            comptime {
+                std.testing.refAllDecls(@This());
+            }
+        };
+
+        comptime {
+            std.testing.refAllDecls(@This());
+        }
+    };
+
+    pub fn blobLookup(self: *const Repository, id: *const git.Oid) !*git.Blob {
+        // This check is to prevent formating the oid when we are not going to print anything
+        if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
+            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            const slice = try id.formatHex(&buf);
+            log.debug("Repository.blobLookup called, id={s}", .{slice});
+        }
+
+        var blob: ?*raw.git_blob = undefined;
+
+        try internal.wrapCall("git_blob_lookup", .{ &blob, internal.toC(self), internal.toC(id) });
+
+        log.debug("successfully fetched blob {*}", .{blob});
+
+        return internal.fromC(blob.?);
+    }
+
+    /// Lookup a blob object from a repository, given a prefix of its identifier (short id).
+    pub fn blobLookupPrefix(self: *const Repository, id: *const git.Oid, len: usize) !*git.Blob {
+        // This check is to prevent formating the oid when we are not going to print anything
+        if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
+            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            const slice = try id.formatHex(&buf);
+            log.debug("Repository.blobLookup called, id={s}, len={}", .{ slice, len });
+        }
+
+        var blob: ?*raw.git_blob = undefined;
+
+        try internal.wrapCall("git_blob_lookup_prefix", .{ &blob, internal.toC(self), internal.toC(id), len });
+
+        log.debug("successfully fetched blob {*}", .{blob});
+
+        return internal.fromC(blob.?);
+    }
+
+    /// Create a new branch pointing at a target commit
+    ///
+    /// A new direct reference will be created pointing to this target commit. If `force` is true and a reference already exists
+    /// with the given name, it'll be replaced.
+    ///
+    /// The returned reference must be freed by the user.
+    ///
+    /// The branch name will be checked for validity.
+    ///
+    /// ## Parameters
+    /// * `branch_name` - Name for the branch; this name is validated for consistency. It should also not conflict with an already
+    /// existing branch name.
+    /// * `target` - Commit to which this branch should point. This object must belong to the given `repo`.
+    /// * `force` - Overwrite existing branch.
+    pub fn branchCreate(self: *Repository, branch_name: [:0]const u8, target: *const git.Commit, force: bool) !*git.Reference {
+        log.debug("Repository.branchCreate called, branch_name={s}, target={*}, force={}", .{ branch_name, target, force });
+
+        var reference: ?*raw.git_reference = undefined;
+
+        try internal.wrapCall("git_branch_create", .{
+            &reference,
+            internal.toC(self),
+            branch_name.ptr,
+            internal.toC(target),
+            @boolToInt(force),
+        });
+
+        log.debug("successfully created branch", .{});
+
+        return internal.fromC(reference.?);
+    }
+
+    /// Create a new branch pointing at a target commit
+    ///
+    /// This behaves like `branchCreate` but takes an annotated commit, which lets you specify which extended sha syntax string
+    /// was specified by a user, allowing for more exact reflog messages.
+    ///
+    /// ## Parameters
+    /// * `branch_name` - Name for the branch; this name is validated for consistency. It should also not conflict with an already
+    /// existing branch name.
+    /// * `target` - Commit to which this branch should point. This object must belong to the given `repo`.
+    /// * `force` - Overwrite existing branch.
+    pub fn branchCreateFromAnnotated(
+        self: *Repository,
+        branch_name: [:0]const u8,
+        target: *const git.AnnotatedCommit,
+        force: bool,
+    ) !*git.Reference {
+        log.debug("Repository.branchCreateFromAnnotated called, branch_name={s}, target={*}, force={}", .{ branch_name, target, force });
+
+        var reference: ?*raw.git_reference = undefined;
+
+        try internal.wrapCall("git_branch_create_from_annotated", .{
+            &reference,
+            internal.toC(self),
+            branch_name.ptr,
+            internal.toC(target),
+            @boolToInt(force),
+        });
+
+        log.debug("successfully created branch", .{});
+
+        return internal.fromC(reference.?);
+    }
+
+    pub fn iterateBranches(self: *const Repository, branch_type: BranchType) !*BranchIterator {
+        log.debug("Repository.iterateBranches called", .{});
+
+        var iterator: ?*raw.git_branch_iterator = undefined;
+
+        try internal.wrapCall("git_branch_iterator_new", .{ &iterator, internal.toC(self), @enumToInt(branch_type) });
+
+        log.debug("branch iterator created successfully", .{});
+
+        return internal.fromC(iterator.?);
+    }
+
+    pub const BranchType = enum(c_uint) {
+        LOCAL = 1,
+        REMOTE = 2,
+        ALL = 3,
+    };
+
+    pub const BranchIterator = opaque {
+        pub fn next(self: *BranchIterator) !?Item {
+            log.debug("BranchIterator.next called", .{});
+
+            var reference: ?*raw.git_reference = undefined;
+            var branch_type: raw.git_branch_t = undefined;
+
+            internal.wrapCall("git_branch_next", .{ &reference, &branch_type, internal.toC(self) }) catch |err| switch (err) {
+                git.GitError.IterOver => {
+                    log.debug("end of iteration reached", .{});
+                    return null;
+                },
+                else => return err,
+            };
+
+            const ret = Item{
+                .reference = internal.fromC(reference.?),
+                .branch_type = @intToEnum(BranchType, branch_type),
+            };
+
+            log.debug("successfully fetched branch: {}", .{ret});
+
+            return ret;
+        }
+
+        pub const Item = struct {
+            reference: *git.Reference,
+            branch_type: BranchType,
+        };
+
+        pub fn deinit(self: *BranchIterator) void {
+            log.debug("BranchIterator.deinit called", .{});
+
+            raw.git_branch_iterator_free(internal.toC(self));
+
+            log.debug("branch iterator freed successfully", .{});
+        }
+
+        comptime {
+            std.testing.refAllDecls(@This());
+        }
+    };
+
+    /// Lookup a branch by its name in a repository.
+    ///
+    /// The generated reference must be freed by the user.
+    /// The branch name will be checked for validity.
+    pub fn branchLookup(self: *const Repository, branch_name: [:0]const u8, branch_type: BranchType) !*git.Reference {
+        log.debug("Repository.branchLookup called, branch_name={s}, branch_type={}", .{ branch_name, branch_type });
+
+        var ref: ?*raw.git_reference = undefined;
+
+        try internal.wrapCall("git_branch_lookup", .{ &ref, internal.toC(self), branch_name.ptr, @enumToInt(branch_type) });
+
+        log.debug("successfully fetched branch: {*}", .{ref});
+
+        return internal.fromC(ref.?);
+    }
+
+    /// Find the remote name of a remote-tracking branch
+    ///
+    /// This will return the name of the remote whose fetch refspec is matching the given branch. E.g. given a branch
+    /// "refs/remotes/test/master", it will extract the "test" part. If refspecs from multiple remotes match, the function will
+    /// return `GitError.AMBIGUOUS`.
+    pub fn remoteGetName(self: *Repository, refname: [:0]const u8) !git.Buf {
+        log.debug("Repository.remoteGetName called, refname={s}", .{refname});
+
+        var c_buf: raw.git_buf = undefined;
+
+        try internal.wrapCall("git_branch_remote_name", .{ &c_buf, internal.toC(self), refname.ptr });
+
+        const ret = internal.fromC(c_buf);
+
+        log.debug("remote name acquired successfully, name={s}", .{ret.toSlice()});
+
+        return ret;
+    }
+
+    /// Retrieve the upstream remote of a local branch
+    ///
+    /// This will return the currently configured "branch.*.remote" for a given branch. This branch must be local.
+    pub fn remoteUpstreamRemote(self: *Repository, refname: [:0]const u8) !git.Buf {
+        log.debug("Repository.remoteUpstreamRemote called, refname={s}", .{refname});
+
+        var c_buf: raw.git_buf = undefined;
+
+        try internal.wrapCall("git_branch_upstream_remote", .{ &c_buf, internal.toC(self), refname.ptr });
+
+        const ret = internal.fromC(c_buf);
+
+        log.debug("upstream remote name acquired successfully, name={s}", .{ret.toSlice()});
+
+        return ret;
+    }
+
+    /// Get the upstream name of a branch
+    ///
+    /// Given a local branch, this will return its remote-tracking branch information, as a full reference name, ie.
+    /// "feature/nice" would become "refs/remote/origin/feature/nice", depending on that branch's configuration.
+    pub fn upstreamGetName(self: *Repository, refname: [:0]const u8) !git.Buf {
+        log.debug("Repository.upstreamGetName called, refname={s}", .{refname});
+
+        var c_buf: raw.git_buf = undefined;
+
+        try internal.wrapCall("git_branch_upstream_name", .{ &c_buf, internal.toC(self), refname.ptr });
+
+        const ret = internal.fromC(c_buf);
+
+        log.debug("upstream name acquired successfully, name={s}", .{ret.toSlice()});
+
+        return ret;
+    }
+
     pub usingnamespace if (internal.available(.master)) struct {
+        /// Retrieve the upstream merge of a local branch
+        ///
+        /// This will return the currently configured "branch.*.remote" for a given branch. This branch must be local.
+        pub fn remoteUpstreamMerge(self: *Repository, refname: [:0]const u8) !git.Buf {
+            log.debug("Repository.remoteUpstreamMerge called, refname={s}", .{refname});
+
+            var c_buf: raw.git_buf = undefined;
+
+            try internal.wrapCall("git_branch_upstream_merge", .{ &c_buf, internal.toC(self), refname.ptr });
+
+            const ret = internal.fromC(c_buf);
+
+            log.debug("upstream remote name acquired successfully, name={s}", .{ret.toSlice()});
+
+            return ret;
+        }
+
         /// Look up the value of one git attribute for path with extended options.
         ///
         /// ## Parameters
@@ -1914,156 +2277,6 @@ pub const Repository = opaque {
             }
         };
     } else struct {};
-
-    pub fn blameFile(self: *const Repository, path: [:0]const u8, options: ?BlameOptions) !*git.Blame {
-        log.debug("Repository.blameFile called, path={s}, options={}", .{ path, options });
-
-        var blame: ?*raw.git_blame = undefined;
-
-        if (options) |user_options| {
-            var opts: raw.git_blame_options = .{
-                .version = raw.GIT_BLAME_OPTIONS_VERSION,
-                .flags = @bitCast(u32, user_options.flags),
-                .min_match_characters = user_options.min_match_characters,
-                .newest_commit = internal.toC(user_options.newest_commit),
-                .oldest_commit = internal.toC(user_options.oldest_commit),
-                .min_line = user_options.min_line,
-                .max_line = user_options.max_line,
-            };
-
-            try internal.wrapCall("git_blame_file", .{ &blame, internal.toC(self), path.ptr, &opts });
-        } else {
-            try internal.wrapCall("git_blame_file", .{ &blame, internal.toC(self), path.ptr, null });
-        }
-
-        log.debug("successfully fetched file blame", .{});
-
-        return internal.fromC(blame.?);
-    }
-
-    pub const BlameOptions = struct {
-        flags: BlameFlags = .{},
-
-        /// The lower bound on the number of alphanumeric characters that must be detected as moving/copying within a file for it
-        /// to associate those lines with the parent commit. The default value is 20.
-        ///
-        /// This value only takes effect if any of the `BlameFlags.TRACK_COPIES_*` flags are specified.
-        min_match_characters: u16 = 0,
-
-        /// The id of the newest commit to consider. The default is HEAD.
-        newest_commit: git.Oid = git.Oid.zero(),
-
-        /// The id of the oldest commit to consider. The default is the first commit encountered with a NULL parent.
-        oldest_commit: git.Oid = git.Oid.zero(),
-
-        /// The first line in the file to blame. The default is 1 (line numbers start with 1).
-        min_line: usize = 0,
-
-        /// The last line in the file to blame. The default is the last line of the file.
-        max_line: usize = 0,
-
-        pub const BlameFlags = packed struct {
-            NORMAL: bool = false,
-
-            /// Track lines that have moved within a file (like `git blame -M`).
-            ///
-            /// This is not yet implemented and reserved for future use.
-            TRACK_COPIES_SAME_FILE: bool = false,
-
-            /// Track lines that have moved across files in the same commit (like `git blame -C`).
-            ///
-            /// This is not yet implemented and reserved for future use.
-            TRACK_COPIES_SAME_COMMIT_MOVES: bool = false,
-
-            /// Track lines that have been copied from another file that exists in the same commit (like `git blame -CC`). 
-            /// Implies SAME_FILE.
-            ///
-            /// This is not yet implemented and reserved for future use.
-            TRACK_COPIES_SAME_COMMIT_COPIES: bool = false,
-
-            /// Track lines that have been copied from another file that exists in *any* commit (like `git blame -CCC`). Implies
-            /// SAME_COMMIT_COPIES.
-            ///
-            /// This is not yet implemented and reserved for future use.
-            TRACK_COPIES_ANY_COMMIT_COPIES: bool = false,
-
-            /// Restrict the search of commits to those reachable following only the first parents.
-            FIRST_PARENT: bool = false,
-
-            /// Use mailmap file to map author and committer names and email addresses to canonical real names and email
-            /// addresses. The mailmap will be read from the working directory, or HEAD in a bare repository.
-            USE_MAILMAP: bool = false,
-
-            /// Ignore whitespace differences 
-            IGNORE_WHITESPACE: bool = false,
-
-            z_padding1: u8 = 0,
-            z_padding2: u16 = 0,
-
-            pub fn format(
-                value: BlameFlags,
-                comptime fmt: []const u8,
-                options: std.fmt.FormatOptions,
-                writer: anytype,
-            ) !void {
-                _ = fmt;
-                return internal.formatWithoutFields(
-                    value,
-                    options,
-                    writer,
-                    &.{ "z_padding1", "z_padding2" },
-                );
-            }
-
-            test {
-                try std.testing.expectEqual(@sizeOf(u32), @sizeOf(BlameFlags));
-                try std.testing.expectEqual(@bitSizeOf(u32), @bitSizeOf(BlameFlags));
-            }
-
-            comptime {
-                std.testing.refAllDecls(@This());
-            }
-        };
-
-        comptime {
-            std.testing.refAllDecls(@This());
-        }
-    };
-
-    pub fn blobLookup(self: *const Repository, id: *const git.Oid) !*git.Blob {
-        // This check is to prevent formating the oid when we are not going to print anything
-        if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
-            const slice = try id.formatHex(&buf);
-            log.debug("Repository.blobLookup called, id={s}", .{slice});
-        }
-
-        var blob: ?*raw.git_blob = undefined;
-
-        try internal.wrapCall("git_blob_lookup", .{ &blob, internal.toC(self), internal.toC(id) });
-
-        log.debug("successfully fetched blob {*}", .{blob});
-
-        return internal.fromC(blob.?);
-    }
-
-    /// Lookup a blob object from a repository, given a prefix of its identifier (short id).
-    pub fn blobLookupPrefix(self: *const Repository, id: *const git.Oid, len: usize) !*git.Blob {
-        // This check is to prevent formating the oid when we are not going to print anything
-        if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
-            const slice = try id.formatHex(&buf);
-            log.debug("Repository.blobLookup called, id={s}, len={}", .{ slice, len });
-        }
-
-        var blob: ?*raw.git_blob = undefined;
-
-        try internal.wrapCall("git_blob_lookup_prefix", .{ &blob, internal.toC(self), internal.toC(id), len });
-
-        log.debug("successfully fetched blob {*}", .{blob});
-
-        return internal.fromC(blob.?);
-    }
 
     pub usingnamespace if (internal.available(.@"0.99.0")) struct {
         /// Read a file from the filesystem and write its content to the Object Database as a loose blob

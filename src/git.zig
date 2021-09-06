@@ -14,6 +14,7 @@ pub const Blame = @import("blame.zig").Blame;
 pub const BlameHunk = @import("blame.zig").BlameHunk;
 pub const Blob = @import("blob.zig").Blob;
 pub const Buf = @import("buffer.zig").Buf;
+pub const Commit = @import("commit.zig").Commit;
 pub const Config = @import("config.zig").Config;
 pub const Diff = @import("diff.zig").Diff;
 pub const DiffDelta = @import("diff.zig").DiffDelta;

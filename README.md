@@ -11,7 +11,7 @@ This is an in-progress zig binding to libgit2, unfortunately libgit2 doesn't ful
 - [x] attr.h
 - [x] blame.h
 - [x] blob.h
-- [ ] branch.h
+- [x] branch.h
 - [x] buffer.h
 - [ ] cert.h
 - [ ] checkout.h
