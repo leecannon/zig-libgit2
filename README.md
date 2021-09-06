@@ -14,7 +14,7 @@ This is an in-progress zig binding to libgit2, unfortunately libgit2 doesn't ful
 - [x] branch.h
 - [x] buffer.h
 - [ ] cert.h
-- [ ] checkout.h
+- [x] checkout.h
 - [ ] cherrypick.h
 - [ ] clone.h
 - [ ] commit.h

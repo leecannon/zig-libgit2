@@ -134,92 +134,92 @@ pub const DiffDelta = extern struct {
         CONFLICTED,
     };
 
-    /// Flags for the delta object and the file objects on each side.
-    ///
-    /// These flags are used for both the `flags` value of the `git_diff_delta` and the flags for the `git_diff_file` objects
-    /// representing the old and new sides of the delta.  Values outside of this public range should be considered reserved 
-    /// for internal or future use.
-    pub const DiffFlags = packed struct {
-        /// file(s) treated as binary data
-        BINARY: bool = false,
-        /// file(s) treated as text data
-        NOT_BINARY: bool = false,
-        /// `id` value is known correct
-        VALID_ID: bool = false,
-        /// file exists at this side of the delta
-        EXISTS: bool = false,
-
-        z_padding1: u12 = 0,
-        z_padding2: u16 = 0,
-
-        pub fn format(
-            value: DiffFlags,
-            comptime fmt: []const u8,
-            options: std.fmt.FormatOptions,
-            writer: anytype,
-        ) !void {
-            _ = fmt;
-            return internal.formatWithoutFields(
-                value,
-                options,
-                writer,
-                &.{ "z_padding1", "z_padding2" },
-            );
-        }
-
-        test {
-            try std.testing.expectEqual(@sizeOf(c_uint), @sizeOf(DiffFlags));
-            try std.testing.expectEqual(@bitSizeOf(c_uint), @bitSizeOf(DiffFlags));
-        }
-
-        comptime {
-            std.testing.refAllDecls(@This());
-        }
-    };
-
-    /// Description of one side of a delta.
-    ///
-    /// Although this is called a "file", it could represent a file, a symbolic link, a submodule commit id, or even a tree
-    /// (although that only if you are tracking type changes or ignored/untracked directories).
-    pub const DiffFile = extern struct {
-        /// The `git_oid` of the item.  If the entry represents an absent side of a diff (e.g. the `old_file` of a
-        /// `GIT_DELTA_ADDED` delta), then the oid will be zeroes.
-        id: git.Oid,
-        /// Path to the entry relative to the working directory of the repository.
-        path: [*:0]const u8,
-        /// The size of the entry in bytes.
-        size: u64,
-        flags: DiffFlags,
-        /// Roughly, the stat() `st_mode` value for the item.
-        mode: FileMode,
-        /// Represents the known length of the `id` field, when converted to a hex string.  It is generally `GIT_OID_HEXSZ`,
-        /// unless this delta was created from reading a patch file, in which case it may be abbreviated to something reasonable,
-        /// like 7 characters.
-        id_abbrev: u16,
-
-        /// Valid modes for index and tree entries.
-        pub const FileMode = enum(u16) {
-            UNREADABLE = 0o000000,
-            TREE = 0o040000,
-            BLOB = 0o100644,
-            BLOB_EXECUTABLE = 0o100755,
-            LINK = 0o120000,
-            COMMIT = 0o160000,
-        };
-
-        test {
-            try std.testing.expectEqual(@sizeOf(raw.git_diff_file), @sizeOf(DiffFile));
-            try std.testing.expectEqual(@bitSizeOf(raw.git_diff_file), @bitSizeOf(DiffFile));
-        }
-
-        comptime {
-            std.testing.refAllDecls(@This());
-        }
-    };
-
     test {
         try std.testing.expectEqual(@sizeOf(raw.git_diff_delta), @sizeOf(DiffDelta));
         try std.testing.expectEqual(@bitSizeOf(raw.git_diff_delta), @bitSizeOf(DiffDelta));
+    }
+
+    comptime {
+        std.testing.refAllDecls(@This());
+    }
+};
+
+/// Flags for the delta object and the file objects on each side.
+///
+/// These flags are used for both the `flags` value of the `git_diff_delta` and the flags for the `git_diff_file` objects
+/// representing the old and new sides of the delta.  Values outside of this public range should be considered reserved 
+/// for internal or future use.
+pub const DiffFlags = packed struct {
+    /// file(s) treated as binary data
+    BINARY: bool = false,
+    /// file(s) treated as text data
+    NOT_BINARY: bool = false,
+    /// `id` value is known correct
+    VALID_ID: bool = false,
+    /// file exists at this side of the delta
+    EXISTS: bool = false,
+
+    z_padding1: u12 = 0,
+    z_padding2: u16 = 0,
+
+    pub fn format(
+        value: DiffFlags,
+        comptime fmt: []const u8,
+        options: std.fmt.FormatOptions,
+        writer: anytype,
+    ) !void {
+        _ = fmt;
+        return internal.formatWithoutFields(
+            value,
+            options,
+            writer,
+            &.{ "z_padding1", "z_padding2" },
+        );
+    }
+
+    test {
+        try std.testing.expectEqual(@sizeOf(c_uint), @sizeOf(DiffFlags));
+        try std.testing.expectEqual(@bitSizeOf(c_uint), @bitSizeOf(DiffFlags));
+    }
+
+    comptime {
+        std.testing.refAllDecls(@This());
+    }
+};
+
+/// Description of one side of a delta.
+///
+/// Although this is called a "file", it could represent a file, a symbolic link, a submodule commit id, or even a tree
+/// (although that only if you are tracking type changes or ignored/untracked directories).
+pub const DiffFile = extern struct {
+    /// The `git_oid` of the item.  If the entry represents an absent side of a diff (e.g. the `old_file` of a
+    /// `GIT_DELTA_ADDED` delta), then the oid will be zeroes.
+    id: git.Oid,
+    /// Path to the entry relative to the working directory of the repository.
+    path: [*:0]const u8,
+    /// The size of the entry in bytes.
+    size: u64,
+    flags: DiffFlags,
+    /// Roughly, the stat() `st_mode` value for the item.
+    mode: FileMode,
+    /// Represents the known length of the `id` field, when converted to a hex string.  It is generally `GIT_OID_HEXSZ`,
+    /// unless this delta was created from reading a patch file, in which case it may be abbreviated to something reasonable,
+    /// like 7 characters.
+    id_abbrev: u16,
+
+    /// Valid modes for index and tree entries.
+    pub const FileMode = enum(u16) {
+        UNREADABLE = 0o000000,
+        TREE = 0o040000,
+        BLOB = 0o100644,
+        BLOB_EXECUTABLE = 0o100755,
+        LINK = 0o120000,
+        COMMIT = 0o160000,
+    };
+
+    test {
+        try std.testing.expectEqual(@sizeOf(raw.git_diff_file), @sizeOf(DiffFile));
+        try std.testing.expectEqual(@bitSizeOf(raw.git_diff_file), @bitSizeOf(DiffFile));
     }
 
     comptime {

@@ -2053,6 +2053,308 @@ pub const Repository = opaque {
         return ret;
     }
 
+    /// Updates files in the index and the working tree to match the content of the commit pointed at by HEAD.
+    ///
+    /// Note that this is _not_ the correct mechanism used to switch branches; do not change your `HEAD` and then call this
+    /// method, that would leave you with checkout conflicts since your working directory would then appear to be dirty.
+    /// Instead, checkout the target of the branch and then update `HEAD` using `git_repository_set_head` to point to the branch
+    /// you checked out.
+    ///
+    /// Returns a non-zero value is the `notify_cb` callback returns non-zero.
+    pub fn checkoutHead(self: *Repository, options: ?CheckoutOptions) !c_uint {
+        log.debug("Repository.checkoutHead called, options={}", .{options});
+
+        var ret: c_int = undefined;
+
+        if (options) |*opts| {
+            ret = try internal.wrapCallWithReturn("git_checkout_head", .{ internal.toC(self), internal.toC(opts) });
+        } else {
+            ret = try internal.wrapCallWithReturn("git_checkout_head", .{ internal.toC(self), null });
+        }
+
+        log.debug("successfully checked out HEAD", .{});
+
+        return @intCast(c_uint, ret);
+    }
+
+    /// Updates files in the working tree to match the content of the index.
+    ///
+    /// Returns a non-zero value is the `notify_cb` callback returns non-zero.
+    pub fn checkoutIndex(self: *Repository, index: *git.Index, options: ?CheckoutOptions) !c_uint {
+        log.debug("Repository.checkoutHead called, options={}", .{options});
+
+        var ret: c_int = undefined;
+
+        if (options) |*opts| {
+            ret = try internal.wrapCallWithReturn("git_checkout_index", .{
+                internal.toC(self),
+                internal.toC(index),
+                internal.toC(opts),
+            });
+        } else {
+            ret = try internal.wrapCallWithReturn("git_checkout_index", .{ internal.toC(self), internal.toC(index), null });
+        }
+
+        log.debug("successfully checked out index", .{});
+
+        return @intCast(c_uint, ret);
+    }
+
+    /// Updates files in the working tree to match the content of the index.
+    ///
+    /// Returns a non-zero value is the `notify_cb` callback returns non-zero.
+    pub fn checkoutTree(self: *Repository, treeish: *const git.Object, options: ?CheckoutOptions) !c_uint {
+        log.debug("Repository.checkoutHead called, options={}", .{options});
+
+        var ret: c_int = undefined;
+
+        if (options) |*opts| {
+            ret = try internal.wrapCallWithReturn("git_checkout_tree", .{
+                internal.toC(self),
+                internal.toC(treeish),
+                internal.toC(opts),
+            });
+        } else {
+            ret = try internal.wrapCallWithReturn("git_checkout_tree", .{ internal.toC(self), internal.toC(treeish), null });
+        }
+
+        log.debug("successfully checked out tree", .{});
+
+        return @intCast(c_uint, ret);
+    }
+
+    pub const CheckoutOptions = extern struct {
+        version: c_uint = raw.GIT_CHECKOUT_OPTIONS_VERSION,
+
+        checkout_strategy: Strategy = .{},
+
+        /// don't apply filters like CRLF conversion
+        disable_filters: bool = false,
+
+        /// default is 0o755
+        dir_mode: c_uint = 0,
+
+        /// default is 0o644 or 0o755 as dictated by blob
+        file_mode: c_uint = 0,
+
+        /// default is O_CREAT | O_TRUNC | O_WRONLY
+        file_open_flags: c_int = 0,
+
+        /// Optional callback to get notifications on specific file states.
+        notify_flags: Notification = .{},
+
+        /// Optional callback to notify the consumer of checkout progress
+        notify_cb: ?fn (
+            why: Notification,
+            path: [*:0]const u8,
+            baseline: *git.DiffFile,
+            target: *git.DiffFile,
+            workdir: *git.DiffFile,
+            payload: *c_void,
+        ) callconv(.C) c_int = null,
+
+        /// Payload passed to notify_cb
+        notify_payload: ?*c_void = null,
+
+        /// Optional callback to notify the consumer of checkout progress
+        progress_cb: ?fn (
+            path: [*:0]const u8,
+            completed_steps: usize,
+            total_steps: usize,
+            payload: *c_void,
+        ) callconv(.C) void = null,
+
+        /// Payload passed to progress_cb
+        progress_payload: ?*c_void = null,
+
+        /// A list of wildmatch patterns or paths.
+        ///
+        /// By default, all paths are processed. If you pass an array of wildmatch patterns, those will be used to filter which
+        /// paths should be taken into account.
+        ///
+        /// Use GIT_CHECKOUT_DISABLE_PATHSPEC_MATCH to treat as a simple list.
+        paths: git.StrArray = .{},
+
+        /// The expected content of the working directory; defaults to HEAD.
+        ///
+        /// If the working directory does not match this baseline information, that will produce a checkout conflict.
+        baseline: ?*git.Tree = null,
+
+        /// Like `baseline` above, though expressed as an index. This option overrides `baseline`.
+        baseline_index: ?*git.Tree = null,
+
+        /// alternative checkout path to workdir
+        target_directory: ?[*:0]const u8 = null,
+
+        /// the name of the common ancestor side of conflicts
+        ancestor_label: ?[*:0]const u8 = null,
+
+        /// the name of the "our" side of conflicts 
+        our_label: ?[*:0]const u8 = null,
+
+        /// the name of the "their" side of conflicts
+        their_label: ?[*:0]const u8 = null,
+
+        /// Optional callback to notify the consumer of performance data. 
+        perfdata_cb: ?fn (perfdata: *const PerfData, payload: *c_void) callconv(.C) void = null,
+
+        /// Payload passed to perfdata_cb
+        perfdata_payload: ?*c_void = null,
+
+        pub const PerfData = extern struct {
+            mkdir_calls: usize,
+            stat_calls: usize,
+            chmod_calls: usize,
+        };
+
+        /// TODO: Add documentation
+        pub const Strategy = packed struct {
+            /// Allow safe updates that cannot overwrite uncommitted data.
+            /// If the uncommitted changes don't conflict with the checked out files,
+            /// the checkout will still proceed, leaving the changes intact.
+            ///
+            /// Mutually exclusive with FORCE.
+            /// FORCE takes precedence over SAFE.
+            SAFE: bool = false,
+
+            /// Allow all updates to force working directory to look like index.
+            ///
+            /// Mutually exclusive with SAFE.
+            /// FORCE takes precedence over SAFE.
+            FORCE: bool = false,
+
+            /// Allow checkout to recreate missing files
+            RECREATE_MISSING: bool = false,
+
+            z_padding: bool = false,
+
+            /// Allow checkout to make safe updates even if conflicts are found
+            ALLOW_CONFLICTS: bool = false,
+
+            /// Remove untracked files not in index (that are not ignored)
+            REMOVE_UNTRACKED: bool = false,
+
+            /// Remove ignored files not in index
+            REMOVE_IGNORED: bool = false,
+
+            /// Only update existing files, don't create new ones
+            UPDATE_ONLY: bool = false,
+
+            /// Normally checkout updates index entries as it goes; this stops that.
+            /// Implies `DONT_WRITE_INDEX`.
+            DONT_UPDATE_INDEX: bool = false,
+
+            /// Don't refresh index/config/etc before doing checkout
+            NO_REFRESH: bool = false,
+
+            /// Allow checkout to skip unmerged files
+            SKIP_UNMERGED: bool = false,
+
+            /// For unmerged files, checkout stage 2 from index
+            USE_OURS: bool = false,
+
+            /// For unmerged files, checkout stage 3 from index
+            USE_THEIRS: bool = false,
+
+            /// Treat pathspec as simple list of exact match file paths
+            DISABLE_PATHSPEC_MATCH: bool = false,
+
+            z_padding2: u2 = 0,
+
+            /// Recursively checkout submodules with same options (NOT IMPLEMENTED)
+            UPDATE_SUBMODULES: bool = false,
+
+            /// Recursively checkout submodules if HEAD moved in super repo (NOT IMPLEMENTED)
+            UPDATE_SUBMODULES_IF_CHANGED: bool = false,
+
+            /// Ignore directories in use, they will be left empty
+            SKIP_LOCKED_DIRECTORIES: bool = false,
+
+            /// Don't overwrite ignored files that exist in the checkout target
+            DONT_OVERWRITE_IGNORED: bool = false,
+
+            /// Write normal merge files for conflicts
+            CONFLICT_STYLE_MERGE: bool = false,
+
+            /// Include common ancestor data in diff3 format files for conflicts
+            CONFLICT_STYLE_DIFF3: bool = false,
+
+            /// Don't overwrite existing files or folders
+            DONT_REMOVE_EXISTING: bool = false,
+
+            /// Normally checkout writes the index upon completion; this prevents that.
+            DONT_WRITE_INDEX: bool = false,
+
+            z_padding3: u8 = 0,
+
+            pub fn format(
+                value: Strategy,
+                comptime fmt: []const u8,
+                options: std.fmt.FormatOptions,
+                writer: anytype,
+            ) !void {
+                _ = fmt;
+                return internal.formatWithoutFields(
+                    value,
+                    options,
+                    writer,
+                    &.{ "z_padding", "z_padding2", "z_padding3" },
+                );
+            }
+
+            test {
+                try std.testing.expectEqual(@sizeOf(c_uint), @sizeOf(Strategy));
+                try std.testing.expectEqual(@bitSizeOf(c_uint), @bitSizeOf(Strategy));
+            }
+
+            comptime {
+                std.testing.refAllDecls(@This());
+            }
+        };
+
+        pub const Notification = packed struct {
+            /// Invokes checkout on conflicting paths.
+            CONFLICT: bool = false,
+
+            /// Notifies about "dirty" files, i.e. those that do not need an update
+            /// but no longer match the baseline.  Core git displays these files when
+            /// checkout runs, but won't stop the checkout.
+            DIRTY: bool = false,
+
+            /// Sends notification for any file changed.
+            UPDATED: bool = false,
+
+            /// Notifies about untracked files.
+            UNTRACKED: bool = false,
+
+            /// Notifies about ignored files.
+            IGNORED: bool = false,
+
+            z_padding: u11 = 0,
+            z_padding2: u16 = 0,
+
+            pub const ALL = @bitCast(Notification, @as(c_uint, 0xFFFF));
+
+            test {
+                try std.testing.expectEqual(@sizeOf(c_uint), @sizeOf(Notification));
+                try std.testing.expectEqual(@bitSizeOf(c_uint), @bitSizeOf(Notification));
+            }
+
+            comptime {
+                std.testing.refAllDecls(@This());
+            }
+        };
+
+        test {
+            try std.testing.expectEqual(@sizeOf(raw.git_checkout_options), @sizeOf(CheckoutOptions));
+            try std.testing.expectEqual(@bitSizeOf(raw.git_checkout_options), @bitSizeOf(CheckoutOptions));
+        }
+
+        comptime {
+            std.testing.refAllDecls(@This());
+        }
+    };
+
     pub usingnamespace if (internal.available(.master)) struct {
         /// Retrieve the upstream merge of a local branch
         ///
