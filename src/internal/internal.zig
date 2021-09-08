@@ -162,6 +162,7 @@ const type_mappings = &[_]TypeMapping{
     .{ git.Repository.BranchIterator, raw.git_branch_iterator },
     .{ git.Repository.CheckoutOptions, raw.git_checkout_options },
     .{ git.Object, raw.git_object },
+    .{ git.SimilarityMetric, raw.git_diff_similarity_metric },
 };
 
 const TypeMapping = std.meta.Tuple(&.{ type, type });

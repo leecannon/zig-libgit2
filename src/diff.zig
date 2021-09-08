@@ -144,6 +144,33 @@ pub const DiffDelta = extern struct {
     }
 };
 
+pub const SimilarityMetric = extern struct {
+    file_signature: fn (out: *?*c_void, file: *const DiffFile, full_path: [*:0]const u8, payload: ?*c_void) callconv(.C) c_int,
+
+    buffer_signature: fn (
+        out: *?*c_void,
+        file: *const DiffFile,
+        buf: [*:0]const u8,
+        buf_len: usize,
+        payload: ?*c_void,
+    ) callconv(.C) c_int,
+
+    free_signature: fn (sig: ?*c_void, payload: ?*c_void) callconv(.C) void,
+
+    similarity: fn (score: *c_int, siga: ?*c_void, sigb: ?*c_void, payload: ?*c_void) callconv(.C) c_int,
+
+    payload: ?*c_void,
+
+    test {
+        try std.testing.expectEqual(@sizeOf(raw.git_diff_similarity_metric), @sizeOf(SimilarityMetric));
+        try std.testing.expectEqual(@bitSizeOf(raw.git_diff_similarity_metric), @bitSizeOf(SimilarityMetric));
+    }
+
+    comptime {
+        std.testing.refAllDecls(@This());
+    }
+};
+
 /// Flags for the delta object and the file objects on each side.
 ///
 /// These flags are used for both the `flags` value of the `git_diff_delta` and the flags for the `git_diff_file` objects

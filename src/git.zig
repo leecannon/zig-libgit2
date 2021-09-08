@@ -5,41 +5,37 @@ const log = std.log.scoped(.git);
 
 pub const PATH_LIST_SEPARATOR = raw.GIT_PATH_LIST_SEPARATOR;
 
+pub usingnamespace @import("alloc.zig");
+pub usingnamespace @import("annotated_commit.zig");
+pub usingnamespace @import("attribute.zig");
+pub usingnamespace @import("blame.zig");
+pub usingnamespace @import("blob.zig");
+pub usingnamespace @import("buffer.zig");
+pub usingnamespace @import("commit.zig");
+pub usingnamespace @import("config.zig");
+pub usingnamespace @import("diff.zig");
 pub usingnamespace @import("errors.zig");
+pub usingnamespace @import("handle.zig");
+pub usingnamespace @import("index.zig");
+pub usingnamespace @import("merge.zig");
+pub usingnamespace @import("object.zig");
+pub usingnamespace @import("odb.zig");
+pub usingnamespace @import("oid.zig");
+pub usingnamespace @import("ref_db.zig");
+pub usingnamespace @import("reference.zig");
+pub usingnamespace @import("repository.zig");
+pub usingnamespace @import("signature.zig");
+pub usingnamespace @import("status_list.zig");
+pub usingnamespace @import("str_array.zig");
+pub usingnamespace @import("tree.zig");
+pub usingnamespace @import("worktree.zig");
+pub usingnamespace @import("writestream.zig");
 
-pub const GitAllocator = @import("alloc.zig").GitAllocator;
-pub const AnnotatedCommit = @import("annotated_commit.zig").AnnotatedCommit;
-pub const Attribute = @import("attribute.zig").Attribute;
-pub const Blame = @import("blame.zig").Blame;
-pub const BlameHunk = @import("blame.zig").BlameHunk;
-pub const Blob = @import("blob.zig").Blob;
-pub const Buf = @import("buffer.zig").Buf;
-pub const Commit = @import("commit.zig").Commit;
-pub const Config = @import("config.zig").Config;
-pub const Diff = @import("diff.zig").Diff;
-pub const DiffDelta = @import("diff.zig").DiffDelta;
-pub const DiffHunk = @import("diff.zig").DiffHunk;
-pub const DiffFile = @import("diff.zig").DiffFile;
-pub const DiffFlags = @import("diff.zig").DiffFlags;
-pub const Handle = @import("handle.zig").Handle;
-pub const Index = @import("index.zig").Index;
-pub const Object = @import("object.zig").Object;
-pub const Odb = @import("odb.zig").Odb;
-pub const Oid = @import("oid.zig").Oid;
-pub const OidShortener = @import("oid.zig").OidShortener;
-pub const RefDb = @import("ref_db.zig").RefDb;
-pub const Reference = @import("reference.zig").Reference;
-pub const Repository = @import("repository.zig").Repository;
-pub const Signature = @import("signature.zig").Signature;
-pub const StatusList = @import("status_list.zig").StatusList;
-pub const StrArray = @import("str_array.zig").StrArray;
-pub const Tree = @import("tree.zig").Tree;
-pub const Worktree = @import("worktree.zig").Worktree;
-pub const WriteStream = @import("writestream.zig").WriteStream;
+const git = @This();
 
 /// Initialize global state. This function must be called before any other function.
 /// *NOTE*: This function can called multiple times.
-pub fn init() !Handle {
+pub fn init() !git.Handle {
     log.debug("init called", .{});
 
     const number = try internal.wrapCallWithReturn("git_libgit2_init", .{});
@@ -50,7 +46,7 @@ pub fn init() !Handle {
         log.debug("{} ongoing initalizations without shutdown", .{number});
     }
 
-    return Handle{};
+    return git.Handle{};
 }
 
 pub fn availableLibGit2Features() LibGit2Features {
@@ -84,70 +80,6 @@ pub const LibGit2Features = packed struct {
     test {
         try std.testing.expectEqual(@sizeOf(c_uint), @sizeOf(LibGit2Features));
         try std.testing.expectEqual(@bitSizeOf(c_uint), @bitSizeOf(LibGit2Features));
-    }
-
-    comptime {
-        std.testing.refAllDecls(@This());
-    }
-};
-
-/// Basic type (loose or packed) of any Git object.
-pub const ObjectType = enum(c_int) {
-    /// Object can be any of the following
-    ANY = -2,
-    /// Object is invalid.
-    INVALID = -1,
-    /// A commit object.
-    COMMIT = 1,
-    /// A tree (directory listing) object.
-    TREE = 2,
-    /// A file revision object.
-    BLOB = 3,
-    /// An annotated tag object.
-    TAG = 4,
-    /// A delta, base is given by an offset.
-    OFS_DELTA = 6,
-    /// A delta, base is given by object id.
-    REF_DELTA = 7,
-};
-
-pub const FileStatus = packed struct {
-    CURRENT: bool = false,
-    INDEX_NEW: bool = false,
-    INDEX_MODIFIED: bool = false,
-    INDEX_DELETED: bool = false,
-    INDEX_RENAMED: bool = false,
-    INDEX_TYPECHANGE: bool = false,
-    WT_NEW: bool = false,
-    WT_MODIFIED: bool = false,
-    WT_DELETED: bool = false,
-    WT_TYPECHANGE: bool = false,
-    WT_RENAMED: bool = false,
-    WT_UNREADABLE: bool = false,
-    IGNORED: bool = false,
-    CONFLICTED: bool = false,
-
-    z_padding1: u2 = 0,
-    z_padding2: u16 = 0,
-
-    pub fn format(
-        value: FileStatus,
-        comptime fmt: []const u8,
-        options: std.fmt.FormatOptions,
-        writer: anytype,
-    ) !void {
-        _ = fmt;
-        return internal.formatWithoutFields(
-            value,
-            options,
-            writer,
-            &.{ "z_padding1", "z_padding2" },
-        );
-    }
-
-    test {
-        try std.testing.expectEqual(@sizeOf(c_uint), @sizeOf(FileStatus));
-        try std.testing.expectEqual(@bitSizeOf(c_uint), @bitSizeOf(FileStatus));
     }
 
     comptime {

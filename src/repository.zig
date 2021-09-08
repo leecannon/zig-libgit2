@@ -2355,6 +2355,113 @@ pub const Repository = opaque {
         }
     };
 
+    pub fn cherrypickCommit(
+        self: *Repository,
+        cherrypick_commit: *git.Commit,
+        our_commit: *git.Commit,
+        mainline: bool,
+        options: ?git.MergeOptions,
+    ) !*git.Index {
+        log.debug(
+            "Repository.cherrypickCommit called, cherrypick_commit={*}, our_commit={*}, mainline={}, options={}",
+            .{ cherrypick_commit, our_commit, mainline, options },
+        );
+
+        var c_ret: ?*raw.git_index = undefined;
+
+        if (options) |opts| {
+            const c_opts = raw.git_merge_options{
+                .version = raw.GIT_MERGE_OPTIONS_VERSION,
+                .flags = @bitCast(u32, opts.flags),
+                .rename_threshold = opts.rename_threshold,
+                .target_limit = opts.target_limit,
+                .metric = internal.toC(opts.metric),
+                .recursion_limit = opts.recursion_limit,
+                .default_driver = if (opts.default_driver) |ptr| ptr.ptr else null,
+                .file_favor = @enumToInt(opts.file_favor),
+                .file_flags = @bitCast(u32, opts.file_flags),
+            };
+
+            try internal.wrapCall("git_cherrypick_commit", .{
+                &c_ret,
+                internal.toC(self),
+                internal.toC(cherrypick_commit),
+                internal.toC(our_commit),
+                @boolToInt(mainline),
+                &c_opts,
+            });
+        } else {
+            try internal.wrapCall("git_cherrypick_commit", .{
+                &c_ret,
+                internal.toC(self),
+                internal.toC(cherrypick_commit),
+                internal.toC(our_commit),
+                @boolToInt(mainline),
+                null,
+            });
+        }
+
+        const ret = internal.fromC(c_ret.?);
+
+        log.debug("successfully cherrypicked, index={*}", .{ret});
+
+        return ret;
+    }
+
+    pub fn cherrypick(
+        self: *Repository,
+        commit: *git.Commit,
+        options: ?CherrypickOptions,
+    ) !void {
+        log.debug(
+            "Repository.cherrypick called, commit={*}, options={}",
+            .{ commit, options },
+        );
+
+        if (options) |opts| {
+            const c_opts = raw.git_cherrypick_options{
+                .version = raw.GIT_CHERRYPICK_OPTIONS_VERSION,
+                .mainline = @boolToInt(opts.mainline),
+                .merge_opts = raw.git_merge_options{
+                    .version = raw.GIT_MERGE_OPTIONS_VERSION,
+                    .flags = @bitCast(u32, opts.merge_options.flags),
+                    .rename_threshold = opts.merge_options.rename_threshold,
+                    .target_limit = opts.merge_options.target_limit,
+                    .metric = internal.toC(opts.merge_options.metric),
+                    .recursion_limit = opts.merge_options.recursion_limit,
+                    .default_driver = if (opts.merge_options.default_driver) |ptr| ptr.ptr else null,
+                    .file_favor = @enumToInt(opts.merge_options.file_favor),
+                    .file_flags = @bitCast(u32, opts.merge_options.file_flags),
+                },
+                .checkout_opts = internal.toC(opts.checkout_options),
+            };
+
+            try internal.wrapCall("git_cherrypick", .{
+                internal.toC(self),
+                internal.toC(commit),
+                &c_opts,
+            });
+        } else {
+            try internal.wrapCall("git_cherrypick", .{
+                internal.toC(self),
+                internal.toC(commit),
+                null,
+            });
+        }
+
+        log.debug("successfully cherrypicked", .{});
+    }
+
+    pub const CherrypickOptions = struct {
+        mainline: bool = false,
+        merge_options: git.MergeOptions = .{},
+        checkout_options: CheckoutOptions = .{},
+
+        comptime {
+            std.testing.refAllDecls(@This());
+        }
+    };
+
     pub usingnamespace if (internal.available(.master)) struct {
         /// Retrieve the upstream merge of a local branch
         ///
@@ -2671,6 +2778,70 @@ pub const Repository = opaque {
     comptime {
         std.testing.refAllDecls(@This());
     }
+};
+
+pub const FileStatus = packed struct {
+    CURRENT: bool = false,
+    INDEX_NEW: bool = false,
+    INDEX_MODIFIED: bool = false,
+    INDEX_DELETED: bool = false,
+    INDEX_RENAMED: bool = false,
+    INDEX_TYPECHANGE: bool = false,
+    WT_NEW: bool = false,
+    WT_MODIFIED: bool = false,
+    WT_DELETED: bool = false,
+    WT_TYPECHANGE: bool = false,
+    WT_RENAMED: bool = false,
+    WT_UNREADABLE: bool = false,
+    IGNORED: bool = false,
+    CONFLICTED: bool = false,
+
+    z_padding1: u2 = 0,
+    z_padding2: u16 = 0,
+
+    pub fn format(
+        value: FileStatus,
+        comptime fmt: []const u8,
+        options: std.fmt.FormatOptions,
+        writer: anytype,
+    ) !void {
+        _ = fmt;
+        return internal.formatWithoutFields(
+            value,
+            options,
+            writer,
+            &.{ "z_padding1", "z_padding2" },
+        );
+    }
+
+    test {
+        try std.testing.expectEqual(@sizeOf(c_uint), @sizeOf(FileStatus));
+        try std.testing.expectEqual(@bitSizeOf(c_uint), @bitSizeOf(FileStatus));
+    }
+
+    comptime {
+        std.testing.refAllDecls(@This());
+    }
+};
+
+/// Basic type (loose or packed) of any Git object.
+pub const ObjectType = enum(c_int) {
+    /// Object can be any of the following
+    ANY = -2,
+    /// Object is invalid.
+    INVALID = -1,
+    /// A commit object.
+    COMMIT = 1,
+    /// A tree (directory listing) object.
+    TREE = 2,
+    /// A file revision object.
+    BLOB = 3,
+    /// An annotated tag object.
+    TAG = 4,
+    /// A delta, base is given by an offset.
+    OFS_DELTA = 6,
+    /// A delta, base is given by object id.
+    REF_DELTA = 7,
 };
 
 comptime {
