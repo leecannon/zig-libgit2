@@ -4,3 +4,4 @@ Check options (e.g. do defaults match upstream)
 make functions take options as nullable, as this equates with the defaults
 Use a raw.zig built from each release to make sure version flags are complete
 Check every extern structs size
+Use hasdecl to compile error instead of needing version
