@@ -17,6 +17,7 @@ pub usingnamespace @import("diff.zig");
 pub usingnamespace @import("errors.zig");
 pub usingnamespace @import("handle.zig");
 pub usingnamespace @import("index.zig");
+pub usingnamespace @import("mailmap.zig");
 pub usingnamespace @import("merge.zig");
 pub usingnamespace @import("object.zig");
 pub usingnamespace @import("odb.zig");

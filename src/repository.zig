@@ -2462,6 +2462,193 @@ pub const Repository = opaque {
         }
     };
 
+    /// Lookup a commit object from a repository.
+    pub fn commitLookup(self: *Repository, oid: *const git.Oid) !*git.Commit {
+        // This check is to prevent formating the oid when we are not going to print anything
+        if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
+            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            const slice = try oid.formatHex(&buf);
+            log.debug("Repository.commitLookup called, oid={s}", .{slice});
+        }
+
+        var commit: ?*raw.git_commit = undefined;
+
+        try internal.wrapCall("git_commit_lookup", .{ &commit, internal.toC(self), internal.toC(oid) });
+
+        const ret = internal.fromC(commit.?);
+
+        log.debug("successfully looked up commit, commit={*}", .{ret});
+
+        return ret;
+    }
+
+    /// Lookup a commit object from a repository, given a prefix of its identifier (short id).
+    pub fn commitLookupPrefix(self: *Repository, oid: *const git.Oid, size: usize) !*git.Commit {
+        // This check is to prevent formating the oid when we are not going to print anything
+        if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
+            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            const slice = try oid.formatHex(&buf);
+            log.debug("Repository.commitLookupPrefix called, oid={s}, size={}", .{ slice, size });
+        }
+
+        var commit: ?*raw.git_commit = undefined;
+
+        try internal.wrapCall("git_commit_lookup_prefix", .{ &commit, internal.toC(self), internal.toC(oid), size });
+
+        const ret = internal.fromC(commit.?);
+
+        log.debug("successfully looked up commit, commit={*}", .{ret});
+
+        return ret;
+    }
+
+    pub fn commitExtractSignature(self: *Repository, commit: *git.Oid, field: ?[:0]const u8) !ExtractSignatureResult {
+        // This check is to prevent formating the oid when we are not going to print anything
+        if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
+            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            const slice = try commit.formatHex(&buf);
+            log.debug("Repository.commitExtractSignature called, commit={s}, field={s}", .{ slice, field });
+        }
+
+        var result: ExtractSignatureResult = undefined;
+
+        const field_temp: [*c]const u8 = if (field) |slice| slice.ptr else null;
+        try internal.wrapCall("git_commit_extract_signature", .{
+            internal.toC(&result.signature),
+            internal.toC(&result.signed_data),
+            internal.toC(self),
+            internal.toC(commit),
+            field_temp,
+        });
+
+        return result;
+    }
+
+    pub const ExtractSignatureResult = struct {
+        signature: git.Buf,
+        signed_data: git.Buf,
+    };
+
+    pub fn commitCreate(
+        self: *Repository,
+        update_ref: ?[:0]const u8,
+        author: *const git.Signature,
+        committer: *const git.Signature,
+        message_encoding: ?[:0]const u8,
+        message: [:0]const u8,
+        tree: *const git.Tree,
+        parents: []const *const git.Commit,
+    ) !git.Oid {
+        log.debug("Repository.commitCreate called, update_ref={s}, author={*}, committer={*}, message_encoding={s}, message={s}, tree={*}", .{
+            update_ref,
+            author,
+            committer,
+            message_encoding,
+            message,
+            tree,
+        });
+
+        var ret: git.Oid = undefined;
+
+        const update_ref_temp: [*c]const u8 = if (update_ref) |slice| slice.ptr else null;
+        const encoding_temp: [*c]const u8 = if (message_encoding) |slice| slice.ptr else null;
+
+        try internal.wrapCall("git_commit_create", .{
+            internal.toC(&ret),
+            internal.toC(self),
+            update_ref_temp,
+            internal.toC(author),
+            internal.toC(committer),
+            encoding_temp,
+            message.ptr,
+            internal.toC(tree),
+            parents.len,
+            @intToPtr([*c]?*const raw.struct_git_commit, @ptrToInt(parents.ptr)),
+        });
+
+        // This check is to prevent formating the oid when we are not going to print anything
+        if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
+            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            const slice = try ret.formatHex(&buf);
+            log.debug("successfully created commit: {s}", .{slice});
+        }
+
+        return ret;
+    }
+
+    pub fn commitCreateBuffer(
+        self: *Repository,
+        author: *const git.Signature,
+        committer: *const git.Signature,
+        message_encoding: ?[:0]const u8,
+        message: [:0]const u8,
+        tree: *const git.Tree,
+        parents: []const *const git.Commit,
+    ) !git.Buf {
+        log.debug("Repository.commitCreateBuffer called, author={*}, committer={*}, message_encoding={s}, message={s}, tree={*}", .{
+            author,
+            committer,
+            message_encoding,
+            message,
+            tree,
+        });
+
+        var ret: git.Buf = undefined;
+
+        const encoding_temp: [*c]const u8 = if (message_encoding) |slice| slice.ptr else null;
+
+        try internal.wrapCall("git_commit_create_buffer", .{
+            internal.toC(&ret),
+            internal.toC(self),
+            internal.toC(author),
+            internal.toC(committer),
+            encoding_temp,
+            message.ptr,
+            internal.toC(tree),
+            parents.len,
+            @intToPtr([*c]?*const raw.struct_git_commit, @ptrToInt(parents.ptr)),
+        });
+
+        log.debug("successfully created commit: {s}", .{ret.toSlice()});
+
+        return ret;
+    }
+
+    pub fn commitCreateWithSignature(
+        self: *Repository,
+        commit_content: [:0]const u8,
+        signature: ?[:0]const u8,
+        signature_field: ?[:0]const u8,
+    ) !git.Oid {
+        log.debug("Repository.commitCreateWithSignature called, commit_content={s}, signature={s}, signature_field={s}", .{
+            commit_content,
+            signature,
+            signature_field,
+        });
+
+        var ret: git.Oid = undefined;
+
+        const signature_temp: [*c]const u8 = if (signature) |slice| slice.ptr else null;
+        const signature_field_temp: [*c]const u8 = if (signature_field) |slice| slice.ptr else null;
+
+        try internal.wrapCall("git_commit_create_with_signature", .{
+            internal.toC(&ret),
+            internal.toC(self),
+            commit_content.ptr,
+            signature_temp,
+            signature_field_temp,
+        });
+
+        // This check is to prevent formating the oid when we are not going to print anything
+        if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
+            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            const slice = try ret.formatHex(&buf);
+            log.debug("successfully created commit: {s}", .{slice});
+        }
+
+        return ret;
+    }
+
     pub usingnamespace if (internal.available(.master)) struct {
         /// Retrieve the upstream merge of a local branch
         ///

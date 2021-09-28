@@ -5,3 +5,14 @@ make functions take options as nullable, as this equates with the defaults
 Use a raw.zig built from each release to make sure version flags are complete
 Check every extern structs size
 Use hasdecl to compile error instead of needing version
+
+Change this pattern:
+    var buf: raw.git_buf = undefined;
+    try internal.wrapCall("git_commit_header_field", .{ &buf, internal.toC(self), field.ptr });
+    const ret = internal.fromC(buf);
+    return ret;
+
+Into this:
+    var buf: git.Buf = undefined;
+    try internal.wrapCall("git_commit_header_field", .{ internal.toC(&buf), internal.toC(self), field.ptr });
+    return buf;
