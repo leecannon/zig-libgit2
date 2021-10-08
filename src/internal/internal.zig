@@ -15,7 +15,7 @@ pub inline fn wrapCall(comptime name: []const u8, args: anytype) git.GitError!vo
 
         // We dont want to output log messages in tests, as the error might be expected
         // also dont incur the cost of calling `getDetailedLastError` if we are not going to use it
-        if (!std.builtin.is_test and @enumToInt(std.log.Level.warn) <= @enumToInt(std.log.level)) {
+        if (!@import("builtin").is_test and @enumToInt(std.log.Level.warn) <= @enumToInt(std.log.level)) {
             if (git.getDetailedLastError()) |detailed| {
                 log.warn(name ++ " failed with error {s}/{s} - {s}", .{
                     @errorName(err),
@@ -40,7 +40,7 @@ pub inline fn wrapCallWithReturn(
 
         // We dont want to output log messages in tests, as the error might be expected
         // also dont incur the cost of calling `getDetailedLastError` if we are not going to use it
-        if (!std.builtin.is_test and @enumToInt(std.log.Level.warn) <= @enumToInt(std.log.level)) {
+        if (!@import("builtin").is_test and @enumToInt(std.log.Level.warn) <= @enumToInt(std.log.level)) {
             if (git.getDetailedLastError()) |detailed| {
                 log.warn(name ++ " failed with error {s}/{s} - {s}", .{
                     @errorName(err),
@@ -165,6 +165,11 @@ const type_mappings = &[_]TypeMapping{
     .{ git.SimilarityMetric, raw.git_diff_similarity_metric },
     .{ git.Signature, raw.git_signature },
     .{ git.Mailmap, raw.git_mailmap },
+    .{ git.Config.ConfigEntry, raw.git_config_entry },
+    .{ git.Config.ConfigIterator, raw.git_config_iterator },
+    .{ git.Config.ConfigMap, raw.git_configmap },
+    .{ git.ConfigBackend, raw.git_config_backend },
+    .{ git.Transaction, raw.git_transaction },
 };
 
 const TypeMapping = std.meta.Tuple(&.{ type, type });

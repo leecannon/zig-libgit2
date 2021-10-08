@@ -19,7 +19,7 @@ This is an in-progress zig binding to libgit2, unfortunately libgit2 doesn't ful
 - [ ] clone.h
 - [x] commit.h
 - [x] common.h
-- [ ] config.h
+- [x] config.h
 - [ ] cred_helpers.h
 - [ ] credential_helpers.h
 - [ ] credential.h

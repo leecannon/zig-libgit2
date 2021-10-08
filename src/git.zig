@@ -28,6 +28,7 @@ pub usingnamespace @import("repository.zig");
 pub usingnamespace @import("signature.zig");
 pub usingnamespace @import("status_list.zig");
 pub usingnamespace @import("str_array.zig");
+pub usingnamespace @import("transaction.zig");
 pub usingnamespace @import("tree.zig");
 pub usingnamespace @import("worktree.zig");
 pub usingnamespace @import("writestream.zig");
