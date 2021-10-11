@@ -170,6 +170,7 @@ const type_mappings = &[_]TypeMapping{
     .{ git.Config.ConfigMap, raw.git_configmap },
     .{ git.ConfigBackend, raw.git_config_backend },
     .{ git.Transaction, raw.git_transaction },
+    .{ git.Credential, raw.git_credential },
 };
 
 const TypeMapping = std.meta.Tuple(&.{ type, type });
