@@ -1,5 +1,6 @@
 const std = @import("std");
 const raw = @import("raw.zig");
+const c = @import("c.zig");
 const git = @import("../git.zig");
 const log = std.log.scoped(.git);
 pub const LibraryVersion = @import("version.zig").LibraryVersion;
@@ -170,7 +171,7 @@ const type_mappings = &[_]TypeMapping{
     .{ git.Config.ConfigMap, raw.git_configmap },
     .{ git.ConfigBackend, raw.git_config_backend },
     .{ git.Transaction, raw.git_transaction },
-    .{ git.Credential, raw.git_credential },
+    .{ git.Credential, if (@hasDecl(c, "git_credential")) raw.git_credential else raw.git_cred },
 };
 
 const TypeMapping = std.meta.Tuple(&.{ type, type });

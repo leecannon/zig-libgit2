@@ -1,15 +1,23 @@
 const std = @import("std");
 const raw = @import("internal/raw.zig");
+const c = @import("internal/c.zig");
 const internal = @import("internal/internal.zig");
 const log = std.log.scoped(.git);
 
 const git = @import("git.zig");
 
+const hasCredential = @hasDecl(c, "git_credential");
+const RawCredentialType = if (hasCredential) raw.git_credential else raw.git_cred;
+
 pub const Credential = opaque {
     pub fn deinit(self: *Credential) void {
         log.debug("Credential.deinit called", .{});
 
-        raw.git_credential_free(internal.toC(self));
+        if (hasCredential) {
+            raw.git_credential_free(internal.toC(self));
+        } else {
+            raw.git_cred_free(internal.toC(self));
+        }
 
         log.debug("credential freed successfully", .{});
     }
@@ -17,7 +25,13 @@ pub const Credential = opaque {
     pub fn hasUsername(self: *const Credential) bool {
         log.debug("Credential.hasUsername called", .{});
 
-        const ret = raw.git_credential_has_username(internal.toC(self)) != 0;
+        var ret: bool = undefined;
+
+        if (hasCredential) {
+            ret = raw.git_credential_has_username(internal.toC(self)) != 0;
+        } else {
+            ret = raw.git_cred_has_username(internal.toC(self)) != 0;
+        }
 
         log.debug("credential has username: {}", .{ret});
 
@@ -27,7 +41,19 @@ pub const Credential = opaque {
     pub fn getUsername(self: *const Credential) ?[:0]const u8 {
         log.debug("Credential.getUsername called", .{});
 
-        const opt_username = raw.git_credential_get_username(internal.toC(self));
+        var opt_username: [*c]const u8 = undefined;
+
+        if (hasCredential) {
+            opt_username = raw.git_credential_get_username(internal.toC(self));
+        } else {
+            if (@hasDecl(c, "git_cred_get_username")) {
+                opt_username = raw.git_cred_get_username(internal.toC(self));
+            } else {
+                // TODO: make this a compile error when we move to full c header
+                log.crit("the version of libgit2 linked does not provide a function to fetch the username of a credential", .{});
+                return null;
+            }
+        }
 
         if (opt_username) |username| {
             const slice = std.mem.sliceTo(username, 0);
@@ -42,9 +68,13 @@ pub const Credential = opaque {
     pub fn initUserPassPlaintext(username: [:0]const u8, password: [:0]const u8) !*Credential {
         log.debug("Credential.initUserPassPlaintext called, username={s}, password={s}", .{ username, password });
 
-        var cred: ?*raw.git_credential = undefined;
+        var cred: ?*RawCredentialType = undefined;
 
-        try internal.wrapCall("git_credential_userpass_plaintext_new", .{ &cred, username.ptr, password.ptr });
+        if (hasCredential) {
+            try internal.wrapCall("git_credential_userpass_plaintext_new", .{ &cred, username.ptr, password.ptr });
+        } else {
+            try internal.wrapCall("git_cred_userpass_plaintext_new", .{ &cred, username.ptr, password.ptr });
+        }
 
         const ret = internal.fromC(cred.?);
 
@@ -57,9 +87,13 @@ pub const Credential = opaque {
     pub fn initDefault() !*Credential {
         log.debug("Credential.initDefault", .{});
 
-        var cred: ?*raw.git_credential = undefined;
+        var cred: ?*RawCredentialType = undefined;
 
-        try internal.wrapCall("git_credential_default_new", .{&cred});
+        if (hasCredential) {
+            try internal.wrapCall("git_credential_default_new", .{&cred});
+        } else {
+            try internal.wrapCall("git_cred_default_new", .{&cred});
+        }
 
         const ret = internal.fromC(cred.?);
 
@@ -74,9 +108,13 @@ pub const Credential = opaque {
     pub fn initUsername(username: [:0]const u8) !*Credential {
         log.debug("Credential.initUsername called, username={s}", .{username});
 
-        var cred: ?*raw.git_credential = undefined;
+        var cred: ?*RawCredentialType = undefined;
 
-        try internal.wrapCall("git_credential_username_new", .{ &cred, username.ptr });
+        if (hasCredential) {
+            try internal.wrapCall("git_credential_username_new", .{ &cred, username.ptr });
+        } else {
+            try internal.wrapCall("git_cred_username_new", .{ &cred, username.ptr });
+        }
 
         const ret = internal.fromC(cred.?);
 
@@ -103,18 +141,28 @@ pub const Credential = opaque {
             .{ username, publickey, privatekey, passphrase },
         );
 
-        var cred: ?*raw.git_credential = undefined;
+        var cred: ?*RawCredentialType = undefined;
 
         const publickey_c = if (publickey) |str| str.ptr else null;
         const passphrase_c = if (passphrase) |str| str.ptr else null;
 
-        try internal.wrapCall("git_credential_ssh_key_new", .{
-            &cred,
-            username.ptr,
-            publickey_c,
-            privatekey.ptr,
-            passphrase_c,
-        });
+        if (hasCredential) {
+            try internal.wrapCall("git_credential_ssh_key_new", .{
+                &cred,
+                username.ptr,
+                publickey_c,
+                privatekey.ptr,
+                passphrase_c,
+            });
+        } else {
+            try internal.wrapCall("git_cred_ssh_key_new", .{
+                &cred,
+                username.ptr,
+                publickey_c,
+                privatekey.ptr,
+                passphrase_c,
+            });
+        }
 
         const ret = internal.fromC(cred.?);
 
@@ -138,18 +186,28 @@ pub const Credential = opaque {
     ) !*Credential {
         log.debug("Credential.initSshKeyMemory called", .{});
 
-        var cred: ?*raw.git_credential = undefined;
+        var cred: ?*RawCredentialType = undefined;
 
         const publickey_c = if (publickey) |str| str.ptr else null;
         const passphrase_c = if (passphrase) |str| str.ptr else null;
 
-        try internal.wrapCall("git_credential_ssh_key_memory_new", .{
-            &cred,
-            username.ptr,
-            publickey_c,
-            privatekey.ptr,
-            passphrase_c,
-        });
+        if (hasCredential) {
+            try internal.wrapCall("git_credential_ssh_key_memory_new", .{
+                &cred,
+                username.ptr,
+                publickey_c,
+                privatekey.ptr,
+                passphrase_c,
+            });
+        } else {
+            try internal.wrapCall("git_cred_ssh_key_memory_new", .{
+                &cred,
+                username.ptr,
+                publickey_c,
+                privatekey.ptr,
+                passphrase_c,
+            });
+        }
 
         const ret = internal.fromC(cred.?);
 
@@ -200,9 +258,13 @@ pub const Credential = opaque {
 
         log.debug("Credential.initSshKeyInteractive called, username={s}", .{username});
 
-        var cred: ?*raw.git_credential = undefined;
+        var cred: ?*RawCredentialType = undefined;
 
-        try internal.wrapCall("git_credential_ssh_interactive_new", .{ &cred, username.ptr, cb, user_data });
+        if (hasCredential) {
+            try internal.wrapCall("git_credential_ssh_interactive_new", .{ &cred, username.ptr, cb, user_data });
+        } else {
+            try internal.wrapCall("git_cred_ssh_interactive_new", .{ &cred, username.ptr, cb, user_data });
+        }
 
         const ret = internal.fromC(cred.?);
 
@@ -214,9 +276,13 @@ pub const Credential = opaque {
     pub fn initSshKeyFromAgent(username: [:0]const u8) !*Credential {
         log.debug("Credential.initSshKeyFromAgent called, username={s}", .{username});
 
-        var cred: ?*raw.git_credential = undefined;
+        var cred: ?*RawCredentialType = undefined;
 
-        try internal.wrapCall("git_credential_ssh_key_from_agent", .{ &cred, username.ptr });
+        if (hasCredential) {
+            try internal.wrapCall("git_credential_ssh_key_from_agent", .{ &cred, username.ptr });
+        } else {
+            try internal.wrapCall("git_cred_ssh_key_from_agent", .{ &cred, username.ptr });
+        }
 
         const ret = internal.fromC(cred.?);
 
@@ -263,16 +329,27 @@ pub const Credential = opaque {
 
         log.debug("Credential.initSshKeyCustom called, username={s}", .{username});
 
-        var cred: ?*raw.git_credential = undefined;
+        var cred: ?*RawCredentialType = undefined;
 
-        try internal.wrapCall("git_credential_ssh_custom_new", .{
-            &cred,
-            username.ptr,
-            publickey.ptr,
-            publickey.len,
-            cb,
-            user_data,
-        });
+        if (hasCredential) {
+            try internal.wrapCall("git_credential_ssh_custom_new", .{
+                &cred,
+                username.ptr,
+                publickey.ptr,
+                publickey.len,
+                cb,
+                user_data,
+            });
+        } else {
+            try internal.wrapCall("git_cred_ssh_custom_new", .{
+                &cred,
+                username.ptr,
+                publickey.ptr,
+                publickey.len,
+                cb,
+                user_data,
+            });
+        }
 
         const ret = internal.fromC(cred.?);
 
