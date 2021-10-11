@@ -116,14 +116,6 @@ test "getBit - comptime_int" {
 pub fn getBits(target: anytype, comptime start_bit: comptime_int, comptime number_of_bits: comptime_int) std.meta.Int(.unsigned, number_of_bits) {
     const TargetType = @TypeOf(target);
     const ReturnType = std.meta.Int(.unsigned, number_of_bits);
-    const end_bit = start_bit + number_of_bits;
-    const MaskType = std.meta.Int(.unsigned, end_bit);
-
-    const mask: MaskType = comptime blk: {
-        var temp: MaskType = std.math.maxInt(MaskType);
-        temp <<= start_bit;
-        break :blk temp;
-    };
 
     comptime {
         if (number_of_bits == 0) @compileError("non-zero number_of_bits must be provided");
@@ -131,7 +123,7 @@ pub fn getBits(target: anytype, comptime start_bit: comptime_int, comptime numbe
         if (@typeInfo(TargetType) == .Int) {
             if (@typeInfo(TargetType).Int.signedness != .unsigned) @compileError("requires an unsigned integer, found " ++ @typeName(TargetType));
             if (start_bit >= @bitSizeOf(TargetType)) @compileError("start_bit index is out of bounds of the bit field");
-            if (end_bit > @bitSizeOf(TargetType)) @compileError("start_bit + number_of_bits is out of bounds of the bit field");
+            if (start_bit + number_of_bits > @bitSizeOf(TargetType)) @compileError("start_bit + number_of_bits is out of bounds of the bit field");
         } else if (@typeInfo(TargetType) == .ComptimeInt) {
             if (target < 0) @compileError("requires an unsigned integer, found " ++ @typeName(TargetType));
         } else {
@@ -139,7 +131,7 @@ pub fn getBits(target: anytype, comptime start_bit: comptime_int, comptime numbe
         }
     }
 
-    return @truncate(ReturnType, (@truncate(MaskType, target) & mask) >> start_bit);
+    return @truncate(ReturnType, target >> start_bit);
 }
 
 test "getBits" {
@@ -243,8 +235,8 @@ pub fn setBits(target: anytype, comptime start_bit: comptime_int, comptime numbe
 
     const peer_value = @as(TargetType, value);
 
-    if (getBits(peer_value, 0, (end_bit - start_bit)) != peer_value) {
-        @panic("value exceeds bit range");
+    if (std.debug.runtime_safety) {
+        if (getBits(peer_value, 0, (end_bit - start_bit)) != peer_value) @panic("value exceeds bit range");
     }
 
     const bitmask: TargetType = comptime ~(~@as(TargetType, 0) << (@bitSizeOf(TargetType) - end_bit) >> (@bitSizeOf(TargetType) - end_bit) >> start_bit << start_bit);

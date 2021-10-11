@@ -6,6 +6,8 @@ Use a raw.zig built from each release to make sure version flags are complete
 Check every extern structs size
 Use hasdecl to compile error instead of needing version
 
+Use bitjuggle package
+
 Change this pattern:
     var buf: raw.git_buf = undefined;
     try internal.wrapCall("git_commit_header_field", .{ &buf, internal.toC(self), field.ptr });
