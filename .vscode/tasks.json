@@ -6,7 +6,7 @@
         {
             "label": "zig build",
             "type": "process",
-            "command": "/home/lee/bin/zig",
+            "command": "zig",
             "args": [
                 "build"
             ],
