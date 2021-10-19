@@ -1,10 +1,12 @@
 3f02b5b95e90d6be25aedf3f861e173182e815d7
 
 Check options (e.g. do defaults match upstream)
+always use a `toC` function - no options should use internal.toC/fromC
 make functions take options as nullable, as this equates with the defaults
 Use a raw.zig built from each release to make sure version flags are complete
 Check every extern structs size
 Use hasdecl to compile error instead of needing version
+add documentation to *every* function
 
 Use bitjuggle package
 

@@ -6,30 +6,30 @@ This is an in-progress zig binding to libgit2, unfortunately libgit2 doesn't ful
 
 ## Files fully wrapped (others maybe partially complete)
 
-- [x] annotated_commit.h
-- [x] apply.h
-- [x] attr.h
-- [x] blame.h
-- [x] blob.h
-- [x] branch.h
-- [x] buffer.h
+- [X] annotated_commit.h
+- [X] apply.h
+- [X] attr.h
+- [X] blame.h
+- [X] blob.h
+- [X] branch.h
+- [X] buffer.h
 - [ ] cert.h
-- [x] checkout.h
-- [x] cherrypick.h
+- [X] checkout.h
+- [X] cherrypick.h
 - [ ] clone.h
-- [x] commit.h
-- [x] common.h
-- [x] config.h
+- [X] commit.h
+- [X] common.h
+- [X] config.h
 - [ ] credential_helpers.h
-- [x] credential.h
-- [ ] describe.h
+- [X] credential.h
+- [X] describe.h
 - [ ] diff.h
-- [x] errors.h
+- [X] errors.h
 - [ ] filter.h
 - [ ] global.h
 - [ ] graph.h
 - [ ] ignore.h
-- [x] index.h
+- [X] index.h
 - [ ] indexer.h
 - [ ] mailmap.h
 - [ ] merge.h
@@ -39,7 +39,7 @@ This is an in-progress zig binding to libgit2, unfortunately libgit2 doesn't ful
 - [ ] object.h
 - [ ] odb_backend.h
 - [ ] odb.h
-- [x] oid.h
+- [X] oid.h
 - [ ] oidarray.h
 - [ ] pack.h
 - [ ] patch.h
@@ -51,15 +51,15 @@ This is an in-progress zig binding to libgit2, unfortunately libgit2 doesn't ful
 - [ ] refs.h
 - [ ] refspec.h
 - [ ] remote.h
-- [x] repository.h
+- [X] repository.h
 - [ ] reset.h
 - [ ] revert.h
 - [ ] revparse.h
 - [ ] revwalk.h
 - [ ] signature.h
 - [ ] stash.h
-- [x] status.h
-- [x] strarray.h
+- [X] status.h
+- [X] strarray.h
 - [ ] submodule.h
 - [ ] tag.h
 - [ ] trace.h

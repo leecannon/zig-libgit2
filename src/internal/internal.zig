@@ -171,6 +171,7 @@ const type_mappings = &[_]TypeMapping{
     .{ git.Config.ConfigMap, raw.git_configmap },
     .{ git.ConfigBackend, raw.git_config_backend },
     .{ git.Transaction, raw.git_transaction },
+    .{ git.DescribeResult, raw.git_describe_result },
     .{ git.Credential, if (@hasDecl(c, "git_credential")) raw.git_credential else raw.git_cred },
 };
 

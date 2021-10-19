@@ -14,6 +14,7 @@ pub usingnamespace @import("buffer.zig");
 pub usingnamespace @import("commit.zig");
 pub usingnamespace @import("config.zig");
 pub usingnamespace @import("credential.zig");
+pub usingnamespace @import("describe.zig");
 pub usingnamespace @import("diff.zig");
 pub usingnamespace @import("errors.zig");
 pub usingnamespace @import("handle.zig");

@@ -11,13 +11,13 @@ pub const Buf = extern struct {
     asize: usize = 0,
     size: usize = 0,
 
-    pub fn fromSlice(slice: []u8) Buf {
-        return .{ .ptr = slice.ptr, .size = slice.len };
-    }
+    const zero_array = [_]u8{0};
 
-    pub fn toSlice(self: Buf) []const u8 {
-        if (self.size == 0) return &[_]u8{};
-        return self.ptr.?[0..self.size];
+    pub fn toSlice(self: Buf) [:0]const u8 {
+        if (self.size == 0) {
+            return zero_array[0..0 :0];
+        }
+        return self.ptr.?[0..self.size :0];
     }
 
     /// Free the memory referred to by the `Buf`

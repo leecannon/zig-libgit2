@@ -39,6 +39,24 @@ pub const Repository = opaque {
         APPLY_MAILBOX_OR_REBASE,
     };
 
+    /// Describe a commit
+    ///
+    /// Perform the describe operation on the current commit and the worktree.
+    pub fn describe(self: *Repository, options: git.DescribeOptions) !*git.DescribeResult {
+        log.debug("Repository.describe called, options={}", .{options});
+
+        var result: ?*raw.git_describe_result = undefined;
+
+        var c_options = options.toC();
+        try internal.wrapCall("git_describe_workdir", .{ &result, internal.toC(self), &c_options });
+
+        const ret = internal.fromC(result.?);
+
+        log.debug("successfully described commitish object", .{});
+
+        return ret;
+    }
+
     /// Retrieve the configured identity to use for reflogs
     pub fn identityGet(self: *const Repository) !Identity {
         log.debug("Repository.identityGet called", .{});
