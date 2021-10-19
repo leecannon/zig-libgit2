@@ -9,6 +9,8 @@ pub const DescribeOptions = struct {
     max_candidate_tags: c_uint = 10,
     describe_strategy: DescribeStrategy = .default,
 
+    pattern: ?[:0]const u8,
+
     /// When calculating the distance from the matching tag or reference, only walk down the first-parent ancestry.
     only_follow_first_parent: bool = false,
 
@@ -27,13 +29,14 @@ pub const DescribeOptions = struct {
     };
 
     pub fn toC(self: DescribeOptions) raw.git_describe_options {
-        var opt: raw.struct_git_describe_options = undefined;
-        _ = raw.git_describe_init_options(&opt, raw.GIT_DESCRIBE_OPTIONS_VERSION);
-        opt.max_candidates_tags = self.max_candidate_tags;
-        opt.describe_strategy = @enumToInt(self.describe_strategy);
-        opt.only_follow_first_parent = @boolToInt(self.only_follow_first_parent);
-        opt.show_commit_oid_as_fallback = @boolToInt(self.show_commit_oid_as_fallback);
-        return opt;
+        return .{
+            .version = raw.GIT_DESCRIBE_OPTIONS_VERSION,
+            .max_candidates_tags = self.max_candidate_tags,
+            .describe_strategy = @enumToInt(self.describe_strategy),
+            .pattern = if (self.pattern) |slice| slice.ptr else null,
+            .only_follow_first_parent = @boolToInt(self.only_follow_first_parent),
+            .show_commit_oid_as_fallback = @boolToInt(self.show_commit_oid_as_fallback),
+        };
     }
 
     comptime {
@@ -52,12 +55,12 @@ pub const DescribeFormatOptions = struct {
     dirty_suffix: ?[:0]const u8 = null,
 
     pub fn toC(self: DescribeFormatOptions) raw.git_describe_format_options {
-        var opt: raw.git_describe_format_options = undefined;
-        _ = raw.git_describe_format_options_init(&opt, raw.GIT_DESCRIBE_FORMAT_OPTIONS_VERSION);
-        opt.abbreviated_size = self.abbreviated_size;
-        opt.always_use_long_format = @boolToInt(self.always_use_long_format);
-        opt.dirty_suffix = if (self.dirty_suffix) |slice| slice.ptr else null;
-        return opt;
+        return .{
+            .version = raw.GIT_DESCRIBE_FORMAT_OPTIONS_VERSION,
+            .abbreviated_size = self.abbreviated_size,
+            .always_use_long_format = @boolToInt(self.always_use_long_format),
+            .dirty_suffix = if (self.dirty_suffix) |slice| slice.ptr else null,
+        };
     }
 
     comptime {
