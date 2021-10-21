@@ -161,7 +161,6 @@ const type_mappings = &[_]TypeMapping{
     .{ git.WriteStream, raw.git_writestream },
     .{ git.Commit, raw.git_commit },
     .{ git.Repository.BranchIterator, raw.git_branch_iterator },
-    .{ git.Repository.CheckoutOptions, raw.git_checkout_options },
     .{ git.Object, raw.git_object },
     .{ git.SimilarityMetric, raw.git_diff_similarity_metric },
     .{ git.Signature, raw.git_signature },

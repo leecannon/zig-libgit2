@@ -317,15 +317,13 @@ pub const Commit = opaque {
     pub fn getHeaderField(self: *const Commit, field: [:0]const u8) !git.Buf {
         log.debug("Commit.getHeaderField called, field={s}", .{field});
 
-        var buf: raw.git_buf = undefined;
+        var buf: git.Buf = undefined;
 
-        try internal.wrapCall("git_commit_header_field", .{ &buf, internal.toC(self), field.ptr });
+        try internal.wrapCall("git_commit_header_field", .{ internal.toC(&buf), internal.toC(self), field.ptr });
 
-        const ret = internal.fromC(buf);
+        log.debug("header field: {s}", .{buf.toSlice()});
 
-        log.debug("header field: {s}", .{ret.toSlice()});
-
-        return ret;
+        return buf;
     }
 
     pub fn amend(

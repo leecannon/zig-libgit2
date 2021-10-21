@@ -69,15 +69,10 @@ pub const DescribeFormatOptions = struct {
 };
 
 pub const DescribeResult = opaque {
-    pub fn format(self: *const DescribeResult, options: ?DescribeFormatOptions) !git.Buf {
+    pub fn format(self: *const DescribeResult, options: DescribeFormatOptions) !git.Buf {
         var buf: git.Buf = undefined;
 
-        if (options) |opt| {
-            const c_options = opt.toC();
-            try internal.wrapCall("git_describe_format", .{ internal.toC(&buf), internal.toC(self), &c_options });
-        } else {
-            try internal.wrapCall("git_describe_format", .{ internal.toC(&buf), internal.toC(self), null });
-        }
+        try internal.wrapCall("git_describe_format", .{ internal.toC(&buf), internal.toC(self), &options.toC() });
 
         log.debug("successfully formatted describe", .{});
 

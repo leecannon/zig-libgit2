@@ -365,57 +365,49 @@ pub const Config = opaque {
     pub fn findGlobal() ?git.Buf {
         log.debug("Config.findGlobal called", .{});
 
-        var buf: raw.git_buf = undefined;
+        var buf: git.Buf = undefined;
 
-        if (raw.git_config_find_global(&buf) == 0) return null;
+        if (raw.git_config_find_global(internal.toC(&buf)) == 0) return null;
 
-        const ret = internal.fromC(buf);
+        log.debug("global config path: {s}", .{buf.toSlice()});
 
-        log.debug("global config path: {s}", .{ret.toSlice()});
-
-        return ret;
+        return buf;
     }
 
     pub fn findXdg() ?git.Buf {
         log.debug("Config.findXdg called", .{});
 
-        var buf: raw.git_buf = undefined;
+        var buf: git.Buf = undefined;
 
-        if (raw.git_config_find_xdg(&buf) == 0) return null;
+        if (raw.git_config_find_xdg(internal.toC(&buf)) == 0) return null;
 
-        const ret = internal.fromC(buf);
+        log.debug("xdg config path: {s}", .{buf.toSlice()});
 
-        log.debug("xdg config path: {s}", .{ret.toSlice()});
-
-        return ret;
+        return buf;
     }
 
     pub fn findSystem() ?git.Buf {
         log.debug("Config.findSystem called", .{});
 
-        var buf: raw.git_buf = undefined;
+        var buf: git.Buf = undefined;
 
-        if (raw.git_config_find_system(&buf) == 0) return null;
+        if (raw.git_config_find_system(internal.toC(&buf)) == 0) return null;
 
-        const ret = internal.fromC(buf);
+        log.debug("system config path: {s}", .{buf.toSlice()});
 
-        log.debug("system config path: {s}", .{ret.toSlice()});
-
-        return ret;
+        return buf;
     }
 
     pub fn findProgramdata() ?git.Buf {
         log.debug("Config.findProgramdata called", .{});
 
-        var buf: raw.git_buf = undefined;
+        var buf: git.Buf = undefined;
 
-        if (raw.git_config_find_programdata(&buf) == 0) return null;
+        if (raw.git_config_find_programdata(internal.toC(&buf)) == 0) return null;
 
-        const ret = internal.fromC(buf);
+        log.debug("programdata config path: {s}", .{buf.toSlice()});
 
-        log.debug("programdata config path: {s}", .{ret.toSlice()});
-
-        return ret;
+        return buf;
     }
 
     pub fn lock(self: *Config) !*git.Transaction {

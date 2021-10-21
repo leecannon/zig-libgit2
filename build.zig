@@ -16,7 +16,8 @@ pub fn build(b: *std.build.Builder) void {
         const lib_test = b.addTest("src/tests.zig");
         lib_test.setTarget(target);
         lib_test.setBuildMode(mode);
-        linkLibGit(lib_test, target);
+        lib_test.linkLibC();
+        lib_test.linkSystemLibrary("git2");
         lib_test.addOptions("build_options", build_options);
 
         const lib_test_step = b.step("test_lib", "Run the lib tests");
@@ -25,7 +26,7 @@ pub fn build(b: *std.build.Builder) void {
         const sample_test = b.addTest("sample.zig");
         sample_test.setTarget(target);
         sample_test.setBuildMode(mode);
-        addLibGit(sample_test, target, "", version);
+        addLibGit(sample_test, "", version);
         const sample_test_step = b.step("test_sample", "Run the sample tests");
         sample_test_step.dependOn(&sample_test.step);
 
@@ -42,7 +43,7 @@ pub fn build(b: *std.build.Builder) void {
         sample_exe.setTarget(target);
         sample_exe.setBuildMode(mode);
         sample_exe.install();
-        addLibGit(sample_exe, target, "", version);
+        addLibGit(sample_exe, "", version);
         sample_exe.addOptions("build_options", build_options);
 
         const run_cmd = sample_exe.run();
@@ -58,7 +59,6 @@ pub fn build(b: *std.build.Builder) void {
 
 pub fn addLibGit(
     exe: *std.build.LibExeObjStep,
-    target: std.build.Target,
     comptime prefix_path: []const u8,
     version_of_libgit: LibraryVersion,
 ) void {
@@ -71,14 +71,6 @@ pub fn addLibGit(
         .path = .{ .path = prefix_path ++ "src/git.zig" },
         .dependencies = &[_]std.build.Pkg{build_options.getPackage("build_options")},
     });
-
-    linkLibGit(exe, target);
-}
-
-fn linkLibGit(exe: *std.build.LibExeObjStep, target: std.build.Target) void {
-    _ = target;
-
-    // TODO: Handle non-linux
 
     exe.linkLibC();
     exe.linkSystemLibrary("git2");

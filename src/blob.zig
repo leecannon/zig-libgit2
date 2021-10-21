@@ -76,26 +76,16 @@ pub const Blob = opaque {
     }
 
     pub usingnamespace if (internal.available(.@"0.99.0")) struct {
-        pub fn filter(self: *Blob, as_path: [:0]const u8, options: ?FilterOptions) !git.Buf {
+        pub fn filter(self: *Blob, as_path: [:0]const u8, options: FilterOptions) !git.Buf {
             log.debug("Blob.filter called, as_path={s}, options={}", .{ as_path, options });
 
-            var buf: raw.git_buf = undefined;
+            var buf: git.Buf = undefined;
 
-            if (options) |user_options| {
-                var opts: raw.git_blob_filter_options = .{
-                    .version = raw.GIT_BLOB_FILTER_OPTIONS_VERSION,
-                    .flags = @bitCast(u32, user_options.flags),
-                    .commit_id = if (user_options.commit_id) |commit| internal.toC(commit) else null,
-                };
-
-                try internal.wrapCall("git_blob_filter", .{ &buf, internal.toC(self), as_path.ptr, &opts });
-            } else {
-                try internal.wrapCall("git_blob_filter", .{ &buf, internal.toC(self), as_path.ptr, null });
-            }
+            try internal.wrapCall("git_blob_filter", .{ internal.toC(&buf), internal.toC(self), as_path.ptr, &options.toC() });
 
             log.debug("successfully filtered blob", .{});
 
-            return internal.fromC(buf);
+            return buf;
         }
 
         pub const FilterOptions = struct {
@@ -142,6 +132,14 @@ pub const Blob = opaque {
                     std.testing.refAllDecls(@This());
                 }
             };
+
+            pub fn toC(self: FilterOptions) raw.git_blob_filter_options {
+                return .{
+                    .version = raw.GIT_BLOB_FILTER_OPTIONS_VERSION,
+                    .flags = @bitCast(u32, self.flags),
+                    .commit_id = if (self.commit_id) |commit| internal.toC(commit) else null,
+                };
+            }
 
             comptime {
                 std.testing.refAllDecls(@This());

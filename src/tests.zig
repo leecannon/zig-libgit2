@@ -263,11 +263,7 @@ test "foreach file status extended on fresh repository" {
 
     var count: usize = 0;
 
-    _ = try test_handle.repo.fileStatusForeachExtendedWithUserData(
-        .{ .flags = git.Repository.FileStatusOptions.Flags.DEFAULT },
-        &count,
-        dummyFileStatusCallback,
-    );
+    _ = try test_handle.repo.fileStatusForeachExtendedWithUserData(.{}, &count, dummyFileStatusCallback);
 
     try std.testing.expectEqual(@as(usize, 0), count);
 }

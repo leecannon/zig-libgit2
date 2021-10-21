@@ -835,15 +835,12 @@ pub const Repository = opaque {
 
         log.debug("Repository.fileStatusForeachExtendedWithUserData called, options={}", .{options});
 
-        var opts: raw.git_status_options = .{
-            .version = raw.GIT_REPOSITORY_INIT_OPTIONS_VERSION,
-            .show = @enumToInt(options.show),
-            .flags = @bitCast(c_int, options.flags),
-            .pathspec = internal.toC(options.pathspec),
-            .baseline = if (options.baseline) |tree| internal.toC(tree) else null,
-        };
-
-        const ret = try internal.wrapCallWithReturn("git_status_foreach_ext", .{ internal.toC(self), &opts, cb, user_data });
+        const ret = try internal.wrapCallWithReturn("git_status_foreach_ext", .{
+            internal.toC(self),
+            &options.toC(),
+            cb,
+            user_data,
+        });
 
         log.debug("callback returned: {}", .{ret});
 
@@ -861,16 +858,8 @@ pub const Repository = opaque {
     pub fn statusList(self: *const Repository, options: FileStatusOptions) !*git.StatusList {
         log.debug("Repository.statusList called, options={}", .{options});
 
-        var opts: raw.git_status_options = .{
-            .version = raw.GIT_REPOSITORY_INIT_OPTIONS_VERSION,
-            .show = @enumToInt(options.show),
-            .flags = @bitCast(c_int, options.flags),
-            .pathspec = internal.toC(options.pathspec),
-            .baseline = if (options.baseline) |tree| internal.toC(tree) else null,
-        };
-
         var status_list: ?*raw.git_status_list = undefined;
-        try internal.wrapCall("git_status_list_new", .{ &status_list, internal.toC(self), &opts });
+        try internal.wrapCall("git_status_list_new", .{ &status_list, internal.toC(self), &options.toC() });
 
         log.debug("successfully fetched status list", .{});
 
@@ -909,12 +898,12 @@ pub const Repository = opaque {
             /// Says that callbacks should be made on untracked files.
             /// These will only be made if the workdir files are included in the status
             /// "show" option.
-            INCLUDE_UNTRACKED: bool = false,
+            INCLUDE_UNTRACKED: bool = true,
 
             /// Says that ignored files get callbacks.
             /// Again, these callbacks will only be made if the workdir files are
             /// included in the status "show" option.
-            INCLUDE_IGNORED: bool = false,
+            INCLUDE_IGNORED: bool = true,
 
             /// Indicates that callback should be made even on unmodified files.
             INCLUDE_UNMODIFIED: bool = false,
@@ -929,7 +918,7 @@ pub const Repository = opaque {
             /// directory is included (with a trailing slash on the entry name).
             /// This flag says to include all of the individual files in the directory
             /// instead.
-            RECURSE_UNTRACKED_DIRS: bool = false,
+            RECURSE_UNTRACKED_DIRS: bool = true,
 
             /// Indicates that the given path should be treated as a literal path,
             /// and not as a pathspec pattern.
@@ -983,14 +972,6 @@ pub const Repository = opaque {
 
             z_padding: u16 = 0,
 
-            pub const DEFAULT: Flags = blk: {
-                var opt = Flags{};
-                opt.INCLUDE_IGNORED = true;
-                opt.INCLUDE_UNTRACKED = true;
-                opt.RECURSE_UNTRACKED_DIRS = true;
-                break :blk opt;
-            };
-
             pub fn format(
                 value: Flags,
                 comptime fmt: []const u8,
@@ -1015,6 +996,16 @@ pub const Repository = opaque {
                 std.testing.refAllDecls(@This());
             }
         };
+
+        pub fn toC(self: FileStatusOptions) raw.git_status_options {
+            return .{
+                .version = raw.GIT_STATUS_OPTIONS_VERSION,
+                .show = @enumToInt(self.show),
+                .flags = @bitCast(c_int, self.flags),
+                .pathspec = internal.toC(self.pathspec),
+                .baseline = if (self.baseline) |tree| internal.toC(tree) else null,
+            };
+        }
 
         comptime {
             std.testing.refAllDecls(@This());
@@ -1117,45 +1108,15 @@ pub const Repository = opaque {
         self: *Repository,
         diff: *git.Diff,
         location: ApplyLocation,
-        comptime options: ?ApplyOptions,
+        options: ApplyOptions,
     ) !void {
         log.debug("Repository.applyDiff called, diff={*}, location={}, options={}", .{ diff, location, options });
-
-        const opts = if (options) |user_options| opts_blk: {
-            const delta_cb = if (user_options.delta_cb) |delta_cb| blk: {
-                break :blk struct {
-                    pub fn cb(delta: [*c]raw.git_diff_delta, payload: ?*c_void) callconv(.C) c_int {
-                        _ = payload;
-                        return delta_cb(internal.toC(delta));
-                    }
-                }.cb;
-            } else null;
-
-            const hunk_cb = if (user_options.hunk_cb) |hunk_cb| blk: {
-                break :blk struct {
-                    pub fn cb(hunk: [*c]raw.git_diff_hunk, payload: ?*c_void) callconv(.C) c_int {
-                        _ = payload;
-                        return hunk_cb(internal.toC(hunk));
-                    }
-                }.cb;
-            } else null;
-
-            var opts: raw.git_apply_options = undefined;
-            try internal.wrapCall("git_apply_options_init", .{ &opts, raw.GIT_APPLY_OPTIONS_VERSION });
-
-            opts.delta_cb = delta_cb;
-            opts.hunk_cb = hunk_cb;
-            opts.payload = null;
-            opts.flags = @bitCast(c_uint, user_options.flags);
-
-            break :opts_blk opts;
-        } else null;
 
         try internal.wrapCall("git_apply", .{
             internal.toC(self),
             internal.toC(diff),
-            internal.toC(location),
-            opts,
+            @enumToInt(location),
+            &options.toC(),
         });
 
         log.debug("apply completed", .{});
@@ -1169,55 +1130,19 @@ pub const Repository = opaque {
     /// * `user_data` - user data to be passed to callbacks
     /// * `options` - the options for the apply (or null for defaults)
     pub fn applyDiffWithUserData(
+        comptime T: type,
         self: *Repository,
         diff: *git.Diff,
         location: ApplyLocation,
-        user_data: anytype,
-        comptime options: ?ApplyOptionsWithUserData(@TypeOf(user_data)),
+        options: ApplyOptionsWithUserData(T),
     ) !void {
-        const UserDataType = @TypeOf(user_data);
-
-        log.debug("Repository.applyDiffWithUserData called, diff={*}, location={}, options={}", .{ diff, location, options });
-
-        const opts = if (options) |user_options| opts_blk: {
-            const delta_cb = if (user_options.delta_cb) |delta_cb| blk: {
-                break :blk struct {
-                    pub fn cb(delta: [*c]raw.git_diff_delta, payload: ?*c_void) callconv(.C) c_int {
-                        return delta_cb(
-                            internal.toC(delta.?),
-                            @intToPtr(UserDataType, @ptrToInt(payload)),
-                        );
-                    }
-                }.cb;
-            } else null;
-
-            const hunk_cb = if (user_options.hunk_cb) |hunk_cb| blk: {
-                break :blk struct {
-                    pub fn cb(hunk: [*c]raw.git_diff_hunk, payload: ?*c_void) callconv(.C) c_int {
-                        return hunk_cb(
-                            internal.toC(hunk.?),
-                            @intToPtr(UserDataType, @ptrToInt(payload)),
-                        );
-                    }
-                }.cb;
-            } else null;
-
-            var opts: raw.git_apply_options = undefined;
-            try internal.wrapCall("git_apply_options_init", .{ &opts, raw.GIT_APPLY_OPTIONS_VERSION });
-
-            opts.delta_cb = delta_cb;
-            opts.hunk_cb = hunk_cb;
-            opts.payload = user_data;
-            opts.flags = @bitCast(c_uint, user_options.flags);
-
-            break :opts_blk opts;
-        } else null;
+        log.debug("Repository.applyDiffWithUserData(" ++ @typeName(T) ++ ") called, diff={*}, location={}, options={}", .{ diff, location, options });
 
         try internal.wrapCall("git_apply", .{
             internal.toC(self),
             internal.toC(diff),
             internal.toC(location),
-            opts,
+            &options.toC(),
         });
 
         log.debug("apply completed", .{});
@@ -1233,52 +1158,21 @@ pub const Repository = opaque {
         self: *Repository,
         diff: *git.Diff,
         preimage: *git.Tree,
-        user_data: anytype,
-        comptime options: ?ApplyOptionsWithUserData(@TypeOf(user_data)),
+        options: ApplyOptions,
     ) !*git.Index {
         log.debug(
             "Repository.applyDiffToTree called, diff={*}, preimage={*}, options={}",
             .{ diff, preimage, options },
         );
 
-        const opts = if (options) |user_options| opts_blk: {
-            const delta_cb = if (user_options.delta_cb) |delta_cb| blk: {
-                break :blk struct {
-                    pub fn cb(delta: [*c]raw.git_diff_delta, payload: ?*c_void) callconv(.C) c_int {
-                        _ = payload;
-                        return delta_cb(internal.toC(delta.?));
-                    }
-                }.cb;
-            } else null;
-
-            const hunk_cb = if (user_options.hunk_cb) |hunk_cb| blk: {
-                break :blk struct {
-                    pub fn cb(hunk: [*c]raw.git_diff_hunk, payload: ?*c_void) callconv(.C) c_int {
-                        _ = payload;
-                        return hunk_cb(internal.toC(hunk.?));
-                    }
-                }.cb;
-            } else null;
-
-            var opts: raw.git_apply_options = undefined;
-            try internal.wrapCall("git_apply_options_init", .{ &opts, raw.GIT_APPLY_OPTIONS_VERSION });
-
-            opts.delta_cb = delta_cb;
-            opts.hunk_cb = hunk_cb;
-            opts.payload = null;
-            opts.flags = @bitCast(c_uint, user_options.flags);
-
-            break :opts_blk opts;
-        } else null;
-
-        var ret: [*c]raw.git_index = undefined;
+        var ret: ?*raw.git_index = undefined;
 
         try internal.wrapCall("git_apply_to_tree", .{
             &ret,
             internal.toC(self),
             internal.toC(preimage),
             internal.toC(diff),
-            opts,
+            &options.toC(),
         });
 
         const result = internal.fromC(ret.?);
@@ -1293,55 +1187,18 @@ pub const Repository = opaque {
     /// ## Parameters
     /// * `diff` - the diff to apply`
     /// * `preimage` - the tree to apply the diff to
-    /// * `user_data` - user data to be passed to callbacks
     /// * `options` - the options for the apply (or null for defaults)
     pub fn applyDiffToTreeWithUserData(
+        comptime T: type,
         self: *Repository,
         diff: *git.Diff,
         preimage: *git.Tree,
-        user_data: anytype,
-        comptime options: ?ApplyOptionsWithUserData(@TypeOf(user_data)),
+        options: ApplyOptionsWithUserData(T),
     ) !*git.Index {
-        const UserDataType = @TypeOf(user_data);
-
         log.debug(
-            "Repository.applyDiffToTreeWithUserData called, diff={*}, preimage={*}, options={}",
+            "Repository.applyDiffToTreeWithUserData(" ++ @typeName(T) ++ ") called, diff={*}, preimage={*}, options={}",
             .{ diff, preimage, options },
         );
-
-        const opts = if (options) |user_options| opts_blk: {
-            const delta_cb = if (user_options.delta_cb) |delta_cb| blk: {
-                break :blk struct {
-                    pub fn cb(delta: [*c]raw.git_diff_delta, payload: ?*c_void) callconv(.C) c_int {
-                        return delta_cb(
-                            internal.toC(delta.?),
-                            @intToPtr(UserDataType, @ptrToInt(payload)),
-                        );
-                    }
-                }.cb;
-            } else null;
-
-            const hunk_cb = if (user_options.hunk_cb) |hunk_cb| blk: {
-                break :blk struct {
-                    pub fn cb(hunk: [*c]raw.git_diff_hunk, payload: ?*c_void) callconv(.C) c_int {
-                        return hunk_cb(
-                            internal.toC(hunk.?),
-                            @intToPtr(UserDataType, @ptrToInt(payload)),
-                        );
-                    }
-                }.cb;
-            } else null;
-
-            var opts: raw.git_apply_options = undefined;
-            try internal.wrapCall("git_apply_options_init", .{ &opts, raw.GIT_APPLY_OPTIONS_VERSION });
-
-            opts.delta_cb = delta_cb;
-            opts.hunk_cb = hunk_cb;
-            opts.payload = user_data;
-            opts.flags = @bitCast(c_uint, user_options.flags);
-
-            break :opts_blk opts;
-        } else null;
 
         var ret: [*c]raw.git_index = undefined;
 
@@ -1350,7 +1207,7 @@ pub const Repository = opaque {
             internal.toC(self),
             internal.toC(preimage),
             internal.toC(diff),
-            opts,
+            &options.toC(),
         });
 
         const result = internal.fromC(ret.?);
@@ -1367,7 +1224,7 @@ pub const Repository = opaque {
         ///   - returns < 0, the apply process will be aborted.
         ///   - returns > 0, the delta will not be applied, but the apply process continues
         ///   - returns 0, the delta is applied, and the apply process continues.
-        delta_cb: ?fn (delta: *const git.DiffDelta) c_int = null,
+        delta_cb: ?fn (delta: *const git.DiffDelta) callconv(.C) c_int = null,
 
         /// callback that will be made per hunk
         ///
@@ -1375,9 +1232,19 @@ pub const Repository = opaque {
         ///   - returns < 0, the apply process will be aborted.
         ///   - returns > 0, the hunk will not be applied, but the apply process continues
         ///   - returns 0, the hunk is applied, and the apply process continues.
-        hunk_cb: ?fn (hunk: *const git.DiffHunk) c_int = null,
+        hunk_cb: ?fn (hunk: *const git.DiffHunk) callconv(.C) c_int = null,
 
         flags: ApplyOptionsFlags = .{},
+
+        pub fn toC(self: ApplyOptions) raw.git_apply_options {
+            return .{
+                .version = raw.GIT_APPLY_OPTIONS_VERSION,
+                .delta_cb = @ptrCast(raw.git_apply_delta_cb, self.delta_cb),
+                .hunk_cb = @ptrCast(raw.git_apply_hunk_cb, self.hunk_cb),
+                .payload = null,
+                .flags = @bitCast(c_uint, self.flags),
+            };
+        }
 
         comptime {
             std.testing.refAllDecls(@This());
@@ -1392,7 +1259,7 @@ pub const Repository = opaque {
             ///   - returns < 0, the apply process will be aborted.
             ///   - returns > 0, the delta will not be applied, but the apply process continues
             ///   - returns 0, the delta is applied, and the apply process continues.
-            delta_cb: ?fn (delta: *const git.DiffDelta, user_data: T) c_int = null,
+            delta_cb: ?fn (delta: *const git.DiffDelta, user_data: T) callconv(.C) c_int = null,
 
             /// callback that will be made per hunk
             ///
@@ -1400,9 +1267,21 @@ pub const Repository = opaque {
             ///   - returns < 0, the apply process will be aborted.
             ///   - returns > 0, the hunk will not be applied, but the apply process continues
             ///   - returns 0, the hunk is applied, and the apply process continues.
-            hunk_cb: ?fn (hunk: *const git.DiffHunk, user_data: T) c_int = null,
+            hunk_cb: ?fn (hunk: *const git.DiffHunk, user_data: T) callconv(.C) c_int = null,
+
+            payload: T,
 
             flags: ApplyOptionsFlags = .{},
+
+            pub fn toC(self: @This()) raw.git_apply_options {
+                return .{
+                    .version = raw.GIT_APPLY_OPTIONS_VERSION,
+                    .delta_cb = @ptrCast(raw.git_apply_delta_cb, self.delta_cb),
+                    .hunk_cb = @ptrCast(raw.git_apply_hunk_cb, self.hunk_cb),
+                    .payload = self.payload,
+                    .flags = @bitCast(c_uint, self.flags),
+                };
+            }
 
             comptime {
                 std.testing.refAllDecls(@This());
@@ -1725,26 +1604,12 @@ pub const Repository = opaque {
         log.debug("successfully added macro", .{});
     }
 
-    pub fn blameFile(self: *const Repository, path: [:0]const u8, options: ?BlameOptions) !*git.Blame {
+    pub fn blameFile(self: *const Repository, path: [:0]const u8, options: BlameOptions) !*git.Blame {
         log.debug("Repository.blameFile called, path={s}, options={}", .{ path, options });
 
         var blame: ?*raw.git_blame = undefined;
 
-        if (options) |user_options| {
-            var opts: raw.git_blame_options = .{
-                .version = raw.GIT_BLAME_OPTIONS_VERSION,
-                .flags = @bitCast(u32, user_options.flags),
-                .min_match_characters = user_options.min_match_characters,
-                .newest_commit = internal.toC(user_options.newest_commit),
-                .oldest_commit = internal.toC(user_options.oldest_commit),
-                .min_line = user_options.min_line,
-                .max_line = user_options.max_line,
-            };
-
-            try internal.wrapCall("git_blame_file", .{ &blame, internal.toC(self), path.ptr, &opts });
-        } else {
-            try internal.wrapCall("git_blame_file", .{ &blame, internal.toC(self), path.ptr, null });
-        }
+        try internal.wrapCall("git_blame_file", .{ &blame, internal.toC(self), path.ptr, &options.toC() });
 
         log.debug("successfully fetched file blame", .{});
 
@@ -1834,6 +1699,18 @@ pub const Repository = opaque {
                 std.testing.refAllDecls(@This());
             }
         };
+
+        pub fn toC(self: BlameOptions) raw.git_blame_options {
+            return .{
+                .version = raw.GIT_BLAME_OPTIONS_VERSION,
+                .flags = @bitCast(u32, self.flags),
+                .min_match_characters = self.min_match_characters,
+                .newest_commit = internal.toC(self.newest_commit),
+                .oldest_commit = internal.toC(self.oldest_commit),
+                .min_line = self.min_line,
+                .max_line = self.max_line,
+            };
+        }
 
         comptime {
             std.testing.refAllDecls(@This());
@@ -2025,15 +1902,13 @@ pub const Repository = opaque {
     pub fn remoteGetName(self: *Repository, refname: [:0]const u8) !git.Buf {
         log.debug("Repository.remoteGetName called, refname={s}", .{refname});
 
-        var c_buf: raw.git_buf = undefined;
+        var buf: git.Buf = undefined;
 
-        try internal.wrapCall("git_branch_remote_name", .{ &c_buf, internal.toC(self), refname.ptr });
+        try internal.wrapCall("git_branch_remote_name", .{ internal.toC(&buf), internal.toC(self), refname.ptr });
 
-        const ret = internal.fromC(c_buf);
+        log.debug("remote name acquired successfully, name={s}", .{buf.toSlice()});
 
-        log.debug("remote name acquired successfully, name={s}", .{ret.toSlice()});
-
-        return ret;
+        return buf;
     }
 
     /// Retrieve the upstream remote of a local branch
@@ -2042,15 +1917,13 @@ pub const Repository = opaque {
     pub fn remoteUpstreamRemote(self: *Repository, refname: [:0]const u8) !git.Buf {
         log.debug("Repository.remoteUpstreamRemote called, refname={s}", .{refname});
 
-        var c_buf: raw.git_buf = undefined;
+        var buf: git.Buf = undefined;
 
-        try internal.wrapCall("git_branch_upstream_remote", .{ &c_buf, internal.toC(self), refname.ptr });
+        try internal.wrapCall("git_branch_upstream_remote", .{ internal.toC(&buf), internal.toC(self), refname.ptr });
 
-        const ret = internal.fromC(c_buf);
+        log.debug("upstream remote name acquired successfully, name={s}", .{buf.toSlice()});
 
-        log.debug("upstream remote name acquired successfully, name={s}", .{ret.toSlice()});
-
-        return ret;
+        return buf;
     }
 
     /// Get the upstream name of a branch
@@ -2060,15 +1933,13 @@ pub const Repository = opaque {
     pub fn upstreamGetName(self: *Repository, refname: [:0]const u8) !git.Buf {
         log.debug("Repository.upstreamGetName called, refname={s}", .{refname});
 
-        var c_buf: raw.git_buf = undefined;
+        var buf: git.Buf = undefined;
 
-        try internal.wrapCall("git_branch_upstream_name", .{ &c_buf, internal.toC(self), refname.ptr });
+        try internal.wrapCall("git_branch_upstream_name", .{ internal.toC(&buf), internal.toC(self), refname.ptr });
 
-        const ret = internal.fromC(c_buf);
+        log.debug("upstream name acquired successfully, name={s}", .{buf.toSlice()});
 
-        log.debug("upstream name acquired successfully, name={s}", .{ret.toSlice()});
-
-        return ret;
+        return buf;
     }
 
     /// Updates files in the index and the working tree to match the content of the commit pointed at by HEAD.
@@ -2079,16 +1950,10 @@ pub const Repository = opaque {
     /// you checked out.
     ///
     /// Returns a non-zero value is the `notify_cb` callback returns non-zero.
-    pub fn checkoutHead(self: *Repository, options: ?CheckoutOptions) !c_uint {
+    pub fn checkoutHead(self: *Repository, options: CheckoutOptions) !c_uint {
         log.debug("Repository.checkoutHead called, options={}", .{options});
 
-        var ret: c_int = undefined;
-
-        if (options) |*opts| {
-            ret = try internal.wrapCallWithReturn("git_checkout_head", .{ internal.toC(self), internal.toC(opts) });
-        } else {
-            ret = try internal.wrapCallWithReturn("git_checkout_head", .{ internal.toC(self), null });
-        }
+        const ret = try internal.wrapCallWithReturn("git_checkout_head", .{ internal.toC(self), &options.toC() });
 
         log.debug("successfully checked out HEAD", .{});
 
@@ -2098,20 +1963,14 @@ pub const Repository = opaque {
     /// Updates files in the working tree to match the content of the index.
     ///
     /// Returns a non-zero value is the `notify_cb` callback returns non-zero.
-    pub fn checkoutIndex(self: *Repository, index: *git.Index, options: ?CheckoutOptions) !c_uint {
+    pub fn checkoutIndex(self: *Repository, index: *git.Index, options: CheckoutOptions) !c_uint {
         log.debug("Repository.checkoutHead called, options={}", .{options});
 
-        var ret: c_int = undefined;
-
-        if (options) |*opts| {
-            ret = try internal.wrapCallWithReturn("git_checkout_index", .{
-                internal.toC(self),
-                internal.toC(index),
-                internal.toC(opts),
-            });
-        } else {
-            ret = try internal.wrapCallWithReturn("git_checkout_index", .{ internal.toC(self), internal.toC(index), null });
-        }
+        const ret = try internal.wrapCallWithReturn("git_checkout_index", .{
+            internal.toC(self),
+            internal.toC(index),
+            &options.toC(),
+        });
 
         log.debug("successfully checked out index", .{});
 
@@ -2121,29 +1980,21 @@ pub const Repository = opaque {
     /// Updates files in the working tree to match the content of the index.
     ///
     /// Returns a non-zero value is the `notify_cb` callback returns non-zero.
-    pub fn checkoutTree(self: *Repository, treeish: *const git.Object, options: ?CheckoutOptions) !c_uint {
+    pub fn checkoutTree(self: *Repository, treeish: *const git.Object, options: CheckoutOptions) !c_uint {
         log.debug("Repository.checkoutHead called, options={}", .{options});
 
-        var ret: c_int = undefined;
-
-        if (options) |*opts| {
-            ret = try internal.wrapCallWithReturn("git_checkout_tree", .{
-                internal.toC(self),
-                internal.toC(treeish),
-                internal.toC(opts),
-            });
-        } else {
-            ret = try internal.wrapCallWithReturn("git_checkout_tree", .{ internal.toC(self), internal.toC(treeish), null });
-        }
+        const ret = try internal.wrapCallWithReturn("git_checkout_tree", .{
+            internal.toC(self),
+            internal.toC(treeish),
+            &options.toC(),
+        });
 
         log.debug("successfully checked out tree", .{});
 
         return @intCast(c_uint, ret);
     }
 
-    pub const CheckoutOptions = extern struct {
-        version: c_uint = raw.GIT_CHECKOUT_OPTIONS_VERSION,
-
+    pub const CheckoutOptions = struct {
         checkout_strategy: Strategy = .{},
 
         /// don't apply filters like CRLF conversion
@@ -2199,19 +2050,19 @@ pub const Repository = opaque {
         baseline: ?*git.Tree = null,
 
         /// Like `baseline` above, though expressed as an index. This option overrides `baseline`.
-        baseline_index: ?*git.Tree = null,
+        baseline_index: ?*git.Index = null,
 
         /// alternative checkout path to workdir
-        target_directory: ?[*:0]const u8 = null,
+        target_directory: ?[:0]const u8 = null,
 
         /// the name of the common ancestor side of conflicts
-        ancestor_label: ?[*:0]const u8 = null,
+        ancestor_label: ?[:0]const u8 = null,
 
         /// the name of the "our" side of conflicts 
-        our_label: ?[*:0]const u8 = null,
+        our_label: ?[:0]const u8 = null,
 
         /// the name of the "their" side of conflicts
-        their_label: ?[*:0]const u8 = null,
+        their_label: ?[:0]const u8 = null,
 
         /// Optional callback to notify the consumer of performance data. 
         perfdata_cb: ?fn (perfdata: *const PerfData, payload: *c_void) callconv(.C) void = null,
@@ -2223,9 +2074,13 @@ pub const Repository = opaque {
             mkdir_calls: usize,
             stat_calls: usize,
             chmod_calls: usize,
+
+            test {
+                try std.testing.expectEqual(@sizeOf(raw.git_checkout_perfdata), @sizeOf(PerfData));
+                try std.testing.expectEqual(@bitSizeOf(raw.git_checkout_perfdata), @bitSizeOf(PerfData));
+            }
         };
 
-        /// TODO: Add documentation
         pub const Strategy = packed struct {
             /// Allow safe updates that cannot overwrite uncommitted data.
             /// If the uncommitted changes don't conflict with the checked out files,
@@ -2363,9 +2218,29 @@ pub const Repository = opaque {
             }
         };
 
-        test {
-            try std.testing.expectEqual(@sizeOf(raw.git_checkout_options), @sizeOf(CheckoutOptions));
-            try std.testing.expectEqual(@bitSizeOf(raw.git_checkout_options), @bitSizeOf(CheckoutOptions));
+        pub fn toC(self: CheckoutOptions) raw.git_checkout_options {
+            return .{
+                .version = raw.GIT_CHECKOUT_OPTIONS_VERSION,
+                .checkout_strategy = @bitCast(c_uint, self.checkout_strategy),
+                .disable_filters = @boolToInt(self.disable_filters),
+                .dir_mode = self.dir_mode,
+                .file_mode = self.file_mode,
+                .file_open_flags = self.file_open_flags,
+                .notify_flags = @bitCast(c_uint, self.notify_flags),
+                .notify_cb = @ptrCast(raw.git_checkout_notify_cb, self.notify_cb),
+                .notify_payload = self.notify_payload,
+                .progress_cb = @ptrCast(raw.git_checkout_progress_cb, self.progress_cb),
+                .progress_payload = self.progress_payload,
+                .paths = internal.toC(self.paths),
+                .baseline = internal.toC(self.baseline),
+                .baseline_index = internal.toC(self.baseline_index),
+                .target_directory = if (self.target_directory) |ptr| ptr.ptr else null,
+                .ancestor_label = if (self.ancestor_label) |ptr| ptr.ptr else null,
+                .our_label = if (self.our_label) |ptr| ptr.ptr else null,
+                .their_label = if (self.their_label) |ptr| ptr.ptr else null,
+                .perfdata_cb = @ptrCast(raw.git_checkout_perfdata_cb, self.perfdata_cb),
+                .perfdata_payload = self.perfdata_payload,
+            };
         }
 
         comptime {
@@ -2378,7 +2253,7 @@ pub const Repository = opaque {
         cherrypick_commit: *git.Commit,
         our_commit: *git.Commit,
         mainline: bool,
-        options: ?git.MergeOptions,
+        options: git.MergeOptions,
     ) !*git.Index {
         log.debug(
             "Repository.cherrypickCommit called, cherrypick_commit={*}, our_commit={*}, mainline={}, options={}",
@@ -2387,37 +2262,14 @@ pub const Repository = opaque {
 
         var c_ret: ?*raw.git_index = undefined;
 
-        if (options) |opts| {
-            const c_opts = raw.git_merge_options{
-                .version = raw.GIT_MERGE_OPTIONS_VERSION,
-                .flags = @bitCast(u32, opts.flags),
-                .rename_threshold = opts.rename_threshold,
-                .target_limit = opts.target_limit,
-                .metric = internal.toC(opts.metric),
-                .recursion_limit = opts.recursion_limit,
-                .default_driver = if (opts.default_driver) |ptr| ptr.ptr else null,
-                .file_favor = @enumToInt(opts.file_favor),
-                .file_flags = @bitCast(u32, opts.file_flags),
-            };
-
-            try internal.wrapCall("git_cherrypick_commit", .{
-                &c_ret,
-                internal.toC(self),
-                internal.toC(cherrypick_commit),
-                internal.toC(our_commit),
-                @boolToInt(mainline),
-                &c_opts,
-            });
-        } else {
-            try internal.wrapCall("git_cherrypick_commit", .{
-                &c_ret,
-                internal.toC(self),
-                internal.toC(cherrypick_commit),
-                internal.toC(our_commit),
-                @boolToInt(mainline),
-                null,
-            });
-        }
+        try internal.wrapCall("git_cherrypick_commit", .{
+            &c_ret,
+            internal.toC(self),
+            internal.toC(cherrypick_commit),
+            internal.toC(our_commit),
+            @boolToInt(mainline),
+            &options.toC(),
+        });
 
         const ret = internal.fromC(c_ret.?);
 
@@ -2429,43 +2281,18 @@ pub const Repository = opaque {
     pub fn cherrypick(
         self: *Repository,
         commit: *git.Commit,
-        options: ?CherrypickOptions,
+        options: CherrypickOptions,
     ) !void {
         log.debug(
             "Repository.cherrypick called, commit={*}, options={}",
             .{ commit, options },
         );
 
-        if (options) |opts| {
-            const c_opts = raw.git_cherrypick_options{
-                .version = raw.GIT_CHERRYPICK_OPTIONS_VERSION,
-                .mainline = @boolToInt(opts.mainline),
-                .merge_opts = raw.git_merge_options{
-                    .version = raw.GIT_MERGE_OPTIONS_VERSION,
-                    .flags = @bitCast(u32, opts.merge_options.flags),
-                    .rename_threshold = opts.merge_options.rename_threshold,
-                    .target_limit = opts.merge_options.target_limit,
-                    .metric = internal.toC(opts.merge_options.metric),
-                    .recursion_limit = opts.merge_options.recursion_limit,
-                    .default_driver = if (opts.merge_options.default_driver) |ptr| ptr.ptr else null,
-                    .file_favor = @enumToInt(opts.merge_options.file_favor),
-                    .file_flags = @bitCast(u32, opts.merge_options.file_flags),
-                },
-                .checkout_opts = internal.toC(opts.checkout_options),
-            };
-
-            try internal.wrapCall("git_cherrypick", .{
-                internal.toC(self),
-                internal.toC(commit),
-                &c_opts,
-            });
-        } else {
-            try internal.wrapCall("git_cherrypick", .{
-                internal.toC(self),
-                internal.toC(commit),
-                null,
-            });
-        }
+        try internal.wrapCall("git_cherrypick", .{
+            internal.toC(self),
+            internal.toC(commit),
+            &options.toC(),
+        });
 
         log.debug("successfully cherrypicked", .{});
     }
@@ -2474,6 +2301,15 @@ pub const Repository = opaque {
         mainline: bool = false,
         merge_options: git.MergeOptions = .{},
         checkout_options: CheckoutOptions = .{},
+
+        pub fn toC(self: CherrypickOptions) raw.git_cherrypick_options {
+            return .{
+                .version = raw.GIT_CHERRYPICK_OPTIONS_VERSION,
+                .mainline = @boolToInt(self.mainline),
+                .merge_opts = self.merge_options.toC(),
+                .checkout_opts = self.checkout_options.toC(),
+            };
+        }
 
         comptime {
             std.testing.refAllDecls(@This());
@@ -2674,15 +2510,13 @@ pub const Repository = opaque {
         pub fn remoteUpstreamMerge(self: *Repository, refname: [:0]const u8) !git.Buf {
             log.debug("Repository.remoteUpstreamMerge called, refname={s}", .{refname});
 
-            var c_buf: raw.git_buf = undefined;
+            var buf: git.Buf = undefined;
 
-            try internal.wrapCall("git_branch_upstream_merge", .{ &c_buf, internal.toC(self), refname.ptr });
+            try internal.wrapCall("git_branch_upstream_merge", .{ internal.toC(&buf), internal.toC(self), refname.ptr });
 
-            const ret = internal.fromC(c_buf);
+            log.debug("upstream remote name acquired successfully, name={s}", .{buf.toSlice()});
 
-            log.debug("upstream remote name acquired successfully, name={s}", .{ret.toSlice()});
-
-            return ret;
+            return buf;
         }
 
         /// Look up the value of one git attribute for path with extended options.
@@ -2700,17 +2534,11 @@ pub const Repository = opaque {
         ) !git.Attribute {
             log.debug("Repository.attributeExtended called, options={}, path={s}, name={s}", .{ options, path, name });
 
-            var opts: raw.git_attr_options = .{
-                .version = raw.GIT_ATTR_OPTIONS_VERSION,
-                .flags = options.flags.toC(),
-                .commit_id = internal.toC(options.commit_id),
-            };
-
             var result: [*c]const u8 = undefined;
             try internal.wrapCall("git_attr_get_ext", .{
                 &result,
                 internal.toC(self),
-                &opts,
+                &options.toC(),
                 path.ptr,
                 name.ptr,
             });
@@ -2744,16 +2572,10 @@ pub const Repository = opaque {
 
             log.debug("Repository.attributeManyExtended called, options={}, path={s}", .{ options, path });
 
-            var opts: raw.git_attr_options = .{
-                .version = raw.GIT_ATTR_OPTIONS_VERSION,
-                .flags = options.flags.toC(),
-                .commit_id = internal.toC(options.commit_id),
-            };
-
             try internal.wrapCall("git_attr_get_many_ext", .{
                 @ptrCast([*c][*c]const u8, output_buffer.ptr),
                 internal.toC(self),
-                &opts,
+                &options.toC(),
                 path.ptr,
                 names.len,
                 @ptrCast([*c][*c]const u8, names.ptr),
@@ -2801,15 +2623,9 @@ pub const Repository = opaque {
 
             log.debug("Repository.attributeForeach called, options={}, path={s}", .{ options, path });
 
-            var opts: raw.git_attr_options = .{
-                .version = raw.GIT_ATTR_OPTIONS_VERSION,
-                .flags = options.flags.toC(),
-                .commit_id = internal.toC(options.commit_id),
-            };
-
             const ret = try internal.wrapCallWithReturn("git_attr_foreach_ext", .{
                 internal.toC(self),
-                &opts,
+                &options.toC(),
                 path.ptr,
                 cb,
                 null,
@@ -2863,15 +2679,9 @@ pub const Repository = opaque {
 
             log.debug("Repository.attributeForeachWithUserData called, options={}, path={s}", .{ options, path });
 
-            var opts: raw.git_attr_options = .{
-                .version = raw.GIT_ATTR_OPTIONS_VERSION,
-                .flags = options.flags.toC(),
-                .commit_id = internal.toC(options.commit_id),
-            };
-
             const ret = try internal.wrapCallWithReturn("git_attr_foreach_ext", .{
                 internal.toC(self),
-                &opts,
+                &options.toC(),
                 path.ptr,
                 cb,
                 user_data,
@@ -2885,6 +2695,14 @@ pub const Repository = opaque {
         pub const AttributeOptions = struct {
             flags: AttributeFlags,
             commit_id: *git.Oid,
+
+            pub fn toC(self: AttributeOptions) raw.git_attr_options {
+                return .{
+                    .version = raw.GIT_ATTR_OPTIONS_VERSION,
+                    .flags = self.flags.toC(),
+                    .commit_id = internal.toC(self.commit_id),
+                };
+            }
 
             comptime {
                 std.testing.refAllDecls(@This());

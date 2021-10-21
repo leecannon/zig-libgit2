@@ -92,20 +92,9 @@ pub const Handle = struct {
 
         log.debug("Handle.repositoryInitExtended called, path={s}, options={}", .{ path, options });
 
-        var opts: raw.git_repository_init_options = .{
-            .version = raw.GIT_REPOSITORY_INIT_OPTIONS_VERSION,
-            .flags = options.flags.toInt(),
-            .mode = options.mode.toInt(),
-            .workdir_path = if (options.workdir_path) |slice| slice.ptr else null,
-            .description = if (options.description) |slice| slice.ptr else null,
-            .template_path = if (options.template_path) |slice| slice.ptr else null,
-            .initial_head = if (options.initial_head) |slice| slice.ptr else null,
-            .origin_url = if (options.origin_url) |slice| slice.ptr else null,
-        };
-
         var repo: ?*raw.git_repository = undefined;
 
-        try internal.wrapCall("git_repository_init_ext", .{ &repo, path.ptr, &opts });
+        try internal.wrapCall("git_repository_init_ext", .{ &repo, path.ptr, &options.toC() });
 
         log.debug("repository created successfully", .{});
 
@@ -215,6 +204,19 @@ pub const Handle = struct {
                 };
             }
         };
+
+        pub fn toC(self: RepositoryInitOptions) raw.git_repository_init_options {
+            return .{
+                .version = raw.GIT_REPOSITORY_INIT_OPTIONS_VERSION,
+                .flags = self.flags.toInt(),
+                .mode = self.mode.toInt(),
+                .workdir_path = if (self.workdir_path) |slice| slice.ptr else null,
+                .description = if (self.description) |slice| slice.ptr else null,
+                .template_path = if (self.template_path) |slice| slice.ptr else null,
+                .initial_head = if (self.initial_head) |slice| slice.ptr else null,
+                .origin_url = if (self.origin_url) |slice| slice.ptr else null,
+            };
+        }
 
         comptime {
             std.testing.refAllDecls(@This());
