@@ -10,3 +10,13 @@ Currently working against commit 3f02b5b95e90d6be25aedf3f861e173182e815d7
 - [ ] Use bitjuggle package
 - [ ] language style
 - [ ] Remove `internal.toC` & `internal.fromC`
+
+## Libgit2 Version Timeline
+
+- 1.3.0  2021/09/27 b7bad55
+- 1.2.0  2021/09/02 4fd32be
+- 1.1.1  2021/06/30 8a0dc67
+- 1.1.0  2020/10/13 7f4fa17
+- 1.0.1  2020/06/04 0ced296
+- 1.0.0  2020/04/01 7d3c705
+- 0.99.0 2020/02/19 1722390

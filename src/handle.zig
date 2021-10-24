@@ -719,7 +719,7 @@ pub const Handle = struct {
         log.debug("successfully set HTTP expect continue mode", .{});
     }
 
-    pub usingnamespace if (internal.available(.master)) struct {
+    pub usingnamespace if (internal.available(.@"1.2.0")) struct {
         pub fn branchNameIsValid(name: [:0]const u8) !bool {
             log.debug("Handle.branchNameIsValid, name={s}", .{name});
 

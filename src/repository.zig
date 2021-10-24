@@ -1528,9 +1528,9 @@ pub const Repository = opaque {
 
             /// Passing the `INCLUDE_COMMIT` flag will use attributes from a `.gitattributes` file in a specific
             /// commit.
-            INCLUDE_COMMIT: if (internal.available(.master)) bool else void = if (internal.available(.master)) false else {},
+            INCLUDE_COMMIT: if (internal.available(.@"1.2.0")) bool else void = if (internal.available(.@"1.2.0")) false else {},
 
-            z_padding2: if (internal.available(.master)) u27 else u28 = 0,
+            z_padding2: if (internal.available(.@"1.2.0")) u27 else u28 = 0,
 
             pub fn format(
                 value: Extended,
@@ -1574,7 +1574,7 @@ pub const Repository = opaque {
                 result |= raw.GIT_ATTR_CHECK_INCLUDE_HEAD;
             }
 
-            if (comptime internal.available(.master)) {
+            if (comptime internal.available(.@"1.2.0")) {
                 if (self.extended.INCLUDE_COMMIT) {
                     result |= raw.GIT_ATTR_CHECK_INCLUDE_COMMIT;
                 }
@@ -2548,52 +2548,54 @@ pub const Repository = opaque {
         return null;
     }
 
-    /// Load the filter list for a given path.
-    ///
-    /// This will return null if no filters are requested for the given file.
-    ///
-    /// ## Parameters
-    /// * `blob` - The blob to which the filter will be applied (if known)
-    /// * `path` - Relative path of the file to be filtered
-    /// * `mode` - Filtering direction (WT->ODB or ODB->WT)
-    /// * `options` - Filter options
-    pub fn filterListLoadExtended(
-        self: *Repository,
-        blob: ?*git.Blob,
-        path: [:0]const u8,
-        mode: git.FilterMode,
-        options: git.FilterOptions,
-    ) !?*git.FilterList {
-        log.debug(
-            "Repository.filterListLoad called, blob={*}, path={s}, mode={}, options={}",
-            .{ blob, path, mode, options },
-        );
+    pub usingnamespace if (internal.available(.@"1.1.1")) struct {
+        /// Load the filter list for a given path.
+        ///
+        /// This will return null if no filters are requested for the given file.
+        ///
+        /// ## Parameters
+        /// * `blob` - The blob to which the filter will be applied (if known)
+        /// * `path` - Relative path of the file to be filtered
+        /// * `mode` - Filtering direction (WT->ODB or ODB->WT)
+        /// * `options` - Filter options
+        pub fn filterListLoadExtended(
+            self: *Repository,
+            blob: ?*git.Blob,
+            path: [:0]const u8,
+            mode: git.FilterMode,
+            options: git.FilterOptions,
+        ) !?*git.FilterList {
+            log.debug(
+                "Repository.filterListLoad called, blob={*}, path={s}, mode={}, options={}",
+                .{ blob, path, mode, options },
+            );
 
-        var c_opt: ?*raw.git_filter_list = undefined;
+            var c_opt: ?*raw.git_filter_list = undefined;
 
-        try internal.wrapCall("git_filter_list_load_ext", .{
-            &c_opt,
-            internal.toC(self),
-            internal.toC(blob),
-            path.ptr,
-            @enumToInt(mode),
-            &options.toC(),
-        });
+            try internal.wrapCall("git_filter_list_load_ext", .{
+                &c_opt,
+                internal.toC(self),
+                internal.toC(blob),
+                path.ptr,
+                @enumToInt(mode),
+                &options.toC(),
+            });
 
-        if (c_opt) |c_non_opt| {
-            const ret = internal.fromC(c_non_opt);
+            if (c_opt) |c_non_opt| {
+                const ret = internal.fromC(c_non_opt);
 
-            log.debug("successfully acquired filters for the given path: {*}", .{ret});
+                log.debug("successfully acquired filters for the given path: {*}", .{ret});
 
-            return ret;
+                return ret;
+            }
+
+            log.debug("no filters for the given path", .{});
+
+            return null;
         }
+    } else struct {};
 
-        log.debug("no filters for the given path", .{});
-
-        return null;
-    }
-
-    pub usingnamespace if (internal.available(.master)) struct {
+    pub usingnamespace if (internal.available(.@"1.2.0")) struct {
         /// Retrieve the upstream merge of a local branch
         ///
         /// This will return the currently configured "branch.*.remote" for a given branch. This branch must be local.
