@@ -1002,7 +1002,7 @@ pub const Repository = opaque {
                 .version = raw.GIT_STATUS_OPTIONS_VERSION,
                 .show = @enumToInt(self.show),
                 .flags = @bitCast(c_int, self.flags),
-                .pathspec = internal.toC(self.pathspec),
+                .pathspec = @bitCast(raw.git_strarray, self.pathspec),
                 .baseline = if (self.baseline) |tree| internal.toC(tree) else null,
             };
         }
@@ -1705,8 +1705,8 @@ pub const Repository = opaque {
                 .version = raw.GIT_BLAME_OPTIONS_VERSION,
                 .flags = @bitCast(u32, self.flags),
                 .min_match_characters = self.min_match_characters,
-                .newest_commit = internal.toC(self.newest_commit),
-                .oldest_commit = internal.toC(self.oldest_commit),
+                .newest_commit = @bitCast(raw.git_oid, self.newest_commit),
+                .oldest_commit = @bitCast(raw.git_oid, self.oldest_commit),
                 .min_line = self.min_line,
                 .max_line = self.max_line,
             };
@@ -2231,7 +2231,7 @@ pub const Repository = opaque {
                 .notify_payload = self.notify_payload,
                 .progress_cb = @ptrCast(raw.git_checkout_progress_cb, self.progress_cb),
                 .progress_payload = self.progress_payload,
-                .paths = internal.toC(self.paths),
+                .paths = @bitCast(raw.git_strarray, self.paths),
                 .baseline = internal.toC(self.baseline),
                 .baseline_index = internal.toC(self.baseline_index),
                 .target_directory = if (self.target_directory) |ptr| ptr.ptr else null,
@@ -2503,6 +2503,96 @@ pub const Repository = opaque {
         return ret;
     }
 
+    /// Load the filter list for a given path.
+    ///
+    /// This will return null if no filters are requested for the given file.
+    ///
+    /// ## Parameters
+    /// * `blob` - The blob to which the filter will be applied (if known)
+    /// * `path` - Relative path of the file to be filtered
+    /// * `mode` - Filtering direction (WT->ODB or ODB->WT)
+    /// * `flags` - Filter flags
+    pub fn filterListLoad(
+        self: *Repository,
+        blob: ?*git.Blob,
+        path: [:0]const u8,
+        mode: git.FilterMode,
+        flags: git.FilterFlags,
+    ) !?*git.FilterList {
+        log.debug(
+            "Repository.filterListLoad called, blob={*}, path={s}, mode={}, flags={}",
+            .{ blob, path, mode, flags },
+        );
+
+        var c_opt: ?*raw.git_filter_list = undefined;
+
+        try internal.wrapCall("git_filter_list_load", .{
+            &c_opt,
+            internal.toC(self),
+            internal.toC(blob),
+            path.ptr,
+            @enumToInt(mode),
+            @bitCast(c_uint, flags),
+        });
+
+        if (c_opt) |c_non_opt| {
+            const ret = internal.fromC(c_non_opt);
+
+            log.debug("successfully acquired filters for the given path: {*}", .{ret});
+
+            return ret;
+        }
+
+        log.debug("no filters for the given path", .{});
+
+        return null;
+    }
+
+    /// Load the filter list for a given path.
+    ///
+    /// This will return null if no filters are requested for the given file.
+    ///
+    /// ## Parameters
+    /// * `blob` - The blob to which the filter will be applied (if known)
+    /// * `path` - Relative path of the file to be filtered
+    /// * `mode` - Filtering direction (WT->ODB or ODB->WT)
+    /// * `options` - Filter options
+    pub fn filterListLoadExtended(
+        self: *Repository,
+        blob: ?*git.Blob,
+        path: [:0]const u8,
+        mode: git.FilterMode,
+        options: git.FilterOptions,
+    ) !?*git.FilterList {
+        log.debug(
+            "Repository.filterListLoad called, blob={*}, path={s}, mode={}, options={}",
+            .{ blob, path, mode, options },
+        );
+
+        var c_opt: ?*raw.git_filter_list = undefined;
+
+        try internal.wrapCall("git_filter_list_load_ext", .{
+            &c_opt,
+            internal.toC(self),
+            internal.toC(blob),
+            path.ptr,
+            @enumToInt(mode),
+            &options.toC(),
+        });
+
+        if (c_opt) |c_non_opt| {
+            const ret = internal.fromC(c_non_opt);
+
+            log.debug("successfully acquired filters for the given path: {*}", .{ret});
+
+            return ret;
+        }
+
+        log.debug("no filters for the given path", .{});
+
+        return null;
+    }
+
     pub usingnamespace if (internal.available(.master)) struct {
         /// Retrieve the upstream merge of a local branch
         ///
@@ -2715,11 +2805,9 @@ pub const Repository = opaque {
         pub fn blobFromBuffer(self: *Repository, buffer: []const u8) !git.Oid {
             log.debug("Repository.blobFromBuffer called, buffer={s}", .{buffer});
 
-            var oid: raw.git_oid = undefined;
+            var ret: git.Oid = undefined;
 
-            try internal.wrapCall("git_blob_create_from_buffer", .{ &oid, internal.toC(self), buffer.ptr, buffer.len });
-
-            const ret = internal.fromC(oid);
+            try internal.wrapCall("git_blob_create_from_buffer", .{ internal.toC(&ret), internal.toC(self), buffer.ptr, buffer.len });
 
             // This check is to prevent formating the oid when we are not going to print anything
             if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
@@ -2761,11 +2849,9 @@ pub const Repository = opaque {
         pub fn blobFromDisk(self: *Repository, path: [:0]const u8) !git.Oid {
             log.debug("Repository.blobFromDisk called, path={s}", .{path});
 
-            var oid: raw.git_oid = undefined;
+            var ret: git.Oid = undefined;
 
-            try internal.wrapCall("git_blob_create_from_disk", .{ &oid, internal.toC(self), path.ptr });
-
-            const ret = internal.fromC(oid);
+            try internal.wrapCall("git_blob_create_from_disk", .{ internal.toC(&ret), internal.toC(self), path.ptr });
 
             // This check is to prevent formating the oid when we are not going to print anything
             if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
@@ -2781,11 +2867,9 @@ pub const Repository = opaque {
         pub fn blobFromWorkdir(self: *Repository, relative_path: [:0]const u8) !git.Oid {
             log.debug("Repository.blobFromWorkdir called, relative_path={s}", .{relative_path});
 
-            var oid: raw.git_oid = undefined;
+            var ret: git.Oid = undefined;
 
-            try internal.wrapCall("git_blob_create_from_workdir", .{ &oid, internal.toC(self), relative_path.ptr });
-
-            const ret = internal.fromC(oid);
+            try internal.wrapCall("git_blob_create_from_workdir", .{ internal.toC(&ret), internal.toC(self), relative_path.ptr });
 
             // This check is to prevent formating the oid when we are not going to print anything
             if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {

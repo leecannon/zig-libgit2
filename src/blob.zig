@@ -89,11 +89,11 @@ pub const Blob = opaque {
         }
 
         pub const FilterOptions = struct {
-            flags: FilterFlags = .{},
+            flags: BlobFilterFlags = .{},
             /// The commit to load attributes from, when `FilterFlags.ATTRIBUTES_FROM_COMMIT` is specified.
             commit_id: ?*git.Oid = null,
 
-            pub const FilterFlags = packed struct {
+            pub const BlobFilterFlags = packed struct {
                 /// When set, filters will not be applied to binary files.
                 CHECK_FOR_BINARY: bool = false,
 
@@ -109,7 +109,7 @@ pub const Blob = opaque {
                 z_padding: u28 = 0,
 
                 pub fn format(
-                    value: FilterFlags,
+                    value: BlobFilterFlags,
                     comptime fmt: []const u8,
                     options: std.fmt.FormatOptions,
                     writer: anytype,
@@ -124,8 +124,8 @@ pub const Blob = opaque {
                 }
 
                 test {
-                    try std.testing.expectEqual(@sizeOf(u32), @sizeOf(FilterFlags));
-                    try std.testing.expectEqual(@bitSizeOf(u32), @bitSizeOf(FilterFlags));
+                    try std.testing.expectEqual(@sizeOf(u32), @sizeOf(BlobFilterFlags));
+                    try std.testing.expectEqual(@bitSizeOf(u32), @bitSizeOf(BlobFilterFlags));
                 }
 
                 comptime {

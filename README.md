@@ -4,6 +4,8 @@ Zig bindings to [libgit2](https://github.com/libgit2/libgit2)
 
 This is an in-progress zig binding to libgit2, unfortunately libgit2 doesn't full document all possible errors so every errorable function returns the full errorset.
 
+There is currently no plan to port the headers within "include/git2/sys", if anyone requires that functionailty raise an issue.
+
 ## Files fully wrapped (others maybe partially complete)
 
 - [X] annotated_commit.h
@@ -25,7 +27,7 @@ This is an in-progress zig binding to libgit2, unfortunately libgit2 doesn't ful
 - [X] describe.h
 - [ ] diff.h
 - [X] errors.h
-- [ ] filter.h
+- [X] filter.h
 - [ ] global.h
 - [ ] graph.h
 - [ ] ignore.h

@@ -171,6 +171,8 @@ const type_mappings = &[_]TypeMapping{
     .{ git.ConfigBackend, raw.git_config_backend },
     .{ git.Transaction, raw.git_transaction },
     .{ git.DescribeResult, raw.git_describe_result },
+    .{ git.Filter, raw.git_filter },
+    .{ git.FilterList, raw.git_filter_list },
     .{ git.Credential, if (@hasDecl(c, "git_credential")) raw.git_credential else raw.git_cred },
 };
 
@@ -203,14 +205,7 @@ fn toCType(comptime value_type: type) type {
 
             @compileError("unsupported type " ++ @typeName(value_type));
         },
-        .Struct => {
-            inline for (type_mappings) |mapping| {
-                if (value_type == mapping.@"0") return mapping.@"1";
-            }
-
-            @compileError("unsupported type " ++ @typeName(value_type));
-        },
-        else => @compileError("unimplemented type_info " ++ @typeName(value_type)),
+        else => @compileError("only pointers are supported received " ++ @typeName(value_type)),
     }
 }
 
@@ -241,14 +236,7 @@ fn fromCType(comptime value_type: type) type {
 
             @compileError("unsupported type " ++ @typeName(value_type));
         },
-        .Struct => {
-            inline for (type_mappings) |mapping| {
-                if (value_type == mapping.@"1") return mapping.@"0";
-            }
-
-            @compileError("unsupported type " ++ @typeName(value_type));
-        },
-        else => @compileError("unimplemented type_info " ++ @typeName(value_type)),
+        else => @compileError("only pointers are supported received " ++ @typeName(value_type)),
     }
 }
 
@@ -268,9 +256,6 @@ fn MakeCTypeFunction(comptime func: fn (type) type) type {
             switch (type_info) {
                 .Pointer => {
                     return @intToPtr(func(value_type), @ptrToInt(value));
-                },
-                .Struct => {
-                    return @bitCast(func(value_type), value);
                 },
                 else => @compileError("unimplemented type_info " ++ @typeName(value_type)),
             }
