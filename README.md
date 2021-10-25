@@ -30,7 +30,7 @@ There is currently no plan to port the headers within "include/git2/sys", if any
 - [X] filter.h
 - [X] global.h
 - [X] graph.h
-- [ ] ignore.h
+- [X] ignore.h
 - [X] index.h
 - [ ] indexer.h
 - [ ] mailmap.h
