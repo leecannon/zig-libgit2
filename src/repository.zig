@@ -2615,35 +2615,6 @@ pub const Repository = opaque {
         return ret;
     }
 
-    /// Determine if a commit is reachable from any of a list of commits by following parent edges.
-    ///
-    /// ## Parameters
-    /// * `commit` - a previously loaded commit
-    /// * `decendants` - oids of the commits
-    pub fn graphReachableFromAny(
-        self: *const Repository,
-        commit: *const git.Oid,
-        decendants: []const git.Oid,
-    ) !bool {
-        // This check is to prevent formating the oid when we are not going to print anything
-        if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
-            const slice = try commit.formatHex(&buf);
-            log.debug("Repository.graphReachableFromAny called, commit={s}, number of decendants={}", .{ slice, decendants.len });
-        }
-
-        const ret = (try internal.wrapCallWithReturn("git_graph_reachable_from_any", .{
-            internal.toC(self),
-            internal.toC(commit),
-            internal.toC(decendants.ptr),
-            decendants.len,
-        })) != 0;
-
-        log.debug("commit is an ancestor: {}", .{ret});
-
-        return ret;
-    }
-
     pub usingnamespace if (internal.available(.@"1.1.1")) struct {
         /// Load the filter list for a given path.
         ///
@@ -2688,6 +2659,35 @@ pub const Repository = opaque {
             log.debug("no filters for the given path", .{});
 
             return null;
+        }
+
+        /// Determine if a commit is reachable from any of a list of commits by following parent edges.
+        ///
+        /// ## Parameters
+        /// * `commit` - a previously loaded commit
+        /// * `decendants` - oids of the commits
+        pub fn graphReachableFromAny(
+            self: *const Repository,
+            commit: *const git.Oid,
+            decendants: []const git.Oid,
+        ) !bool {
+            // This check is to prevent formating the oid when we are not going to print anything
+            if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
+                var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+                const slice = try commit.formatHex(&buf);
+                log.debug("Repository.graphReachableFromAny called, commit={s}, number of decendants={}", .{ slice, decendants.len });
+            }
+
+            const ret = (try internal.wrapCallWithReturn("git_graph_reachable_from_any", .{
+                internal.toC(self),
+                internal.toC(commit),
+                internal.toC(decendants.ptr),
+                decendants.len,
+            })) != 0;
+
+            log.debug("commit is an ancestor: {}", .{ret});
+
+            return ret;
         }
     } else struct {};
 
