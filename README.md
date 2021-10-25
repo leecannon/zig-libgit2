@@ -28,8 +28,8 @@ There is currently no plan to port the headers within "include/git2/sys", if any
 - [ ] diff.h
 - [X] errors.h
 - [X] filter.h
-- [ ] global.h
-- [ ] graph.h
+- [X] global.h
+- [X] graph.h
 - [ ] ignore.h
 - [X] index.h
 - [ ] indexer.h

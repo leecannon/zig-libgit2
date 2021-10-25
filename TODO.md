@@ -10,6 +10,7 @@ Currently working against commit 3f02b5b95e90d6be25aedf3f861e173182e815d7
 - [ ] Use bitjuggle package
 - [ ] language style
 - [ ] Remove `internal.toC` & `internal.fromC`
+- [ ] Make as many pointers const as possible
 
 ## Libgit2 Version Timeline
 

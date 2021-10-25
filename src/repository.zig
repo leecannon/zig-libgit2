@@ -2548,6 +2548,102 @@ pub const Repository = opaque {
         return null;
     }
 
+    /// Count the number of unique commits between two commit objects
+    ///
+    /// There is no need for branches containing the commits to have any upstream relationship, but it helps to think of one as a
+    // branch and the other as its upstream, the `ahead` and `behind` values will be what git would report for the branches.
+    ///
+    /// ## Parameters
+    /// * `local` - the commit for local
+    /// * `upstream` - the commit for upstream
+    pub fn graphAheadBehind(
+        self: *const Repository,
+        local: *const git.Oid,
+        upstream: *const git.Oid,
+    ) !GraphAheadBehindResult {
+        // This check is to prevent formating the oid when we are not going to print anything
+        if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
+            var buf1: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            var buf2: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            const slice1 = try local.formatHex(&buf1);
+            const slice2 = try upstream.formatHex(&buf2);
+            log.debug("Repository.graphAheadBehind called, local={s}, upstream={s}", .{ slice1, slice2 });
+        }
+
+        var ret: GraphAheadBehindResult = undefined;
+
+        try internal.wrapCall("git_graph_ahead_behind", .{
+            &ret.ahead,
+            &ret.behind,
+            internal.toC(self),
+            internal.toC(local),
+            internal.toC(upstream),
+        });
+
+        log.debug("successfully got unique commits: {}", .{ret});
+
+        return ret;
+    }
+
+    pub const GraphAheadBehindResult = struct { ahead: usize, behind: usize };
+
+    /// Determine if a commit is the descendant of another commit.
+    ///
+    /// Note that a commit is not considered a descendant of itself, in contrast to `git merge-base --is-ancestor`.
+    ///
+    /// ## Parameters
+    /// * `commit` - a previously loaded commit
+    /// * `ancestor` - a potential ancestor commit
+    pub fn graphDecendantOf(self: *const Repository, commit: *const git.Oid, ancestor: *const git.Oid) !bool {
+        // This check is to prevent formating the oid when we are not going to print anything
+        if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
+            var buf1: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            var buf2: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            const slice1 = try commit.formatHex(&buf1);
+            const slice2 = try ancestor.formatHex(&buf2);
+            log.debug("Repository.graphDecendantOf called, commit={s}, ancestor={s}", .{ slice1, slice2 });
+        }
+
+        const ret = (try internal.wrapCallWithReturn("git_graph_descendant_of", .{
+            internal.toC(self),
+            internal.toC(commit),
+            internal.toC(ancestor),
+        })) != 0;
+
+        log.debug("commit is an ancestor: {}", .{ret});
+
+        return ret;
+    }
+
+    /// Determine if a commit is reachable from any of a list of commits by following parent edges.
+    ///
+    /// ## Parameters
+    /// * `commit` - a previously loaded commit
+    /// * `decendants` - oids of the commits
+    pub fn graphReachableFromAny(
+        self: *const Repository,
+        commit: *const git.Oid,
+        decendants: []const git.Oid,
+    ) !bool {
+        // This check is to prevent formating the oid when we are not going to print anything
+        if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
+            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            const slice = try commit.formatHex(&buf);
+            log.debug("Repository.graphReachableFromAny called, commit={s}, number of decendants={}", .{ slice, decendants.len });
+        }
+
+        const ret = (try internal.wrapCallWithReturn("git_graph_reachable_from_any", .{
+            internal.toC(self),
+            internal.toC(commit),
+            internal.toC(decendants.ptr),
+            decendants.len,
+        })) != 0;
+
+        log.debug("commit is an ancestor: {}", .{ret});
+
+        return ret;
+    }
+
     pub usingnamespace if (internal.available(.@"1.1.1")) struct {
         /// Load the filter list for a given path.
         ///
