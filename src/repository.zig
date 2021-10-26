@@ -2503,6 +2503,27 @@ pub const Repository = opaque {
         return ret;
     }
 
+    /// Create a new mailmap instance from a repository, loading mailmap files based on the repository's configuration.
+    ///
+    /// Mailmaps are loaded in the following order:
+    ///  1. '.mailmap' in the root of the repository's working directory, if present.
+    ///  2. The blob object identified by the 'mailmap.blob' config entry, if set.
+    /// 	   [NOTE: 'mailmap.blob' defaults to 'HEAD:.mailmap' in bare repositories]
+    ///  3. The path in the 'mailmap.file' config entry, if set.
+    pub fn mailmapFromRepo(self: *Repository) !*git.Mailmap {
+        log.debug("Repository.mailmapFromRepo called", .{});
+
+        var mailmap: ?*raw.git_mailmap = undefined;
+
+        try internal.wrapCall("git_mailmap_from_repository", .{ &mailmap, internal.toC(self) });
+
+        const ret = internal.fromC(mailmap.?);
+
+        log.debug("successfully loaded mailmap from repo: {*}", .{ret});
+
+        return ret;
+    }
+
     /// Load the filter list for a given path.
     ///
     /// This will return null if no filters are requested for the given file.

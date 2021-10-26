@@ -33,7 +33,7 @@ There is currently no plan to port the headers within "include/git2/sys", if any
 - [X] ignore.h
 - [X] index.h
 - [X] indexer.h
-- [ ] mailmap.h
+- [X] mailmap.h
 - [ ] merge.h
 - [ ] message.h
 - [ ] net.h
