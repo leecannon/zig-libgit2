@@ -9,7 +9,17 @@ Currently working against commit 3f02b5b95e90d6be25aedf3f861e173182e815d7
 - [ ] package with zigmod/gyro
 - [ ] Use bitjuggle package
 - [ ] language style
-- [ ] Remove `internal.toC` & `internal.fromC`
+- [ ] remove:
+    ```zig
+    var c_thing: CType = undefined
+    try internal.wrapCall("some_func", .{ &c_thing });
+    const ret  = internal.toC(c_thing.?);
+    ```
+    Replace with
+    ```zig
+    var ret: NonCType = undefined
+    try internal.wrapCall("some_func", .{ internal.toC(&ret) });
+    ```
 - [ ] Make as many pointers const as possible
 
 ## Libgit2 Version Timeline

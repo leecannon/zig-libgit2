@@ -173,6 +173,8 @@ const type_mappings = &[_]TypeMapping{
     .{ git.DescribeResult, raw.git_describe_result },
     .{ git.Filter, raw.git_filter },
     .{ git.FilterList, raw.git_filter_list },
+    .{ git.Indexer, raw.git_indexer },
+    .{ git.Indexer.Progress, raw.git_indexer_progress },
     .{ git.Credential, if (@hasDecl(c, "git_credential")) raw.git_credential else raw.git_cred },
 };
 
