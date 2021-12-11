@@ -24,10 +24,16 @@ pub fn isBitSet(target: anytype, comptime bit: comptime_int) bool {
 
     comptime {
         if (@typeInfo(TargetType) == .Int) {
-            if (@typeInfo(TargetType).Int.signedness != .unsigned) @compileError("requires an unsigned integer, found " ++ @typeName(TargetType));
-            if (bit >= @bitSizeOf(TargetType)) @compileError("bit index is out of bounds of the bit field");
+            if (@typeInfo(TargetType).Int.signedness != .unsigned) {
+                @compileError("requires an unsigned integer, found " ++ @typeName(TargetType));
+            }
+            if (bit >= @bitSizeOf(TargetType)) {
+                @compileError("bit index is out of bounds of the bit field");
+            }
         } else if (@typeInfo(TargetType) == .ComptimeInt) {
-            if (target < 0) @compileError("requires an unsigned integer, found " ++ @typeName(TargetType));
+            if (target < 0) {
+                @compileError("requires an unsigned integer, found " ++ @typeName(TargetType));
+            }
         } else {
             @compileError("requires an unsigned integer, found " ++ @typeName(TargetType));
         }
@@ -121,11 +127,19 @@ pub fn getBits(target: anytype, comptime start_bit: comptime_int, comptime numbe
         if (number_of_bits == 0) @compileError("non-zero number_of_bits must be provided");
 
         if (@typeInfo(TargetType) == .Int) {
-            if (@typeInfo(TargetType).Int.signedness != .unsigned) @compileError("requires an unsigned integer, found " ++ @typeName(TargetType));
-            if (start_bit >= @bitSizeOf(TargetType)) @compileError("start_bit index is out of bounds of the bit field");
-            if (start_bit + number_of_bits > @bitSizeOf(TargetType)) @compileError("start_bit + number_of_bits is out of bounds of the bit field");
+            if (@typeInfo(TargetType).Int.signedness != .unsigned) {
+                @compileError("requires an unsigned integer, found " ++ @typeName(TargetType));
+            }
+            if (start_bit >= @bitSizeOf(TargetType)) {
+                @compileError("start_bit index is out of bounds of the bit field");
+            }
+            if (start_bit + number_of_bits > @bitSizeOf(TargetType)) {
+                @compileError("start_bit + number_of_bits is out of bounds of the bit field");
+            }
         } else if (@typeInfo(TargetType) == .ComptimeInt) {
-            if (target < 0) @compileError("requires an unsigned integer, found " ++ @typeName(TargetType));
+            if (target < 0) {
+                @compileError("requires an unsigned integer, found " ++ @typeName(TargetType));
+            }
         } else {
             @compileError("requires an unsigned integer, found " ++ @typeName(TargetType));
         }
@@ -165,8 +179,12 @@ pub fn setBit(target: anytype, comptime bit: comptime_int, value: bool) void {
 
     comptime {
         if (@typeInfo(TargetType) == .Int) {
-            if (@typeInfo(TargetType).Int.signedness != .unsigned) @compileError("requires an unsigned integer, found " ++ @typeName(TargetType));
-            if (bit >= @bitSizeOf(TargetType)) @compileError("bit index is out of bounds of the bit field");
+            if (@typeInfo(TargetType).Int.signedness != .unsigned) {
+                @compileError("requires an unsigned integer, found " ++ @typeName(TargetType));
+            }
+            if (bit >= @bitSizeOf(TargetType)) {
+                @compileError("bit index is out of bounds of the bit field");
+            }
         } else if (@typeInfo(TargetType) == .ComptimeInt) {
             @compileError("comptime_int is unsupported");
         } else {
@@ -223,9 +241,15 @@ pub fn setBits(target: anytype, comptime start_bit: comptime_int, comptime numbe
         if (number_of_bits == 0) @compileError("non-zero number_of_bits must be provided");
 
         if (@typeInfo(TargetType) == .Int) {
-            if (@typeInfo(TargetType).Int.signedness != .unsigned) @compileError("requires an unsigned integer, found " ++ @typeName(TargetType));
-            if (start_bit >= @bitSizeOf(TargetType)) @compileError("start_bit index is out of bounds of the bit field");
-            if (end_bit > @bitSizeOf(TargetType)) @compileError("start_bit + number_of_bits is out of bounds of the bit field");
+            if (@typeInfo(TargetType).Int.signedness != .unsigned) {
+                @compileError("requires an unsigned integer, found " ++ @typeName(TargetType));
+            }
+            if (start_bit >= @bitSizeOf(TargetType)) {
+                @compileError("start_bit index is out of bounds of the bit field");
+            }
+            if (end_bit > @bitSizeOf(TargetType)) {
+                @compileError("start_bit + number_of_bits is out of bounds of the bit field");
+            }
         } else if (@typeInfo(TargetType) == .ComptimeInt) {
             @compileError("comptime_int is unsupported");
         } else {
@@ -239,7 +263,14 @@ pub fn setBits(target: anytype, comptime start_bit: comptime_int, comptime numbe
         if (getBits(peer_value, 0, (end_bit - start_bit)) != peer_value) @panic("value exceeds bit range");
     }
 
-    const bitmask: TargetType = comptime ~(~@as(TargetType, 0) << (@bitSizeOf(TargetType) - end_bit) >> (@bitSizeOf(TargetType) - end_bit) >> start_bit << start_bit);
+    const bitmask: TargetType = comptime blk: {
+        var bitmask = ~@as(TargetType, 0);
+        bitmask <<= (@bitSizeOf(TargetType) - end_bit);
+        bitmask >>= (@bitSizeOf(TargetType) - end_bit);
+        bitmask >>= start_bit;
+        bitmask <<= start_bit;
+        break :blk ~bitmask;
+    };
 
     target.* = (target.* & bitmask) | (peer_value << start_bit);
 }
@@ -269,19 +300,22 @@ pub fn Bitfield(comptime FieldType: type, comptime shift_amount: usize, comptime
 
     const ValueType = std.meta.Int(.unsigned, num_bits);
 
-    return struct {
+    return extern struct {
         dummy: FieldType,
 
-        inline fn field(self: anytype) PtrCastPreserveCV(@This(), @TypeOf(self), FieldType) {
-            return @ptrCast(PtrCastPreserveCV(@This(), @TypeOf(self), FieldType), self);
+        const Self = @This();
+
+        // This function uses `anytype` inorder to support both const and non-const pointers
+        inline fn field(self: anytype) PtrCastPreserveCV(Self, @TypeOf(self), FieldType) {
+            return @ptrCast(PtrCastPreserveCV(Self, @TypeOf(self), FieldType), self);
         }
 
-        pub fn write(self: anytype, val: ValueType) void {
+        pub fn write(self: *Self, val: ValueType) void {
             self.field().* &= ~self_mask;
             self.field().* |= @intCast(FieldType, val) << shift_amount;
         }
 
-        pub fn read(self: anytype) ValueType {
+        pub fn read(self: Self) ValueType {
             const val: FieldType = self.field().*;
             return @intCast(ValueType, (val & self_mask) >> shift_amount);
         }
@@ -309,27 +343,29 @@ test "bitfield" {
     try std.testing.expect(s.val == 0x69691337);
 }
 
-fn BitType(comptime FieldType: type, comptime ValueType: type, comptime shift_amount: usize) type {
+pub fn Bit(comptime FieldType: type, comptime shift_amount: usize) type {
     const self_bit: FieldType = (1 << shift_amount);
 
-    return struct {
+    return extern struct {
         bits: Bitfield(FieldType, shift_amount, 1),
 
-        pub fn set(self: anytype) void {
+        const Self = @This();
+
+        fn set(self: *Self) void {
             self.bits.field().* |= self_bit;
         }
 
-        pub fn unset(self: anytype) void {
+        fn unset(self: *Self) void {
             self.bits.field().* &= ~self_bit;
         }
 
-        pub fn read(self: anytype) ValueType {
-            return @bitCast(ValueType, @truncate(u1, self.bits.field().* >> shift_amount));
+        pub fn read(self: Self) u1 {
+            return @truncate(u1, self.bits.field().* >> shift_amount);
         }
 
         // Since these are mostly used with MMIO, I want to avoid
         // reading the memory just to write it again, also races
-        pub fn write(self: anytype, val: ValueType) void {
+        pub fn write(self: *Self, val: u1) void {
             if (@bitCast(bool, val)) {
                 self.set();
             } else {
@@ -341,10 +377,6 @@ fn BitType(comptime FieldType: type, comptime ValueType: type, comptime shift_am
             std.testing.refAllDecls(@This());
         }
     };
-}
-
-pub fn Bit(comptime FieldType: type, comptime shift_amount: usize) type {
-    return BitType(FieldType, u1, shift_amount);
 }
 
 test "bit" {
@@ -369,7 +401,39 @@ test "bit" {
 }
 
 pub fn Boolean(comptime FieldType: type, comptime shift_amount: usize) type {
-    return BitType(FieldType, bool, shift_amount);
+    const self_bit: FieldType = (1 << shift_amount);
+
+    return extern struct {
+        bits: Bitfield(FieldType, shift_amount, 1),
+
+        const Self = @This();
+
+        fn set(self: *Self) void {
+            self.bits.field().* |= self_bit;
+        }
+
+        fn unset(self: *Self) void {
+            self.bits.field().* &= ~self_bit;
+        }
+
+        pub fn read(self: Self) bool {
+            return @bitCast(bool, @truncate(u1, self.bits.field().* >> shift_amount));
+        }
+
+        // Since these are mostly used with MMIO, I want to avoid
+        // reading the memory just to write it again, also races
+        pub fn write(self: *Self, val: bool) void {
+            if (val) {
+                self.set();
+            } else {
+                self.unset();
+            }
+        }
+
+        comptime {
+            std.testing.refAllDecls(@This());
+        }
+    };
 }
 
 test "boolean" {

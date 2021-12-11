@@ -90,7 +90,7 @@ fn checkForError(value: raw.git_error_code) git.GitError!void {
         raw.GIT_EINDEXDIRTY => git.GitError.IndexDirty,
         raw.GIT_EAPPLYFAIL => git.GitError.ApplyFail,
         else => {
-            log.emerg("encountered unknown libgit2 error: {}", .{value});
+            log.err("encountered unknown libgit2 error: {}", .{value});
             unreachable;
         },
     };

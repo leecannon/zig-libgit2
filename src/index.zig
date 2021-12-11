@@ -189,9 +189,15 @@ pub const Index = opaque {
         NO_SYMLINKS: bool = false,
 
         z_padding1: u13 = 0,
-        z_padding2: u15 = 0,
+        z_padding2: u16 = 0,
 
-        FROM_OWNER: bool = false,
+        pub fn isGetCapabilitiesFromOwner(self: IndexCapabilities) bool {
+            return @bitCast(c_int, self) == -1;
+        }
+
+        pub fn getCapabilitiesFromOwner() IndexCapabilities {
+            return @bitCast(IndexCapabilities, @as(c_int, -1));
+        }
 
         pub fn format(
             value: IndexCapabilities,

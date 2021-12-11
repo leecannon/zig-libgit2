@@ -406,7 +406,7 @@ test "new index capabilities" {
 
     const cap = index.indexCapabilities();
 
-    try std.testing.expect(!cap.FROM_OWNER);
+    try std.testing.expect(!cap.isGetCapabilitiesFromOwner());
     try std.testing.expect(!cap.IGNORE_CASE);
     try std.testing.expect(!cap.NO_FILEMODE);
     try std.testing.expect(!cap.NO_SYMLINKS);

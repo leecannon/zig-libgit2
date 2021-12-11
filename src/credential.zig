@@ -50,7 +50,7 @@ pub const Credential = opaque {
                 opt_username = raw.git_cred_get_username(internal.toC(self));
             } else {
                 // TODO: make this a compile error when we move to full c header
-                log.crit("the version of libgit2 linked does not provide a function to fetch the username of a credential", .{});
+                log.err("the version of libgit2 linked does not provide a function to fetch the username of a credential", .{});
                 return null;
             }
         }
