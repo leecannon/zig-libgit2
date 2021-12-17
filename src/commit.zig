@@ -325,7 +325,7 @@ pub const Commit = opaque {
     pub fn getHeaderField(self: *const Commit, field: [:0]const u8) !git.Buf {
         log.debug("Commit.getHeaderField called, field={s}", .{field});
 
-        var buf: git.Buf = undefined;
+        var buf: git.Buf = .{};
 
         try internal.wrapCall("git_commit_header_field", .{
             @ptrCast(*raw.git_buf, &buf),

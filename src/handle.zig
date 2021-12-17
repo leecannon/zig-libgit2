@@ -530,7 +530,7 @@ pub const Handle = struct {
 
         log.debug("Handle.optionGetTemplatePath called", .{});
 
-        var result: git.Buf = undefined;
+        var result: git.Buf = .{};
         try internal.wrapCall("git_libgit2_opts", .{
             raw.GIT_OPT_GET_TEMPLATE_PATH,
             @ptrCast(*raw.git_buf, &result),
@@ -579,7 +579,7 @@ pub const Handle = struct {
 
         log.debug("Handle.optionGetUserAgent called", .{});
 
-        var result: git.Buf = undefined;
+        var result: git.Buf = .{};
         try internal.wrapCall("git_libgit2_opts", .{
             raw.GIT_OPT_GET_USER_AGENT,
             @ptrCast(*raw.git_buf, &result),

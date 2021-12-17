@@ -70,7 +70,7 @@ pub const DescribeFormatOptions = struct {
 
 pub const DescribeResult = opaque {
     pub fn format(self: *const DescribeResult, options: DescribeFormatOptions) !git.Buf {
-        var buf: git.Buf = undefined;
+        var buf: git.Buf = .{};
 
         const c_options = options.makeCOptionObject();
 

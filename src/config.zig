@@ -107,7 +107,7 @@ pub const Config = opaque {
     pub fn getPath(self: *const Config, name: [:0]const u8) !git.Buf {
         log.debug("Config.getPath called, name={s}", .{name});
 
-        var buf: git.Buf = undefined;
+        var buf: git.Buf = .{};
 
         try internal.wrapCall("git_config_get_path", .{
             @ptrCast(*raw.git_buf, &buf),
@@ -153,7 +153,7 @@ pub const Config = opaque {
     pub fn getStringBuf(self: *const Config, name: [:0]const u8) !git.Buf {
         log.debug("Config.getStringBuf called, name={s}", .{name});
 
-        var buf: git.Buf = undefined;
+        var buf: git.Buf = .{};
 
         try internal.wrapCall("git_config_get_string_buf", .{
             @ptrCast(*raw.git_buf, &buf),
@@ -373,7 +373,7 @@ pub const Config = opaque {
     pub fn findGlobal() ?git.Buf {
         log.debug("Config.findGlobal called", .{});
 
-        var buf: git.Buf = undefined;
+        var buf: git.Buf = .{};
 
         if (raw.git_config_find_global(@ptrCast(*raw.git_buf, &buf)) == 0) return null;
 
@@ -385,7 +385,7 @@ pub const Config = opaque {
     pub fn findXdg() ?git.Buf {
         log.debug("Config.findXdg called", .{});
 
-        var buf: git.Buf = undefined;
+        var buf: git.Buf = .{};
 
         if (raw.git_config_find_xdg(@ptrCast(*raw.git_buf, &buf)) == 0) return null;
 
@@ -397,7 +397,7 @@ pub const Config = opaque {
     pub fn findSystem() ?git.Buf {
         log.debug("Config.findSystem called", .{});
 
-        var buf: git.Buf = undefined;
+        var buf: git.Buf = .{};
 
         if (raw.git_config_find_system(@ptrCast(*raw.git_buf, &buf)) == 0) return null;
 
@@ -409,7 +409,7 @@ pub const Config = opaque {
     pub fn findProgramdata() ?git.Buf {
         log.debug("Config.findProgramdata called", .{});
 
-        var buf: git.Buf = undefined;
+        var buf: git.Buf = .{};
 
         if (raw.git_config_find_programdata(@ptrCast(*raw.git_buf, &buf)) == 0) return null;
 
@@ -551,7 +551,7 @@ pub const Config = opaque {
     }
 
     pub fn parsePath(value: [:0]const u8) !git.Buf {
-        var buf: git.Buf = undefined;
+        var buf: git.Buf = .{};
         try internal.wrapCall("git_config_parse_path", .{ @ptrCast(*raw.git_buf, &buf), value.ptr });
         return buf;
     }

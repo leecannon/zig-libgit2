@@ -119,7 +119,7 @@ pub const FilterList = opaque {
     pub fn applyToFile(self: *FilterList, repo: *git.Repository, path: [:0]const u8) !git.Buf {
         log.debug("FilterList.applyToFile called, repo={*}, path={s}", .{ repo, path });
 
-        var ret: git.Buf = undefined;
+        var ret: git.Buf = .{};
 
         try internal.wrapCall("git_filter_list_apply_to_file", .{
             @ptrCast(*raw.git_buf, &ret),
@@ -140,7 +140,7 @@ pub const FilterList = opaque {
     pub fn applyToBlob(self: *FilterList, blob: *git.Blob) !git.Buf {
         log.debug("FilterList.applyToBlob called, blob={*}", .{blob});
 
-        var ret: git.Buf = undefined;
+        var ret: git.Buf = .{};
 
         try internal.wrapCall("git_filter_list_apply_to_blob", .{
             @ptrCast(*raw.git_buf, &ret),
@@ -210,7 +210,7 @@ pub const FilterList = opaque {
         pub fn applyToBuffer(self: *FilterList, in: [:0]const u8) !git.Buf {
             log.debug("FilterList.applyToBuffer called, in={s}", .{in});
 
-            var ret: git.Buf = undefined;
+            var ret: git.Buf = .{};
 
             try internal.wrapCall("git_filter_list_apply_to_buffer", .{
                 @ptrCast(*raw.git_buf, &ret),

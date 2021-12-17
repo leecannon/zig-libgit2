@@ -1980,7 +1980,7 @@ pub const Repository = opaque {
     pub fn remoteGetName(self: *Repository, refname: [:0]const u8) !git.Buf {
         log.debug("Repository.remoteGetName called, refname={s}", .{refname});
 
-        var buf: git.Buf = undefined;
+        var buf: git.Buf = .{};
 
         try internal.wrapCall("git_branch_remote_name", .{
             @ptrCast(*raw.git_buf, &buf),
@@ -1999,7 +1999,7 @@ pub const Repository = opaque {
     pub fn remoteUpstreamRemote(self: *Repository, refname: [:0]const u8) !git.Buf {
         log.debug("Repository.remoteUpstreamRemote called, refname={s}", .{refname});
 
-        var buf: git.Buf = undefined;
+        var buf: git.Buf = .{};
 
         try internal.wrapCall("git_branch_upstream_remote", .{
             @ptrCast(*raw.git_buf, &buf),
@@ -2019,7 +2019,7 @@ pub const Repository = opaque {
     pub fn upstreamGetName(self: *Repository, refname: [:0]const u8) !git.Buf {
         log.debug("Repository.upstreamGetName called, refname={s}", .{refname});
 
-        var buf: git.Buf = undefined;
+        var buf: git.Buf = .{};
 
         try internal.wrapCall("git_branch_upstream_name", .{
             @ptrCast(*raw.git_buf, &buf),
@@ -2559,7 +2559,7 @@ pub const Repository = opaque {
             tree,
         });
 
-        var ret: git.Buf = undefined;
+        var ret: git.Buf = .{};
 
         const encoding_temp: [*c]const u8 = if (message_encoding) |slice| slice.ptr else null;
 
@@ -2899,7 +2899,7 @@ pub const Repository = opaque {
         pub fn remoteUpstreamMerge(self: *Repository, refname: [:0]const u8) !git.Buf {
             log.debug("Repository.remoteUpstreamMerge called, refname={s}", .{refname});
 
-            var buf: git.Buf = undefined;
+            var buf: git.Buf = .{};
 
             try internal.wrapCall("git_branch_upstream_merge", .{
                 @ptrCast(*raw.git_buf, &buf),
