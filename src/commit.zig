@@ -17,7 +17,10 @@ pub const Commit = opaque {
     pub fn id(self: *const Commit) *const git.Oid {
         log.debug("Commit.id called", .{});
 
-        const ret = internal.fromC(raw.git_commit_id(@ptrCast(*const raw.git_commit, self)).?);
+        const ret = @ptrCast(
+            *const git.Oid,
+            raw.git_commit_id(@ptrCast(*const raw.git_commit, self)),
+        );
 
         // This check is to prevent formating the oid when we are not going to print anything
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
@@ -35,9 +38,12 @@ pub const Commit = opaque {
     pub fn getOwner(self: *const Commit) *git.Repository {
         log.debug("Commit.getOwner called", .{});
 
-        const ret = internal.fromC(raw.git_commit_owner(@ptrCast(*const raw.git_commit, self)).?);
+        const ret = @ptrCast(
+            *git.Repository,
+            raw.git_commit_owner(@ptrCast(*const raw.git_commit, self)),
+        );
 
-        log.debug("successfully fetched owning repository: {s}", .{ret});
+        log.debug("successfully fetched owning repository: {*}", .{ret});
 
         return ret;
     }
@@ -175,7 +181,10 @@ pub const Commit = opaque {
     pub fn getCommitter(self: *const Commit) *const git.Signature {
         log.debug("Commit.getCommitter called", .{});
 
-        const ret = internal.fromC(raw.git_commit_committer(@ptrCast(*const raw.git_commit, self)));
+        const ret = @ptrCast(
+            *const git.Signature,
+            raw.git_commit_committer(@ptrCast(*const raw.git_commit, self)),
+        );
 
         log.debug("commit committer: {s} {s}", .{ ret.z_name, ret.z_email });
 
@@ -185,7 +194,10 @@ pub const Commit = opaque {
     pub fn getAuthor(self: *const Commit) *const git.Signature {
         log.debug("Commit.getAuthor called", .{});
 
-        const ret = internal.fromC(raw.git_commit_author(@ptrCast(*const raw.git_commit, self)));
+        const ret = @ptrCast(
+            *const git.Signature,
+            raw.git_commit_author(@ptrCast(*const raw.git_commit, self)),
+        );
 
         log.debug("commit author: {s} {s}", .{ ret.z_name, ret.z_email });
 
@@ -195,57 +207,57 @@ pub const Commit = opaque {
     pub fn committerWithMailmap(self: *const Commit, mail_map: ?*const git.Mailmap) !*git.Signature {
         log.debug("Commit.committerWithMailmap called, mail_map={*}", .{mail_map});
 
-        var signature: [*c]raw.git_signature = undefined;
+        var signature: *git.Signature = undefined;
 
         try internal.wrapCall("git_commit_committer_with_mailmap", .{
-            &signature,
+            @ptrCast(*[*c]raw.git_signature, &signature),
             @ptrCast(*const raw.git_commit, self),
             @ptrCast(?*const raw.git_mailmap, self),
         });
 
-        const ret = internal.fromC(signature);
+        log.debug("commit committer: {s} {s}", .{ signature.z_name, signature.z_email });
 
-        log.debug("commit committer: {s} {s}", .{ ret.z_name, ret.z_email });
-
-        return ret;
+        return signature;
     }
 
     pub fn authorWithMailmap(self: *const Commit, mail_map: ?*const git.Mailmap) !*git.Signature {
         log.debug("Commit.authorWithMailmap called, mail_map={*}", .{mail_map});
 
-        var signature: [*c]raw.git_signature = undefined;
+        var signature: *git.Signature = undefined;
 
         try internal.wrapCall("git_commit_author_with_mailmap", .{
-            &signature,
+            @ptrCast(*[*c]raw.git_signature, &signature),
             @ptrCast(*const raw.git_commit, self),
-            @ptrCast(?*const raw.git_mailmap, self),
+            @ptrCast(?*const raw.git_mailmap, mail_map),
         });
 
-        const ret = internal.fromC(signature);
+        log.debug("commit author: {s} {s}", .{ signature.z_name, signature.z_email });
 
-        log.debug("commit author: {s} {s}", .{ ret.z_name, ret.z_email });
-
-        return ret;
+        return signature;
     }
 
     pub fn getTree(self: *const Commit) !*git.Tree {
         log.debug("Commit.getTree called", .{});
 
-        var c_tree: ?*raw.git_tree = undefined;
+        var tree: *git.Tree = undefined;
 
-        try internal.wrapCall("git_commit_tree", .{ &c_tree, @ptrCast(*const raw.git_commit, self) });
+        try internal.wrapCall("git_commit_tree", .{
+            @ptrCast(*?*raw.git_tree, &tree),
+            @ptrCast(*const raw.git_commit, self),
+        });
 
-        const ret = internal.fromC(c_tree.?);
+        log.debug("commit tree: {*}", .{tree});
 
-        log.debug("commit tree: {*}", .{ret});
-
-        return ret;
+        return tree;
     }
 
     pub fn getTreeId(self: *const Commit) !*const git.Oid {
         log.debug("Commit.getTreeId called", .{});
 
-        const ret = internal.fromC(raw.git_commit_tree_id(@ptrCast(*const raw.git_commit, self)));
+        const ret = @ptrCast(
+            *const git.Oid,
+            raw.git_commit_tree_id(@ptrCast(*const raw.git_commit, self)),
+        );
 
         // This check is to prevent formating the oid when we are not going to print anything
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
@@ -273,25 +285,31 @@ pub const Commit = opaque {
     pub fn getParent(self: *const Commit, parent_number: u32) !*Commit {
         log.debug("Commit.getParent called, parent_number={}", .{parent_number});
 
-        var commit: ?*raw.git_commit = undefined;
+        var commit: *Commit = undefined;
 
-        try internal.wrapCall("git_commit_parent", .{ &commit, @ptrCast(*const raw.git_commit, self), parent_number });
+        try internal.wrapCall("git_commit_parent", .{
+            @ptrCast(*?*raw.git_commit, &commit),
+            @ptrCast(*const raw.git_commit, self),
+            parent_number,
+        });
 
-        const ret = internal.fromC(commit.?);
+        log.debug("parent commit: {*}", .{commit});
 
-        log.debug("parent commit: {*}", .{ret});
-
-        return ret;
+        return commit;
     }
 
     pub fn getParentId(self: *const Commit, parent_number: u32) ?*const git.Oid {
         log.debug("Commit.getParentId called", .{});
 
-        const opt_c_ret = raw.git_commit_parent_id(@ptrCast(*const raw.git_commit, self), parent_number);
+        const opt_ret = @ptrCast(
+            ?*const git.Oid,
+            raw.git_commit_parent_id(
+                @ptrCast(*const raw.git_commit, self),
+                parent_number,
+            ),
+        );
 
-        if (opt_c_ret) |c_ret| {
-            const ret = internal.fromC(c_ret);
-
+        if (opt_ret) |ret| {
             // This check is to prevent formating the oid when we are not going to print anything
             if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
                 var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
@@ -308,18 +326,20 @@ pub const Commit = opaque {
         return null;
     }
 
-    pub fn getAncestor(self: *const Commit, ancestor_number: u32) !*git.Commit {
+    pub fn getAncestor(self: *const Commit, ancestor_number: u32) !*Commit {
         log.debug("Commit.getAncestor called, ancestor_number={}", .{ancestor_number});
 
-        var commit: ?*raw.git_commit = undefined;
+        var commit: *Commit = undefined;
 
-        try internal.wrapCall("git_commit_nth_gen_ancestor", .{ &commit, @ptrCast(*const raw.git_commit, self), ancestor_number });
+        try internal.wrapCall("git_commit_nth_gen_ancestor", .{
+            @ptrCast(*?*raw.git_commit, &commit),
+            @ptrCast(*const raw.git_commit, self),
+            ancestor_number,
+        });
 
-        const ret = internal.fromC(commit.?);
+        log.debug("ancestor commit: {*}", .{commit});
 
-        log.debug("ancestor commit: {*}", .{ret});
-
-        return ret;
+        return commit;
     }
 
     pub fn getHeaderField(self: *const Commit, field: [:0]const u8) !git.Buf {
@@ -386,15 +406,16 @@ pub const Commit = opaque {
     pub fn dupe(self: *Commit) !*Commit {
         log.debug("Commit.dupe called", .{});
 
-        var commit: ?*raw.git_commit = undefined;
+        var commit: *Commit = undefined;
 
-        try internal.wrapCall("git_commit_dup", .{ &commit, @ptrCast(*raw.git_commit, self) });
-
-        const ret = internal.fromC(commit.?);
+        try internal.wrapCall("git_commit_dup", .{
+            @ptrCast(*?*raw.git_commit, &commit),
+            @ptrCast(*raw.git_commit, self),
+        });
 
         log.debug("duplicated commit", .{});
 
-        return ret;
+        return commit;
     }
 
     comptime {

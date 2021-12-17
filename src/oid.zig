@@ -184,7 +184,7 @@ pub const OidShortener = opaque {
         if (raw.git_oid_shorten_new(min_length)) |ret| {
             log.debug("Oid shortener created successfully", .{});
 
-            return internal.fromC(ret);
+            return @ptrCast(*OidShortener, ret);
         }
 
         return error.OutOfMemory;

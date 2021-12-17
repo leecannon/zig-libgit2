@@ -29,16 +29,17 @@ pub const Reference = opaque {
     pub fn annotatedCommitCreate(self: *const Reference, repository: *git.Repository) !*git.AnnotatedCommit {
         log.debug("Reference.annotatedCommitCreate called, repository={*}", .{repository});
 
-        var result: ?*raw.git_annotated_commit = undefined;
+        var result: *git.AnnotatedCommit = undefined;
+
         try internal.wrapCall("git_annotated_commit_from_ref", .{
-            &result,
+            @ptrCast(*?*raw.git_annotated_commit, &result),
             @ptrCast(*raw.git_repository, repository),
             @ptrCast(*const raw.git_reference, self),
         });
 
         log.debug("successfully created annotated commit", .{});
 
-        return internal.fromC(result.?);
+        return result;
     }
 
     /// Move/rename an existing local branch reference.
@@ -50,12 +51,18 @@ pub const Reference = opaque {
     pub fn move(self: *Reference, new_branch_name: [:0]const u8, force: bool) !*Reference {
         log.debug("Reference.move called, new_branch_name={s}, force={}", .{ new_branch_name, force });
 
-        var ref: ?*raw.git_reference = undefined;
-        try internal.wrapCall("git_branch_move", .{ &ref, @ptrCast(*raw.git_reference, self), new_branch_name.ptr, @boolToInt(force) });
+        var ref: *Reference = undefined;
+
+        try internal.wrapCall("git_branch_move", .{
+            @ptrCast(*?*raw.git_reference, &ref),
+            @ptrCast(*raw.git_reference, self),
+            new_branch_name.ptr,
+            @boolToInt(force),
+        });
 
         log.debug("successfully moved branch", .{});
 
-        return internal.fromC(ref.?);
+        return ref;
     }
 
     pub fn nameGet(self: *Reference) ![:0]const u8 {
@@ -73,15 +80,16 @@ pub const Reference = opaque {
     pub fn upstreamGet(self: *Reference) !*Reference {
         log.debug("Reference.upstreamGet called", .{});
 
-        var ref: ?*raw.git_reference = undefined;
+        var ref: *Reference = undefined;
 
-        try internal.wrapCall("git_branch_upstream", .{ &ref, @ptrCast(*const raw.git_reference, self) });
+        try internal.wrapCall("git_branch_upstream", .{
+            @ptrCast(*?*raw.git_reference, &ref),
+            @ptrCast(*const raw.git_reference, self),
+        });
 
-        const ret = internal.fromC(ref.?);
+        log.debug("successfully fetched reference={*}", .{ref});
 
-        log.debug("successfully fetched reference={*}", .{ret});
-
-        return ret;
+        return ref;
     }
 
     pub fn upstreamSet(self: *Reference, branch_name: [:0]const u8) !void {

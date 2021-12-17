@@ -78,7 +78,7 @@ pub const Indexer = opaque {
                 stats: [*c]const raw.git_indexer_progress,
                 payload: ?*c_void,
             ) callconv(.C) c_int {
-                return callback_fn(internal.fromC(stats), @ptrCast(UserDataType, payload));
+                return callback_fn(@ptrCast(*const Progress, stats), @ptrCast(UserDataType, payload));
             }
         }.cb;
 
@@ -149,11 +149,12 @@ pub const Indexer = opaque {
     pub fn hash(self: *const Indexer) ?*const git.Oid {
         log.debug("Indexer.hash called", .{});
 
-        var opt_hash = raw.git_indexer_hash(@ptrCast(*const raw.git_indexer, self));
+        var opt_hash = @ptrCast(
+            ?*const git.Oid,
+            raw.git_indexer_hash(@ptrCast(*const raw.git_indexer, self)),
+        );
 
-        if (opt_hash) |pack_hash| {
-            const ret = internal.fromC(pack_hash);
-
+        if (opt_hash) |ret| {
             // This check is to prevent formating the oid when we are not going to print anything
             if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
                 var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;

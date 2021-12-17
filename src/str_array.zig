@@ -9,9 +9,9 @@ pub const StrArray = extern struct {
     strings: [*c][*c]u8 = null,
     count: usize = 0,
 
-    pub fn fromSlice(slice: []const [*:0]const u8) StrArray {
+    pub fn fromSlice(slice: [][*:0]u8) StrArray {
         return .{
-            .strings = @intToPtr([*c][*c]u8, @ptrToInt(slice.ptr)),
+            .strings = @ptrCast([*c][*c]u8, slice.ptr),
             .count = slice.len,
         };
     }

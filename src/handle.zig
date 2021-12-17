@@ -35,13 +35,16 @@ pub const Handle = struct {
 
         log.debug("Handle.indexOpen called, path={s}", .{path});
 
-        var index: ?*raw.git_index = undefined;
+        var index: *git.Index = undefined;
 
-        try internal.wrapCall("git_index_open", .{ &index, path.ptr });
+        try internal.wrapCall("git_index_open", .{
+            @ptrCast(*?*raw.git_index, &index),
+            path.ptr,
+        });
 
         log.debug("index opened successfully", .{});
 
-        return internal.fromC(index.?);
+        return index;
     }
 
     /// Create an in-memory index object.
@@ -52,13 +55,15 @@ pub const Handle = struct {
 
         log.debug("Handle.indexInit called", .{});
 
-        var index: ?*raw.git_index = undefined;
+        var index: *git.Index = undefined;
 
-        try internal.wrapCall("git_index_new", .{&index});
+        try internal.wrapCall("git_index_new", .{
+            @ptrCast(*?*raw.git_index, &index),
+        });
 
         log.debug("index created successfully", .{});
 
-        return internal.fromC(index.?);
+        return index;
     }
 
     /// Create a new repository in the given directory.
@@ -73,13 +78,17 @@ pub const Handle = struct {
 
         log.debug("Handle.repositoryInit called, path={s}, is_bare={}", .{ path, is_bare });
 
-        var repo: ?*raw.git_repository = undefined;
+        var repo: *git.Repository = undefined;
 
-        try internal.wrapCall("git_repository_init", .{ &repo, path.ptr, @boolToInt(is_bare) });
+        try internal.wrapCall("git_repository_init", .{
+            @ptrCast(*?*raw.git_repository, &repo),
+            path.ptr,
+            @boolToInt(is_bare),
+        });
 
         log.debug("repository created successfully", .{});
 
-        return internal.fromC(repo.?);
+        return repo;
     }
 
     /// Create a new repository in the given directory with extended options.
@@ -92,15 +101,19 @@ pub const Handle = struct {
 
         log.debug("Handle.repositoryInitExtended called, path={s}, options={}", .{ path, options });
 
-        var repo: ?*raw.git_repository = undefined;
+        var repo: *git.Repository = undefined;
 
         var c_options = options.makeCOptionObject();
 
-        try internal.wrapCall("git_repository_init_ext", .{ &repo, path.ptr, &c_options });
+        try internal.wrapCall("git_repository_init_ext", .{
+            @ptrCast(*?*raw.git_repository, &repo),
+            path.ptr,
+            &c_options,
+        });
 
         log.debug("repository created successfully", .{});
 
-        return internal.fromC(repo.?);
+        return repo;
     }
 
     pub const RepositoryInitOptions = struct {
@@ -234,13 +247,16 @@ pub const Handle = struct {
 
         log.debug("Handle.repositoryOpen called, path={s}", .{path});
 
-        var repo: ?*raw.git_repository = undefined;
+        var repo: *git.Repository = undefined;
 
-        try internal.wrapCall("git_repository_open", .{ &repo, path.ptr });
+        try internal.wrapCall("git_repository_open", .{
+            @ptrCast(*?*raw.git_repository, &repo),
+            path.ptr,
+        });
 
         log.debug("repository opened successfully", .{});
 
-        return internal.fromC(repo.?);
+        return repo;
     }
 
     /// Find and open a repository with extended options.
@@ -262,15 +278,20 @@ pub const Handle = struct {
 
         log.debug("Handle.repositoryOpenExtended called, path={s}, flags={}, ceiling_dirs={s}", .{ path, flags, ceiling_dirs });
 
-        var repo: ?*raw.git_repository = undefined;
+        var repo: *git.Repository = undefined;
 
         const path_temp: [*c]const u8 = if (path) |slice| slice.ptr else null;
         const ceiling_dirs_temp: [*c]const u8 = if (ceiling_dirs) |slice| slice.ptr else null;
-        try internal.wrapCall("git_repository_open_ext", .{ &repo, path_temp, flags.toInt(), ceiling_dirs_temp });
+        try internal.wrapCall("git_repository_open_ext", .{
+            @ptrCast(*?*raw.git_repository, &repo),
+            path_temp,
+            flags.toInt(),
+            ceiling_dirs_temp,
+        });
 
         log.debug("repository opened successfully", .{});
 
-        return internal.fromC(repo.?);
+        return repo;
     }
 
     pub const RepositoryOpenOptions = packed struct {
@@ -332,13 +353,16 @@ pub const Handle = struct {
 
         log.debug("Handle.repositoryOpenBare called, path={s}", .{path});
 
-        var repo: ?*raw.git_repository = undefined;
+        var repo: *git.Repository = undefined;
 
-        try internal.wrapCall("git_repository_open_bare", .{ &repo, path.ptr });
+        try internal.wrapCall("git_repository_open_bare", .{
+            @ptrCast(*?*raw.git_repository, &repo),
+            path.ptr,
+        });
 
         log.debug("repository opened successfully", .{});
 
-        return internal.fromC(repo.?);
+        return repo;
     }
 
     /// Look for a git repository and return its path.

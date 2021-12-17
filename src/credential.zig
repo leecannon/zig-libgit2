@@ -72,38 +72,46 @@ pub const Credential = extern struct {
     pub fn initUserPassPlaintext(username: [:0]const u8, password: [:0]const u8) !*Credential {
         log.debug("Credential.initUserPassPlaintext called, username={s}, password={s}", .{ username, password });
 
-        var cred: ?*RawCredentialType = undefined;
+        var cred: *Credential = undefined;
 
         if (hasCredential) {
-            try internal.wrapCall("git_credential_userpass_plaintext_new", .{ &cred, username.ptr, password.ptr });
+            try internal.wrapCall("git_credential_userpass_plaintext_new", .{
+                @ptrCast(*[*c]RawCredentialType, &cred),
+                username.ptr,
+                password.ptr,
+            });
         } else {
-            try internal.wrapCall("git_cred_userpass_plaintext_new", .{ &cred, username.ptr, password.ptr });
+            try internal.wrapCall("git_cred_userpass_plaintext_new", .{
+                @ptrCast(*[*c]RawCredentialType, &cred),
+                username.ptr,
+                password.ptr,
+            });
         }
 
-        const ret = internal.fromC(cred.?);
+        log.debug("created new credential {*}", .{cred});
 
-        log.debug("created new credential {*}", .{ret});
-
-        return ret;
+        return cred;
     }
 
     /// Create a "default" credential usable for Negotiate mechanisms like NTLM or Kerberos authentication.
     pub fn initDefault() !*Credential {
         log.debug("Credential.initDefault", .{});
 
-        var cred: ?*RawCredentialType = undefined;
+        var cred: *Credential = undefined;
 
         if (hasCredential) {
-            try internal.wrapCall("git_credential_default_new", .{&cred});
+            try internal.wrapCall("git_credential_default_new", .{
+                @ptrCast(*[*c]RawCredentialType, &cred),
+            });
         } else {
-            try internal.wrapCall("git_cred_default_new", .{&cred});
+            try internal.wrapCall("git_cred_default_new", .{
+                @ptrCast(*[*c]RawCredentialType, &cred),
+            });
         }
 
-        const ret = internal.fromC(cred.?);
+        log.debug("created new credential {*}", .{cred});
 
-        log.debug("created new credential {*}", .{ret});
-
-        return ret;
+        return cred;
     }
 
     /// Create a credential to specify a username.
@@ -112,19 +120,23 @@ pub const Credential = extern struct {
     pub fn initUsername(username: [:0]const u8) !*Credential {
         log.debug("Credential.initUsername called, username={s}", .{username});
 
-        var cred: ?*RawCredentialType = undefined;
+        var cred: *Credential = undefined;
 
         if (hasCredential) {
-            try internal.wrapCall("git_credential_username_new", .{ &cred, username.ptr });
+            try internal.wrapCall("git_credential_username_new", .{
+                @ptrCast(*[*c]RawCredentialType, &cred),
+                username.ptr,
+            });
         } else {
-            try internal.wrapCall("git_cred_username_new", .{ &cred, username.ptr });
+            try internal.wrapCall("git_cred_username_new", .{
+                @ptrCast(*[*c]RawCredentialType, &cred),
+                username.ptr,
+            });
         }
 
-        const ret = internal.fromC(cred.?);
+        log.debug("created new credential {*}", .{cred});
 
-        log.debug("created new credential {*}", .{ret});
-
-        return ret;
+        return cred;
     }
 
     /// Create a new passphrase-protected ssh key credential object.
@@ -145,14 +157,14 @@ pub const Credential = extern struct {
             .{ username, publickey, privatekey, passphrase },
         );
 
-        var cred: ?*RawCredentialType = undefined;
+        var cred: *Credential = undefined;
 
         const publickey_c = if (publickey) |str| str.ptr else null;
         const passphrase_c = if (passphrase) |str| str.ptr else null;
 
         if (hasCredential) {
             try internal.wrapCall("git_credential_ssh_key_new", .{
-                &cred,
+                @ptrCast(*[*c]RawCredentialType, &cred),
                 username.ptr,
                 publickey_c,
                 privatekey.ptr,
@@ -160,7 +172,7 @@ pub const Credential = extern struct {
             });
         } else {
             try internal.wrapCall("git_cred_ssh_key_new", .{
-                &cred,
+                @ptrCast(*[*c]RawCredentialType, &cred),
                 username.ptr,
                 publickey_c,
                 privatekey.ptr,
@@ -168,11 +180,9 @@ pub const Credential = extern struct {
             });
         }
 
-        const ret = internal.fromC(cred.?);
+        log.debug("created new credential {*}", .{cred});
 
-        log.debug("created new credential {*}", .{ret});
-
-        return ret;
+        return cred;
     }
 
     /// Create a new ssh key credential object reading the keys from memory.
@@ -190,14 +200,14 @@ pub const Credential = extern struct {
     ) !*Credential {
         log.debug("Credential.initSshKeyMemory called", .{});
 
-        var cred: ?*RawCredentialType = undefined;
+        var cred: *Credential = undefined;
 
         const publickey_c = if (publickey) |str| str.ptr else null;
         const passphrase_c = if (passphrase) |str| str.ptr else null;
 
         if (hasCredential) {
             try internal.wrapCall("git_credential_ssh_key_memory_new", .{
-                &cred,
+                @ptrCast(*[*c]RawCredentialType, &cred),
                 username.ptr,
                 publickey_c,
                 privatekey.ptr,
@@ -205,7 +215,7 @@ pub const Credential = extern struct {
             });
         } else {
             try internal.wrapCall("git_cred_ssh_key_memory_new", .{
-                &cred,
+                @ptrCast(*[*c]RawCredentialType, &cred),
                 username.ptr,
                 publickey_c,
                 privatekey.ptr,
@@ -213,11 +223,9 @@ pub const Credential = extern struct {
             });
         }
 
-        const ret = internal.fromC(cred.?);
+        log.debug("created new credential {*}", .{cred});
 
-        log.debug("created new credential {*}", .{ret});
-
-        return ret;
+        return cred;
     }
 
     /// Create a new ssh keyboard-interactive based credential object.
@@ -262,37 +270,49 @@ pub const Credential = extern struct {
 
         log.debug("Credential.initSshKeyInteractive called, username={s}", .{username});
 
-        var cred: ?*RawCredentialType = undefined;
+        var cred: *Credential = undefined;
 
         if (hasCredential) {
-            try internal.wrapCall("git_credential_ssh_interactive_new", .{ &cred, username.ptr, cb, user_data });
+            try internal.wrapCall("git_credential_ssh_interactive_new", .{
+                @ptrCast(*[*c]RawCredentialType, &cred),
+                username.ptr,
+                cb,
+                user_data,
+            });
         } else {
-            try internal.wrapCall("git_cred_ssh_interactive_new", .{ &cred, username.ptr, cb, user_data });
+            try internal.wrapCall("git_cred_ssh_interactive_new", .{
+                @ptrCast(*[*c]RawCredentialType, &cred),
+                username.ptr,
+                cb,
+                user_data,
+            });
         }
 
-        const ret = internal.fromC(cred.?);
+        log.debug("created new credential {*}", .{cred});
 
-        log.debug("created new credential {*}", .{ret});
-
-        return ret;
+        return cred;
     }
 
     pub fn initSshKeyFromAgent(username: [:0]const u8) !*Credential {
         log.debug("Credential.initSshKeyFromAgent called, username={s}", .{username});
 
-        var cred: ?*RawCredentialType = undefined;
+        var cred: *Credential = undefined;
 
         if (hasCredential) {
-            try internal.wrapCall("git_credential_ssh_key_from_agent", .{ &cred, username.ptr });
+            try internal.wrapCall("git_credential_ssh_key_from_agent", .{
+                @ptrCast(*[*c]RawCredentialType, &cred),
+                username.ptr,
+            });
         } else {
-            try internal.wrapCall("git_cred_ssh_key_from_agent", .{ &cred, username.ptr });
+            try internal.wrapCall("git_cred_ssh_key_from_agent", .{
+                @ptrCast(*[*c]RawCredentialType, &cred),
+                username.ptr,
+            });
         }
 
-        const ret = internal.fromC(cred.?);
+        log.debug("created new credential {*}", .{cred});
 
-        log.debug("created new credential {*}", .{ret});
-
-        return ret;
+        return cred;
     }
 
     pub fn initSshKeyCustom(
@@ -333,11 +353,11 @@ pub const Credential = extern struct {
 
         log.debug("Credential.initSshKeyCustom called, username={s}", .{username});
 
-        var cred: ?*RawCredentialType = undefined;
+        var cred: *Credential = undefined;
 
         if (hasCredential) {
             try internal.wrapCall("git_credential_ssh_custom_new", .{
-                &cred,
+                @ptrCast(*[*c]RawCredentialType, &cred),
                 username.ptr,
                 publickey.ptr,
                 publickey.len,
@@ -346,7 +366,7 @@ pub const Credential = extern struct {
             });
         } else {
             try internal.wrapCall("git_cred_ssh_custom_new", .{
-                &cred,
+                @ptrCast(*[*c]RawCredentialType, &cred),
                 username.ptr,
                 publickey.ptr,
                 publickey.len,
@@ -355,11 +375,9 @@ pub const Credential = extern struct {
             });
         }
 
-        const ret = internal.fromC(cred.?);
+        log.debug("created new credential {*}", .{cred});
 
-        log.debug("created new credential {*}", .{ret});
-
-        return ret;
+        return cred;
     }
 
     pub const CredentialType = extern union {

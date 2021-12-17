@@ -17,13 +17,16 @@ pub const Odb = opaque {
     pub fn repositoryOpen(self: *Odb) !*git.Repository {
         log.debug("Odb.repositoryOpen called", .{});
 
-        var repo: ?*raw.git_repository = undefined;
+        var repo: *git.Repository = undefined;
 
-        try internal.wrapCall("git_repository_wrap_odb", .{ &repo, @ptrCast(*raw.git_odb, self) });
+        try internal.wrapCall("git_repository_wrap_odb", .{
+            @ptrCast(*?*raw.git_repository, &repo),
+            @ptrCast(*raw.git_odb, self),
+        });
 
         log.debug("repository opened successfully", .{});
 
-        return internal.fromC(repo.?);
+        return repo;
     }
 
     comptime {

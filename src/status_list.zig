@@ -27,14 +27,15 @@ pub const StatusList = opaque {
     pub fn statusByIndex(self: *StatusList, index: usize) ?*const StatusEntry {
         log.debug("StatusList.statusByIndex called, index={}", .{index});
 
-        const ret_opt = raw.git_status_byindex(@ptrCast(*raw.git_status_list, self), index);
+        const ret_opt = @ptrCast(
+            ?*const StatusEntry,
+            raw.git_status_byindex(@ptrCast(*raw.git_status_list, self), index),
+        );
 
         if (ret_opt) |ret| {
-            const result = @intToPtr(*const StatusEntry, @ptrToInt(ret));
+            log.debug("successfully fetched status entry: {}", .{ret});
 
-            log.debug("successfully fetched status entry: {}", .{result});
-
-            return result;
+            return ret;
         } else {
             log.debug("index out of bounds", .{});
             return null;

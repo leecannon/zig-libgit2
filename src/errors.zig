@@ -69,7 +69,7 @@ pub const GitError = error{
 
 /// Get detailed information regarding the last error that occured on *this* thread.
 pub fn getDetailedLastError() ?*const DetailedError {
-    return internal.fromC(raw.git_error_last() orelse return null);
+    return @ptrCast(?*const DetailedError, raw.git_error_last());
 }
 
 /// Clear the last error that occured on *this* thread.

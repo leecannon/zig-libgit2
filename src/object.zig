@@ -12,16 +12,18 @@ pub const Object = opaque {
     pub fn describe(self: *Object, options: git.DescribeOptions) !*git.DescribeResult {
         log.debug("Object.describe called, options={}", .{options});
 
-        var result: ?*raw.git_describe_result = undefined;
+        var result: *git.DescribeResult = undefined;
 
         var c_options = options.makeCOptionObject();
-        try internal.wrapCall("git_describe_commit", .{ &result, @ptrCast(*raw.git_object, self), &c_options });
-
-        const ret = internal.fromC(result.?);
+        try internal.wrapCall("git_describe_commit", .{
+            @ptrCast(*?*raw.git_describe_result, &result),
+            @ptrCast(*raw.git_object, self),
+            &c_options,
+        });
 
         log.debug("successfully described commitish object", .{});
 
-        return ret;
+        return result;
     }
 
     comptime {

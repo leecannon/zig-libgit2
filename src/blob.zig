@@ -17,7 +17,7 @@ pub const Blob = opaque {
     pub fn id(self: *const Blob) *const git.Oid {
         log.debug("Blame.id called", .{});
 
-        const ret = internal.fromC(raw.git_blob_id(@ptrCast(*const raw.git_blob, self)).?);
+        const ret = @ptrCast(*const git.Oid, raw.git_blob_id(@ptrCast(*const raw.git_blob, self)));
 
         // This check is to prevent formating the oid when we are not going to print anything
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
@@ -35,7 +35,10 @@ pub const Blob = opaque {
     pub fn owner(self: *const Blob) *git.Repository {
         log.debug("Blame.owner called", .{});
 
-        const ret = internal.fromC(raw.git_blob_owner(@ptrCast(*const raw.git_blob, self)).?);
+        const ret = @ptrCast(
+            *git.Repository,
+            raw.git_blob_owner(@ptrCast(*const raw.git_blob, self)),
+        );
 
         log.debug("successfully fetched owning repository: {s}", .{ret});
 
@@ -69,10 +72,16 @@ pub const Blob = opaque {
     }
 
     pub fn copy(self: *Blob) !*Blob {
-        var new_blob: ?*raw.git_blob = undefined;
+        var new_blob: *Blob = undefined;
+
+        const ret = raw.git_blob_dup(
+            @ptrCast(*?*raw.git_blob, &new_blob),
+            @ptrCast(*raw.git_blob, self),
+        );
         // This always returns 0
-        _ = raw.git_blob_dup(&new_blob, @ptrCast(*raw.git_blob, self));
-        return internal.fromC(new_blob.?);
+        std.debug.assert(ret == 0);
+
+        return new_blob;
     }
 
     pub usingnamespace if (internal.available(.@"0.99.0")) struct {

@@ -17,13 +17,16 @@ pub const Worktree = opaque {
     pub fn repositoryOpen(self: *Worktree) !*git.Repository {
         log.debug("Worktree.repositoryOpen called", .{});
 
-        var repo: ?*raw.git_repository = undefined;
+        var repo: *git.Repository = undefined;
 
-        try internal.wrapCall("git_repository_open_from_worktree", .{ &repo, @ptrCast(*raw.git_worktree, self) });
+        try internal.wrapCall("git_repository_open_from_worktree", .{
+            @ptrCast(*?*raw.git_repository, &repo),
+            @ptrCast(*raw.git_worktree, self),
+        });
 
         log.debug("repository opened successfully", .{});
 
-        return internal.fromC(repo.?);
+        return repo;
     }
 
     comptime {

@@ -28,7 +28,7 @@ pub const Blame = opaque {
         log.debug("Blame.hunkByIndex called, index={}", .{index});
 
         if (raw.git_blame_get_hunk_byindex(@ptrCast(*raw.git_blame, self), index)) |c_ret| {
-            const ret = internal.fromC(c_ret);
+            const ret = @ptrCast(*const git.BlameHunk, c_ret);
             log.debug("successfully fetched hunk: {*}", .{ret});
             return ret;
         }
@@ -40,7 +40,7 @@ pub const Blame = opaque {
         log.debug("Blame.hunkByLine called, line={}", .{line});
 
         if (raw.git_blame_get_hunk_byline(@ptrCast(*raw.git_blame, self), line)) |c_ret| {
-            const ret = internal.fromC(c_ret);
+            const ret = @ptrCast(*const git.BlameHunk, c_ret);
             log.debug("successfully fetched hunk: {*}", .{ret});
             return ret;
         }
@@ -56,13 +56,18 @@ pub const Blame = opaque {
     pub fn blameBuffer(self: *Blame, buffer: [:0]const u8) !*git.Blame {
         log.debug("Blame.blameBuffer called, buffer={s}", .{buffer});
 
-        var blame: ?*raw.git_blame = undefined;
+        var blame: *git.Blame = undefined;
 
-        try internal.wrapCall("git_blame_buffer", .{ &blame, @ptrCast(*raw.git_blame, self), buffer.ptr, buffer.len });
+        try internal.wrapCall("git_blame_buffer", .{
+            @ptrCast(*?*raw.git_blame, &blame),
+            @ptrCast(*raw.git_blame, self),
+            buffer.ptr,
+            buffer.len,
+        });
 
         log.debug("successfully fetched blame buffer", .{});
 
-        return internal.fromC(blame.?);
+        return blame;
     }
 
     comptime {

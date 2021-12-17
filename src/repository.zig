@@ -45,16 +45,19 @@ pub const Repository = opaque {
     pub fn describe(self: *Repository, options: git.DescribeOptions) !*git.DescribeResult {
         log.debug("Repository.describe called, options={}", .{options});
 
-        var result: ?*raw.git_describe_result = undefined;
+        var result: *git.DescribeResult = undefined;
 
         var c_options = options.makeCOptionObject();
-        try internal.wrapCall("git_describe_workdir", .{ &result, @ptrCast(*raw.git_repository, self), &c_options });
 
-        const ret = internal.fromC(result.?);
+        try internal.wrapCall("git_describe_workdir", .{
+            @ptrCast(*?*raw.git_describe_result, &result),
+            @ptrCast(*raw.git_repository, self),
+            &c_options,
+        });
 
         log.debug("successfully described commitish object", .{});
 
-        return ret;
+        return result;
     }
 
     /// Retrieve the configured identity to use for reflogs
@@ -139,13 +142,16 @@ pub const Repository = opaque {
     pub fn head(self: *Repository) !*git.Reference {
         log.debug("Repository.head called", .{});
 
-        var ref: ?*raw.git_reference = undefined;
+        var ref: *git.Reference = undefined;
 
-        try internal.wrapCall("git_repository_head", .{ &ref, @ptrCast(*raw.git_repository, self) });
+        try internal.wrapCall("git_repository_head", .{
+            @ptrCast(*?*raw.git_reference, &ref),
+            @ptrCast(*raw.git_repository, self),
+        });
 
         log.debug("reference opened successfully", .{});
 
-        return internal.fromC(ref.?);
+        return ref;
     }
 
     /// Make the repository HEAD point to the specified reference.
@@ -244,13 +250,17 @@ pub const Repository = opaque {
     pub fn headForWorktree(self: *Repository, name: [:0]const u8) !*git.Reference {
         log.debug("Repository.headForWorktree called, name={s}", .{name});
 
-        var ref: ?*raw.git_reference = undefined;
+        var ref: *git.Reference = undefined;
 
-        try internal.wrapCall("git_repository_head_for_worktree", .{ &ref, @ptrCast(*raw.git_repository, self), name.ptr });
+        try internal.wrapCall("git_repository_head_for_worktree", .{
+            @ptrCast(*?*raw.git_reference, &ref),
+            @ptrCast(*raw.git_repository, self),
+            name.ptr,
+        });
 
         log.debug("reference opened successfully", .{});
 
-        return internal.fromC(ref.?);
+        return ref;
     }
 
     pub fn isHeadUnborn(self: *Repository) !bool {
@@ -398,13 +408,16 @@ pub const Repository = opaque {
     pub fn configGet(self: *Repository) !*git.Config {
         log.debug("Repository.configGet called", .{});
 
-        var config: ?*raw.git_config = undefined;
+        var config: *git.Config = undefined;
 
-        try internal.wrapCall("git_repository_config", .{ &config, @ptrCast(*raw.git_repository, self) });
+        try internal.wrapCall("git_repository_config", .{
+            @ptrCast(*?*raw.git_config, &config),
+            @ptrCast(*raw.git_repository, self),
+        });
 
         log.debug("repository config acquired successfully", .{});
 
-        return internal.fromC(config.?);
+        return config;
     }
 
     /// Get a snapshot of the repository's configuration
@@ -413,49 +426,61 @@ pub const Repository = opaque {
     pub fn configSnapshot(self: *Repository) !*git.Config {
         log.debug("Repository.configSnapshot called", .{});
 
-        var config: ?*raw.git_config = undefined;
+        var config: *git.Config = undefined;
 
-        try internal.wrapCall("git_repository_config_snapshot", .{ &config, @ptrCast(*raw.git_repository, self) });
+        try internal.wrapCall("git_repository_config_snapshot", .{
+            @ptrCast(*?*raw.git_config, &config),
+            @ptrCast(*raw.git_repository, self),
+        });
 
         log.debug("repository config acquired successfully", .{});
 
-        return internal.fromC(config.?);
+        return config;
     }
 
     pub fn odbGet(self: *Repository) !*git.Odb {
         log.debug("Repository.odbGet called", .{});
 
-        var odb: ?*raw.git_odb = undefined;
+        var odb: *git.Odb = undefined;
 
-        try internal.wrapCall("git_repository_odb", .{ &odb, @ptrCast(*raw.git_repository, self) });
+        try internal.wrapCall("git_repository_odb", .{
+            @ptrCast(*?*raw.git_odb, &odb),
+            @ptrCast(*raw.git_repository, self),
+        });
 
         log.debug("repository odb acquired successfully", .{});
 
-        return internal.fromC(odb.?);
+        return odb;
     }
 
     pub fn refDb(self: *Repository) !*git.RefDb {
         log.debug("Repository.refDb called", .{});
 
-        var ref_db: ?*raw.git_refdb = undefined;
+        var ref_db: *git.RefDb = undefined;
 
-        try internal.wrapCall("git_repository_refdb", .{ &ref_db, @ptrCast(*raw.git_repository, self) });
+        try internal.wrapCall("git_repository_refdb", .{
+            @ptrCast(*?*raw.git_refdb, &ref_db),
+            @ptrCast(*raw.git_repository, self),
+        });
 
         log.debug("repository refdb acquired successfully", .{});
 
-        return internal.fromC(ref_db.?);
+        return ref_db;
     }
 
     pub fn indexGet(self: *Repository) !*git.Index {
         log.debug("Repository.indexGet called", .{});
 
-        var index: ?*raw.git_index = undefined;
+        var index: *git.Index = undefined;
 
-        try internal.wrapCall("git_repository_index", .{ &index, @ptrCast(*raw.git_repository, self) });
+        try internal.wrapCall("git_repository_index", .{
+            @ptrCast(*?*raw.git_index, &index),
+            @ptrCast(*raw.git_repository, self),
+        });
 
         log.debug("repository index acquired successfully", .{});
 
-        return internal.fromC(index.?);
+        return index;
     }
 
     /// Retrieve git's prepared message
@@ -574,7 +599,7 @@ pub const Repository = opaque {
                 return callback_fn(
                     std.mem.sliceTo(c_ref_name, 0),
                     std.mem.sliceTo(c_remote_url, 0),
-                    internal.fromC(c_oid.?),
+                    @ptrCast(*const git.Oid, c_oid),
                     c_is_merge == 1,
                     @ptrCast(UserDataType, payload),
                 );
@@ -640,7 +665,7 @@ pub const Repository = opaque {
 
         const cb = struct {
             pub fn cb(c_oid: [*c]const raw.git_oid, payload: ?*c_void) callconv(.C) c_int {
-                return callback_fn(internal.fromC(c_oid.?), @ptrCast(UserDataType, payload));
+                return callback_fn(@ptrCast(*const git.Oid, c_oid), @ptrCast(UserDataType, payload));
             }
         }.cb;
 
@@ -676,30 +701,28 @@ pub const Repository = opaque {
         path: [:0]const u8,
         object_type: git.ObjectType,
         as_path: ?[:0]const u8,
-    ) !*const git.Oid {
+    ) !git.Oid {
         log.debug("Repository.hashFile called, path={s}, object_type={}, as_path={s}", .{ path, object_type, as_path });
 
-        var oid: ?*raw.git_oid = undefined;
+        var oid: git.Oid = undefined;
 
         const as_path_temp: [*c]const u8 = if (as_path) |slice| slice.ptr else null;
         try internal.wrapCall("git_repository_hashfile", .{
-            oid,
+            @ptrCast(*raw.git_oid, &oid),
             @ptrCast(*raw.git_repository, self),
             path.ptr,
             @enumToInt(object_type),
             as_path_temp,
         });
 
-        const ret = internal.fromC(oid.?);
-
         // This check is to prevent formating the oid when we are not going to print anything
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
             var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
-            const slice = try ret.formatHex(&buf);
+            const slice = try oid.formatHex(&buf);
             log.debug("file hash acquired successfully, hash={s}", .{slice});
         }
 
-        return ret;
+        return oid;
     }
 
     /// Get file status for a single file.
@@ -771,13 +794,16 @@ pub const Repository = opaque {
         ) c_int,
     ) !c_int {
         const UserDataType = @TypeOf(user_data);
+        const ptr_info = @typeInfo(UserDataType);
+        comptime std.debug.assert(ptr_info == .Pointer); // Must be a pointer
+        const alignment = ptr_info.Pointer.alignment;
 
         const cb = struct {
             pub fn cb(path: [*c]const u8, status: c_uint, payload: ?*c_void) callconv(.C) c_int {
                 return callback_fn(
                     std.mem.sliceTo(path, 0),
                     @bitCast(git.FileStatus, status),
-                    @intToPtr(UserDataType, @ptrToInt(payload)),
+                    @ptrCast(UserDataType, @alignCast(alignment, payload)),
                 );
             }
         }.cb;
@@ -859,13 +885,16 @@ pub const Repository = opaque {
         ) c_int,
     ) !c_int {
         const UserDataType = @TypeOf(user_data);
+        const ptr_info = @typeInfo(UserDataType);
+        comptime std.debug.assert(ptr_info == .Pointer); // Must be a pointer
+        const alignment = ptr_info.Pointer.alignment;
 
         const cb = struct {
             pub fn cb(path: [*c]const u8, status: c_uint, payload: ?*c_void) callconv(.C) c_int {
                 return callback_fn(
                     std.mem.sliceTo(path, 0),
                     @bitCast(git.FileStatus, status),
-                    @intToPtr(UserDataType, @ptrToInt(payload)),
+                    @ptrCast(UserDataType, @alignCast(alignment, payload)),
                 );
             }
         }.cb;
@@ -897,19 +926,19 @@ pub const Repository = opaque {
     pub fn statusList(self: *Repository, options: FileStatusOptions) !*git.StatusList {
         log.debug("Repository.statusList called, options={}", .{options});
 
-        var status_list: ?*raw.git_status_list = undefined;
+        var status_list: *git.StatusList = undefined;
 
         const c_options = options.makeCOptionObject();
 
         try internal.wrapCall("git_status_list_new", .{
-            &status_list,
+            @ptrCast(*?*raw.git_status_list, &status_list),
             @ptrCast(*raw.git_repository, self),
             &c_options,
         });
 
         log.debug("successfully fetched status list", .{});
 
-        return internal.fromC(status_list.?);
+        return status_list;
     }
 
     pub const FileStatusOptions = struct {
@@ -1095,9 +1124,10 @@ pub const Repository = opaque {
             );
         }
 
-        var result: ?*raw.git_annotated_commit = undefined;
+        var result: *git.AnnotatedCommit = undefined;
+
         try internal.wrapCall("git_annotated_commit_from_fetchhead", .{
-            &result,
+            @ptrCast(*?*raw.git_annotated_commit, &result),
             @ptrCast(*raw.git_repository, self),
             branch_name.ptr,
             remote_url.ptr,
@@ -1106,7 +1136,7 @@ pub const Repository = opaque {
 
         log.debug("successfully created annotated commit", .{});
 
-        return internal.fromC(result.?);
+        return result;
     }
 
     pub fn annotatedCommitCreateFromLookup(self: *Repository, id: git.Oid) !*git.AnnotatedCommit {
@@ -1117,31 +1147,33 @@ pub const Repository = opaque {
             log.debug("Repository.annotatedCommitCreateFromLookup called, id={s}", .{slice});
         }
 
-        var result: ?*raw.git_annotated_commit = undefined;
+        var result: *git.AnnotatedCommit = undefined;
+
         try internal.wrapCall("git_annotated_commit_lookup", .{
-            &result,
+            @ptrCast(*?*raw.git_annotated_commit, &result),
             @ptrCast(*raw.git_repository, self),
             @ptrCast(*const raw.git_oid, &id),
         });
 
         log.debug("successfully created annotated commit", .{});
 
-        return internal.fromC(result.?);
+        return result;
     }
 
     pub fn annotatedCommitCreateFromRevisionString(self: *Repository, revspec: [:0]const u8) !*git.AnnotatedCommit {
         log.debug("Repository.annotatedCommitCreateFromRevisionString called, revspec={s}", .{revspec});
 
-        var result: ?*raw.git_annotated_commit = undefined;
+        var result: *git.AnnotatedCommit = undefined;
+
         try internal.wrapCall("git_annotated_commit_from_revspec", .{
-            &result,
+            @ptrCast(*?*raw.git_annotated_commit, &result),
             @ptrCast(*raw.git_repository, self),
             revspec.ptr,
         });
 
         log.debug("successfully created annotated commit", .{});
 
-        return internal.fromC(result.?);
+        return result;
     }
 
     /// Apply a `Diff` to the given repository, making changes directly in the working directory, the index, or both.
@@ -1215,23 +1247,21 @@ pub const Repository = opaque {
             .{ diff, preimage, options },
         );
 
-        var ret: ?*raw.git_index = undefined;
+        var ret: *git.Index = undefined;
 
         const c_options = options.makeCOptionObject();
 
         try internal.wrapCall("git_apply_to_tree", .{
-            &ret,
+            @ptrCast(*?*raw.git_index, &ret),
             @ptrCast(*raw.git_repository, self),
             @ptrCast(*raw.git_tree, preimage),
             @ptrCast(*raw.git_diff, diff),
             &c_options,
         });
 
-        const result = internal.fromC(ret.?);
+        log.debug("apply completed, index={*}", .{ret});
 
-        log.debug("apply completed, index={*}", .{result});
-
-        return result;
+        return ret;
     }
 
     /// Apply a `Diff` to a `Tree`, and return the resulting image as an index.
@@ -1252,23 +1282,21 @@ pub const Repository = opaque {
             .{ diff, preimage, options },
         );
 
-        var ret: [*c]raw.git_index = undefined;
+        var ret: *git.Index = undefined;
 
         const c_options = options.makeCOptionObject();
 
         try internal.wrapCall("git_apply_to_tree", .{
-            &ret,
+            @ptrCast(*?*raw.git_index, &ret),
             @ptrCast(*raw.git_repository, self),
             @ptrCast(*raw.git_tree, preimage),
             @ptrCast(*raw.git_diff, diff),
             &c_options,
         });
 
-        const result = internal.fromC(ret.?);
+        log.debug("apply completed, index={*}", .{ret});
 
-        log.debug("apply completed, index={*}", .{result});
-
-        return result;
+        return ret;
     }
 
     pub const ApplyOptions = struct {
@@ -1661,15 +1689,20 @@ pub const Repository = opaque {
     pub fn blameFile(self: *Repository, path: [:0]const u8, options: BlameOptions) !*git.Blame {
         log.debug("Repository.blameFile called, path={s}, options={}", .{ path, options });
 
-        var blame: ?*raw.git_blame = undefined;
+        var blame: *git.Blame = undefined;
 
         var c_options = options.makeCOptionObject();
 
-        try internal.wrapCall("git_blame_file", .{ &blame, @ptrCast(*raw.git_repository, self), path.ptr, &c_options });
+        try internal.wrapCall("git_blame_file", .{
+            @ptrCast(*?*raw.git_blame, &blame),
+            @ptrCast(*raw.git_repository, self),
+            path.ptr,
+            &c_options,
+        });
 
         log.debug("successfully fetched file blame", .{});
 
-        return internal.fromC(blame.?);
+        return blame;
     }
 
     pub const BlameOptions = struct {
@@ -1781,17 +1814,17 @@ pub const Repository = opaque {
             log.debug("Repository.blobLookup called, id={s}", .{slice});
         }
 
-        var blob: ?*raw.git_blob = undefined;
+        var blob: *git.Blob = undefined;
 
         try internal.wrapCall("git_blob_lookup", .{
-            &blob,
+            @ptrCast(*?*raw.git_blob, &blob),
             @ptrCast(*raw.git_repository, self),
             @ptrCast(*const raw.git_oid, id),
         });
 
         log.debug("successfully fetched blob {*}", .{blob});
 
-        return internal.fromC(blob.?);
+        return blob;
     }
 
     /// Lookup a blob object from a repository, given a prefix of its identifier (short id).
@@ -1803,10 +1836,10 @@ pub const Repository = opaque {
             log.debug("Repository.blobLookup called, id={s}, len={}", .{ slice, len });
         }
 
-        var blob: ?*raw.git_blob = undefined;
+        var blob: *git.Blob = undefined;
 
         try internal.wrapCall("git_blob_lookup_prefix", .{
-            &blob,
+            @ptrCast(*?*raw.git_blob, &blob),
             @ptrCast(*raw.git_repository, self),
             @ptrCast(*const raw.git_oid, id),
             len,
@@ -1814,7 +1847,7 @@ pub const Repository = opaque {
 
         log.debug("successfully fetched blob {*}", .{blob});
 
-        return internal.fromC(blob.?);
+        return blob;
     }
 
     /// Create a new branch pointing at a target commit
@@ -1834,10 +1867,10 @@ pub const Repository = opaque {
     pub fn branchCreate(self: *Repository, branch_name: [:0]const u8, target: *const git.Commit, force: bool) !*git.Reference {
         log.debug("Repository.branchCreate called, branch_name={s}, target={*}, force={}", .{ branch_name, target, force });
 
-        var reference: ?*raw.git_reference = undefined;
+        var reference: *git.Reference = undefined;
 
         try internal.wrapCall("git_branch_create", .{
-            &reference,
+            @ptrCast(*?*raw.git_reference, &reference),
             @ptrCast(*raw.git_repository, self),
             branch_name.ptr,
             @ptrCast(*const raw.git_commit, target),
@@ -1846,7 +1879,7 @@ pub const Repository = opaque {
 
         log.debug("successfully created branch", .{});
 
-        return internal.fromC(reference.?);
+        return reference;
     }
 
     /// Create a new branch pointing at a target commit
@@ -1867,10 +1900,10 @@ pub const Repository = opaque {
     ) !*git.Reference {
         log.debug("Repository.branchCreateFromAnnotated called, branch_name={s}, target={*}, force={}", .{ branch_name, target, force });
 
-        var reference: ?*raw.git_reference = undefined;
+        var reference: *git.Reference = undefined;
 
         try internal.wrapCall("git_branch_create_from_annotated", .{
-            &reference,
+            @ptrCast(*?*raw.git_reference, &reference),
             @ptrCast(*raw.git_repository, self),
             branch_name.ptr,
             @ptrCast(*const raw.git_annotated_commit, target),
@@ -1879,23 +1912,23 @@ pub const Repository = opaque {
 
         log.debug("successfully created branch", .{});
 
-        return internal.fromC(reference.?);
+        return reference;
     }
 
     pub fn iterateBranches(self: *Repository, branch_type: BranchType) !*BranchIterator {
         log.debug("Repository.iterateBranches called", .{});
 
-        var iterator: ?*raw.git_branch_iterator = undefined;
+        var iterator: *BranchIterator = undefined;
 
         try internal.wrapCall("git_branch_iterator_new", .{
-            &iterator,
+            @ptrCast(*?*raw.git_branch_iterator, &iterator),
             @ptrCast(*raw.git_repository, self),
             @enumToInt(branch_type),
         });
 
         log.debug("branch iterator created successfully", .{});
 
-        return internal.fromC(iterator.?);
+        return iterator;
     }
 
     pub const BranchType = enum(c_uint) {
@@ -1908,11 +1941,11 @@ pub const Repository = opaque {
         pub fn next(self: *BranchIterator) !?Item {
             log.debug("BranchIterator.next called", .{});
 
-            var reference: ?*raw.git_reference = undefined;
+            var reference: *git.Reference = undefined;
             var branch_type: raw.git_branch_t = undefined;
 
             internal.wrapCall("git_branch_next", .{
-                &reference,
+                @ptrCast(*?*raw.git_reference, &reference),
                 &branch_type,
                 @ptrCast(*raw.git_branch_iterator, self),
             }) catch |err| switch (err) {
@@ -1924,7 +1957,7 @@ pub const Repository = opaque {
             };
 
             const ret = Item{
-                .reference = internal.fromC(reference.?),
+                .reference = reference,
                 .branch_type = @intToEnum(BranchType, branch_type),
             };
 
@@ -1958,10 +1991,10 @@ pub const Repository = opaque {
     pub fn branchLookup(self: *Repository, branch_name: [:0]const u8, branch_type: BranchType) !*git.Reference {
         log.debug("Repository.branchLookup called, branch_name={s}, branch_type={}", .{ branch_name, branch_type });
 
-        var ref: ?*raw.git_reference = undefined;
+        var ref: *git.Reference = undefined;
 
         try internal.wrapCall("git_branch_lookup", .{
-            &ref,
+            @ptrCast(*?*raw.git_reference, &ref),
             @ptrCast(*raw.git_repository, self),
             branch_name.ptr,
             @enumToInt(branch_type),
@@ -1969,7 +2002,7 @@ pub const Repository = opaque {
 
         log.debug("successfully fetched branch: {*}", .{ref});
 
-        return internal.fromC(ref.?);
+        return ref;
     }
 
     /// Find the remote name of a remote-tracking branch
@@ -2359,12 +2392,12 @@ pub const Repository = opaque {
             .{ cherrypick_commit, our_commit, mainline, options },
         );
 
-        var c_ret: ?*raw.git_index = undefined;
+        var index: *git.Index = undefined;
 
         const c_options = options.makeCOptionObject();
 
         try internal.wrapCall("git_cherrypick_commit", .{
-            &c_ret,
+            @ptrCast(*?*raw.git_index, &index),
             @ptrCast(*raw.git_repository, self),
             @ptrCast(*raw.git_commit, cherrypick_commit),
             @ptrCast(*raw.git_commit, our_commit),
@@ -2372,11 +2405,9 @@ pub const Repository = opaque {
             &c_options,
         });
 
-        const ret = internal.fromC(c_ret.?);
+        log.debug("successfully cherrypicked, index={*}", .{index});
 
-        log.debug("successfully cherrypicked, index={*}", .{ret});
-
-        return ret;
+        return index;
     }
 
     pub fn cherrypick(
@@ -2428,19 +2459,17 @@ pub const Repository = opaque {
             log.debug("Repository.commitLookup called, oid={s}", .{slice});
         }
 
-        var commit: ?*raw.git_commit = undefined;
+        var commit: *git.Commit = undefined;
 
         try internal.wrapCall("git_commit_lookup", .{
-            &commit,
+            @ptrCast(*?*raw.git_commit, &commit),
             @ptrCast(*raw.git_repository, self),
             @ptrCast(*const raw.git_oid, oid),
         });
 
-        const ret = internal.fromC(commit.?);
+        log.debug("successfully looked up commit, commit={*}", .{commit});
 
-        log.debug("successfully looked up commit, commit={*}", .{ret});
-
-        return ret;
+        return commit;
     }
 
     /// Lookup a commit object from a repository, given a prefix of its identifier (short id).
@@ -2452,20 +2481,18 @@ pub const Repository = opaque {
             log.debug("Repository.commitLookupPrefix called, oid={s}, size={}", .{ slice, size });
         }
 
-        var commit: ?*raw.git_commit = undefined;
+        var commit: *git.Commit = undefined;
 
         try internal.wrapCall("git_commit_lookup_prefix", .{
-            &commit,
+            @ptrCast(*?*raw.git_commit, &commit),
             @ptrCast(*raw.git_repository, self),
             @ptrCast(*const raw.git_oid, oid),
             size,
         });
 
-        const ret = internal.fromC(commit.?);
+        log.debug("successfully looked up commit, commit={*}", .{commit});
 
-        log.debug("successfully looked up commit, commit={*}", .{ret});
-
-        return ret;
+        return commit;
     }
 
     pub fn commitExtractSignature(self: *Repository, commit: *git.Oid, field: ?[:0]const u8) !ExtractSignatureResult {
@@ -2503,7 +2530,7 @@ pub const Repository = opaque {
         message_encoding: ?[:0]const u8,
         message: [:0]const u8,
         tree: *const git.Tree,
-        parents: []const *const git.Commit,
+        parents: []*const git.Commit,
     ) !git.Oid {
         log.debug("Repository.commitCreate called, update_ref={s}, author={*}, committer={*}, message_encoding={s}, message={s}, tree={*}", .{
             update_ref,
@@ -2529,7 +2556,7 @@ pub const Repository = opaque {
             message.ptr,
             @ptrCast(*const raw.git_tree, tree),
             parents.len,
-            @intToPtr([*c]?*const raw.struct_git_commit, @ptrToInt(parents.ptr)),
+            @ptrCast([*c]?*const raw.git_commit, parents.ptr),
         });
 
         // This check is to prevent formating the oid when we are not going to print anything
@@ -2549,7 +2576,7 @@ pub const Repository = opaque {
         message_encoding: ?[:0]const u8,
         message: [:0]const u8,
         tree: *const git.Tree,
-        parents: []const *const git.Commit,
+        parents: []*const git.Commit,
     ) !git.Buf {
         log.debug("Repository.commitCreateBuffer called, author={*}, committer={*}, message_encoding={s}, message={s}, tree={*}", .{
             author,
@@ -2572,7 +2599,7 @@ pub const Repository = opaque {
             message.ptr,
             @ptrCast(*const raw.git_tree, tree),
             parents.len,
-            @intToPtr([*c]?*const raw.struct_git_commit, @ptrToInt(parents.ptr)),
+            @ptrCast([*c]?*const raw.git_commit, parents.ptr),
         });
 
         log.debug("successfully created commit: {s}", .{ret.toSlice()});
@@ -2625,15 +2652,16 @@ pub const Repository = opaque {
     pub fn mailmapFromRepo(self: *Repository) !*git.Mailmap {
         log.debug("Repository.mailmapFromRepo called", .{});
 
-        var mailmap: ?*raw.git_mailmap = undefined;
+        var mailmap: *git.Mailmap = undefined;
 
-        try internal.wrapCall("git_mailmap_from_repository", .{ &mailmap, @ptrCast(*raw.git_repository, self) });
+        try internal.wrapCall("git_mailmap_from_repository", .{
+            @ptrCast(*?*raw.git_mailmap, &mailmap),
+            @ptrCast(*raw.git_repository, self),
+        });
 
-        const ret = internal.fromC(mailmap.?);
+        log.debug("successfully loaded mailmap from repo: {*}", .{mailmap});
 
-        log.debug("successfully loaded mailmap from repo: {*}", .{ret});
-
-        return ret;
+        return mailmap;
     }
 
     /// Load the filter list for a given path.
@@ -2657,10 +2685,10 @@ pub const Repository = opaque {
             .{ blob, path, mode, flags },
         );
 
-        var c_opt: ?*raw.git_filter_list = undefined;
+        var opt: ?*git.FilterList = undefined;
 
         try internal.wrapCall("git_filter_list_load", .{
-            &c_opt,
+            @ptrCast(*?*raw.git_filter_list, &opt),
             @ptrCast(*raw.git_repository, self),
             @ptrCast(?*raw.git_blob, blob),
             path.ptr,
@@ -2668,9 +2696,7 @@ pub const Repository = opaque {
             @bitCast(c_uint, flags),
         });
 
-        if (c_opt) |c_non_opt| {
-            const ret = internal.fromC(c_non_opt);
-
+        if (opt) |ret| {
             log.debug("successfully acquired filters for the given path: {*}", .{ret});
 
             return ret;
@@ -2836,12 +2862,12 @@ pub const Repository = opaque {
                 .{ blob, path, mode, options },
             );
 
-            var c_opt: ?*raw.git_filter_list = undefined;
+            var opt: ?*git.FilterList = undefined;
 
             var c_options = options.makeCOptionObject();
 
             try internal.wrapCall("git_filter_list_load_ext", .{
-                &c_opt,
+                @ptrCast(*?*raw.git_filter_list, &opt),
                 @ptrCast(*raw.git_repository, self),
                 @ptrCast(?*raw.git_blob, blob),
                 path.ptr,
@@ -2849,9 +2875,7 @@ pub const Repository = opaque {
                 &c_options,
             });
 
-            if (c_opt) |c_non_opt| {
-                const ret = internal.fromC(c_non_opt);
-
+            if (opt) |ret| {
                 log.debug("successfully acquired filters for the given path: {*}", .{ret});
 
                 return ret;
@@ -3149,20 +3173,19 @@ pub const Repository = opaque {
         pub fn blobFromStream(self: *Repository, hint_path: ?[:0]const u8) !*git.WriteStream {
             log.debug("Repository.blobFromDisk called, hint_path={s}", .{hint_path});
 
-            var write_stream: [*c]raw.git_writestream = undefined;
+            var write_stream: *git.WriteStream = undefined;
 
             const hint_path_c = if (hint_path) |ptr| ptr.ptr else null;
+
             try internal.wrapCall("git_blob_create_from_stream", .{
-                &write_stream,
+                @ptrCast(*?*raw.git_writestream, &write_stream),
                 @ptrCast(*raw.git_repository, self),
                 hint_path_c,
             });
 
-            const ret = internal.fromC(write_stream);
-
             log.debug("successfully created writestream {*}", .{write_stream});
 
-            return ret;
+            return write_stream;
         }
 
         /// Read a file from the filesystem and write its content to the Object Database as a loose blob

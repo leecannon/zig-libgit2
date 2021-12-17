@@ -17,29 +17,31 @@ pub const Config = opaque {
     pub fn new() !*Config {
         log.debug("Config.new called", .{});
 
-        var config: ?*raw.git_config = undefined;
+        var config: *Config = undefined;
 
-        try internal.wrapCall("git_config_new", .{&config});
-
-        const ret = internal.fromC(config.?);
+        try internal.wrapCall("git_config_new", .{
+            @ptrCast(*?*raw.git_config, &config),
+        });
 
         log.debug("created new config", .{});
 
-        return ret;
+        return config;
     }
 
     pub fn getEntry(self: *const Config, name: [:0]const u8) !*ConfigEntry {
         log.debug("Config.getEntry called, name={s}", .{name});
 
-        var entry: ?*raw.git_config_entry = undefined;
+        var entry: *ConfigEntry = undefined;
 
-        try internal.wrapCall("git_config_get_entry", .{ &entry, @ptrCast(*const raw.git_config, self), name.ptr });
+        try internal.wrapCall("git_config_get_entry", .{
+            @ptrCast(*?*raw.git_config_entry, &entry),
+            @ptrCast(*const raw.git_config, self),
+            name.ptr,
+        });
 
-        const ret = internal.fromC(entry.?);
+        log.debug("got entry: {*}", .{entry});
 
-        log.debug("got entry: {*}", .{ret});
-
-        return ret;
+        return entry;
     }
 
     pub fn getInt(self: *const Config, name: [:0]const u8) !i32 {
@@ -181,7 +183,7 @@ pub const Config = opaque {
                 payload: ?*c_void,
             ) callconv(.C) c_int {
                 return callback_fn(
-                    internal.fromC(entry.?),
+                    @ptrCast(*const ConfigEntry, entry),
                     @ptrCast(UserDataType, payload),
                 );
             }
@@ -217,7 +219,7 @@ pub const Config = opaque {
                 payload: ?*c_void,
             ) callconv(.C) c_int {
                 return callback_fn(
-                    internal.fromC(entry.?),
+                    @ptrCast(*const ConfigEntry, entry),
                     @ptrCast(UserDataType, payload),
                 );
             }
@@ -250,7 +252,7 @@ pub const Config = opaque {
                 payload: ?*c_void,
             ) callconv(.C) c_int {
                 return callback_fn(
-                    internal.fromC(entry.?),
+                    @ptrCast(*const ConfigEntry, entry),
                     @ptrCast(UserDataType, payload),
                 );
             }
@@ -303,71 +305,76 @@ pub const Config = opaque {
     pub fn openOnDisk(path: [:0]const u8) !*Config {
         log.debug("Config.openOnDisk called, path={s}", .{path});
 
-        var config: ?*raw.git_config = undefined;
+        var config: *Config = undefined;
 
-        try internal.wrapCall("git_config_open_ondisk", .{ &config, path.ptr });
-
-        const ret = internal.fromC(config.?);
+        try internal.wrapCall("git_config_open_ondisk", .{
+            @ptrCast(*?*raw.git_config, &config),
+            path.ptr,
+        });
 
         log.debug("opened config from file", .{});
 
-        return ret;
+        return config;
     }
 
-    pub fn openLevel(self: *const git.Config, level: Level) !*git.Config {
+    pub fn openLevel(self: *const Config, level: Level) !*Config {
         log.debug("Config.openLevel called, level={}", .{level});
 
-        var config: ?*raw.git_config = undefined;
+        var config: *Config = undefined;
 
-        try internal.wrapCall("git_config_open_level", .{ &config, @ptrCast(*const raw.git_config, self), @enumToInt(level) });
-
-        const ret = internal.fromC(config.?);
+        try internal.wrapCall("git_config_open_level", .{
+            @ptrCast(*?*raw.git_config, &config),
+            @ptrCast(*const raw.git_config, self),
+            @enumToInt(level),
+        });
 
         log.debug("opened config for level", .{});
 
-        return ret;
+        return config;
     }
 
     pub fn openGlobal(self: *git.Config) !*Config {
         log.debug("Config.openGlobal called", .{});
 
-        var config: ?*raw.git_config = undefined;
+        var config: *Config = undefined;
 
-        try internal.wrapCall("git_config_open_global", .{ &config, @ptrCast(*raw.git_config, self) });
-
-        const ret = internal.fromC(config.?);
+        try internal.wrapCall("git_config_open_global", .{
+            @ptrCast(*?*raw.git_config, &config),
+            @ptrCast(*raw.git_config, self),
+        });
 
         log.debug("opened global config", .{});
 
-        return ret;
+        return config;
     }
 
     pub fn snapshot(self: *git.Config) !*Config {
         log.debug("Config.snapshot called", .{});
 
-        var config: ?*raw.git_config = undefined;
+        var config: *Config = undefined;
 
-        try internal.wrapCall("git_config_snapshot", .{ &config, @ptrCast(*raw.git_config, self) });
-
-        const ret = internal.fromC(config.?);
+        try internal.wrapCall("git_config_snapshot", .{
+            @ptrCast(*?*raw.git_config, &config),
+            @ptrCast(*raw.git_config, self),
+        });
 
         log.debug("created snapshot of config", .{});
 
-        return ret;
+        return config;
     }
 
     pub fn openDefault() !*Config {
         log.debug("Config.openDefault called", .{});
 
-        var config: ?*raw.git_config = undefined;
+        var config: *Config = undefined;
 
-        try internal.wrapCall("git_config_open_default", .{&config});
-
-        const ret = internal.fromC(config.?);
+        try internal.wrapCall("git_config_open_default", .{
+            @ptrCast(*?*raw.git_config, &config),
+        });
 
         log.debug("opened default config", .{});
 
-        return ret;
+        return config;
     }
 
     pub fn findGlobal() ?git.Buf {
@@ -421,24 +428,27 @@ pub const Config = opaque {
     pub fn lock(self: *Config) !*git.Transaction {
         log.debug("Config.lock called", .{});
 
-        var transaction: ?*raw.git_transaction = undefined;
+        var transaction: *git.Transaction = undefined;
 
-        try internal.wrapCall("git_config_lock", .{ &transaction, @ptrCast(*raw.git_config, self) });
+        try internal.wrapCall("git_config_lock", .{
+            @ptrCast(*?*raw.git_transaction, &transaction),
+            @ptrCast(*raw.git_config, self),
+        });
 
         log.debug("successfully locked config", .{});
 
-        return internal.fromC(transaction.?);
+        return transaction;
     }
 
     pub fn iterateMultivar(self: *const Config, name: [:0]const u8, regex: ?[:0]const u8) !*ConfigIterator {
         log.debug("Config.iterateMultivar called, name={s}, regex={s}", .{ name, regex });
 
-        var iterator: ?*raw.git_config_iterator = undefined;
+        var iterator: *ConfigIterator = undefined;
 
         const regex_c = if (regex) |str| str.ptr else null;
 
         try internal.wrapCall("git_config_multivar_iterator_new", .{
-            &iterator,
+            @ptrCast(*?*raw.git_config_iterator, &iterator),
             @ptrCast(*const raw.git_config, self),
             name.ptr,
             regex_c,
@@ -446,47 +456,50 @@ pub const Config = opaque {
 
         log.debug("multivar config iterator created successfully", .{});
 
-        return internal.fromC(iterator.?);
+        return iterator;
     }
 
     pub fn iterate(self: *const Config) !*ConfigIterator {
         log.debug("Config.iterate called", .{});
 
-        var iterator: ?*raw.git_config_iterator = undefined;
+        var iterator: *ConfigIterator = undefined;
 
         try internal.wrapCall("git_config_iterator_new", .{
-            &iterator,
+            @ptrCast(*?*raw.git_config_iterator, &iterator),
             @ptrCast(*const raw.git_config, self),
         });
 
         log.debug("config iterator created successfully", .{});
 
-        return internal.fromC(iterator.?);
+        return iterator;
     }
 
     pub fn iterateGlob(self: *const Config, regex: [:0]const u8) !*ConfigIterator {
         log.debug("Config.iterateGlob called", .{});
 
-        var iterator: ?*raw.git_config_iterator = undefined;
+        var iterator: *ConfigIterator = undefined;
 
         try internal.wrapCall("git_config_iterator_glob_new", .{
-            &iterator,
+            @ptrCast(*?*raw.git_config_iterator, &iterator),
             @ptrCast(*const raw.git_config, self),
             regex.ptr,
         });
 
         log.debug("config iterator created successfully", .{});
 
-        return internal.fromC(iterator.?);
+        return iterator;
     }
 
     pub const ConfigIterator = opaque {
         pub fn next(self: *ConfigIterator) !?*ConfigEntry {
             log.debug("ConfigIterator.next called", .{});
 
-            var entry: [*c]raw.git_config_entry = undefined;
+            var entry: *ConfigEntry = undefined;
 
-            internal.wrapCall("git_config_next", .{ &entry, @ptrCast(*raw.git_config_iterator, self) }) catch |err| switch (err) {
+            internal.wrapCall("git_config_next", .{
+                @ptrCast(*?*raw.git_config_entry, &entry),
+                @ptrCast(*raw.git_config_iterator, self),
+            }) catch |err| switch (err) {
                 git.GitError.IterOver => {
                     log.debug("end of iteration reached", .{});
                     return null;
@@ -494,11 +507,9 @@ pub const Config = opaque {
                 else => return err,
             };
 
-            const ret = internal.fromC(entry);
+            log.debug("successfully fetched config entry: {}", .{entry});
 
-            log.debug("successfully fetched config entry: {}", .{ret});
-
-            return ret;
+            return entry;
         }
 
         pub fn deinit(self: *ConfigIterator) void {
@@ -666,7 +677,7 @@ pub const ConfigBackend = opaque {
                 payload: ?*c_void,
             ) callconv(.C) c_int {
                 return callback_fn(
-                    internal.fromC(entry.?),
+                    @ptrCast(*const Config.ConfigEntry, entry),
                     @ptrCast(UserDataType, payload),
                 );
             }

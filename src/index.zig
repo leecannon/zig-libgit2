@@ -82,7 +82,7 @@ pub const Index = opaque {
 
         if (ret) |ptr| {
             log.debug("successfully fetched owning repository", .{});
-            return internal.fromC(ptr);
+            return @ptrCast(*git.Repository, ptr);
         }
 
         log.debug("no owning repository", .{});
@@ -96,18 +96,19 @@ pub const Index = opaque {
     pub fn checksum(self: *Index) !*const git.Oid {
         log.debug("Index.checksum called", .{});
 
-        const oid = raw.git_index_checksum(@ptrCast(*raw.git_index, self));
-
-        const ret = internal.fromC(oid.?);
+        const oid = @ptrCast(
+            *const git.Oid,
+            raw.git_index_checksum(@ptrCast(*raw.git_index, self)),
+        );
 
         // This check is to prevent formating the oid when we are not going to print anything
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
             var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
-            const slice = try ret.formatHex(&buf);
+            const slice = try oid.formatHex(&buf);
             log.debug("index checksum acquired successfully, checksum={s}", .{slice});
         }
 
-        return ret;
+        return oid;
     }
 
     pub fn setToTree(self: *Index, tree: *const git.Tree) !void {
@@ -234,11 +235,12 @@ pub const Index = opaque {
     pub fn entryByIndex(self: *Index, index: usize) ?*const IndexEntry {
         log.debug("Index.entryByIndex called, index={}", .{index});
 
-        const ret_opt = raw.git_index_get_byindex(@ptrCast(*raw.git_index, self), index);
+        const ret_opt = @ptrCast(
+            ?*const IndexEntry,
+            raw.git_index_get_byindex(@ptrCast(*raw.git_index, self), index),
+        );
 
-        if (ret_opt) |ret| {
-            const result = internal.fromC(ret);
-
+        if (ret_opt) |result| {
             log.debug("successfully fetched index entry: {}", .{result});
 
             return result;
@@ -251,11 +253,12 @@ pub const Index = opaque {
     pub fn entryByPath(self: *Index, path: [:0]const u8, stage: c_int) ?*const IndexEntry {
         log.debug("Index.entryByPath called, path={s}, stage={}", .{ path, stage });
 
-        const ret_opt = raw.git_index_get_bypath(@ptrCast(*raw.git_index, self), path.ptr, stage);
+        const ret_opt = @ptrCast(
+            ?*const IndexEntry,
+            raw.git_index_get_bypath(@ptrCast(*raw.git_index, self), path.ptr, stage),
+        );
 
-        if (ret_opt) |ret| {
-            const result = internal.fromC(ret);
-
+        if (ret_opt) |result| {
             log.debug("successfully fetched index entry: {}", .{result});
 
             return result;
@@ -334,22 +337,28 @@ pub const Index = opaque {
     pub fn iterate(self: *Index) !*IndexIterator {
         log.debug("Index.iterate called", .{});
 
-        var iterator: ?*raw.git_index_iterator = undefined;
+        var iterator: *IndexIterator = undefined;
 
-        try internal.wrapCall("git_index_iterator_new", .{ &iterator, @ptrCast(*raw.git_index, self) });
+        try internal.wrapCall("git_index_iterator_new", .{
+            @ptrCast(*?*raw.git_index_iterator, &iterator),
+            @ptrCast(*raw.git_index, self),
+        });
 
         log.debug("index iterator created successfully", .{});
 
-        return internal.fromC(iterator.?);
+        return iterator;
     }
 
     pub const IndexIterator = opaque {
         pub fn next(self: *IndexIterator) !?*const IndexEntry {
             log.debug("IndexIterator.next called", .{});
 
-            var index_entry: [*c]const raw.git_index_entry = undefined;
+            var index_entry: *const IndexEntry = undefined;
 
-            internal.wrapCall("git_index_iterator_next", .{ &index_entry, @ptrCast(*raw.git_index_iterator, self) }) catch |err| switch (err) {
+            internal.wrapCall("git_index_iterator_next", .{
+                @ptrCast(*[*c]raw.git_index_entry, &index_entry),
+                @ptrCast(*raw.git_index_iterator, self),
+            }) catch |err| switch (err) {
                 git.GitError.IterOver => {
                     log.debug("end of iteration reached", .{});
                     return null;
@@ -357,11 +366,9 @@ pub const Index = opaque {
                 else => return err,
             };
 
-            const ret = internal.fromC(index_entry);
+            log.debug("successfully fetched index entry: {}", .{index_entry});
 
-            log.debug("successfully fetched index entry: {}", .{ret});
-
-            return ret;
+            return index_entry;
         }
 
         pub fn deinit(self: *IndexIterator) void {
@@ -809,14 +816,14 @@ pub const Index = opaque {
     pub fn conflictGet(index: *Index, path: [:0]const u8) !Conflicts {
         log.debug("Index.conflictGet called, path={s}", .{path});
 
-        var ancestor_out: [*c]raw.git_index_entry = undefined;
-        var our_out: [*c]raw.git_index_entry = undefined;
-        var their_out: [*c]raw.git_index_entry = undefined;
+        var ancestor_out: *const IndexEntry = undefined;
+        var our_out: *const IndexEntry = undefined;
+        var their_out: *const IndexEntry = undefined;
 
         try internal.wrapCall("git_index_conflict_get", .{
-            &ancestor_out,
-            &our_out,
-            &their_out,
+            @ptrCast(*[*c]const raw.git_index_entry, &ancestor_out),
+            @ptrCast(*[*c]const raw.git_index_entry, &our_out),
+            @ptrCast(*[*c]const raw.git_index_entry, &their_out),
             @ptrCast(*raw.git_index, index),
             path.ptr,
         });
@@ -824,9 +831,9 @@ pub const Index = opaque {
         log.debug("successfully fetched conflict entries", .{});
 
         return Conflicts{
-            .ancestor = internal.fromC(ancestor_out),
-            .our = internal.fromC(our_out),
-            .their = internal.fromC(their_out),
+            .ancestor = ancestor_out,
+            .our = our_out,
+            .their = their_out,
         };
     }
 
@@ -861,14 +868,14 @@ pub const Index = opaque {
         pub fn next(self: *IndexConflictIterator) !?Conflicts {
             log.debug("IndexConflictIterator.next called", .{});
 
-            var ancestor_out: [*c]raw.git_index_entry = undefined;
-            var our_out: [*c]raw.git_index_entry = undefined;
-            var their_out: [*c]raw.git_index_entry = undefined;
+            var ancestor_out: *const IndexEntry = undefined;
+            var our_out: *const IndexEntry = undefined;
+            var their_out: *const IndexEntry = undefined;
 
             internal.wrapCall("git_index_conflict_next", .{
-                &ancestor_out,
-                &our_out,
-                &their_out,
+                @ptrCast(*[*c]const raw.git_index_entry, &ancestor_out),
+                @ptrCast(*[*c]const raw.git_index_entry, &our_out),
+                @ptrCast(*[*c]const raw.git_index_entry, &their_out),
                 @ptrCast(*raw.git_index_conflict_iterator, self),
             }) catch |err| switch (err) {
                 git.GitError.IterOver => {
@@ -881,9 +888,9 @@ pub const Index = opaque {
             log.debug("successfully fetched conflicts", .{});
 
             return Conflicts{
-                .ancestor = internal.fromC(ancestor_out),
-                .our = internal.fromC(our_out),
-                .their = internal.fromC(their_out),
+                .ancestor = ancestor_out,
+                .our = our_out,
+                .their = their_out,
             };
         }
 

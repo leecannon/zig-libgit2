@@ -13,15 +13,15 @@ pub const Mailmap = opaque {
     pub fn init() !*Mailmap {
         log.debug("Mailmap.init called", .{});
 
-        var mailmap: ?*raw.git_mailmap = undefined;
+        var mailmap: *Mailmap = undefined;
 
-        try internal.wrapCall("git_mailmap_new", .{&mailmap});
+        try internal.wrapCall("git_mailmap_new", .{
+            @ptrCast(*?*raw.git_mailmap, &mailmap),
+        });
 
-        const ret = internal.fromC(mailmap.?);
+        log.debug("successfully initalized mailmap {*}", .{mailmap});
 
-        log.debug("successfully initalized mailmap {*}", .{ret});
-
-        return ret;
+        return mailmap;
     }
 
     /// Free the mailmap and its associated memory.
@@ -113,19 +113,17 @@ pub const Mailmap = opaque {
     pub fn resolveSignature(self: *const Mailmap, signature: *const git.Signature) !*git.Signature {
         log.debug("Mailmap.resolveSignature called, signature={*}", .{signature});
 
-        var sig: ?*raw.git_signature = undefined;
+        var sig: *git.Signature = undefined;
 
         try internal.wrapCall("git_mailmap_resolve_signature", .{
-            &sig,
+            @ptrCast(*[*c]raw.git_signature, &sig),
             @ptrCast(*const raw.git_mailmap, self),
             @ptrCast(*const raw.git_signature, signature),
         });
 
-        const ret = internal.fromC(sig.?);
-
         log.debug("successfully resolved signature", .{});
 
-        return ret;
+        return sig;
     }
 
     comptime {
