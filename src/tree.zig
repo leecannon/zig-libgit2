@@ -9,7 +9,7 @@ pub const Tree = opaque {
     pub fn deinit(self: *Tree) void {
         log.debug("Tree.deinit called", .{});
 
-        raw.git_tree_free(internal.toC(self));
+        raw.git_tree_free(@ptrCast(*raw.git_tree, self));
 
         log.debug("tree freed successfully", .{});
     }

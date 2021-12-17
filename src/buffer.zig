@@ -27,7 +27,7 @@ pub const Buf = extern struct {
     pub fn deinit(self: *Buf) void {
         log.debug("Buf.deinit called", .{});
 
-        raw.git_buf_dispose(internal.toC(self));
+        raw.git_buf_dispose(@ptrCast(*raw.git_buf, self));
 
         log.debug("Buf freed successfully", .{});
     }
@@ -46,7 +46,7 @@ pub const Buf = extern struct {
     pub fn grow(self: *Buf, target_size: usize) !void {
         log.debug("Buf.grow called, target_size={}", .{target_size});
 
-        try internal.wrapCall("git_buf_grow", .{ internal.toC(self), target_size });
+        try internal.wrapCall("git_buf_grow", .{ @ptrCast(*raw.git_buf, self), target_size });
 
         log.debug("Buf grown successfully", .{});
     }
@@ -54,7 +54,7 @@ pub const Buf = extern struct {
     pub fn isBinary(self: Buf) bool {
         log.debug("Buf.isBinary called", .{});
 
-        const ret = raw.git_buf_is_binary(internal.toC(&self)) == 1;
+        const ret = raw.git_buf_is_binary(@ptrCast(*const raw.git_buf, &self)) == 1;
 
         log.debug("Buf is binary: {}", .{ret});
 

@@ -2,6 +2,7 @@ const std = @import("std");
 const raw = @import("internal/raw.zig");
 const c = @import("internal/c.zig");
 const internal = @import("internal/internal.zig");
+const bitjuggle = @import("internal/bitjuggle.zig");
 const log = std.log.scoped(.git);
 
 const git = @import("git.zig");
@@ -9,28 +10,31 @@ const git = @import("git.zig");
 const hasCredential = @hasDecl(c, "git_credential");
 const RawCredentialType = if (hasCredential) raw.git_credential else raw.git_cred;
 
-pub const Credential = opaque {
+pub const Credential = extern struct {
+    credtype: CredentialType,
+    free: ?fn (*Credential) callconv(.C) void,
+
     pub fn deinit(self: *Credential) void {
         log.debug("Credential.deinit called", .{});
 
         if (hasCredential) {
-            raw.git_credential_free(internal.toC(self));
+            raw.git_credential_free(@ptrCast(*RawCredentialType, self));
         } else {
-            raw.git_cred_free(internal.toC(self));
+            raw.git_cred_free(@ptrCast(*RawCredentialType, self));
         }
 
         log.debug("credential freed successfully", .{});
     }
 
-    pub fn hasUsername(self: *const Credential) bool {
+    pub fn hasUsername(self: *Credential) bool {
         log.debug("Credential.hasUsername called", .{});
 
         var ret: bool = undefined;
 
         if (hasCredential) {
-            ret = raw.git_credential_has_username(internal.toC(self)) != 0;
+            ret = raw.git_credential_has_username(@ptrCast(*RawCredentialType, self)) != 0;
         } else {
-            ret = raw.git_cred_has_username(internal.toC(self)) != 0;
+            ret = raw.git_cred_has_username(@ptrCast(*RawCredentialType, self)) != 0;
         }
 
         log.debug("credential has username: {}", .{ret});
@@ -38,16 +42,16 @@ pub const Credential = opaque {
         return ret;
     }
 
-    pub fn getUsername(self: *const Credential) ?[:0]const u8 {
+    pub fn getUsername(self: *Credential) ?[:0]const u8 {
         log.debug("Credential.getUsername called", .{});
 
         var opt_username: [*c]const u8 = undefined;
 
         if (hasCredential) {
-            opt_username = raw.git_credential_get_username(internal.toC(self));
+            opt_username = raw.git_credential_get_username(@ptrCast(*RawCredentialType, self));
         } else {
             if (@hasDecl(c, "git_cred_get_username")) {
-                opt_username = raw.git_cred_get_username(internal.toC(self));
+                opt_username = raw.git_cred_get_username(@ptrCast(*RawCredentialType, self));
             } else {
                 // TODO: make this a compile error when we move to full c header
                 log.err("the version of libgit2 linked does not provide a function to fetch the username of a credential", .{});
@@ -357,6 +361,52 @@ pub const Credential = opaque {
 
         return ret;
     }
+
+    pub const CredentialType = extern union {
+        /// A vanilla user/password request
+        /// @see git_credential_userpass_plaintext_new
+        userpass_plaintext: bitjuggle.Boolean(c_uint, 0),
+
+        /// An SSH key-based authentication request
+        /// @see git_credential_ssh_key_new
+        ssh_key: bitjuggle.Boolean(c_uint, 1),
+
+        /// An SSH key-based authentication request, with a custom signature
+        /// @see git_credential_ssh_custom_new
+        ssh_custom: bitjuggle.Boolean(c_uint, 2),
+
+        /// An NTLM/Negotiate-based authentication request.
+        /// @see git_credential_default
+        default: bitjuggle.Boolean(c_uint, 3),
+
+        /// An SSH interactive authentication request
+        /// @see git_credential_ssh_interactive_new
+        ssh_interactive: bitjuggle.Boolean(c_uint, 4),
+
+        /// Username-only authentication request
+        ///
+        /// Used as a pre-authentication step if the underlying transport
+        /// (eg. SSH, with no username in its URL) does not know which username
+        /// to use.
+        ///
+        /// @see git_credential_username_new
+        username: bitjuggle.Boolean(c_uint, 5),
+
+        /// An SSH key-based authentication request
+        ///
+        /// Allows credentials to be read from memory instead of files.
+        /// Note that because of differences in crypto backend support, it might
+        /// not be functional.
+        ///
+        /// @see git_credential_ssh_key_memory_new
+        ssh_memory: bitjuggle.Boolean(c_uint, 6),
+
+        value: c_uint,
+
+        comptime {
+            std.testing.refAllDecls(@This());
+        }
+    };
 
     comptime {
         std.testing.refAllDecls(@This());

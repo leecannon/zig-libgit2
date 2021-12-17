@@ -94,7 +94,9 @@ pub const Handle = struct {
 
         var repo: ?*raw.git_repository = undefined;
 
-        try internal.wrapCall("git_repository_init_ext", .{ &repo, path.ptr, &options.toC() });
+        var c_options = options.makeCOptionObject();
+
+        try internal.wrapCall("git_repository_init_ext", .{ &repo, path.ptr, &c_options });
 
         log.debug("repository created successfully", .{});
 
@@ -205,7 +207,7 @@ pub const Handle = struct {
             }
         };
 
-        pub fn toC(self: RepositoryInitOptions) raw.git_repository_init_options {
+        pub fn makeCOptionObject(self: RepositoryInitOptions) raw.git_repository_init_options {
             return .{
                 .version = raw.GIT_REPOSITORY_INIT_OPTIONS_VERSION,
                 .flags = self.flags.toInt(),
@@ -357,14 +359,20 @@ pub const Handle = struct {
             .{ start_path, across_fs, ceiling_dirs },
         );
 
-        var git_buf = git.Buf{};
+        var buf: git.Buf = .{};
 
         const ceiling_dirs_temp: [*c]const u8 = if (ceiling_dirs) |slice| slice.ptr else null;
-        try internal.wrapCall("git_repository_discover", .{ internal.toC(&git_buf), start_path.ptr, @boolToInt(across_fs), ceiling_dirs_temp });
 
-        log.debug("repository discovered - {s}", .{git_buf.toSlice()});
+        try internal.wrapCall("git_repository_discover", .{
+            @ptrCast(*raw.git_buf, &buf),
+            start_path.ptr,
+            @boolToInt(across_fs),
+            ceiling_dirs_temp,
+        });
 
-        return git_buf;
+        log.debug("repository discovered - {s}", .{buf.toSlice()});
+
+        return buf;
     }
 
     pub fn optionGetMaximumMmapWindowSize(self: Handle) !usize {
@@ -444,7 +452,11 @@ pub const Handle = struct {
         log.debug("Handle.optionGetSearchPath called, level={s}", .{@tagName(level)});
 
         var buf: git.Buf = .{};
-        try internal.wrapCall("git_libgit2_opts", .{ raw.GIT_OPT_GET_SEARCH_PATH, @enumToInt(level), internal.toC(&buf) });
+        try internal.wrapCall("git_libgit2_opts", .{
+            raw.GIT_OPT_GET_SEARCH_PATH,
+            @enumToInt(level),
+            @ptrCast(*raw.git_buf, &buf),
+        });
 
         log.debug("got search path: {s}", .{buf.toSlice()});
 
@@ -518,8 +530,11 @@ pub const Handle = struct {
 
         log.debug("Handle.optionGetTemplatePath called", .{});
 
-        var result: git.Buf = .{};
-        try internal.wrapCall("git_libgit2_opts", .{ raw.GIT_OPT_GET_TEMPLATE_PATH, internal.toC(&result) });
+        var result: git.Buf = undefined;
+        try internal.wrapCall("git_libgit2_opts", .{
+            raw.GIT_OPT_GET_TEMPLATE_PATH,
+            @ptrCast(*raw.git_buf, &result),
+        });
 
         log.debug("got template path: {s}", .{result.toSlice()});
 
@@ -564,8 +579,11 @@ pub const Handle = struct {
 
         log.debug("Handle.optionGetUserAgent called", .{});
 
-        var result: git.Buf = .{};
-        try internal.wrapCall("git_libgit2_opts", .{ raw.GIT_OPT_GET_USER_AGENT, internal.toC(&result) });
+        var result: git.Buf = undefined;
+        try internal.wrapCall("git_libgit2_opts", .{
+            raw.GIT_OPT_GET_USER_AGENT,
+            @ptrCast(*raw.git_buf, &result),
+        });
 
         log.debug("got user agent: {s}", .{result.toSlice()});
 

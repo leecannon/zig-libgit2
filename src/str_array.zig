@@ -26,9 +26,9 @@ pub const StrArray = extern struct {
         log.debug("StrArray.deinit called", .{});
 
         if (comptime internal.available(.@"1.0.1")) {
-            raw.git_strarray_dispose(internal.toC(self));
+            raw.git_strarray_dispose(@ptrCast(*raw.git_strarray, self));
         } else {
-            raw.git_strarray_free(internal.toC(self));
+            raw.git_strarray_free(@ptrCast(*raw.git_strarray, self));
         }
 
         log.debug("StrArray freed successfully", .{});
@@ -38,7 +38,10 @@ pub const StrArray = extern struct {
         log.debug("StrArray.copy called", .{});
 
         var result: StrArray = undefined;
-        try internal.wrapCall("git_strarray_copy", .{ internal.toC(&result), internal.toC(&self) });
+        try internal.wrapCall("git_strarray_copy", .{
+            @ptrCast(*raw.git_strarray, &result),
+            @ptrCast(*const raw.git_strarray, &self),
+        });
 
         log.debug("StrArray copied successfully", .{});
 

@@ -9,7 +9,7 @@ pub const Blob = opaque {
     pub fn deinit(self: *Blob) void {
         log.debug("Blob.deinit called", .{});
 
-        raw.git_blob_free(internal.toC(self));
+        raw.git_blob_free(@ptrCast(*raw.git_blob, self));
 
         log.debug("Blob freed successfully", .{});
     }
@@ -17,7 +17,7 @@ pub const Blob = opaque {
     pub fn id(self: *const Blob) *const git.Oid {
         log.debug("Blame.id called", .{});
 
-        const ret = internal.fromC(raw.git_blob_id(internal.toC(self)).?);
+        const ret = internal.fromC(raw.git_blob_id(@ptrCast(*const raw.git_blob, self)).?);
 
         // This check is to prevent formating the oid when we are not going to print anything
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
@@ -35,7 +35,7 @@ pub const Blob = opaque {
     pub fn owner(self: *const Blob) *git.Repository {
         log.debug("Blame.owner called", .{});
 
-        const ret = internal.fromC(raw.git_blob_owner(internal.toC(self)).?);
+        const ret = internal.fromC(raw.git_blob_owner(@ptrCast(*const raw.git_blob, self)).?);
 
         log.debug("successfully fetched owning repository: {s}", .{ret});
 
@@ -45,7 +45,7 @@ pub const Blob = opaque {
     pub fn rawContent(self: *const Blob) !*const c_void {
         log.debug("Blame.rawContent called", .{});
 
-        if (raw.git_blob_rawcontent(internal.toC(self))) |ret| {
+        if (raw.git_blob_rawcontent(@ptrCast(*const raw.git_blob, self))) |ret| {
             log.debug("successfully fetched raw content pointer: {*}", .{ret});
 
             return ret;
@@ -57,7 +57,7 @@ pub const Blob = opaque {
     pub fn rawContentLength(self: *const Blob) u64 {
         log.debug("Blame.rawContentLength called", .{});
 
-        const ret = raw.git_blob_rawsize(internal.toC(self));
+        const ret = raw.git_blob_rawsize(@ptrCast(*const raw.git_blob, self));
 
         log.debug("successfully fetched raw content length: {}", .{ret});
 
@@ -65,13 +65,13 @@ pub const Blob = opaque {
     }
 
     pub fn isBinary(self: *const Blob) bool {
-        return raw.git_blob_is_binary(internal.toC(self)) == 1;
+        return raw.git_blob_is_binary(@ptrCast(*const raw.git_blob, self)) == 1;
     }
 
-    pub fn copy(self: *const Blob) !*Blob {
+    pub fn copy(self: *Blob) !*Blob {
         var new_blob: ?*raw.git_blob = undefined;
         // This always returns 0
-        _ = raw.git_blob_dup(&new_blob, internal.toC(self));
+        _ = raw.git_blob_dup(&new_blob, @ptrCast(*raw.git_blob, self));
         return internal.fromC(new_blob.?);
     }
 
@@ -81,7 +81,14 @@ pub const Blob = opaque {
 
             var buf: git.Buf = undefined;
 
-            try internal.wrapCall("git_blob_filter", .{ internal.toC(&buf), internal.toC(self), as_path.ptr, &options.toC() });
+            var c_options = options.makeCOptionObject();
+
+            try internal.wrapCall("git_blob_filter", .{
+                @ptrCast(*raw.git_buf, &buf),
+                @ptrCast(*raw.git_blob, self),
+                as_path.ptr,
+                &c_options,
+            });
 
             log.debug("successfully filtered blob", .{});
 
@@ -133,11 +140,11 @@ pub const Blob = opaque {
                 }
             };
 
-            pub fn toC(self: FilterOptions) raw.git_blob_filter_options {
+            pub fn makeCOptionObject(self: FilterOptions) raw.git_blob_filter_options {
                 return .{
                     .version = raw.GIT_BLOB_FILTER_OPTIONS_VERSION,
                     .flags = @bitCast(u32, self.flags),
-                    .commit_id = if (self.commit_id) |commit| internal.toC(commit) else null,
+                    .commit_id = @ptrCast(?*raw.git_oid, self.commit_id),
                 };
             }
 

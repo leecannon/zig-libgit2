@@ -17,7 +17,7 @@ pub const Diff = opaque {
     pub fn deinit(self: *Diff) void {
         log.debug("Diff.deinit called", .{});
 
-        raw.git_diff_free(internal.toC(self));
+        raw.git_diff_free(@ptrCast(*raw.git_diff, self));
 
         log.debug("diff freed successfully", .{});
     }

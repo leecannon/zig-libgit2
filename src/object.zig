@@ -14,8 +14,8 @@ pub const Object = opaque {
 
         var result: ?*raw.git_describe_result = undefined;
 
-        var c_options = options.toC();
-        try internal.wrapCall("git_describe_commit", .{ &result, internal.toC(self), &c_options });
+        var c_options = options.makeCOptionObject();
+        try internal.wrapCall("git_describe_commit", .{ &result, @ptrCast(*raw.git_object, self), &c_options });
 
         const ret = internal.fromC(result.?);
 

@@ -18,7 +18,10 @@ pub const WriteStream = extern struct {
 
             var ret: git.Oid = undefined;
 
-            try internal.wrapCall("git_blob_create_from_stream_commit", .{ internal.toC(&ret), internal.toC(self) });
+            try internal.wrapCall("git_blob_create_from_stream_commit", .{
+                @ptrCast(*raw.git_oid, &ret),
+                @ptrCast(*raw.git_writestream, self),
+            });
 
             // This check is to prevent formating the oid when we are not going to print anything
             if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {

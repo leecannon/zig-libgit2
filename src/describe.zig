@@ -28,7 +28,7 @@ pub const DescribeOptions = struct {
         all,
     };
 
-    pub fn toC(self: DescribeOptions) raw.git_describe_options {
+    pub fn makeCOptionObject(self: DescribeOptions) raw.git_describe_options {
         return .{
             .version = raw.GIT_DESCRIBE_OPTIONS_VERSION,
             .max_candidates_tags = self.max_candidate_tags,
@@ -54,7 +54,7 @@ pub const DescribeFormatOptions = struct {
     /// If the workdir is dirty and this is set, this string will be appended to the description string.
     dirty_suffix: ?[:0]const u8 = null,
 
-    pub fn toC(self: DescribeFormatOptions) raw.git_describe_format_options {
+    pub fn makeCOptionObject(self: DescribeFormatOptions) raw.git_describe_format_options {
         return .{
             .version = raw.GIT_DESCRIBE_FORMAT_OPTIONS_VERSION,
             .abbreviated_size = self.abbreviated_size,
@@ -72,7 +72,13 @@ pub const DescribeResult = opaque {
     pub fn format(self: *const DescribeResult, options: DescribeFormatOptions) !git.Buf {
         var buf: git.Buf = undefined;
 
-        try internal.wrapCall("git_describe_format", .{ internal.toC(&buf), internal.toC(self), &options.toC() });
+        const c_options = options.makeCOptionObject();
+
+        try internal.wrapCall("git_describe_format", .{
+            @ptrCast(*raw.git_buf, &buf),
+            @ptrCast(*const raw.git_describe_result, self),
+            &c_options,
+        });
 
         log.debug("successfully formatted describe", .{});
 
@@ -82,7 +88,7 @@ pub const DescribeResult = opaque {
     pub fn deinit(self: *DescribeResult) void {
         log.debug("DescribeResult.deinit called", .{});
 
-        raw.git_describe_result_free(internal.toC(self));
+        raw.git_describe_result_free(@ptrCast(*raw.git_describe_result, self));
 
         log.debug("describe result freed successfully", .{});
     }

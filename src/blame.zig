@@ -9,25 +9,25 @@ pub const Blame = opaque {
     pub fn deinit(self: *Blame) void {
         log.debug("Blame.deinit called", .{});
 
-        raw.git_blame_free(internal.toC(self));
+        raw.git_blame_free(@ptrCast(*raw.git_blame, self));
 
         log.debug("blame freed successfully", .{});
     }
 
-    pub fn hunkCount(self: *const Blame) u32 {
+    pub fn hunkCount(self: *Blame) u32 {
         log.debug("Blame.hunkCount called", .{});
 
-        const ret = raw.git_blame_get_hunk_count(internal.toC(self));
+        const ret = raw.git_blame_get_hunk_count(@ptrCast(*raw.git_blame, self));
 
         log.debug("blame hunk count: {}", .{ret});
 
         return ret;
     }
 
-    pub fn hunkByIndex(self: *const Blame, index: u32) ?*const BlameHunk {
+    pub fn hunkByIndex(self: *Blame, index: u32) ?*const BlameHunk {
         log.debug("Blame.hunkByIndex called, index={}", .{index});
 
-        if (raw.git_blame_get_hunk_byindex(internal.toC(self), index)) |c_ret| {
+        if (raw.git_blame_get_hunk_byindex(@ptrCast(*raw.git_blame, self), index)) |c_ret| {
             const ret = internal.fromC(c_ret);
             log.debug("successfully fetched hunk: {*}", .{ret});
             return ret;
@@ -36,10 +36,10 @@ pub const Blame = opaque {
         return null;
     }
 
-    pub fn hunkByLine(self: *const Blame, line: usize) ?*const BlameHunk {
+    pub fn hunkByLine(self: *Blame, line: usize) ?*const BlameHunk {
         log.debug("Blame.hunkByLine called, line={}", .{line});
 
-        if (raw.git_blame_get_hunk_byline(internal.toC(self), line)) |c_ret| {
+        if (raw.git_blame_get_hunk_byline(@ptrCast(*raw.git_blame, self), line)) |c_ret| {
             const ret = internal.fromC(c_ret);
             log.debug("successfully fetched hunk: {*}", .{ret});
             return ret;
@@ -58,7 +58,7 @@ pub const Blame = opaque {
 
         var blame: ?*raw.git_blame = undefined;
 
-        try internal.wrapCall("git_blame_buffer", .{ &blame, internal.toC(self), buffer.ptr, buffer.len });
+        try internal.wrapCall("git_blame_buffer", .{ &blame, @ptrCast(*raw.git_blame, self), buffer.ptr, buffer.len });
 
         log.debug("successfully fetched blame buffer", .{});
 

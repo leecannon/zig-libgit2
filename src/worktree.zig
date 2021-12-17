@@ -9,7 +9,7 @@ pub const Worktree = opaque {
     pub fn deinit(self: *Worktree) void {
         log.debug("Worktree.deinit called", .{});
 
-        raw.git_worktree_free(internal.toC(self));
+        raw.git_worktree_free(@ptrCast(*raw.git_worktree, self));
 
         log.debug("worktree freed successfully", .{});
     }
@@ -19,7 +19,7 @@ pub const Worktree = opaque {
 
         var repo: ?*raw.git_repository = undefined;
 
-        try internal.wrapCall("git_repository_open_from_worktree", .{ &repo, internal.toC(self) });
+        try internal.wrapCall("git_repository_open_from_worktree", .{ &repo, @ptrCast(*raw.git_worktree, self) });
 
         log.debug("repository opened successfully", .{});
 

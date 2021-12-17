@@ -94,10 +94,10 @@ pub const Indexer = opaque {
         var ret: *Indexer = undefined;
 
         try internal.wrapCall("git_indexer_new", .{
-            internal.toC(&ret),
+            @ptrCast(*raw.git_indexer, &ret),
             path.ptr,
             options.mode,
-            internal.toC(odb),
+            @ptrCast(?*raw.git_oid, odb),
             &c_opts,
         });
 
@@ -114,7 +114,12 @@ pub const Indexer = opaque {
     pub fn append(self: *Indexer, data: []const u8, stats: *Progress) !void {
         log.debug("Indexer.append called, data_len={}, stats={}", .{ data.len, stats });
 
-        try internal.wrapCall("git_indexer_append", .{ internal.toC(self), data.ptr, data.len, internal.toC(stats) });
+        try internal.wrapCall("git_indexer_append", .{
+            @ptrCast(*raw.git_indexer, self),
+            data.ptr,
+            data.len,
+            @ptrCast(*raw.git_indexer_progress, stats),
+        });
 
         log.debug("successfully appended to indexer", .{});
     }
@@ -129,7 +134,10 @@ pub const Indexer = opaque {
     pub fn commit(self: *Indexer, stats: *Progress) !void {
         log.debug("Indexer.commit called, stats={}", .{stats});
 
-        try internal.wrapCall("git_indexer_commit", .{ internal.toC(self), internal.toC(stats) });
+        try internal.wrapCall("git_indexer_commit", .{
+            @ptrCast(*raw.git_indexer, self),
+            @ptrCast(*raw.git_indexer_progress, stats),
+        });
 
         log.debug("successfully commited indexer", .{});
     }
@@ -141,7 +149,7 @@ pub const Indexer = opaque {
     pub fn hash(self: *const Indexer) ?*const git.Oid {
         log.debug("Indexer.hash called", .{});
 
-        var opt_hash = raw.git_indexer_hash(internal.toC(self));
+        var opt_hash = raw.git_indexer_hash(@ptrCast(*const raw.git_indexer, self));
 
         if (opt_hash) |pack_hash| {
             const ret = internal.fromC(pack_hash);
@@ -167,7 +175,7 @@ pub const Indexer = opaque {
     pub fn deinit(self: *Indexer) void {
         log.debug("Indexer.deinit called", .{});
 
-        raw.git_indexer_free(internal.toC(self));
+        raw.git_indexer_free(@ptrCast(*raw.git_indexer, self));
 
         log.debug("Indexer freed successfully", .{});
     }

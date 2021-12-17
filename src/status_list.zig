@@ -9,25 +9,25 @@ pub const StatusList = opaque {
     pub fn deinit(self: *StatusList) void {
         log.debug("StatusList.deinit called", .{});
 
-        raw.git_status_list_free(internal.toC(self));
+        raw.git_status_list_free(@ptrCast(*raw.git_status_list, self));
 
         log.debug("status list freed successfully", .{});
     }
 
-    pub fn entryCount(self: *const StatusList) usize {
+    pub fn entryCount(self: *StatusList) usize {
         log.debug("StatusList.entryCount called", .{});
 
-        const ret = raw.git_status_list_entrycount(internal.toC(self));
+        const ret = raw.git_status_list_entrycount(@ptrCast(*raw.git_status_list, self));
 
         log.debug("status list entry count: {}", .{ret});
 
         return ret;
     }
 
-    pub fn statusByIndex(self: *const StatusList, index: usize) ?*const StatusEntry {
+    pub fn statusByIndex(self: *StatusList, index: usize) ?*const StatusEntry {
         log.debug("StatusList.statusByIndex called, index={}", .{index});
 
-        const ret_opt = raw.git_status_byindex(internal.toC(self), index);
+        const ret_opt = raw.git_status_byindex(@ptrCast(*raw.git_status_list, self), index);
 
         if (ret_opt) |ret| {
             const result = @intToPtr(*const StatusEntry, @ptrToInt(ret));

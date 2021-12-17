@@ -62,11 +62,11 @@ pub const FilterOptions = struct {
     /// The commit to load attributes from, when `FilterFlags.ATTRIBUTES_FROM_COMMIT` is specified.
     commit_id: ?*git.Oid = null,
 
-    pub fn toC(self: FilterOptions) raw.git_filter_options {
+    pub fn makeCOptionObject(self: FilterOptions) raw.git_filter_options {
         return .{
             .version = raw.GIT_FILTER_OPTIONS_VERSION,
             .flags = @bitCast(u32, self.flags),
-            .commit_id = if (self.commit_id) |commit| internal.toC(commit) else null,
+            .commit_id = @ptrCast(?*raw.git_oid, self.commit_id),
         };
     }
 };
@@ -101,10 +101,10 @@ pub const FilterList = opaque {
     ///
     /// ## Parameters
     /// * `name` - The name of the filter to query
-    pub fn contains(self: *const FilterList, name: [:0]const u8) bool {
+    pub fn contains(self: *FilterList, name: [:0]const u8) bool {
         log.debug("FilterList.contains called, name={s}", .{name});
 
-        const ret = raw.git_filter_list_contains(internal.toC(self), name.ptr) != 0;
+        const ret = raw.git_filter_list_contains(@ptrCast(*raw.git_filter_list, self), name.ptr) != 0;
 
         log.debug("filter list contains filter: {}", .{ret});
 
@@ -116,15 +116,15 @@ pub const FilterList = opaque {
     /// ## Parameters
     /// * `repo` - the repository in which to perform the filtering
     /// * `path` - the path of the file to filter, a relative path will be taken as relative to the workdir
-    pub fn applyToFile(self: *const FilterList, repo: *const git.Repository, path: [:0]const u8) !git.Buf {
+    pub fn applyToFile(self: *FilterList, repo: *git.Repository, path: [:0]const u8) !git.Buf {
         log.debug("FilterList.applyToFile called, repo={*}, path={s}", .{ repo, path });
 
         var ret: git.Buf = undefined;
 
         try internal.wrapCall("git_filter_list_apply_to_file", .{
-            internal.toC(&ret),
-            internal.toC(self),
-            internal.toC(repo),
+            @ptrCast(*raw.git_buf, &ret),
+            @ptrCast(*raw.git_filter_list, self),
+            @ptrCast(*raw.git_repository, repo),
             path.ptr,
         });
 
@@ -137,15 +137,15 @@ pub const FilterList = opaque {
     ///
     /// ## Parameters
     /// * `blob` - the blob to filter
-    pub fn applyToBlob(self: *const FilterList, blob: *const git.Blob) !git.Buf {
+    pub fn applyToBlob(self: *FilterList, blob: *git.Blob) !git.Buf {
         log.debug("FilterList.applyToBlob called, blob={*}", .{blob});
 
         var ret: git.Buf = undefined;
 
         try internal.wrapCall("git_filter_list_apply_to_blob", .{
-            internal.toC(&ret),
-            internal.toC(self),
-            internal.toC(blob),
+            @ptrCast(*raw.git_buf, &ret),
+            @ptrCast(*raw.git_filter_list, self),
+            @ptrCast(*raw.git_blob, blob),
         });
 
         log.debug("result: {s}", .{ret.toSlice()});
@@ -160,16 +160,16 @@ pub const FilterList = opaque {
     /// * `path` - the path of the file to filter, a relative path will be taken as relative to the workdir
     /// * `target` - the stream into which the data will be written
     pub fn applyToFileToStream(
-        self: *const FilterList,
-        repo: *const git.Repository,
+        self: *FilterList,
+        repo: *git.Repository,
         path: [:0]const u8,
         target: *git.WriteStream,
     ) !void {
         log.debug("FilterList.applyToFileToStream called, repo={*}, path={s}, target={*}", .{ repo, path, target });
 
         try internal.wrapCall("git_filter_list_stream_file", .{
-            internal.toC(self),
-            internal.toC(repo),
+            @ptrCast(*raw.git_filter_list, self),
+            @ptrCast(*raw.git_repository, repo),
             path.ptr,
             @ptrCast(*raw.git_writestream, target),
         });
@@ -182,12 +182,12 @@ pub const FilterList = opaque {
     /// ## Parameters
     /// * `blob` - the blob to filter
     /// * `target` - the stream into which the data will be written
-    pub fn applyToBlobToStream(self: *const FilterList, blob: *const git.Blob, target: *git.WriteStream) !void {
+    pub fn applyToBlobToStream(self: *FilterList, blob: *git.Blob, target: *git.WriteStream) !void {
         log.debug("FilterList.applyToBlobToStream called, blob={*}, target={*}", .{ blob, target });
 
         try internal.wrapCall("git_filter_list_stream_blob", .{
-            internal.toC(self),
-            internal.toC(blob),
+            @ptrCast(*raw.git_filter_list, self),
+            @ptrCast(*raw.git_blob, blob),
             @ptrCast(*raw.git_writestream, target),
         });
 
@@ -197,7 +197,7 @@ pub const FilterList = opaque {
     pub fn deinit(self: *FilterList) void {
         log.debug("FilterList.deinit called", .{});
 
-        raw.git_filter_list_free(internal.toC(self));
+        raw.git_filter_list_free(@ptrCast(*raw.git_filter_list, self));
 
         log.debug("filter list freed successfully", .{});
     }
@@ -207,14 +207,14 @@ pub const FilterList = opaque {
         ///
         /// ## Parameters
         /// * `name` - Buffer containing the data to filter
-        pub fn applyToBuffer(self: *const FilterList, in: [:0]const u8) !git.Buf {
+        pub fn applyToBuffer(self: *FilterList, in: [:0]const u8) !git.Buf {
             log.debug("FilterList.applyToBuffer called, in={s}", .{in});
 
             var ret: git.Buf = undefined;
 
             try internal.wrapCall("git_filter_list_apply_to_buffer", .{
-                internal.toC(&ret),
-                internal.toC(self),
+                @ptrCast(*raw.git_buf, &ret),
+                @ptrCast(*raw.git_filter_list, self),
                 in.ptr,
                 in.len,
             });
@@ -229,11 +229,11 @@ pub const FilterList = opaque {
         /// ## Parameters
         /// * `buffer` - the buffer to filter
         /// * `target` - the stream into which the data will be written
-        pub fn applyToBufferToStream(self: *const FilterList, buffer: [:0]const u8, target: *git.WriteStream) !void {
+        pub fn applyToBufferToStream(self: *FilterList, buffer: [:0]const u8, target: *git.WriteStream) !void {
             log.debug("FilterList.applyToBufferToStream called, buffer={s}, target={*}", .{ buffer, target });
 
             try internal.wrapCall("git_filter_list_stream_buffer", .{
-                internal.toC(self),
+                @ptrCast(*raw.git_filter_list, self),
                 buffer.ptr,
                 buffer.len,
                 @ptrCast(*raw.git_writestream, target),

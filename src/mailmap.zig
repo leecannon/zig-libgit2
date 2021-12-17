@@ -28,7 +28,7 @@ pub const Mailmap = opaque {
     pub fn deinit(self: *Mailmap) void {
         log.debug("Mailmap.deinit called", .{});
 
-        raw.git_mailmap_free(internal.toC(self));
+        raw.git_mailmap_free(@ptrCast(*raw.git_mailmap, self));
 
         log.debug("Mailmap freed successfully", .{});
     }
@@ -57,7 +57,7 @@ pub const Mailmap = opaque {
         const c_replace_name = if (replace_name) |ptr| ptr.ptr else null;
 
         try internal.wrapCall("git_mailmap_add_entry", .{
-            internal.toC(self),
+            @ptrCast(*raw.git_mailmap, self),
             c_real_name,
             c_real_email,
             c_replace_name,
@@ -89,7 +89,7 @@ pub const Mailmap = opaque {
         try internal.wrapCall("git_mailmap_resolve", .{
             &real_name,
             &real_email,
-            internal.toC(self),
+            @ptrCast(*const raw.git_mailmap, self),
             name.ptr,
             email.ptr,
         });
@@ -117,8 +117,8 @@ pub const Mailmap = opaque {
 
         try internal.wrapCall("git_mailmap_resolve_signature", .{
             &sig,
-            internal.toC(self),
-            internal.toC(signature),
+            @ptrCast(*const raw.git_mailmap, self),
+            @ptrCast(*const raw.git_signature, signature),
         });
 
         const ret = internal.fromC(sig.?);

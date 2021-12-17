@@ -150,13 +150,13 @@ pub const MergeOptions = struct {
         }
     };
 
-    pub fn toC(self: MergeOptions) raw.git_merge_options {
+    pub fn makeCOptionObject(self: MergeOptions) raw.git_merge_options {
         return .{
             .version = raw.GIT_MERGE_OPTIONS_VERSION,
             .flags = @bitCast(u32, self.flags),
             .rename_threshold = self.rename_threshold,
             .target_limit = self.target_limit,
-            .metric = internal.toC(self.metric),
+            .metric = @ptrCast(?*raw.git_diff_similarity_metric, self.metric),
             .recursion_limit = self.recursion_limit,
             .default_driver = if (self.default_driver) |ptr| ptr.ptr else null,
             .file_favor = @enumToInt(self.file_favor),
