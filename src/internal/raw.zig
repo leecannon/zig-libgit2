@@ -95,7 +95,7 @@ pub const __suseconds64_t = c_long;
 pub const __daddr_t = c_int;
 pub const __key_t = c_int;
 pub const __clockid_t = c_int;
-pub const __timer_t = ?*c_void;
+pub const __timer_t = ?*anyopaque;
 pub const __blksize_t = c_long;
 pub const __blkcnt_t = c_long;
 pub const __blkcnt64_t = c_long;
@@ -205,19 +205,19 @@ pub const lldiv_t = extern struct {
 pub extern fn __ctype_get_mb_cur_max() usize;
 pub fn atof(arg___nptr: [*c]const u8) callconv(.C) f64 {
     var __nptr = arg___nptr;
-    return strtod(__nptr, @ptrCast([*c][*c]u8, @alignCast(@import("std").meta.alignment([*c]u8), @intToPtr(?*c_void, @as(c_int, 0)))));
+    return strtod(__nptr, @ptrCast([*c][*c]u8, @alignCast(@import("std").meta.alignment([*c]u8), @intToPtr(?*anyopaque, @as(c_int, 0)))));
 }
 pub fn atoi(arg___nptr: [*c]const u8) callconv(.C) c_int {
     var __nptr = arg___nptr;
-    return @bitCast(c_int, @truncate(c_int, strtol(__nptr, @ptrCast([*c][*c]u8, @alignCast(@import("std").meta.alignment([*c]u8), @intToPtr(?*c_void, @as(c_int, 0)))), @as(c_int, 10))));
+    return @bitCast(c_int, @truncate(c_int, strtol(__nptr, @ptrCast([*c][*c]u8, @alignCast(@import("std").meta.alignment([*c]u8), @intToPtr(?*anyopaque, @as(c_int, 0)))), @as(c_int, 10))));
 }
 pub fn atol(arg___nptr: [*c]const u8) callconv(.C) c_long {
     var __nptr = arg___nptr;
-    return strtol(__nptr, @ptrCast([*c][*c]u8, @alignCast(@import("std").meta.alignment([*c]u8), @intToPtr(?*c_void, @as(c_int, 0)))), @as(c_int, 10));
+    return strtol(__nptr, @ptrCast([*c][*c]u8, @alignCast(@import("std").meta.alignment([*c]u8), @intToPtr(?*anyopaque, @as(c_int, 0)))), @as(c_int, 10));
 }
 pub fn atoll(arg___nptr: [*c]const u8) callconv(.C) c_longlong {
     var __nptr = arg___nptr;
-    return strtoll(__nptr, @ptrCast([*c][*c]u8, @alignCast(@import("std").meta.alignment([*c]u8), @intToPtr(?*c_void, @as(c_int, 0)))), @as(c_int, 10));
+    return strtoll(__nptr, @ptrCast([*c][*c]u8, @alignCast(@import("std").meta.alignment([*c]u8), @intToPtr(?*anyopaque, @as(c_int, 0)))), @as(c_int, 10));
 }
 pub extern fn strtod(__nptr: [*c]const u8, __endptr: [*c][*c]u8) f64;
 pub extern fn strtof(__nptr: [*c]const u8, __endptr: [*c][*c]u8) f32;
@@ -453,19 +453,19 @@ pub extern fn jrand48_r(__xsubi: [*c]c_ushort, noalias __buffer: [*c]struct_dran
 pub extern fn srand48_r(__seedval: c_long, __buffer: [*c]struct_drand48_data) c_int;
 pub extern fn seed48_r(__seed16v: [*c]c_ushort, __buffer: [*c]struct_drand48_data) c_int;
 pub extern fn lcong48_r(__param: [*c]c_ushort, __buffer: [*c]struct_drand48_data) c_int;
-pub extern fn malloc(__size: c_ulong) ?*c_void;
-pub extern fn calloc(__nmemb: c_ulong, __size: c_ulong) ?*c_void;
-pub extern fn realloc(__ptr: ?*c_void, __size: c_ulong) ?*c_void;
-pub extern fn reallocarray(__ptr: ?*c_void, __nmemb: usize, __size: usize) ?*c_void;
-pub extern fn free(__ptr: ?*c_void) void;
-pub extern fn alloca(__size: c_ulong) ?*c_void;
-pub extern fn valloc(__size: usize) ?*c_void;
-pub extern fn posix_memalign(__memptr: [*c]?*c_void, __alignment: usize, __size: usize) c_int;
-pub extern fn aligned_alloc(__alignment: usize, __size: usize) ?*c_void;
+pub extern fn malloc(__size: c_ulong) ?*anyopaque;
+pub extern fn calloc(__nmemb: c_ulong, __size: c_ulong) ?*anyopaque;
+pub extern fn realloc(__ptr: ?*anyopaque, __size: c_ulong) ?*anyopaque;
+pub extern fn reallocarray(__ptr: ?*anyopaque, __nmemb: usize, __size: usize) ?*anyopaque;
+pub extern fn free(__ptr: ?*anyopaque) void;
+pub extern fn alloca(__size: c_ulong) ?*anyopaque;
+pub extern fn valloc(__size: usize) ?*anyopaque;
+pub extern fn posix_memalign(__memptr: [*c]?*anyopaque, __alignment: usize, __size: usize) c_int;
+pub extern fn aligned_alloc(__alignment: usize, __size: usize) ?*anyopaque;
 pub extern fn abort() noreturn;
 pub extern fn atexit(__func: ?fn () callconv(.C) void) c_int;
 pub extern fn at_quick_exit(__func: ?fn () callconv(.C) void) c_int;
-pub extern fn on_exit(__func: ?fn (c_int, ?*c_void) callconv(.C) void, __arg: ?*c_void) c_int;
+pub extern fn on_exit(__func: ?fn (c_int, ?*anyopaque) callconv(.C) void, __arg: ?*anyopaque) c_int;
 pub extern fn exit(__status: c_int) noreturn;
 pub extern fn quick_exit(__status: c_int) noreturn;
 pub extern fn _Exit(__status: c_int) noreturn;
@@ -480,8 +480,8 @@ pub extern fn mkstemps(__template: [*c]u8, __suffixlen: c_int) c_int;
 pub extern fn mkdtemp(__template: [*c]u8) [*c]u8;
 pub extern fn system(__command: [*c]const u8) c_int;
 pub extern fn realpath(noalias __name: [*c]const u8, noalias __resolved: [*c]u8) [*c]u8;
-pub const __compar_fn_t = ?fn (?*const c_void, ?*const c_void) callconv(.C) c_int;
-pub fn bsearch(arg___key: ?*const c_void, arg___base: ?*const c_void, arg___nmemb: usize, arg___size: usize, arg___compar: __compar_fn_t) callconv(.C) ?*c_void {
+pub const __compar_fn_t = ?fn (?*const anyopaque, ?*const anyopaque) callconv(.C) c_int;
+pub fn bsearch(arg___key: ?*const anyopaque, arg___base: ?*const anyopaque, arg___nmemb: usize, arg___size: usize, arg___compar: __compar_fn_t) callconv(.C) ?*anyopaque {
     var __key = arg___key;
     var __base = arg___base;
     var __nmemb = arg___nmemb;
@@ -490,23 +490,23 @@ pub fn bsearch(arg___key: ?*const c_void, arg___base: ?*const c_void, arg___nmem
     var __l: usize = undefined;
     var __u: usize = undefined;
     var __idx: usize = undefined;
-    var __p: ?*const c_void = undefined;
+    var __p: ?*const anyopaque = undefined;
     var __comparison: c_int = undefined;
     __l = 0;
     __u = __nmemb;
     while (__l < __u) {
         __idx = (__l +% __u) / @bitCast(c_ulong, @as(c_long, @as(c_int, 2)));
-        __p = @intToPtr(?*c_void, @ptrToInt(@ptrCast([*c]const u8, @alignCast(@import("std").meta.alignment(u8), __base)) + (__idx *% __size)));
+        __p = @intToPtr(?*anyopaque, @ptrToInt(@ptrCast([*c]const u8, @alignCast(@import("std").meta.alignment(u8), __base)) + (__idx *% __size)));
         __comparison = __compar.?(__key, __p);
         if (__comparison < @as(c_int, 0)) {
             __u = __idx;
         } else if (__comparison > @as(c_int, 0)) {
             __l = __idx +% @bitCast(c_ulong, @as(c_long, @as(c_int, 1)));
-        } else return @intToPtr(?*c_void, @ptrToInt(__p));
+        } else return @intToPtr(?*anyopaque, @ptrToInt(__p));
     }
-    return @intToPtr(?*c_void, @as(c_int, 0));
+    return @intToPtr(?*anyopaque, @as(c_int, 0));
 }
-pub extern fn qsort(__base: ?*c_void, __nmemb: usize, __size: usize, __compar: __compar_fn_t) void;
+pub extern fn qsort(__base: ?*anyopaque, __nmemb: usize, __size: usize, __compar: __compar_fn_t) void;
 pub extern fn abs(__x: c_int) c_int;
 pub extern fn labs(__x: c_long) c_long;
 pub extern fn llabs(__x: c_longlong) c_longlong;
@@ -612,7 +612,7 @@ pub const git_buf = extern struct {
 };
 pub extern fn git_buf_dispose(buffer: [*c]git_buf) void;
 pub extern fn git_buf_grow(buffer: [*c]git_buf, target_size: usize) c_int;
-pub extern fn git_buf_set(buffer: [*c]git_buf, data: ?*const c_void, datalen: usize) c_int;
+pub extern fn git_buf_set(buffer: [*c]git_buf, data: ?*const anyopaque, datalen: usize) c_int;
 pub extern fn git_buf_is_binary(buf: [*c]const git_buf) c_int;
 pub extern fn git_buf_contains_nul(buf: [*c]const git_buf) c_int;
 pub const struct_git_oid = extern struct {
@@ -659,7 +659,7 @@ pub const git_odb_stream = struct_git_odb_stream;
 pub const struct_git_odb_stream = extern struct {
     backend: ?*git_odb_backend,
     mode: c_uint,
-    hash_ctx: ?*c_void,
+    hash_ctx: ?*anyopaque,
     declared_size: git_object_size_t,
     received_bytes: git_object_size_t,
     read: ?fn ([*c]git_odb_stream, [*c]u8, usize) callconv(.C) c_int,
@@ -680,7 +680,7 @@ pub const struct_git_indexer_progress = extern struct {
 pub const git_indexer_progress = struct_git_indexer_progress;
 pub const struct_git_odb_writepack = extern struct {
     backend: ?*git_odb_backend,
-    append: ?fn ([*c]git_odb_writepack, ?*const c_void, usize, [*c]git_indexer_progress) callconv(.C) c_int,
+    append: ?fn ([*c]git_odb_writepack, ?*const anyopaque, usize, [*c]git_indexer_progress) callconv(.C) c_int,
     commit: ?fn ([*c]git_odb_writepack, [*c]git_indexer_progress) callconv(.C) c_int,
     free: ?fn ([*c]git_odb_writepack) callconv(.C) void,
 };
@@ -784,7 +784,7 @@ pub const struct_git_remote_head = extern struct {
     symref_target: [*c]u8,
 };
 pub const git_remote_head = struct_git_remote_head;
-pub const git_transport_message_cb = ?fn ([*c]const u8, c_int, ?*c_void) callconv(.C) c_int;
+pub const git_transport_message_cb = ?fn ([*c]const u8, c_int, ?*anyopaque) callconv(.C) c_int;
 pub const GIT_REMOTE_COMPLETION_DOWNLOAD: c_int = 0;
 pub const GIT_REMOTE_COMPLETION_INDEXING: c_int = 1;
 pub const GIT_REMOTE_COMPLETION_ERROR: c_int = 2;
@@ -795,7 +795,7 @@ pub const struct_git_credential = extern struct {
     free: ?fn ([*c]git_credential) callconv(.C) void,
 };
 pub const git_credential = struct_git_credential;
-pub const git_credential_acquire_cb = ?fn ([*c][*c]git_credential, [*c]const u8, [*c]const u8, c_uint, ?*c_void) callconv(.C) c_int;
+pub const git_credential_acquire_cb = ?fn ([*c][*c]git_credential, [*c]const u8, [*c]const u8, c_uint, ?*anyopaque) callconv(.C) c_int;
 pub const GIT_CERT_NONE: c_int = 0;
 pub const GIT_CERT_X509: c_int = 1;
 pub const GIT_CERT_HOSTKEY_LIBSSH2: c_int = 2;
@@ -806,28 +806,28 @@ pub const struct_git_cert = extern struct {
     cert_type: git_cert_t,
 };
 pub const git_cert = struct_git_cert;
-pub const git_transport_certificate_check_cb = ?fn ([*c]git_cert, c_int, [*c]const u8, ?*c_void) callconv(.C) c_int;
-pub const git_indexer_progress_cb = ?fn ([*c]const git_indexer_progress, ?*c_void) callconv(.C) c_int;
-pub const git_packbuilder_progress = ?fn (c_int, u32, u32, ?*c_void) callconv(.C) c_int;
-pub const git_push_transfer_progress_cb = ?fn (c_uint, c_uint, usize, ?*c_void) callconv(.C) c_int;
-pub const git_push_update_reference_cb = ?fn ([*c]const u8, [*c]const u8, ?*c_void) callconv(.C) c_int;
-pub const git_push_negotiation = ?fn ([*c][*c]const git_push_update, usize, ?*c_void) callconv(.C) c_int;
-pub const git_transport_cb = ?fn ([*c]?*git_transport, ?*git_remote, ?*c_void) callconv(.C) c_int;
-pub const git_url_resolve_cb = ?fn ([*c]git_buf, [*c]const u8, c_int, ?*c_void) callconv(.C) c_int;
+pub const git_transport_certificate_check_cb = ?fn ([*c]git_cert, c_int, [*c]const u8, ?*anyopaque) callconv(.C) c_int;
+pub const git_indexer_progress_cb = ?fn ([*c]const git_indexer_progress, ?*anyopaque) callconv(.C) c_int;
+pub const git_packbuilder_progress = ?fn (c_int, u32, u32, ?*anyopaque) callconv(.C) c_int;
+pub const git_push_transfer_progress_cb = ?fn (c_uint, c_uint, usize, ?*anyopaque) callconv(.C) c_int;
+pub const git_push_update_reference_cb = ?fn ([*c]const u8, [*c]const u8, ?*anyopaque) callconv(.C) c_int;
+pub const git_push_negotiation = ?fn ([*c][*c]const git_push_update, usize, ?*anyopaque) callconv(.C) c_int;
+pub const git_transport_cb = ?fn ([*c]?*git_transport, ?*git_remote, ?*anyopaque) callconv(.C) c_int;
+pub const git_url_resolve_cb = ?fn ([*c]git_buf, [*c]const u8, c_int, ?*anyopaque) callconv(.C) c_int;
 pub const struct_git_remote_callbacks = extern struct {
     version: c_uint,
     sideband_progress: git_transport_message_cb,
-    completion: ?fn (git_remote_completion_t, ?*c_void) callconv(.C) c_int,
+    completion: ?fn (git_remote_completion_t, ?*anyopaque) callconv(.C) c_int,
     credentials: git_credential_acquire_cb,
     certificate_check: git_transport_certificate_check_cb,
     transfer_progress: git_indexer_progress_cb,
-    update_tips: ?fn ([*c]const u8, [*c]const git_oid, [*c]const git_oid, ?*c_void) callconv(.C) c_int,
+    update_tips: ?fn ([*c]const u8, [*c]const git_oid, [*c]const git_oid, ?*anyopaque) callconv(.C) c_int,
     pack_progress: git_packbuilder_progress,
     push_transfer_progress: git_push_transfer_progress_cb,
     push_update_reference: git_push_update_reference_cb,
     push_negotiation: git_push_negotiation,
     transport: git_transport_cb,
-    payload: ?*c_void,
+    payload: ?*anyopaque,
     resolve_url: git_url_resolve_cb,
 };
 pub const git_remote_callbacks = struct_git_remote_callbacks;
@@ -932,10 +932,10 @@ pub extern fn git_repository_index(out: [*c]?*git_index, repo: ?*git_repository)
 pub extern fn git_repository_message(out: [*c]git_buf, repo: ?*git_repository) c_int;
 pub extern fn git_repository_message_remove(repo: ?*git_repository) c_int;
 pub extern fn git_repository_state_cleanup(repo: ?*git_repository) c_int;
-pub const git_repository_fetchhead_foreach_cb = ?fn ([*c]const u8, [*c]const u8, [*c]const git_oid, c_uint, ?*c_void) callconv(.C) c_int;
-pub extern fn git_repository_fetchhead_foreach(repo: ?*git_repository, callback: git_repository_fetchhead_foreach_cb, payload: ?*c_void) c_int;
-pub const git_repository_mergehead_foreach_cb = ?fn ([*c]const git_oid, ?*c_void) callconv(.C) c_int;
-pub extern fn git_repository_mergehead_foreach(repo: ?*git_repository, callback: git_repository_mergehead_foreach_cb, payload: ?*c_void) c_int;
+pub const git_repository_fetchhead_foreach_cb = ?fn ([*c]const u8, [*c]const u8, [*c]const git_oid, c_uint, ?*anyopaque) callconv(.C) c_int;
+pub extern fn git_repository_fetchhead_foreach(repo: ?*git_repository, callback: git_repository_fetchhead_foreach_cb, payload: ?*anyopaque) c_int;
+pub const git_repository_mergehead_foreach_cb = ?fn ([*c]const git_oid, ?*anyopaque) callconv(.C) c_int;
+pub extern fn git_repository_mergehead_foreach(repo: ?*git_repository, callback: git_repository_mergehead_foreach_cb, payload: ?*anyopaque) c_int;
 pub extern fn git_repository_hashfile(out: [*c]git_oid, repo: ?*git_repository, path: [*c]const u8, @"type": git_object_t, as_path: [*c]const u8) c_int;
 pub extern fn git_repository_set_head(repo: ?*git_repository, refname: [*c]const u8) c_int;
 pub extern fn git_repository_set_head_detached(repo: ?*git_repository, commitish: [*c]const git_oid) c_int;
@@ -1006,14 +1006,14 @@ pub extern fn git_treebuilder_free(bld: ?*git_treebuilder) void;
 pub extern fn git_treebuilder_get(bld: ?*git_treebuilder, filename: [*c]const u8) ?*const git_tree_entry;
 pub extern fn git_treebuilder_insert(out: [*c]?*const git_tree_entry, bld: ?*git_treebuilder, filename: [*c]const u8, id: [*c]const git_oid, filemode: git_filemode_t) c_int;
 pub extern fn git_treebuilder_remove(bld: ?*git_treebuilder, filename: [*c]const u8) c_int;
-pub const git_treebuilder_filter_cb = ?fn (?*const git_tree_entry, ?*c_void) callconv(.C) c_int;
-pub extern fn git_treebuilder_filter(bld: ?*git_treebuilder, filter: git_treebuilder_filter_cb, payload: ?*c_void) c_int;
+pub const git_treebuilder_filter_cb = ?fn (?*const git_tree_entry, ?*anyopaque) callconv(.C) c_int;
+pub extern fn git_treebuilder_filter(bld: ?*git_treebuilder, filter: git_treebuilder_filter_cb, payload: ?*anyopaque) c_int;
 pub extern fn git_treebuilder_write(id: [*c]git_oid, bld: ?*git_treebuilder) c_int;
-pub const git_treewalk_cb = ?fn ([*c]const u8, ?*const git_tree_entry, ?*c_void) callconv(.C) c_int;
+pub const git_treewalk_cb = ?fn ([*c]const u8, ?*const git_tree_entry, ?*anyopaque) callconv(.C) c_int;
 pub const GIT_TREEWALK_PRE: c_int = 0;
 pub const GIT_TREEWALK_POST: c_int = 1;
 pub const git_treewalk_mode = c_uint;
-pub extern fn git_tree_walk(tree: ?*const git_tree, mode: git_treewalk_mode, callback: git_treewalk_cb, payload: ?*c_void) c_int;
+pub extern fn git_tree_walk(tree: ?*const git_tree, mode: git_treewalk_mode, callback: git_treewalk_cb, payload: ?*anyopaque) c_int;
 pub extern fn git_tree_dup(out: [*c]?*git_tree, source: ?*git_tree) c_int;
 pub const GIT_TREE_UPDATE_UPSERT: c_int = 0;
 pub const GIT_TREE_UPDATE_REMOVE: c_int = 1;
@@ -1052,10 +1052,10 @@ pub extern fn git_reference_rename(new_ref: [*c]?*git_reference, ref: ?*git_refe
 pub extern fn git_reference_delete(ref: ?*git_reference) c_int;
 pub extern fn git_reference_remove(repo: ?*git_repository, name: [*c]const u8) c_int;
 pub extern fn git_reference_list(array: [*c]git_strarray, repo: ?*git_repository) c_int;
-pub const git_reference_foreach_cb = ?fn (?*git_reference, ?*c_void) callconv(.C) c_int;
-pub const git_reference_foreach_name_cb = ?fn ([*c]const u8, ?*c_void) callconv(.C) c_int;
-pub extern fn git_reference_foreach(repo: ?*git_repository, callback: git_reference_foreach_cb, payload: ?*c_void) c_int;
-pub extern fn git_reference_foreach_name(repo: ?*git_repository, callback: git_reference_foreach_name_cb, payload: ?*c_void) c_int;
+pub const git_reference_foreach_cb = ?fn (?*git_reference, ?*anyopaque) callconv(.C) c_int;
+pub const git_reference_foreach_name_cb = ?fn ([*c]const u8, ?*anyopaque) callconv(.C) c_int;
+pub extern fn git_reference_foreach(repo: ?*git_repository, callback: git_reference_foreach_cb, payload: ?*anyopaque) c_int;
+pub extern fn git_reference_foreach_name(repo: ?*git_repository, callback: git_reference_foreach_name_cb, payload: ?*anyopaque) c_int;
 pub extern fn git_reference_dup(dest: [*c]?*git_reference, source: ?*git_reference) c_int;
 pub extern fn git_reference_free(ref: ?*git_reference) void;
 pub extern fn git_reference_cmp(ref1: ?*const git_reference, ref2: ?*const git_reference) c_int;
@@ -1064,7 +1064,7 @@ pub extern fn git_reference_iterator_glob_new(out: [*c]?*git_reference_iterator,
 pub extern fn git_reference_next(out: [*c]?*git_reference, iter: ?*git_reference_iterator) c_int;
 pub extern fn git_reference_next_name(out: [*c][*c]const u8, iter: ?*git_reference_iterator) c_int;
 pub extern fn git_reference_iterator_free(iter: ?*git_reference_iterator) void;
-pub extern fn git_reference_foreach_glob(repo: ?*git_repository, glob: [*c]const u8, callback: git_reference_foreach_name_cb, payload: ?*c_void) c_int;
+pub extern fn git_reference_foreach_glob(repo: ?*git_repository, glob: [*c]const u8, callback: git_reference_foreach_name_cb, payload: ?*anyopaque) c_int;
 pub extern fn git_reference_has_log(repo: ?*git_repository, refname: [*c]const u8) c_int;
 pub extern fn git_reference_ensure_log(repo: ?*git_repository, refname: [*c]const u8) c_int;
 pub extern fn git_reference_is_branch(ref: ?*const git_reference) c_int;
@@ -1147,8 +1147,8 @@ pub const git_diff_delta = extern struct {
     old_file: git_diff_file,
     new_file: git_diff_file,
 };
-pub const git_diff_notify_cb = ?fn (?*const git_diff, [*c]const git_diff_delta, [*c]const u8, ?*c_void) callconv(.C) c_int;
-pub const git_diff_progress_cb = ?fn (?*const git_diff, [*c]const u8, [*c]const u8, ?*c_void) callconv(.C) c_int;
+pub const git_diff_notify_cb = ?fn (?*const git_diff, [*c]const git_diff_delta, [*c]const u8, ?*anyopaque) callconv(.C) c_int;
+pub const git_diff_progress_cb = ?fn (?*const git_diff, [*c]const u8, [*c]const u8, ?*anyopaque) callconv(.C) c_int;
 pub const git_diff_options = extern struct {
     version: c_uint,
     flags: u32,
@@ -1156,7 +1156,7 @@ pub const git_diff_options = extern struct {
     pathspec: git_strarray,
     notify_cb: git_diff_notify_cb,
     progress_cb: git_diff_progress_cb,
-    payload: ?*c_void,
+    payload: ?*anyopaque,
     context_lines: u32,
     interhunk_lines: u32,
     id_abbrev: u16,
@@ -1165,7 +1165,7 @@ pub const git_diff_options = extern struct {
     new_prefix: [*c]const u8,
 };
 pub extern fn git_diff_options_init(opts: [*c]git_diff_options, version: c_uint) c_int;
-pub const git_diff_file_cb = ?fn ([*c]const git_diff_delta, f32, ?*c_void) callconv(.C) c_int;
+pub const git_diff_file_cb = ?fn ([*c]const git_diff_delta, f32, ?*anyopaque) callconv(.C) c_int;
 pub const GIT_DIFF_BINARY_NONE: c_int = 0;
 pub const GIT_DIFF_BINARY_LITERAL: c_int = 1;
 pub const GIT_DIFF_BINARY_DELTA: c_int = 2;
@@ -1181,7 +1181,7 @@ pub const git_diff_binary = extern struct {
     old_file: git_diff_binary_file,
     new_file: git_diff_binary_file,
 };
-pub const git_diff_binary_cb = ?fn ([*c]const git_diff_delta, [*c]const git_diff_binary, ?*c_void) callconv(.C) c_int;
+pub const git_diff_binary_cb = ?fn ([*c]const git_diff_delta, [*c]const git_diff_binary, ?*anyopaque) callconv(.C) c_int;
 pub const git_diff_hunk = extern struct {
     old_start: c_int,
     old_lines: c_int,
@@ -1190,7 +1190,7 @@ pub const git_diff_hunk = extern struct {
     header_len: usize,
     header: [128]u8,
 };
-pub const git_diff_hunk_cb = ?fn ([*c]const git_diff_delta, [*c]const git_diff_hunk, ?*c_void) callconv(.C) c_int;
+pub const git_diff_hunk_cb = ?fn ([*c]const git_diff_delta, [*c]const git_diff_hunk, ?*anyopaque) callconv(.C) c_int;
 pub const GIT_DIFF_LINE_CONTEXT: c_int = 32;
 pub const GIT_DIFF_LINE_ADDITION: c_int = 43;
 pub const GIT_DIFF_LINE_DELETION: c_int = 45;
@@ -1210,7 +1210,7 @@ pub const git_diff_line = extern struct {
     content_offset: git_off_t,
     content: [*c]const u8,
 };
-pub const git_diff_line_cb = ?fn ([*c]const git_diff_delta, [*c]const git_diff_hunk, [*c]const git_diff_line, ?*c_void) callconv(.C) c_int;
+pub const git_diff_line_cb = ?fn ([*c]const git_diff_delta, [*c]const git_diff_hunk, [*c]const git_diff_line, ?*anyopaque) callconv(.C) c_int;
 pub const GIT_DIFF_FIND_BY_CONFIG: c_int = 0;
 pub const GIT_DIFF_FIND_RENAMES: c_int = 1;
 pub const GIT_DIFF_FIND_RENAMES_FROM_REWRITES: c_int = 2;
@@ -1229,11 +1229,11 @@ pub const GIT_DIFF_BREAK_REWRITES_FOR_RENAMES_ONLY: c_int = 32768;
 pub const GIT_DIFF_FIND_REMOVE_UNMODIFIED: c_int = 65536;
 pub const git_diff_find_t = c_uint;
 pub const git_diff_similarity_metric = extern struct {
-    file_signature: ?fn ([*c]?*c_void, [*c]const git_diff_file, [*c]const u8, ?*c_void) callconv(.C) c_int,
-    buffer_signature: ?fn ([*c]?*c_void, [*c]const git_diff_file, [*c]const u8, usize, ?*c_void) callconv(.C) c_int,
-    free_signature: ?fn (?*c_void, ?*c_void) callconv(.C) void,
-    similarity: ?fn ([*c]c_int, ?*c_void, ?*c_void, ?*c_void) callconv(.C) c_int,
-    payload: ?*c_void,
+    file_signature: ?fn ([*c]?*anyopaque, [*c]const git_diff_file, [*c]const u8, ?*anyopaque) callconv(.C) c_int,
+    buffer_signature: ?fn ([*c]?*anyopaque, [*c]const git_diff_file, [*c]const u8, usize, ?*anyopaque) callconv(.C) c_int,
+    free_signature: ?fn (?*anyopaque, ?*anyopaque) callconv(.C) void,
+    similarity: ?fn ([*c]c_int, ?*anyopaque, ?*anyopaque, ?*anyopaque) callconv(.C) c_int,
+    payload: ?*anyopaque,
 };
 pub const git_diff_find_options = extern struct {
     version: c_uint,
@@ -1259,7 +1259,7 @@ pub extern fn git_diff_num_deltas(diff: ?*const git_diff) usize;
 pub extern fn git_diff_num_deltas_of_type(diff: ?*const git_diff, @"type": git_delta_t) usize;
 pub extern fn git_diff_get_delta(diff: ?*const git_diff, idx: usize) [*c]const git_diff_delta;
 pub extern fn git_diff_is_sorted_icase(diff: ?*const git_diff) c_int;
-pub extern fn git_diff_foreach(diff: ?*git_diff, file_cb: git_diff_file_cb, binary_cb: git_diff_binary_cb, hunk_cb: git_diff_hunk_cb, line_cb: git_diff_line_cb, payload: ?*c_void) c_int;
+pub extern fn git_diff_foreach(diff: ?*git_diff, file_cb: git_diff_file_cb, binary_cb: git_diff_binary_cb, hunk_cb: git_diff_hunk_cb, line_cb: git_diff_line_cb, payload: ?*anyopaque) c_int;
 pub extern fn git_diff_status_char(status: git_delta_t) u8;
 pub const GIT_DIFF_FORMAT_PATCH: c_int = 1;
 pub const GIT_DIFF_FORMAT_PATCH_HEADER: c_int = 2;
@@ -1268,11 +1268,11 @@ pub const GIT_DIFF_FORMAT_NAME_ONLY: c_int = 4;
 pub const GIT_DIFF_FORMAT_NAME_STATUS: c_int = 5;
 pub const GIT_DIFF_FORMAT_PATCH_ID: c_int = 6;
 pub const git_diff_format_t = c_uint;
-pub extern fn git_diff_print(diff: ?*git_diff, format: git_diff_format_t, print_cb: git_diff_line_cb, payload: ?*c_void) c_int;
+pub extern fn git_diff_print(diff: ?*git_diff, format: git_diff_format_t, print_cb: git_diff_line_cb, payload: ?*anyopaque) c_int;
 pub extern fn git_diff_to_buf(out: [*c]git_buf, diff: ?*git_diff, format: git_diff_format_t) c_int;
-pub extern fn git_diff_blobs(old_blob: ?*const git_blob, old_as_path: [*c]const u8, new_blob: ?*const git_blob, new_as_path: [*c]const u8, options: [*c]const git_diff_options, file_cb: git_diff_file_cb, binary_cb: git_diff_binary_cb, hunk_cb: git_diff_hunk_cb, line_cb: git_diff_line_cb, payload: ?*c_void) c_int;
-pub extern fn git_diff_blob_to_buffer(old_blob: ?*const git_blob, old_as_path: [*c]const u8, buffer: [*c]const u8, buffer_len: usize, buffer_as_path: [*c]const u8, options: [*c]const git_diff_options, file_cb: git_diff_file_cb, binary_cb: git_diff_binary_cb, hunk_cb: git_diff_hunk_cb, line_cb: git_diff_line_cb, payload: ?*c_void) c_int;
-pub extern fn git_diff_buffers(old_buffer: ?*const c_void, old_len: usize, old_as_path: [*c]const u8, new_buffer: ?*const c_void, new_len: usize, new_as_path: [*c]const u8, options: [*c]const git_diff_options, file_cb: git_diff_file_cb, binary_cb: git_diff_binary_cb, hunk_cb: git_diff_hunk_cb, line_cb: git_diff_line_cb, payload: ?*c_void) c_int;
+pub extern fn git_diff_blobs(old_blob: ?*const git_blob, old_as_path: [*c]const u8, new_blob: ?*const git_blob, new_as_path: [*c]const u8, options: [*c]const git_diff_options, file_cb: git_diff_file_cb, binary_cb: git_diff_binary_cb, hunk_cb: git_diff_hunk_cb, line_cb: git_diff_line_cb, payload: ?*anyopaque) c_int;
+pub extern fn git_diff_blob_to_buffer(old_blob: ?*const git_blob, old_as_path: [*c]const u8, buffer: [*c]const u8, buffer_len: usize, buffer_as_path: [*c]const u8, options: [*c]const git_diff_options, file_cb: git_diff_file_cb, binary_cb: git_diff_binary_cb, hunk_cb: git_diff_hunk_cb, line_cb: git_diff_line_cb, payload: ?*anyopaque) c_int;
+pub extern fn git_diff_buffers(old_buffer: ?*const anyopaque, old_len: usize, old_as_path: [*c]const u8, new_buffer: ?*const anyopaque, new_len: usize, new_as_path: [*c]const u8, options: [*c]const git_diff_options, file_cb: git_diff_file_cb, binary_cb: git_diff_binary_cb, hunk_cb: git_diff_hunk_cb, line_cb: git_diff_line_cb, payload: ?*anyopaque) c_int;
 pub extern fn git_diff_from_buffer(out: [*c]?*git_diff, content: [*c]const u8, content_len: usize) c_int;
 pub const struct_git_diff_stats = opaque {};
 pub const git_diff_stats = struct_git_diff_stats;
@@ -1310,15 +1310,15 @@ pub const struct_git_diff_patchid_options = extern struct {
 pub const git_diff_patchid_options = struct_git_diff_patchid_options;
 pub extern fn git_diff_patchid_options_init(opts: [*c]git_diff_patchid_options, version: c_uint) c_int;
 pub extern fn git_diff_patchid(out: [*c]git_oid, diff: ?*git_diff, opts: [*c]git_diff_patchid_options) c_int;
-pub const git_apply_delta_cb = ?fn ([*c]const git_diff_delta, ?*c_void) callconv(.C) c_int;
-pub const git_apply_hunk_cb = ?fn ([*c]const git_diff_hunk, ?*c_void) callconv(.C) c_int;
+pub const git_apply_delta_cb = ?fn ([*c]const git_diff_delta, ?*anyopaque) callconv(.C) c_int;
+pub const git_apply_hunk_cb = ?fn ([*c]const git_diff_hunk, ?*anyopaque) callconv(.C) c_int;
 pub const GIT_APPLY_CHECK: c_int = 1;
 pub const git_apply_flags_t = c_uint;
 pub const git_apply_options = extern struct {
     version: c_uint,
     delta_cb: git_apply_delta_cb,
     hunk_cb: git_apply_hunk_cb,
-    payload: ?*c_void,
+    payload: ?*anyopaque,
     flags: c_uint,
 };
 pub extern fn git_apply_options_init(opts: [*c]git_apply_options, version: c_uint) c_int;
@@ -1343,9 +1343,9 @@ pub extern fn git_attr_get(value_out: [*c][*c]const u8, repo: ?*git_repository, 
 pub extern fn git_attr_get_ext(value_out: [*c][*c]const u8, repo: ?*git_repository, opts: [*c]git_attr_options, path: [*c]const u8, name: [*c]const u8) c_int;
 pub extern fn git_attr_get_many(values_out: [*c][*c]const u8, repo: ?*git_repository, flags: u32, path: [*c]const u8, num_attr: usize, names: [*c][*c]const u8) c_int;
 pub extern fn git_attr_get_many_ext(values_out: [*c][*c]const u8, repo: ?*git_repository, opts: [*c]git_attr_options, path: [*c]const u8, num_attr: usize, names: [*c][*c]const u8) c_int;
-pub const git_attr_foreach_cb = ?fn ([*c]const u8, [*c]const u8, ?*c_void) callconv(.C) c_int;
-pub extern fn git_attr_foreach(repo: ?*git_repository, flags: u32, path: [*c]const u8, callback: git_attr_foreach_cb, payload: ?*c_void) c_int;
-pub extern fn git_attr_foreach_ext(repo: ?*git_repository, opts: [*c]git_attr_options, path: [*c]const u8, callback: git_attr_foreach_cb, payload: ?*c_void) c_int;
+pub const git_attr_foreach_cb = ?fn ([*c]const u8, [*c]const u8, ?*anyopaque) callconv(.C) c_int;
+pub extern fn git_attr_foreach(repo: ?*git_repository, flags: u32, path: [*c]const u8, callback: git_attr_foreach_cb, payload: ?*anyopaque) c_int;
+pub extern fn git_attr_foreach_ext(repo: ?*git_repository, opts: [*c]git_attr_options, path: [*c]const u8, callback: git_attr_foreach_cb, payload: ?*anyopaque) c_int;
 pub extern fn git_attr_cache_flush(repo: ?*git_repository) c_int;
 pub extern fn git_attr_add_macro(repo: ?*git_repository, name: [*c]const u8, values: [*c]const u8) c_int;
 pub extern fn git_blob_lookup(blob: [*c]?*git_blob, repo: ?*git_repository, id: [*c]const git_oid) c_int;
@@ -1353,7 +1353,7 @@ pub extern fn git_blob_lookup_prefix(blob: [*c]?*git_blob, repo: ?*git_repositor
 pub extern fn git_blob_free(blob: ?*git_blob) void;
 pub extern fn git_blob_id(blob: ?*const git_blob) [*c]const git_oid;
 pub extern fn git_blob_owner(blob: ?*const git_blob) ?*git_repository;
-pub extern fn git_blob_rawcontent(blob: ?*const git_blob) ?*const c_void;
+pub extern fn git_blob_rawcontent(blob: ?*const git_blob) ?*const anyopaque;
 pub extern fn git_blob_rawsize(blob: ?*const git_blob) git_object_size_t;
 pub const GIT_BLOB_FILTER_CHECK_FOR_BINARY: c_int = 1;
 pub const GIT_BLOB_FILTER_NO_SYSTEM_ATTRIBUTES: c_int = 2;
@@ -1371,7 +1371,7 @@ pub extern fn git_blob_create_from_workdir(id: [*c]git_oid, repo: ?*git_reposito
 pub extern fn git_blob_create_from_disk(id: [*c]git_oid, repo: ?*git_repository, path: [*c]const u8) c_int;
 pub extern fn git_blob_create_from_stream(out: [*c][*c]git_writestream, repo: ?*git_repository, hintpath: [*c]const u8) c_int;
 pub extern fn git_blob_create_from_stream_commit(out: [*c]git_oid, stream: [*c]git_writestream) c_int;
-pub extern fn git_blob_create_from_buffer(id: [*c]git_oid, repo: ?*git_repository, buffer: ?*const c_void, len: usize) c_int;
+pub extern fn git_blob_create_from_buffer(id: [*c]git_oid, repo: ?*git_repository, buffer: ?*const anyopaque, len: usize) c_int;
 pub extern fn git_blob_is_binary(blob: ?*const git_blob) c_int;
 pub extern fn git_blob_dup(out: [*c]?*git_blob, source: ?*git_blob) c_int;
 pub const GIT_BLAME_NORMAL: c_int = 0;
@@ -1459,7 +1459,7 @@ pub const git_cert_hostkey = extern struct {
 };
 pub const git_cert_x509 = extern struct {
     parent: git_cert,
-    data: ?*c_void,
+    data: ?*anyopaque,
     len: usize,
 };
 pub const GIT_CHECKOUT_NONE: c_int = 0;
@@ -1498,9 +1498,9 @@ pub const git_checkout_perfdata = extern struct {
     stat_calls: usize,
     chmod_calls: usize,
 };
-pub const git_checkout_notify_cb = ?fn (git_checkout_notify_t, [*c]const u8, [*c]const git_diff_file, [*c]const git_diff_file, [*c]const git_diff_file, ?*c_void) callconv(.C) c_int;
-pub const git_checkout_progress_cb = ?fn ([*c]const u8, usize, usize, ?*c_void) callconv(.C) void;
-pub const git_checkout_perfdata_cb = ?fn ([*c]const git_checkout_perfdata, ?*c_void) callconv(.C) void;
+pub const git_checkout_notify_cb = ?fn (git_checkout_notify_t, [*c]const u8, [*c]const git_diff_file, [*c]const git_diff_file, [*c]const git_diff_file, ?*anyopaque) callconv(.C) c_int;
+pub const git_checkout_progress_cb = ?fn ([*c]const u8, usize, usize, ?*anyopaque) callconv(.C) void;
+pub const git_checkout_perfdata_cb = ?fn ([*c]const git_checkout_perfdata, ?*anyopaque) callconv(.C) void;
 pub const struct_git_checkout_options = extern struct {
     version: c_uint,
     checkout_strategy: c_uint,
@@ -1510,9 +1510,9 @@ pub const struct_git_checkout_options = extern struct {
     file_open_flags: c_int,
     notify_flags: c_uint,
     notify_cb: git_checkout_notify_cb,
-    notify_payload: ?*c_void,
+    notify_payload: ?*anyopaque,
     progress_cb: git_checkout_progress_cb,
-    progress_payload: ?*c_void,
+    progress_payload: ?*anyopaque,
     paths: git_strarray,
     baseline: ?*git_tree,
     baseline_index: ?*git_index,
@@ -1521,7 +1521,7 @@ pub const struct_git_checkout_options = extern struct {
     our_label: [*c]const u8,
     their_label: [*c]const u8,
     perfdata_cb: git_checkout_perfdata_cb,
-    perfdata_payload: ?*c_void,
+    perfdata_payload: ?*anyopaque,
 };
 pub const git_checkout_options = struct_git_checkout_options;
 pub extern fn git_checkout_options_init(opts: [*c]git_checkout_options, version: c_uint) c_int;
@@ -1539,13 +1539,13 @@ pub const git_indexer = struct_git_indexer;
 pub const struct_git_indexer_options = extern struct {
     version: c_uint,
     progress_cb: git_indexer_progress_cb,
-    progress_cb_payload: ?*c_void,
+    progress_cb_payload: ?*anyopaque,
     verify: u8,
 };
 pub const git_indexer_options = struct_git_indexer_options;
 pub extern fn git_indexer_options_init(opts: [*c]git_indexer_options, version: c_uint) c_int;
 pub extern fn git_indexer_new(out: [*c]?*git_indexer, path: [*c]const u8, mode: c_uint, odb: ?*git_odb, opts: [*c]git_indexer_options) c_int;
-pub extern fn git_indexer_append(idx: ?*git_indexer, data: ?*const c_void, size: usize, stats: [*c]git_indexer_progress) c_int;
+pub extern fn git_indexer_append(idx: ?*git_indexer, data: ?*const anyopaque, size: usize, stats: [*c]git_indexer_progress) c_int;
 pub extern fn git_indexer_commit(idx: ?*git_indexer, stats: [*c]git_indexer_progress) c_int;
 pub extern fn git_indexer_hash(idx: ?*const git_indexer) [*c]const git_oid;
 pub extern fn git_indexer_free(idx: ?*git_indexer) void;
@@ -1581,7 +1581,7 @@ pub const GIT_INDEX_CAPABILITY_NO_FILEMODE: c_int = 2;
 pub const GIT_INDEX_CAPABILITY_NO_SYMLINKS: c_int = 4;
 pub const GIT_INDEX_CAPABILITY_FROM_OWNER: c_int = -1;
 pub const git_index_capability_t = c_int;
-pub const git_index_matched_path_cb = ?fn ([*c]const u8, [*c]const u8, ?*c_void) callconv(.C) c_int;
+pub const git_index_matched_path_cb = ?fn ([*c]const u8, [*c]const u8, ?*anyopaque) callconv(.C) c_int;
 pub const GIT_INDEX_ADD_DEFAULT: c_int = 0;
 pub const GIT_INDEX_ADD_FORCE: c_int = 1;
 pub const GIT_INDEX_ADD_DISABLE_PATHSPEC_MATCH: c_int = 2;
@@ -1621,11 +1621,11 @@ pub extern fn git_index_iterator_new(iterator_out: [*c]?*git_index_iterator, ind
 pub extern fn git_index_iterator_next(out: [*c][*c]const git_index_entry, iterator: ?*git_index_iterator) c_int;
 pub extern fn git_index_iterator_free(iterator: ?*git_index_iterator) void;
 pub extern fn git_index_add_bypath(index: ?*git_index, path: [*c]const u8) c_int;
-pub extern fn git_index_add_from_buffer(index: ?*git_index, entry: [*c]const git_index_entry, buffer: ?*const c_void, len: usize) c_int;
+pub extern fn git_index_add_from_buffer(index: ?*git_index, entry: [*c]const git_index_entry, buffer: ?*const anyopaque, len: usize) c_int;
 pub extern fn git_index_remove_bypath(index: ?*git_index, path: [*c]const u8) c_int;
-pub extern fn git_index_add_all(index: ?*git_index, pathspec: [*c]const git_strarray, flags: c_uint, callback: git_index_matched_path_cb, payload: ?*c_void) c_int;
-pub extern fn git_index_remove_all(index: ?*git_index, pathspec: [*c]const git_strarray, callback: git_index_matched_path_cb, payload: ?*c_void) c_int;
-pub extern fn git_index_update_all(index: ?*git_index, pathspec: [*c]const git_strarray, callback: git_index_matched_path_cb, payload: ?*c_void) c_int;
+pub extern fn git_index_add_all(index: ?*git_index, pathspec: [*c]const git_strarray, flags: c_uint, callback: git_index_matched_path_cb, payload: ?*anyopaque) c_int;
+pub extern fn git_index_remove_all(index: ?*git_index, pathspec: [*c]const git_strarray, callback: git_index_matched_path_cb, payload: ?*anyopaque) c_int;
+pub extern fn git_index_update_all(index: ?*git_index, pathspec: [*c]const git_strarray, callback: git_index_matched_path_cb, payload: ?*anyopaque) c_int;
 pub extern fn git_index_find(at_pos: [*c]usize, index: ?*git_index, path: [*c]const u8) c_int;
 pub extern fn git_index_find_prefix(at_pos: [*c]usize, index: ?*git_index, prefix: [*c]const u8) c_int;
 pub extern fn git_index_conflict_add(index: ?*git_index, ancestor_entry: [*c]const git_index_entry, our_entry: [*c]const git_index_entry, their_entry: [*c]const git_index_entry) c_int;
@@ -1771,24 +1771,24 @@ pub const struct__LIBSSH2_USERAUTH_KBDINT_PROMPT = opaque {};
 pub const LIBSSH2_USERAUTH_KBDINT_PROMPT = struct__LIBSSH2_USERAUTH_KBDINT_PROMPT;
 pub const struct__LIBSSH2_USERAUTH_KBDINT_RESPONSE = opaque {};
 pub const LIBSSH2_USERAUTH_KBDINT_RESPONSE = struct__LIBSSH2_USERAUTH_KBDINT_RESPONSE;
-pub const git_credential_ssh_interactive_cb = ?fn ([*c]const u8, c_int, [*c]const u8, c_int, c_int, ?*const LIBSSH2_USERAUTH_KBDINT_PROMPT, ?*LIBSSH2_USERAUTH_KBDINT_RESPONSE, [*c]?*c_void) callconv(.C) void;
+pub const git_credential_ssh_interactive_cb = ?fn ([*c]const u8, c_int, [*c]const u8, c_int, c_int, ?*const LIBSSH2_USERAUTH_KBDINT_PROMPT, ?*LIBSSH2_USERAUTH_KBDINT_RESPONSE, [*c]?*anyopaque) callconv(.C) void;
 pub const struct_git_credential_ssh_interactive = extern struct {
     parent: git_credential,
     username: [*c]u8,
     prompt_callback: git_credential_ssh_interactive_cb,
-    payload: ?*c_void,
+    payload: ?*anyopaque,
 };
 pub const git_credential_ssh_interactive = struct_git_credential_ssh_interactive;
 pub const struct__LIBSSH2_SESSION = opaque {};
 pub const LIBSSH2_SESSION = struct__LIBSSH2_SESSION;
-pub const git_credential_sign_cb = ?fn (?*LIBSSH2_SESSION, [*c][*c]u8, [*c]usize, [*c]const u8, usize, [*c]?*c_void) callconv(.C) c_int;
+pub const git_credential_sign_cb = ?fn (?*LIBSSH2_SESSION, [*c][*c]u8, [*c]usize, [*c]const u8, usize, [*c]?*anyopaque) callconv(.C) c_int;
 pub const struct_git_credential_ssh_custom = extern struct {
     parent: git_credential,
     username: [*c]u8,
     publickey: [*c]u8,
     publickey_len: usize,
     sign_callback: git_credential_sign_cb,
-    payload: ?*c_void,
+    payload: ?*anyopaque,
 };
 pub const git_credential_ssh_custom = struct_git_credential_ssh_custom;
 pub extern fn git_credential_free(cred: [*c]git_credential) void;
@@ -1799,9 +1799,9 @@ pub extern fn git_credential_default_new(out: [*c][*c]git_credential) c_int;
 pub extern fn git_credential_username_new(out: [*c][*c]git_credential, username: [*c]const u8) c_int;
 pub extern fn git_credential_ssh_key_new(out: [*c][*c]git_credential, username: [*c]const u8, publickey: [*c]const u8, privatekey: [*c]const u8, passphrase: [*c]const u8) c_int;
 pub extern fn git_credential_ssh_key_memory_new(out: [*c][*c]git_credential, username: [*c]const u8, publickey: [*c]const u8, privatekey: [*c]const u8, passphrase: [*c]const u8) c_int;
-pub extern fn git_credential_ssh_interactive_new(out: [*c][*c]git_credential, username: [*c]const u8, prompt_callback: git_credential_ssh_interactive_cb, payload: ?*c_void) c_int;
+pub extern fn git_credential_ssh_interactive_new(out: [*c][*c]git_credential, username: [*c]const u8, prompt_callback: git_credential_ssh_interactive_cb, payload: ?*anyopaque) c_int;
 pub extern fn git_credential_ssh_key_from_agent(out: [*c][*c]git_credential, username: [*c]const u8) c_int;
-pub extern fn git_credential_ssh_custom_new(out: [*c][*c]git_credential, username: [*c]const u8, publickey: [*c]const u8, publickey_len: usize, sign_callback: git_credential_sign_cb, payload: ?*c_void) c_int;
+pub extern fn git_credential_ssh_custom_new(out: [*c][*c]git_credential, username: [*c]const u8, publickey: [*c]const u8, publickey_len: usize, sign_callback: git_credential_sign_cb, payload: ?*anyopaque) c_int;
 pub const GIT_PACKBUILDER_ADDING_OBJECTS: c_int = 0;
 pub const GIT_PACKBUILDER_DELTAFICATION: c_int = 1;
 pub const git_packbuilder_stage_t = c_uint;
@@ -1813,13 +1813,13 @@ pub extern fn git_packbuilder_insert_commit(pb: ?*git_packbuilder, id: [*c]const
 pub extern fn git_packbuilder_insert_walk(pb: ?*git_packbuilder, walk: ?*git_revwalk) c_int;
 pub extern fn git_packbuilder_insert_recur(pb: ?*git_packbuilder, id: [*c]const git_oid, name: [*c]const u8) c_int;
 pub extern fn git_packbuilder_write_buf(buf: [*c]git_buf, pb: ?*git_packbuilder) c_int;
-pub extern fn git_packbuilder_write(pb: ?*git_packbuilder, path: [*c]const u8, mode: c_uint, progress_cb: git_indexer_progress_cb, progress_cb_payload: ?*c_void) c_int;
+pub extern fn git_packbuilder_write(pb: ?*git_packbuilder, path: [*c]const u8, mode: c_uint, progress_cb: git_indexer_progress_cb, progress_cb_payload: ?*anyopaque) c_int;
 pub extern fn git_packbuilder_hash(pb: ?*git_packbuilder) [*c]const git_oid;
-pub const git_packbuilder_foreach_cb = ?fn (?*c_void, usize, ?*c_void) callconv(.C) c_int;
-pub extern fn git_packbuilder_foreach(pb: ?*git_packbuilder, cb: git_packbuilder_foreach_cb, payload: ?*c_void) c_int;
+pub const git_packbuilder_foreach_cb = ?fn (?*anyopaque, usize, ?*anyopaque) callconv(.C) c_int;
+pub extern fn git_packbuilder_foreach(pb: ?*git_packbuilder, cb: git_packbuilder_foreach_cb, payload: ?*anyopaque) c_int;
 pub extern fn git_packbuilder_object_count(pb: ?*git_packbuilder) usize;
 pub extern fn git_packbuilder_written(pb: ?*git_packbuilder) usize;
-pub extern fn git_packbuilder_set_callbacks(pb: ?*git_packbuilder, progress_cb: git_packbuilder_progress, progress_cb_payload: ?*c_void) c_int;
+pub extern fn git_packbuilder_set_callbacks(pb: ?*git_packbuilder, progress_cb: git_packbuilder_progress, progress_cb_payload: ?*anyopaque) c_int;
 pub extern fn git_packbuilder_free(pb: ?*git_packbuilder) void;
 pub const GIT_PROXY_NONE: c_int = 0;
 pub const GIT_PROXY_AUTO: c_int = 1;
@@ -1831,7 +1831,7 @@ pub const git_proxy_options = extern struct {
     url: [*c]const u8,
     credentials: git_credential_acquire_cb,
     certificate_check: git_transport_certificate_check_cb,
-    payload: ?*c_void,
+    payload: ?*anyopaque,
 };
 pub extern fn git_proxy_options_init(opts: [*c]git_proxy_options, version: c_uint) c_int;
 pub extern fn git_remote_create(out: [*c]?*git_remote, repo: ?*git_repository, name: [*c]const u8, url: [*c]const u8) c_int;
@@ -1925,8 +1925,8 @@ pub const GIT_CLONE_LOCAL: c_int = 1;
 pub const GIT_CLONE_NO_LOCAL: c_int = 2;
 pub const GIT_CLONE_LOCAL_NO_LINKS: c_int = 3;
 pub const git_clone_local_t = c_uint;
-pub const git_remote_create_cb = ?fn ([*c]?*git_remote, ?*git_repository, [*c]const u8, [*c]const u8, ?*c_void) callconv(.C) c_int;
-pub const git_repository_create_cb = ?fn ([*c]?*git_repository, [*c]const u8, c_int, ?*c_void) callconv(.C) c_int;
+pub const git_remote_create_cb = ?fn ([*c]?*git_remote, ?*git_repository, [*c]const u8, [*c]const u8, ?*anyopaque) callconv(.C) c_int;
+pub const git_repository_create_cb = ?fn ([*c]?*git_repository, [*c]const u8, c_int, ?*anyopaque) callconv(.C) c_int;
 pub const struct_git_clone_options = extern struct {
     version: c_uint,
     checkout_opts: git_checkout_options,
@@ -1935,9 +1935,9 @@ pub const struct_git_clone_options = extern struct {
     local: git_clone_local_t,
     checkout_branch: [*c]const u8,
     repository_cb: git_repository_create_cb,
-    repository_cb_payload: ?*c_void,
+    repository_cb_payload: ?*anyopaque,
     remote_cb: git_remote_create_cb,
-    remote_cb_payload: ?*c_void,
+    remote_cb_payload: ?*anyopaque,
 };
 pub const git_clone_options = struct_git_clone_options;
 pub extern fn git_clone_options_init(opts: [*c]git_clone_options, version: c_uint) c_int;
@@ -1973,7 +1973,7 @@ pub extern fn git_commit_amend(id: [*c]git_oid, commit_to_amend: ?*const git_com
 pub extern fn git_commit_create_buffer(out: [*c]git_buf, repo: ?*git_repository, author: [*c]const git_signature, committer: [*c]const git_signature, message_encoding: [*c]const u8, message: [*c]const u8, tree: ?*const git_tree, parent_count: usize, parents: [*c]?*const git_commit) c_int;
 pub extern fn git_commit_create_with_signature(out: [*c]git_oid, repo: ?*git_repository, commit_content: [*c]const u8, signature: [*c]const u8, signature_field: [*c]const u8) c_int;
 pub extern fn git_commit_dup(out: [*c]?*git_commit, source: ?*git_commit) c_int;
-pub const git_commit_signing_cb = ?fn ([*c]git_buf, [*c]git_buf, [*c]const u8, ?*c_void) callconv(.C) c_int;
+pub const git_commit_signing_cb = ?fn ([*c]git_buf, [*c]git_buf, [*c]const u8, ?*anyopaque) callconv(.C) c_int;
 pub const GIT_CONFIG_LEVEL_PROGRAMDATA: c_int = 1;
 pub const GIT_CONFIG_LEVEL_SYSTEM: c_int = 2;
 pub const GIT_CONFIG_LEVEL_XDG: c_int = 3;
@@ -1988,11 +1988,11 @@ pub const struct_git_config_entry = extern struct {
     include_depth: c_uint,
     level: git_config_level_t,
     free: ?fn ([*c]struct_git_config_entry) callconv(.C) void,
-    payload: ?*c_void,
+    payload: ?*anyopaque,
 };
 pub const git_config_entry = struct_git_config_entry;
 pub extern fn git_config_entry_free([*c]git_config_entry) void;
-pub const git_config_foreach_cb = ?fn ([*c]const git_config_entry, ?*c_void) callconv(.C) c_int;
+pub const git_config_foreach_cb = ?fn ([*c]const git_config_entry, ?*anyopaque) callconv(.C) c_int;
 pub const struct_git_config_iterator = opaque {};
 pub const git_config_iterator = struct_git_config_iterator;
 pub const GIT_CONFIGMAP_FALSE: c_int = 0;
@@ -2024,7 +2024,7 @@ pub extern fn git_config_get_bool(out: [*c]c_int, cfg: ?*const git_config, name:
 pub extern fn git_config_get_path(out: [*c]git_buf, cfg: ?*const git_config, name: [*c]const u8) c_int;
 pub extern fn git_config_get_string(out: [*c][*c]const u8, cfg: ?*const git_config, name: [*c]const u8) c_int;
 pub extern fn git_config_get_string_buf(out: [*c]git_buf, cfg: ?*const git_config, name: [*c]const u8) c_int;
-pub extern fn git_config_get_multivar_foreach(cfg: ?*const git_config, name: [*c]const u8, regexp: [*c]const u8, callback: git_config_foreach_cb, payload: ?*c_void) c_int;
+pub extern fn git_config_get_multivar_foreach(cfg: ?*const git_config, name: [*c]const u8, regexp: [*c]const u8, callback: git_config_foreach_cb, payload: ?*anyopaque) c_int;
 pub extern fn git_config_multivar_iterator_new(out: [*c]?*git_config_iterator, cfg: ?*const git_config, name: [*c]const u8, regexp: [*c]const u8) c_int;
 pub extern fn git_config_next(entry: [*c][*c]git_config_entry, iter: ?*git_config_iterator) c_int;
 pub extern fn git_config_iterator_free(iter: ?*git_config_iterator) void;
@@ -2035,17 +2035,17 @@ pub extern fn git_config_set_string(cfg: ?*git_config, name: [*c]const u8, value
 pub extern fn git_config_set_multivar(cfg: ?*git_config, name: [*c]const u8, regexp: [*c]const u8, value: [*c]const u8) c_int;
 pub extern fn git_config_delete_entry(cfg: ?*git_config, name: [*c]const u8) c_int;
 pub extern fn git_config_delete_multivar(cfg: ?*git_config, name: [*c]const u8, regexp: [*c]const u8) c_int;
-pub extern fn git_config_foreach(cfg: ?*const git_config, callback: git_config_foreach_cb, payload: ?*c_void) c_int;
+pub extern fn git_config_foreach(cfg: ?*const git_config, callback: git_config_foreach_cb, payload: ?*anyopaque) c_int;
 pub extern fn git_config_iterator_new(out: [*c]?*git_config_iterator, cfg: ?*const git_config) c_int;
 pub extern fn git_config_iterator_glob_new(out: [*c]?*git_config_iterator, cfg: ?*const git_config, regexp: [*c]const u8) c_int;
-pub extern fn git_config_foreach_match(cfg: ?*const git_config, regexp: [*c]const u8, callback: git_config_foreach_cb, payload: ?*c_void) c_int;
+pub extern fn git_config_foreach_match(cfg: ?*const git_config, regexp: [*c]const u8, callback: git_config_foreach_cb, payload: ?*anyopaque) c_int;
 pub extern fn git_config_get_mapped(out: [*c]c_int, cfg: ?*const git_config, name: [*c]const u8, maps: [*c]const git_configmap, map_n: usize) c_int;
 pub extern fn git_config_lookup_map_value(out: [*c]c_int, maps: [*c]const git_configmap, map_n: usize, value: [*c]const u8) c_int;
 pub extern fn git_config_parse_bool(out: [*c]c_int, value: [*c]const u8) c_int;
 pub extern fn git_config_parse_int32(out: [*c]i32, value: [*c]const u8) c_int;
 pub extern fn git_config_parse_int64(out: [*c]i64, value: [*c]const u8) c_int;
 pub extern fn git_config_parse_path(out: [*c]git_buf, value: [*c]const u8) c_int;
-pub extern fn git_config_backend_foreach_match(backend: ?*git_config_backend, regexp: [*c]const u8, callback: git_config_foreach_cb, payload: ?*c_void) c_int;
+pub extern fn git_config_backend_foreach_match(backend: ?*git_config_backend, regexp: [*c]const u8, callback: git_config_foreach_cb, payload: ?*anyopaque) c_int;
 pub extern fn git_config_lock(tx: [*c]?*git_transaction, cfg: ?*git_config) c_int;
 pub const GIT_DESCRIBE_DEFAULT: c_int = 0;
 pub const GIT_DESCRIBE_TAGS: c_int = 1;
@@ -2188,7 +2188,7 @@ pub const git_rebase_options = extern struct {
     merge_options: git_merge_options,
     checkout_options: git_checkout_options,
     signing_cb: git_commit_signing_cb,
-    payload: ?*c_void,
+    payload: ?*anyopaque,
 };
 pub const GIT_REBASE_OPERATION_PICK: c_int = 0;
 pub const GIT_REBASE_OPERATION_REWORD: c_int = 1;
@@ -2267,19 +2267,19 @@ pub const GIT_STASH_APPLY_PROGRESS_CHECKOUT_UNTRACKED: c_int = 5;
 pub const GIT_STASH_APPLY_PROGRESS_CHECKOUT_MODIFIED: c_int = 6;
 pub const GIT_STASH_APPLY_PROGRESS_DONE: c_int = 7;
 pub const git_stash_apply_progress_t = c_uint;
-pub const git_stash_apply_progress_cb = ?fn (git_stash_apply_progress_t, ?*c_void) callconv(.C) c_int;
+pub const git_stash_apply_progress_cb = ?fn (git_stash_apply_progress_t, ?*anyopaque) callconv(.C) c_int;
 pub const struct_git_stash_apply_options = extern struct {
     version: c_uint,
     flags: u32,
     checkout_options: git_checkout_options,
     progress_cb: git_stash_apply_progress_cb,
-    progress_payload: ?*c_void,
+    progress_payload: ?*anyopaque,
 };
 pub const git_stash_apply_options = struct_git_stash_apply_options;
 pub extern fn git_stash_apply_options_init(opts: [*c]git_stash_apply_options, version: c_uint) c_int;
 pub extern fn git_stash_apply(repo: ?*git_repository, index: usize, options: [*c]const git_stash_apply_options) c_int;
-pub const git_stash_cb = ?fn (usize, [*c]const u8, [*c]const git_oid, ?*c_void) callconv(.C) c_int;
-pub extern fn git_stash_foreach(repo: ?*git_repository, callback: git_stash_cb, payload: ?*c_void) c_int;
+pub const git_stash_cb = ?fn (usize, [*c]const u8, [*c]const git_oid, ?*anyopaque) callconv(.C) c_int;
+pub extern fn git_stash_foreach(repo: ?*git_repository, callback: git_stash_cb, payload: ?*anyopaque) c_int;
 pub extern fn git_stash_drop(repo: ?*git_repository, index: usize) c_int;
 pub extern fn git_stash_pop(repo: ?*git_repository, index: usize, options: [*c]const git_stash_apply_options) c_int;
 pub const GIT_STATUS_CURRENT: c_int = 0;
@@ -2297,7 +2297,7 @@ pub const GIT_STATUS_WT_UNREADABLE: c_int = 4096;
 pub const GIT_STATUS_IGNORED: c_int = 16384;
 pub const GIT_STATUS_CONFLICTED: c_int = 32768;
 pub const git_status_t = c_uint;
-pub const git_status_cb = ?fn ([*c]const u8, c_uint, ?*c_void) callconv(.C) c_int;
+pub const git_status_cb = ?fn ([*c]const u8, c_uint, ?*anyopaque) callconv(.C) c_int;
 pub const GIT_STATUS_SHOW_INDEX_AND_WORKDIR: c_int = 0;
 pub const GIT_STATUS_SHOW_INDEX_ONLY: c_int = 1;
 pub const GIT_STATUS_SHOW_WORKDIR_ONLY: c_int = 2;
@@ -2332,8 +2332,8 @@ pub const git_status_entry = extern struct {
     head_to_index: [*c]git_diff_delta,
     index_to_workdir: [*c]git_diff_delta,
 };
-pub extern fn git_status_foreach(repo: ?*git_repository, callback: git_status_cb, payload: ?*c_void) c_int;
-pub extern fn git_status_foreach_ext(repo: ?*git_repository, opts: [*c]const git_status_options, callback: git_status_cb, payload: ?*c_void) c_int;
+pub extern fn git_status_foreach(repo: ?*git_repository, callback: git_status_cb, payload: ?*anyopaque) c_int;
+pub extern fn git_status_foreach_ext(repo: ?*git_repository, opts: [*c]const git_status_options, callback: git_status_cb, payload: ?*anyopaque) c_int;
 pub extern fn git_status_file(status_flags: [*c]c_uint, repo: ?*git_repository, path: [*c]const u8) c_int;
 pub extern fn git_status_list_new(out: [*c]?*git_status_list, repo: ?*git_repository, opts: [*c]const git_status_options) c_int;
 pub extern fn git_status_list_entrycount(statuslist: ?*git_status_list) usize;
@@ -2355,7 +2355,7 @@ pub const GIT_SUBMODULE_STATUS_WD_INDEX_MODIFIED: c_int = 2048;
 pub const GIT_SUBMODULE_STATUS_WD_WD_MODIFIED: c_int = 4096;
 pub const GIT_SUBMODULE_STATUS_WD_UNTRACKED: c_int = 8192;
 pub const git_submodule_status_t = c_uint;
-pub const git_submodule_cb = ?fn (?*git_submodule, [*c]const u8, ?*c_void) callconv(.C) c_int;
+pub const git_submodule_cb = ?fn (?*git_submodule, [*c]const u8, ?*anyopaque) callconv(.C) c_int;
 pub const struct_git_submodule_update_options = extern struct {
     version: c_uint,
     checkout_opts: git_checkout_options,
@@ -2368,7 +2368,7 @@ pub extern fn git_submodule_update(submodule: ?*git_submodule, init: c_int, opti
 pub extern fn git_submodule_lookup(out: [*c]?*git_submodule, repo: ?*git_repository, name: [*c]const u8) c_int;
 pub extern fn git_submodule_dup(out: [*c]?*git_submodule, source: ?*git_submodule) c_int;
 pub extern fn git_submodule_free(submodule: ?*git_submodule) void;
-pub extern fn git_submodule_foreach(repo: ?*git_repository, callback: git_submodule_cb, payload: ?*c_void) c_int;
+pub extern fn git_submodule_foreach(repo: ?*git_repository, callback: git_submodule_cb, payload: ?*anyopaque) c_int;
 pub extern fn git_submodule_add_setup(out: [*c]?*git_submodule, repo: ?*git_repository, url: [*c]const u8, path: [*c]const u8, use_gitlink: c_int) c_int;
 pub extern fn git_submodule_clone(out: [*c]?*git_repository, submodule: ?*git_submodule, opts: [*c]const git_submodule_update_options) c_int;
 pub extern fn git_submodule_add_finalize(submodule: ?*git_submodule) c_int;
@@ -2432,13 +2432,13 @@ pub const struct_git_credential_userpass_payload = extern struct {
     password: [*c]const u8,
 };
 pub const git_credential_userpass_payload = struct_git_credential_userpass_payload;
-pub extern fn git_credential_userpass(out: [*c][*c]git_credential, url: [*c]const u8, user_from_url: [*c]const u8, allowed_types: c_uint, payload: ?*c_void) c_int;
+pub extern fn git_credential_userpass(out: [*c][*c]git_credential, url: [*c]const u8, user_from_url: [*c]const u8, allowed_types: c_uint, payload: ?*anyopaque) c_int;
 pub const git_attr_t = git_attr_value_t;
 pub extern fn git_blob_create_fromworkdir(id: [*c]git_oid, repo: ?*git_repository, relative_path: [*c]const u8) c_int;
 pub extern fn git_blob_create_fromdisk(id: [*c]git_oid, repo: ?*git_repository, path: [*c]const u8) c_int;
 pub extern fn git_blob_create_fromstream(out: [*c][*c]git_writestream, repo: ?*git_repository, hintpath: [*c]const u8) c_int;
 pub extern fn git_blob_create_fromstream_commit(out: [*c]git_oid, stream: [*c]git_writestream) c_int;
-pub extern fn git_blob_create_frombuffer(id: [*c]git_oid, repo: ?*git_repository, buffer: ?*const c_void, len: usize) c_int;
+pub extern fn git_blob_create_frombuffer(id: [*c]git_oid, repo: ?*git_repository, buffer: ?*const anyopaque, len: usize) c_int;
 pub extern fn git_blob_filtered_content(out: [*c]git_buf, blob: ?*git_blob, as_path: [*c]const u8, check_for_binary_data: c_int) c_int;
 pub extern fn git_filter_list_stream_data(filters: ?*git_filter_list, data: [*c]git_buf, target: [*c]git_writestream) c_int;
 pub extern fn git_filter_list_apply_to_data(out: [*c]git_buf, filters: ?*git_filter_list, in: [*c]git_buf) c_int;
@@ -2449,7 +2449,7 @@ pub extern fn giterr_last() [*c]const git_error;
 pub extern fn giterr_clear() void;
 pub extern fn giterr_set_str(error_class: c_int, string: [*c]const u8) void;
 pub extern fn giterr_set_oom() void;
-pub extern fn git_index_add_frombuffer(index: ?*git_index, entry: [*c]const git_index_entry, buffer: ?*const c_void, len: usize) c_int;
+pub extern fn git_index_add_frombuffer(index: ?*git_index, entry: [*c]const git_index_entry, buffer: ?*const anyopaque, len: usize) c_int;
 pub extern fn git_object__size(@"type": git_object_t) usize;
 pub extern fn git_remote_is_valid_name(remote_name: [*c]const u8) c_int;
 pub extern fn git_reference_is_valid_name(refname: [*c]const u8) c_int;
@@ -2475,17 +2475,17 @@ pub extern fn git_cred_default_new(out: [*c][*c]git_credential) c_int;
 pub extern fn git_cred_username_new(out: [*c][*c]git_credential, username: [*c]const u8) c_int;
 pub extern fn git_cred_ssh_key_new(out: [*c][*c]git_credential, username: [*c]const u8, publickey: [*c]const u8, privatekey: [*c]const u8, passphrase: [*c]const u8) c_int;
 pub extern fn git_cred_ssh_key_memory_new(out: [*c][*c]git_credential, username: [*c]const u8, publickey: [*c]const u8, privatekey: [*c]const u8, passphrase: [*c]const u8) c_int;
-pub extern fn git_cred_ssh_interactive_new(out: [*c][*c]git_credential, username: [*c]const u8, prompt_callback: git_credential_ssh_interactive_cb, payload: ?*c_void) c_int;
+pub extern fn git_cred_ssh_interactive_new(out: [*c][*c]git_credential, username: [*c]const u8, prompt_callback: git_credential_ssh_interactive_cb, payload: ?*anyopaque) c_int;
 pub extern fn git_cred_ssh_key_from_agent(out: [*c][*c]git_credential, username: [*c]const u8) c_int;
-pub extern fn git_cred_ssh_custom_new(out: [*c][*c]git_credential, username: [*c]const u8, publickey: [*c]const u8, publickey_len: usize, sign_callback: git_credential_sign_cb, payload: ?*c_void) c_int;
+pub extern fn git_cred_ssh_custom_new(out: [*c][*c]git_credential, username: [*c]const u8, publickey: [*c]const u8, publickey_len: usize, sign_callback: git_credential_sign_cb, payload: ?*anyopaque) c_int;
 pub const git_cred_userpass_payload = git_credential_userpass_payload;
-pub extern fn git_cred_userpass(out: [*c][*c]git_credential, url: [*c]const u8, user_from_url: [*c]const u8, allowed_types: c_uint, payload: ?*c_void) c_int;
+pub extern fn git_cred_userpass(out: [*c][*c]git_credential, url: [*c]const u8, user_from_url: [*c]const u8, allowed_types: c_uint, payload: ?*anyopaque) c_int;
 pub const git_trace_callback = git_trace_cb;
 pub extern fn git_oid_iszero(id: [*c]const git_oid) c_int;
 pub const git_transfer_progress = git_indexer_progress;
 pub const git_transfer_progress_cb = git_indexer_progress_cb;
 pub const git_push_transfer_progress = git_push_transfer_progress_cb;
-pub const git_headlist_cb = ?fn ([*c]git_remote_head, ?*c_void) callconv(.C) c_int;
+pub const git_headlist_cb = ?fn ([*c]git_remote_head, ?*anyopaque) callconv(.C) c_int;
 pub extern fn git_strarray_free(array: [*c]git_strarray) void;
 pub extern fn git_blame_init_options(opts: [*c]git_blame_options, version: c_uint) c_int;
 pub extern fn git_checkout_init_options(opts: [*c]git_checkout_options, version: c_uint) c_int;
@@ -2540,7 +2540,7 @@ pub const git_message_trailer_array = extern struct {
 };
 pub extern fn git_message_trailers(arr: [*c]git_message_trailer_array, message: [*c]const u8) c_int;
 pub extern fn git_message_trailer_array_free(arr: [*c]git_message_trailer_array) void;
-pub const git_note_foreach_cb = ?fn ([*c]const git_oid, [*c]const git_oid, ?*c_void) callconv(.C) c_int;
+pub const git_note_foreach_cb = ?fn ([*c]const git_oid, [*c]const git_oid, ?*anyopaque) callconv(.C) c_int;
 pub const struct_git_iterator = opaque {};
 pub const git_note_iterator = struct_git_iterator;
 pub extern fn git_note_iterator_new(out: [*c]?*git_note_iterator, repo: ?*git_repository, notes_ref: [*c]const u8) c_int;
@@ -2559,8 +2559,8 @@ pub extern fn git_note_remove(repo: ?*git_repository, notes_ref: [*c]const u8, a
 pub extern fn git_note_commit_remove(notes_commit_out: [*c]git_oid, repo: ?*git_repository, notes_commit: ?*git_commit, author: [*c]const git_signature, committer: [*c]const git_signature, oid: [*c]const git_oid) c_int;
 pub extern fn git_note_free(note: ?*git_note) void;
 pub extern fn git_note_default_ref(out: [*c]git_buf, repo: ?*git_repository) c_int;
-pub extern fn git_note_foreach(repo: ?*git_repository, notes_ref: [*c]const u8, note_cb: git_note_foreach_cb, payload: ?*c_void) c_int;
-pub const git_odb_foreach_cb = ?fn ([*c]const git_oid, ?*c_void) callconv(.C) c_int;
+pub extern fn git_note_foreach(repo: ?*git_repository, notes_ref: [*c]const u8, note_cb: git_note_foreach_cb, payload: ?*anyopaque) c_int;
+pub const git_odb_foreach_cb = ?fn ([*c]const git_oid, ?*anyopaque) callconv(.C) c_int;
 pub extern fn git_odb_new(out: [*c]?*git_odb) c_int;
 pub extern fn git_odb_open(out: [*c]?*git_odb, objects_dir: [*c]const u8) c_int;
 pub extern fn git_odb_add_disk_alternate(odb: ?*git_odb, path: [*c]const u8) c_int;
@@ -2578,21 +2578,21 @@ pub const struct_git_odb_expand_id = extern struct {
 pub const git_odb_expand_id = struct_git_odb_expand_id;
 pub extern fn git_odb_expand_ids(db: ?*git_odb, ids: [*c]git_odb_expand_id, count: usize) c_int;
 pub extern fn git_odb_refresh(db: ?*struct_git_odb) c_int;
-pub extern fn git_odb_foreach(db: ?*git_odb, cb: git_odb_foreach_cb, payload: ?*c_void) c_int;
-pub extern fn git_odb_write(out: [*c]git_oid, odb: ?*git_odb, data: ?*const c_void, len: usize, @"type": git_object_t) c_int;
+pub extern fn git_odb_foreach(db: ?*git_odb, cb: git_odb_foreach_cb, payload: ?*anyopaque) c_int;
+pub extern fn git_odb_write(out: [*c]git_oid, odb: ?*git_odb, data: ?*const anyopaque, len: usize, @"type": git_object_t) c_int;
 pub extern fn git_odb_open_wstream(out: [*c][*c]git_odb_stream, db: ?*git_odb, size: git_object_size_t, @"type": git_object_t) c_int;
 pub extern fn git_odb_stream_write(stream: [*c]git_odb_stream, buffer: [*c]const u8, len: usize) c_int;
 pub extern fn git_odb_stream_finalize_write(out: [*c]git_oid, stream: [*c]git_odb_stream) c_int;
 pub extern fn git_odb_stream_read(stream: [*c]git_odb_stream, buffer: [*c]u8, len: usize) c_int;
 pub extern fn git_odb_stream_free(stream: [*c]git_odb_stream) void;
 pub extern fn git_odb_open_rstream(out: [*c][*c]git_odb_stream, len: [*c]usize, @"type": [*c]git_object_t, db: ?*git_odb, oid: [*c]const git_oid) c_int;
-pub extern fn git_odb_write_pack(out: [*c][*c]git_odb_writepack, db: ?*git_odb, progress_cb: git_indexer_progress_cb, progress_payload: ?*c_void) c_int;
-pub extern fn git_odb_hash(out: [*c]git_oid, data: ?*const c_void, len: usize, @"type": git_object_t) c_int;
+pub extern fn git_odb_write_pack(out: [*c][*c]git_odb_writepack, db: ?*git_odb, progress_cb: git_indexer_progress_cb, progress_payload: ?*anyopaque) c_int;
+pub extern fn git_odb_hash(out: [*c]git_oid, data: ?*const anyopaque, len: usize, @"type": git_object_t) c_int;
 pub extern fn git_odb_hashfile(out: [*c]git_oid, path: [*c]const u8, @"type": git_object_t) c_int;
 pub extern fn git_odb_object_dup(dest: [*c]?*git_odb_object, source: ?*git_odb_object) c_int;
 pub extern fn git_odb_object_free(object: ?*git_odb_object) void;
 pub extern fn git_odb_object_id(object: ?*git_odb_object) [*c]const git_oid;
-pub extern fn git_odb_object_data(object: ?*git_odb_object) ?*const c_void;
+pub extern fn git_odb_object_data(object: ?*git_odb_object) ?*const anyopaque;
 pub extern fn git_odb_object_size(object: ?*git_odb_object) usize;
 pub extern fn git_odb_object_type(object: ?*git_odb_object) git_object_t;
 pub extern fn git_odb_add_backend(odb: ?*git_odb, backend: ?*git_odb_backend, priority: c_int) c_int;
@@ -2612,8 +2612,8 @@ pub const git_patch = struct_git_patch;
 pub extern fn git_patch_owner(patch: ?*const git_patch) ?*git_repository;
 pub extern fn git_patch_from_diff(out: [*c]?*git_patch, diff: ?*git_diff, idx: usize) c_int;
 pub extern fn git_patch_from_blobs(out: [*c]?*git_patch, old_blob: ?*const git_blob, old_as_path: [*c]const u8, new_blob: ?*const git_blob, new_as_path: [*c]const u8, opts: [*c]const git_diff_options) c_int;
-pub extern fn git_patch_from_blob_and_buffer(out: [*c]?*git_patch, old_blob: ?*const git_blob, old_as_path: [*c]const u8, buffer: ?*const c_void, buffer_len: usize, buffer_as_path: [*c]const u8, opts: [*c]const git_diff_options) c_int;
-pub extern fn git_patch_from_buffers(out: [*c]?*git_patch, old_buffer: ?*const c_void, old_len: usize, old_as_path: [*c]const u8, new_buffer: ?*const c_void, new_len: usize, new_as_path: [*c]const u8, opts: [*c]const git_diff_options) c_int;
+pub extern fn git_patch_from_blob_and_buffer(out: [*c]?*git_patch, old_blob: ?*const git_blob, old_as_path: [*c]const u8, buffer: ?*const anyopaque, buffer_len: usize, buffer_as_path: [*c]const u8, opts: [*c]const git_diff_options) c_int;
+pub extern fn git_patch_from_buffers(out: [*c]?*git_patch, old_buffer: ?*const anyopaque, old_len: usize, old_as_path: [*c]const u8, new_buffer: ?*const anyopaque, new_len: usize, new_as_path: [*c]const u8, opts: [*c]const git_diff_options) c_int;
 pub extern fn git_patch_free(patch: ?*git_patch) void;
 pub extern fn git_patch_get_delta(patch: ?*const git_patch) [*c]const git_diff_delta;
 pub extern fn git_patch_num_hunks(patch: ?*const git_patch) usize;
@@ -2622,7 +2622,7 @@ pub extern fn git_patch_get_hunk(out: [*c][*c]const git_diff_hunk, lines_in_hunk
 pub extern fn git_patch_num_lines_in_hunk(patch: ?*const git_patch, hunk_idx: usize) c_int;
 pub extern fn git_patch_get_line_in_hunk(out: [*c][*c]const git_diff_line, patch: ?*git_patch, hunk_idx: usize, line_of_hunk: usize) c_int;
 pub extern fn git_patch_size(patch: ?*git_patch, include_context: c_int, include_hunk_headers: c_int, include_file_headers: c_int) usize;
-pub extern fn git_patch_print(patch: ?*git_patch, print_cb: git_diff_line_cb, payload: ?*c_void) c_int;
+pub extern fn git_patch_print(patch: ?*git_patch, print_cb: git_diff_line_cb, payload: ?*anyopaque) c_int;
 pub extern fn git_patch_to_buf(out: [*c]git_buf, patch: ?*git_patch) c_int;
 pub const struct_git_pathspec = opaque {};
 pub const git_pathspec = struct_git_pathspec;
@@ -2694,8 +2694,8 @@ pub extern fn git_revwalk_push_range(walk: ?*git_revwalk, range: [*c]const u8) c
 pub extern fn git_revwalk_simplify_first_parent(walk: ?*git_revwalk) c_int;
 pub extern fn git_revwalk_free(walk: ?*git_revwalk) void;
 pub extern fn git_revwalk_repository(walk: ?*git_revwalk) ?*git_repository;
-pub const git_revwalk_hide_cb = ?fn ([*c]const git_oid, ?*c_void) callconv(.C) c_int;
-pub extern fn git_revwalk_add_hide_cb(walk: ?*git_revwalk, hide_cb: git_revwalk_hide_cb, payload: ?*c_void) c_int;
+pub const git_revwalk_hide_cb = ?fn ([*c]const git_oid, ?*anyopaque) callconv(.C) c_int;
+pub extern fn git_revwalk_add_hide_cb(walk: ?*git_revwalk, hide_cb: git_revwalk_hide_cb, payload: ?*anyopaque) c_int;
 pub extern fn git_signature_new(out: [*c][*c]git_signature, name: [*c]const u8, email: [*c]const u8, time: git_time_t, offset: c_int) c_int;
 pub extern fn git_signature_now(out: [*c][*c]git_signature, name: [*c]const u8, email: [*c]const u8) c_int;
 pub extern fn git_signature_default(out: [*c][*c]git_signature, repo: ?*git_repository) c_int;
@@ -2720,8 +2720,8 @@ pub extern fn git_tag_create_lightweight(oid: [*c]git_oid, repo: ?*git_repositor
 pub extern fn git_tag_delete(repo: ?*git_repository, tag_name: [*c]const u8) c_int;
 pub extern fn git_tag_list(tag_names: [*c]git_strarray, repo: ?*git_repository) c_int;
 pub extern fn git_tag_list_match(tag_names: [*c]git_strarray, pattern: [*c]const u8, repo: ?*git_repository) c_int;
-pub const git_tag_foreach_cb = ?fn ([*c]const u8, [*c]git_oid, ?*c_void) callconv(.C) c_int;
-pub extern fn git_tag_foreach(repo: ?*git_repository, callback: git_tag_foreach_cb, payload: ?*c_void) c_int;
+pub const git_tag_foreach_cb = ?fn ([*c]const u8, [*c]git_oid, ?*anyopaque) callconv(.C) c_int;
+pub extern fn git_tag_foreach(repo: ?*git_repository, callback: git_tag_foreach_cb, payload: ?*anyopaque) c_int;
 pub extern fn git_tag_peel(tag_target_out: [*c]?*git_object, tag: ?*const git_tag) c_int;
 pub extern fn git_tag_dup(out: [*c]?*git_tag, source: ?*git_tag) c_int;
 pub extern fn git_tag_name_is_valid(valid: [*c]c_int, name: [*c]const u8) c_int;
@@ -3268,7 +3268,7 @@ pub inline fn __P(args: anytype) @TypeOf(args) {
 pub inline fn __PMT(args: anytype) @TypeOf(args) {
     return args;
 }
-pub const __ptr_t = ?*c_void;
+pub const __ptr_t = ?*anyopaque;
 pub const __BEGIN_DECLS = "";
 pub const __END_DECLS = "";
 pub inline fn __bos(ptr: anytype) @TypeOf(__builtin_object_size(ptr, __USE_FORTIFY_LEVEL > @as(c_int, 1))) {
@@ -3334,7 +3334,7 @@ pub const __stub_stty = "";
 pub const __need_size_t = "";
 pub const __need_NULL = "";
 pub const _SIZE_T = "";
-pub const NULL = @import("std").zig.c_translation.cast(?*c_void, @as(c_int, 0));
+pub const NULL = @import("std").zig.c_translation.cast(?*anyopaque, @as(c_int, 0));
 pub const _BITS_TIME_H = @as(c_int, 1);
 pub const _BITS_TYPES_H = @as(c_int, 1);
 pub const __TIMESIZE = __WORDSIZE;
@@ -3383,7 +3383,7 @@ pub const __SUSECONDS64_T_TYPE = __SQUAD_TYPE;
 pub const __DADDR_T_TYPE = __S32_TYPE;
 pub const __KEY_T_TYPE = __S32_TYPE;
 pub const __CLOCKID_T_TYPE = __S32_TYPE;
-pub const __TIMER_T_TYPE = ?*c_void;
+pub const __TIMER_T_TYPE = ?*anyopaque;
 pub const __BLKSIZE_T_TYPE = __SYSCALL_SLONG_TYPE;
 pub const __SSIZE_T_TYPE = __SWORD_TYPE;
 pub const __CPU_MASK_TYPE = __SYSCALL_ULONG_TYPE;

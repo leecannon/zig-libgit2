@@ -455,7 +455,7 @@ pub const Index = opaque {
                 pub fn cb(
                     path: [*c]const u8,
                     matched_pathspec: [*c]const u8,
-                    payload: ?*c_void,
+                    payload: ?*anyopaque,
                 ) callconv(.C) c_int {
                     return callback(
                         std.mem.sliceTo(path, 0),
@@ -562,7 +562,7 @@ pub const Index = opaque {
                 pub fn cb(
                     path: [*c]const u8,
                     matched_pathspec: [*c]const u8,
-                    payload: ?*c_void,
+                    payload: ?*anyopaque,
                 ) callconv(.C) c_int {
                     return callback(
                         std.mem.sliceTo(path, 0),
@@ -689,7 +689,7 @@ pub const Index = opaque {
                 pub fn cb(
                     path: [*c]const u8,
                     matched_pathspec: [*c]const u8,
-                    payload: ?*c_void,
+                    payload: ?*anyopaque,
                 ) callconv(.C) c_int {
                     return callback(
                         std.mem.sliceTo(path, 0),

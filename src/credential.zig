@@ -242,7 +242,7 @@ pub const Credential = extern struct {
             instruction: []const u8,
             prompts: []*const raw.LIBSSH2_USERAUTH_KBDINT_PROMPT,
             responses: []*raw.LIBSSH2_USERAUTH_KBDINT_RESPONSE,
-            abstract: [*c]?*c_void,
+            abstract: [*c]?*anyopaque,
         ) void,
     ) !*Credential {
         // TODO: This callback needs to be massively cleaned up
@@ -256,7 +256,7 @@ pub const Credential = extern struct {
                 num_prompts: c_int,
                 prompts: ?*const raw.LIBSSH2_USERAUTH_KBDINT_PROMPT,
                 responses: ?*raw.LIBSSH2_USERAUTH_KBDINT_RESPONSE,
-                abstract: [*c]?*c_void,
+                abstract: [*c]?*anyopaque,
             ) callconv(.C) void {
                 callback_fn(
                     name[0..name_len],
@@ -323,7 +323,7 @@ pub const Credential = extern struct {
             session: *raw.LIBSSH2_SESSION,
             out_signature: *[]const u8,
             data: []const u8,
-            abstract: [*c]?*c_void,
+            abstract: [*c]?*anyopaque,
         ) c_int,
     ) !*Credential {
         const cb = struct {
@@ -333,7 +333,7 @@ pub const Credential = extern struct {
                 sign_len: [*c]usize,
                 data: [*c]const u8,
                 data_len: usize,
-                abstract: [*c]?*c_void,
+                abstract: [*c]?*anyopaque,
             ) callconv(.C) c_int {
                 var out_sig: []const u8 = undefined;
 

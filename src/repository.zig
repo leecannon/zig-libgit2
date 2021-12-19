@@ -594,7 +594,7 @@ pub const Repository = opaque {
                 c_remote_url: [*c]const u8,
                 c_oid: [*c]const raw.git_oid,
                 c_is_merge: c_uint,
-                payload: ?*c_void,
+                payload: ?*anyopaque,
             ) callconv(.C) c_int {
                 return callback_fn(
                     std.mem.sliceTo(c_ref_name, 0),
@@ -664,7 +664,7 @@ pub const Repository = opaque {
         const UserDataType = @TypeOf(user_data);
 
         const cb = struct {
-            pub fn cb(c_oid: [*c]const raw.git_oid, payload: ?*c_void) callconv(.C) c_int {
+            pub fn cb(c_oid: [*c]const raw.git_oid, payload: ?*anyopaque) callconv(.C) c_int {
                 return callback_fn(@ptrCast(*const git.Oid, c_oid), @ptrCast(UserDataType, payload));
             }
         }.cb;
@@ -799,7 +799,7 @@ pub const Repository = opaque {
         const alignment = ptr_info.Pointer.alignment;
 
         const cb = struct {
-            pub fn cb(path: [*c]const u8, status: c_uint, payload: ?*c_void) callconv(.C) c_int {
+            pub fn cb(path: [*c]const u8, status: c_uint, payload: ?*anyopaque) callconv(.C) c_int {
                 return callback_fn(
                     std.mem.sliceTo(path, 0),
                     @bitCast(git.FileStatus, status),
@@ -890,7 +890,7 @@ pub const Repository = opaque {
         const alignment = ptr_info.Pointer.alignment;
 
         const cb = struct {
-            pub fn cb(path: [*c]const u8, status: c_uint, payload: ?*c_void) callconv(.C) c_int {
+            pub fn cb(path: [*c]const u8, status: c_uint, payload: ?*anyopaque) callconv(.C) c_int {
                 return callback_fn(
                     std.mem.sliceTo(path, 0),
                     @bitCast(git.FileStatus, status),
@@ -1503,7 +1503,7 @@ pub const Repository = opaque {
             pub fn cb(
                 name: [*c]const u8,
                 value: [*c]const u8,
-                payload: ?*c_void,
+                payload: ?*anyopaque,
             ) callconv(.C) c_int {
                 _ = payload;
                 return callback_fn(
@@ -1559,7 +1559,7 @@ pub const Repository = opaque {
             pub fn cb(
                 name: [*c]const u8,
                 value: [*c]const u8,
-                payload: ?*c_void,
+                payload: ?*anyopaque,
             ) callconv(.C) c_int {
                 return callback_fn(
                     std.mem.sliceTo(name, 0),
@@ -2151,22 +2151,22 @@ pub const Repository = opaque {
             baseline: *git.DiffFile,
             target: *git.DiffFile,
             workdir: *git.DiffFile,
-            payload: *c_void,
+            payload: *anyopaque,
         ) callconv(.C) c_int = null,
 
         /// Payload passed to notify_cb
-        notify_payload: ?*c_void = null,
+        notify_payload: ?*anyopaque = null,
 
         /// Optional callback to notify the consumer of checkout progress
         progress_cb: ?fn (
             path: [*:0]const u8,
             completed_steps: usize,
             total_steps: usize,
-            payload: *c_void,
+            payload: *anyopaque,
         ) callconv(.C) void = null,
 
         /// Payload passed to progress_cb
-        progress_payload: ?*c_void = null,
+        progress_payload: ?*anyopaque = null,
 
         /// A list of wildmatch patterns or paths.
         ///
@@ -2197,10 +2197,10 @@ pub const Repository = opaque {
         their_label: ?[:0]const u8 = null,
 
         /// Optional callback to notify the consumer of performance data. 
-        perfdata_cb: ?fn (perfdata: *const PerfData, payload: *c_void) callconv(.C) void = null,
+        perfdata_cb: ?fn (perfdata: *const PerfData, payload: *anyopaque) callconv(.C) void = null,
 
         /// Payload passed to perfdata_cb
-        perfdata_payload: ?*c_void = null,
+        perfdata_payload: ?*anyopaque = null,
 
         pub const PerfData = extern struct {
             mkdir_calls: usize,
@@ -3032,7 +3032,7 @@ pub const Repository = opaque {
                 pub fn cb(
                     name: [*c]const u8,
                     value: [*c]const u8,
-                    payload: ?*c_void,
+                    payload: ?*anyopaque,
                 ) callconv(.C) c_int {
                     _ = payload;
                     return callback_fn(
@@ -3090,7 +3090,7 @@ pub const Repository = opaque {
                 pub fn cb(
                     name: [*c]const u8,
                     value: [*c]const u8,
-                    payload: ?*c_void,
+                    payload: ?*anyopaque,
                 ) callconv(.C) c_int {
                     return callback_fn(
                         std.mem.sliceTo(name, 0),

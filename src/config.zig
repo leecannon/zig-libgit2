@@ -180,7 +180,7 @@ pub const Config = opaque {
         const cb = struct {
             pub fn cb(
                 entry: [*c]const raw.git_config_entry,
-                payload: ?*c_void,
+                payload: ?*anyopaque,
             ) callconv(.C) c_int {
                 return callback_fn(
                     @ptrCast(*const ConfigEntry, entry),
@@ -216,7 +216,7 @@ pub const Config = opaque {
         const cb = struct {
             pub fn cb(
                 entry: [*c]const raw.git_config_entry,
-                payload: ?*c_void,
+                payload: ?*anyopaque,
             ) callconv(.C) c_int {
                 return callback_fn(
                     @ptrCast(*const ConfigEntry, entry),
@@ -249,7 +249,7 @@ pub const Config = opaque {
         const cb = struct {
             pub fn cb(
                 entry: [*c]const raw.git_config_entry,
-                payload: ?*c_void,
+                payload: ?*anyopaque,
             ) callconv(.C) c_int {
                 return callback_fn(
                     @ptrCast(*const ConfigEntry, entry),
@@ -637,7 +637,7 @@ pub const Config = opaque {
         /// Free function for this entry 
         free_fn: ?fn ([*c]ConfigEntry) callconv(.C) void,
         /// Opaque value for the free function. Do not read or write
-        payload: *c_void,
+        payload: *anyopaque,
 
         pub fn deinit(self: *ConfigEntry) void {
             log.debug("ConfigEntry.deinit called", .{});
@@ -674,7 +674,7 @@ pub const ConfigBackend = opaque {
         const cb = struct {
             pub fn cb(
                 entry: [*c]const raw.git_config_entry,
-                payload: ?*c_void,
+                payload: ?*anyopaque,
             ) callconv(.C) c_int {
                 return callback_fn(
                     @ptrCast(*const Config.ConfigEntry, entry),

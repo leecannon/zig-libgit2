@@ -76,7 +76,7 @@ pub const Indexer = opaque {
         const cb = struct {
             pub fn cb(
                 stats: [*c]const raw.git_indexer_progress,
-                payload: ?*c_void,
+                payload: ?*anyopaque,
             ) callconv(.C) c_int {
                 return callback_fn(@ptrCast(*const Progress, stats), @ptrCast(UserDataType, payload));
             }

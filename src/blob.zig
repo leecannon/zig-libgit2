@@ -45,7 +45,7 @@ pub const Blob = opaque {
         return ret;
     }
 
-    pub fn rawContent(self: *const Blob) !*const c_void {
+    pub fn rawContent(self: *const Blob) !*const anyopaque {
         log.debug("Blame.rawContent called", .{});
 
         if (raw.git_blob_rawcontent(@ptrCast(*const raw.git_blob, self))) |ret| {
