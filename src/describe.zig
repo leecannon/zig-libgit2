@@ -1,5 +1,5 @@
 const std = @import("std");
-const raw = @import("internal/raw.zig");
+const c = @import("internal/c.zig");
 const internal = @import("internal/internal.zig");
 const log = std.log.scoped(.git);
 
@@ -28,9 +28,9 @@ pub const DescribeOptions = struct {
         all,
     };
 
-    pub fn makeCOptionObject(self: DescribeOptions) raw.git_describe_options {
+    pub fn makeCOptionObject(self: DescribeOptions) c.git_describe_options {
         return .{
-            .version = raw.GIT_DESCRIBE_OPTIONS_VERSION,
+            .version = c.GIT_DESCRIBE_OPTIONS_VERSION,
             .max_candidates_tags = self.max_candidate_tags,
             .describe_strategy = @enumToInt(self.describe_strategy),
             .pattern = if (self.pattern) |slice| slice.ptr else null,
@@ -54,9 +54,9 @@ pub const DescribeFormatOptions = struct {
     /// If the workdir is dirty and this is set, this string will be appended to the description string.
     dirty_suffix: ?[:0]const u8 = null,
 
-    pub fn makeCOptionObject(self: DescribeFormatOptions) raw.git_describe_format_options {
+    pub fn makeCOptionObject(self: DescribeFormatOptions) c.git_describe_format_options {
         return .{
-            .version = raw.GIT_DESCRIBE_FORMAT_OPTIONS_VERSION,
+            .version = c.GIT_DESCRIBE_FORMAT_OPTIONS_VERSION,
             .abbreviated_size = self.abbreviated_size,
             .always_use_long_format = @boolToInt(self.always_use_long_format),
             .dirty_suffix = if (self.dirty_suffix) |slice| slice.ptr else null,
@@ -75,8 +75,8 @@ pub const DescribeResult = opaque {
         const c_options = options.makeCOptionObject();
 
         try internal.wrapCall("git_describe_format", .{
-            @ptrCast(*raw.git_buf, &buf),
-            @ptrCast(*const raw.git_describe_result, self),
+            @ptrCast(*c.git_buf, &buf),
+            @ptrCast(*const c.git_describe_result, self),
             &c_options,
         });
 
@@ -88,7 +88,7 @@ pub const DescribeResult = opaque {
     pub fn deinit(self: *DescribeResult) void {
         log.debug("DescribeResult.deinit called", .{});
 
-        raw.git_describe_result_free(@ptrCast(*raw.git_describe_result, self));
+        c.git_describe_result_free(@ptrCast(*c.git_describe_result, self));
 
         log.debug("describe result freed successfully", .{});
     }

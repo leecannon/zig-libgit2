@@ -1,5 +1,5 @@
 const std = @import("std");
-const raw = @import("internal/raw.zig");
+const c = @import("internal/c.zig");
 const internal = @import("internal/internal.zig");
 const log = std.log.scoped(.git);
 
@@ -16,8 +16,8 @@ pub const Object = opaque {
 
         var c_options = options.makeCOptionObject();
         try internal.wrapCall("git_describe_commit", .{
-            @ptrCast(*?*raw.git_describe_result, &result),
-            @ptrCast(*raw.git_object, self),
+            @ptrCast(*?*c.git_describe_result, &result),
+            @ptrCast(*c.git_object, self),
             &c_options,
         });
 

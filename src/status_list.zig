@@ -1,5 +1,5 @@
 const std = @import("std");
-const raw = @import("internal/raw.zig");
+const c = @import("internal/c.zig");
 const internal = @import("internal/internal.zig");
 const log = std.log.scoped(.git);
 
@@ -9,7 +9,7 @@ pub const StatusList = opaque {
     pub fn deinit(self: *StatusList) void {
         log.debug("StatusList.deinit called", .{});
 
-        raw.git_status_list_free(@ptrCast(*raw.git_status_list, self));
+        c.git_status_list_free(@ptrCast(*c.git_status_list, self));
 
         log.debug("status list freed successfully", .{});
     }
@@ -17,7 +17,7 @@ pub const StatusList = opaque {
     pub fn entryCount(self: *StatusList) usize {
         log.debug("StatusList.entryCount called", .{});
 
-        const ret = raw.git_status_list_entrycount(@ptrCast(*raw.git_status_list, self));
+        const ret = c.git_status_list_entrycount(@ptrCast(*c.git_status_list, self));
 
         log.debug("status list entry count: {}", .{ret});
 
@@ -29,7 +29,7 @@ pub const StatusList = opaque {
 
         const ret_opt = @ptrCast(
             ?*const StatusEntry,
-            raw.git_status_byindex(@ptrCast(*raw.git_status_list, self), index),
+            c.git_status_byindex(@ptrCast(*c.git_status_list, self), index),
         );
 
         if (ret_opt) |ret| {
@@ -55,8 +55,8 @@ pub const StatusList = opaque {
         index_to_workdir: *git.DiffDelta,
 
         test {
-            try std.testing.expectEqual(@sizeOf(raw.git_status_entry), @sizeOf(StatusEntry));
-            try std.testing.expectEqual(@bitSizeOf(raw.git_status_entry), @bitSizeOf(StatusEntry));
+            try std.testing.expectEqual(@sizeOf(c.git_status_entry), @sizeOf(StatusEntry));
+            try std.testing.expectEqual(@bitSizeOf(c.git_status_entry), @bitSizeOf(StatusEntry));
         }
 
         comptime {

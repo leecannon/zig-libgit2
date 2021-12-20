@@ -1,5 +1,5 @@
 const std = @import("std");
-const raw = @import("internal/raw.zig");
+const c = @import("internal/c.zig");
 const internal = @import("internal/internal.zig");
 const log = std.log.scoped(.git);
 
@@ -53,7 +53,7 @@ pub const Attribute = struct {
     }
 
     pub fn getValue(self: Attribute) AttributeValue {
-        return @intToEnum(AttributeValue, raw.git_attr_value(self.z_attr));
+        return @intToEnum(AttributeValue, c.git_attr_value(self.z_attr));
     }
 
     pub const AttributeValue = enum(c_uint) {

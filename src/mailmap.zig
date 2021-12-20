@@ -1,5 +1,5 @@
 const std = @import("std");
-const raw = @import("internal/raw.zig");
+const c = @import("internal/c.zig");
 const internal = @import("internal/internal.zig");
 const log = std.log.scoped(.git);
 
@@ -16,7 +16,7 @@ pub const Mailmap = opaque {
         var mailmap: *Mailmap = undefined;
 
         try internal.wrapCall("git_mailmap_new", .{
-            @ptrCast(*?*raw.git_mailmap, &mailmap),
+            @ptrCast(*?*c.git_mailmap, &mailmap),
         });
 
         log.debug("successfully initalized mailmap {*}", .{mailmap});
@@ -28,7 +28,7 @@ pub const Mailmap = opaque {
     pub fn deinit(self: *Mailmap) void {
         log.debug("Mailmap.deinit called", .{});
 
-        raw.git_mailmap_free(@ptrCast(*raw.git_mailmap, self));
+        c.git_mailmap_free(@ptrCast(*c.git_mailmap, self));
 
         log.debug("Mailmap freed successfully", .{});
     }
@@ -57,7 +57,7 @@ pub const Mailmap = opaque {
         const c_replace_name = if (replace_name) |ptr| ptr.ptr else null;
 
         try internal.wrapCall("git_mailmap_add_entry", .{
-            @ptrCast(*raw.git_mailmap, self),
+            @ptrCast(*c.git_mailmap, self),
             c_real_name,
             c_real_email,
             c_replace_name,
@@ -89,7 +89,7 @@ pub const Mailmap = opaque {
         try internal.wrapCall("git_mailmap_resolve", .{
             &real_name,
             &real_email,
-            @ptrCast(*const raw.git_mailmap, self),
+            @ptrCast(*const c.git_mailmap, self),
             name.ptr,
             email.ptr,
         });
@@ -116,9 +116,9 @@ pub const Mailmap = opaque {
         var sig: *git.Signature = undefined;
 
         try internal.wrapCall("git_mailmap_resolve_signature", .{
-            @ptrCast(*[*c]raw.git_signature, &sig),
-            @ptrCast(*const raw.git_mailmap, self),
-            @ptrCast(*const raw.git_signature, signature),
+            @ptrCast(*[*c]c.git_signature, &sig),
+            @ptrCast(*const c.git_mailmap, self),
+            @ptrCast(*const c.git_signature, signature),
         });
 
         log.debug("successfully resolved signature", .{});

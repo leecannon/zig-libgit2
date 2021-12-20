@@ -1,5 +1,5 @@
 const std = @import("std");
-const raw = @import("internal/raw.zig");
+const c = @import("internal/c.zig");
 const internal = @import("internal/internal.zig");
 const log = std.log.scoped(.git);
 
@@ -9,7 +9,7 @@ pub const Commit = opaque {
     pub fn deinit(self: *Commit) void {
         log.debug("Commit.deinit called", .{});
 
-        raw.git_commit_free(@ptrCast(*raw.git_commit, self));
+        c.git_commit_free(@ptrCast(*c.git_commit, self));
 
         log.debug("Commit freed successfully", .{});
     }
@@ -19,7 +19,7 @@ pub const Commit = opaque {
 
         const ret = @ptrCast(
             *const git.Oid,
-            raw.git_commit_id(@ptrCast(*const raw.git_commit, self)),
+            c.git_commit_id(@ptrCast(*const c.git_commit, self)),
         );
 
         // This check is to prevent formating the oid when we are not going to print anything
@@ -40,7 +40,7 @@ pub const Commit = opaque {
 
         const ret = @ptrCast(
             *git.Repository,
-            raw.git_commit_owner(@ptrCast(*const raw.git_commit, self)),
+            c.git_commit_owner(@ptrCast(*const c.git_commit, self)),
         );
 
         log.debug("successfully fetched owning repository: {*}", .{ret});
@@ -51,7 +51,7 @@ pub const Commit = opaque {
     pub fn getMessageEncoding(self: *const Commit) ?[:0]const u8 {
         log.debug("Commit.getMessageEncoding called", .{});
 
-        const ret = raw.git_commit_message_encoding(@ptrCast(*const raw.git_commit, self));
+        const ret = c.git_commit_message_encoding(@ptrCast(*const c.git_commit, self));
 
         if (ret) |c_str| {
             const slice = std.mem.sliceTo(c_str, 0);
@@ -69,7 +69,7 @@ pub const Commit = opaque {
     pub fn getMessage(self: *const Commit) ?[:0]const u8 {
         log.debug("Commit.getMessage called", .{});
 
-        const ret = raw.git_commit_message(@ptrCast(*const raw.git_commit, self));
+        const ret = c.git_commit_message(@ptrCast(*const c.git_commit, self));
 
         if (ret) |c_str| {
             const slice = std.mem.sliceTo(c_str, 0);
@@ -86,7 +86,7 @@ pub const Commit = opaque {
     pub fn getMessageRaw(self: *const Commit) ?[:0]const u8 {
         log.debug("Commit.getMessageRaw called", .{});
 
-        const ret = raw.git_commit_message_raw(@ptrCast(*const raw.git_commit, self));
+        const ret = c.git_commit_message_raw(@ptrCast(*const c.git_commit, self));
 
         if (ret) |c_str| {
             const slice = std.mem.sliceTo(c_str, 0);
@@ -103,7 +103,7 @@ pub const Commit = opaque {
     pub fn getHeaderRaw(self: *const Commit) ?[:0]const u8 {
         log.debug("Commit.getHeaderRaw called", .{});
 
-        const ret = raw.git_commit_raw_header(@ptrCast(*const raw.git_commit, self));
+        const ret = c.git_commit_raw_header(@ptrCast(*const c.git_commit, self));
 
         if (ret) |c_str| {
             const slice = std.mem.sliceTo(c_str, 0);
@@ -123,7 +123,7 @@ pub const Commit = opaque {
     pub fn getSummary(self: *Commit) ?[:0]const u8 {
         log.debug("Commit.getSummary called", .{});
 
-        const ret = raw.git_commit_summary(@ptrCast(*raw.git_commit, self));
+        const ret = c.git_commit_summary(@ptrCast(*c.git_commit, self));
 
         if (ret) |c_str| {
             const slice = std.mem.sliceTo(c_str, 0);
@@ -143,7 +143,7 @@ pub const Commit = opaque {
     pub fn getBody(self: *Commit) ?[:0]const u8 {
         log.debug("Commit.getBody called", .{});
 
-        const ret = raw.git_commit_body(@ptrCast(*raw.git_commit, self));
+        const ret = c.git_commit_body(@ptrCast(*c.git_commit, self));
 
         if (ret) |c_str| {
             const slice = std.mem.sliceTo(c_str, 0);
@@ -160,7 +160,7 @@ pub const Commit = opaque {
     pub fn getTime(self: *const Commit) i64 {
         log.debug("Commit.getTime called", .{});
 
-        const ret = raw.git_commit_time(@ptrCast(*const raw.git_commit, self));
+        const ret = c.git_commit_time(@ptrCast(*const c.git_commit, self));
 
         log.debug("commit time: {}", .{ret});
 
@@ -171,7 +171,7 @@ pub const Commit = opaque {
     pub fn getTimeOffset(self: *const Commit) i32 {
         log.debug("Commit.getTimeOffset called", .{});
 
-        const ret = raw.git_commit_time_offset(@ptrCast(*const raw.git_commit, self));
+        const ret = c.git_commit_time_offset(@ptrCast(*const c.git_commit, self));
 
         log.debug("commit time offset: {}", .{ret});
 
@@ -183,7 +183,7 @@ pub const Commit = opaque {
 
         const ret = @ptrCast(
             *const git.Signature,
-            raw.git_commit_committer(@ptrCast(*const raw.git_commit, self)),
+            c.git_commit_committer(@ptrCast(*const c.git_commit, self)),
         );
 
         log.debug("commit committer: {s} {s}", .{ ret.z_name, ret.z_email });
@@ -196,7 +196,7 @@ pub const Commit = opaque {
 
         const ret = @ptrCast(
             *const git.Signature,
-            raw.git_commit_author(@ptrCast(*const raw.git_commit, self)),
+            c.git_commit_author(@ptrCast(*const c.git_commit, self)),
         );
 
         log.debug("commit author: {s} {s}", .{ ret.z_name, ret.z_email });
@@ -210,9 +210,9 @@ pub const Commit = opaque {
         var signature: *git.Signature = undefined;
 
         try internal.wrapCall("git_commit_committer_with_mailmap", .{
-            @ptrCast(*[*c]raw.git_signature, &signature),
-            @ptrCast(*const raw.git_commit, self),
-            @ptrCast(?*const raw.git_mailmap, self),
+            @ptrCast(*[*c]c.git_signature, &signature),
+            @ptrCast(*const c.git_commit, self),
+            @ptrCast(?*const c.git_mailmap, self),
         });
 
         log.debug("commit committer: {s} {s}", .{ signature.z_name, signature.z_email });
@@ -226,9 +226,9 @@ pub const Commit = opaque {
         var signature: *git.Signature = undefined;
 
         try internal.wrapCall("git_commit_author_with_mailmap", .{
-            @ptrCast(*[*c]raw.git_signature, &signature),
-            @ptrCast(*const raw.git_commit, self),
-            @ptrCast(?*const raw.git_mailmap, mail_map),
+            @ptrCast(*[*c]c.git_signature, &signature),
+            @ptrCast(*const c.git_commit, self),
+            @ptrCast(?*const c.git_mailmap, mail_map),
         });
 
         log.debug("commit author: {s} {s}", .{ signature.z_name, signature.z_email });
@@ -242,8 +242,8 @@ pub const Commit = opaque {
         var tree: *git.Tree = undefined;
 
         try internal.wrapCall("git_commit_tree", .{
-            @ptrCast(*?*raw.git_tree, &tree),
-            @ptrCast(*const raw.git_commit, self),
+            @ptrCast(*?*c.git_tree, &tree),
+            @ptrCast(*const c.git_commit, self),
         });
 
         log.debug("commit tree: {*}", .{tree});
@@ -256,7 +256,7 @@ pub const Commit = opaque {
 
         const ret = @ptrCast(
             *const git.Oid,
-            raw.git_commit_tree_id(@ptrCast(*const raw.git_commit, self)),
+            c.git_commit_tree_id(@ptrCast(*const c.git_commit, self)),
         );
 
         // This check is to prevent formating the oid when we are not going to print anything
@@ -275,7 +275,7 @@ pub const Commit = opaque {
     pub fn getParentCount(self: *const Commit) u32 {
         log.debug("Commit.getParentCount called", .{});
 
-        const ret = raw.git_commit_parentcount(@ptrCast(*const raw.git_commit, self));
+        const ret = c.git_commit_parentcount(@ptrCast(*const c.git_commit, self));
 
         log.debug("commit parent count: {}", .{ret});
 
@@ -288,8 +288,8 @@ pub const Commit = opaque {
         var commit: *Commit = undefined;
 
         try internal.wrapCall("git_commit_parent", .{
-            @ptrCast(*?*raw.git_commit, &commit),
-            @ptrCast(*const raw.git_commit, self),
+            @ptrCast(*?*c.git_commit, &commit),
+            @ptrCast(*const c.git_commit, self),
             parent_number,
         });
 
@@ -303,8 +303,8 @@ pub const Commit = opaque {
 
         const opt_ret = @ptrCast(
             ?*const git.Oid,
-            raw.git_commit_parent_id(
-                @ptrCast(*const raw.git_commit, self),
+            c.git_commit_parent_id(
+                @ptrCast(*const c.git_commit, self),
                 parent_number,
             ),
         );
@@ -332,8 +332,8 @@ pub const Commit = opaque {
         var commit: *Commit = undefined;
 
         try internal.wrapCall("git_commit_nth_gen_ancestor", .{
-            @ptrCast(*?*raw.git_commit, &commit),
-            @ptrCast(*const raw.git_commit, self),
+            @ptrCast(*?*c.git_commit, &commit),
+            @ptrCast(*const c.git_commit, self),
             ancestor_number,
         });
 
@@ -348,8 +348,8 @@ pub const Commit = opaque {
         var buf: git.Buf = .{};
 
         try internal.wrapCall("git_commit_header_field", .{
-            @ptrCast(*raw.git_buf, &buf),
-            @ptrCast(*const raw.git_commit, self),
+            @ptrCast(*c.git_buf, &buf),
+            @ptrCast(*const c.git_commit, self),
             field.ptr,
         });
 
@@ -383,14 +383,14 @@ pub const Commit = opaque {
         const message_temp: [*c]const u8 = if (message) |slice| slice.ptr else null;
 
         try internal.wrapCall("git_commit_amend", .{
-            @ptrCast(*raw.git_oid, &ret),
-            @ptrCast(*const raw.git_commit, self),
+            @ptrCast(*c.git_oid, &ret),
+            @ptrCast(*const c.git_commit, self),
             update_ref_temp,
-            @ptrCast(?*const raw.git_signature, author),
-            @ptrCast(?*const raw.git_signature, committer),
+            @ptrCast(?*const c.git_signature, author),
+            @ptrCast(?*const c.git_signature, committer),
             encoding_temp,
             message_temp,
-            @ptrCast(?*const raw.git_tree, tree),
+            @ptrCast(?*const c.git_tree, tree),
         });
 
         // This check is to prevent formating the oid when we are not going to print anything
@@ -409,8 +409,8 @@ pub const Commit = opaque {
         var commit: *Commit = undefined;
 
         try internal.wrapCall("git_commit_dup", .{
-            @ptrCast(*?*raw.git_commit, &commit),
-            @ptrCast(*raw.git_commit, self),
+            @ptrCast(*?*c.git_commit, &commit),
+            @ptrCast(*c.git_commit, self),
         });
 
         log.debug("duplicated commit", .{});

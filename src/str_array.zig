@@ -1,5 +1,5 @@
 const std = @import("std");
-const raw = @import("internal/raw.zig");
+const c = @import("internal/c.zig");
 const internal = @import("internal/internal.zig");
 const log = std.log.scoped(.git);
 
@@ -26,9 +26,9 @@ pub const StrArray = extern struct {
         log.debug("StrArray.deinit called", .{});
 
         if (comptime internal.available(.@"1.0.1")) {
-            raw.git_strarray_dispose(@ptrCast(*raw.git_strarray, self));
+            c.git_strarray_dispose(@ptrCast(*c.git_strarray, self));
         } else {
-            raw.git_strarray_free(@ptrCast(*raw.git_strarray, self));
+            c.git_strarray_free(@ptrCast(*c.git_strarray, self));
         }
 
         log.debug("StrArray freed successfully", .{});
@@ -39,8 +39,8 @@ pub const StrArray = extern struct {
 
         var result: StrArray = undefined;
         try internal.wrapCall("git_strarray_copy", .{
-            @ptrCast(*raw.git_strarray, &result),
-            @ptrCast(*const raw.git_strarray, &self),
+            @ptrCast(*c.git_strarray, &result),
+            @ptrCast(*const c.git_strarray, &self),
         });
 
         log.debug("StrArray copied successfully", .{});
@@ -49,8 +49,8 @@ pub const StrArray = extern struct {
     }
 
     test {
-        try std.testing.expectEqual(@sizeOf(raw.git_strarray), @sizeOf(StrArray));
-        try std.testing.expectEqual(@bitSizeOf(raw.git_strarray), @bitSizeOf(StrArray));
+        try std.testing.expectEqual(@sizeOf(c.git_strarray), @sizeOf(StrArray));
+        try std.testing.expectEqual(@bitSizeOf(c.git_strarray), @bitSizeOf(StrArray));
     }
 
     comptime {

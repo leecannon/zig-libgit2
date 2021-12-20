@@ -1,5 +1,5 @@
 const std = @import("std");
-const raw = @import("internal/raw.zig");
+const c = @import("internal/c.zig");
 const internal = @import("internal/internal.zig");
 const log = std.log.scoped(.git);
 
@@ -9,7 +9,7 @@ pub const RefDb = opaque {
     pub fn deinit(self: *RefDb) void {
         log.debug("RefDb.deinit called", .{});
 
-        raw.git_refdb_free(@ptrCast(*raw.git_refdb, self));
+        c.git_refdb_free(@ptrCast(*c.git_refdb, self));
 
         log.debug("refdb freed successfully", .{});
     }

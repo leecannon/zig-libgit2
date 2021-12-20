@@ -1,5 +1,5 @@
 const std = @import("std");
-const raw = @import("internal/raw.zig");
+const c = @import("internal/c.zig");
 const internal = @import("internal/internal.zig");
 const log = std.log.scoped(.git);
 
@@ -19,8 +19,8 @@ pub const WriteStream = extern struct {
             var ret: git.Oid = undefined;
 
             try internal.wrapCall("git_blob_create_from_stream_commit", .{
-                @ptrCast(*raw.git_oid, &ret),
-                @ptrCast(*raw.git_writestream, self),
+                @ptrCast(*c.git_oid, &ret),
+                @ptrCast(*c.git_writestream, self),
             });
 
             // This check is to prevent formating the oid when we are not going to print anything
@@ -35,8 +35,8 @@ pub const WriteStream = extern struct {
     } else struct {};
 
     test {
-        try std.testing.expectEqual(@sizeOf(raw.git_writestream), @sizeOf(WriteStream));
-        try std.testing.expectEqual(@bitSizeOf(raw.git_writestream), @bitSizeOf(WriteStream));
+        try std.testing.expectEqual(@sizeOf(c.git_writestream), @sizeOf(WriteStream));
+        try std.testing.expectEqual(@bitSizeOf(c.git_writestream), @bitSizeOf(WriteStream));
     }
 
     comptime {

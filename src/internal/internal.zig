@@ -1,5 +1,4 @@
 const std = @import("std");
-const raw = @import("raw.zig");
 const c = @import("c.zig");
 const git = @import("../git.zig");
 const log = std.log.scoped(.git);
@@ -12,7 +11,13 @@ pub inline fn available(comptime minimum_version: LibraryVersion) bool {
 }
 
 pub inline fn wrapCall(comptime name: []const u8, args: anytype) git.GitError!void {
-    checkForError(@call(.{}, @field(raw, name), args)) catch |err| {
+    // TODO: Do this better, in pre 1.0 version some functions could not error
+    if (@typeInfo(@TypeOf(@field(c, name))).Fn.return_type.? == void) {
+        @call(.{}, @field(c, name), args);
+        return;
+    }
+
+    checkForError(@call(.{}, @field(c, name), args)) catch |err| {
 
         // We dont want to output log messages in tests, as the error might be expected
         // also dont incur the cost of calling `getDetailedLastError` if we are not going to use it
@@ -35,8 +40,8 @@ pub inline fn wrapCall(comptime name: []const u8, args: anytype) git.GitError!vo
 pub inline fn wrapCallWithReturn(
     comptime name: []const u8,
     args: anytype,
-) git.GitError!@typeInfo(@TypeOf(@field(raw, name))).Fn.return_type.? {
-    const value = @call(.{}, @field(raw, name), args);
+) git.GitError!@typeInfo(@TypeOf(@field(c, name))).Fn.return_type.? {
+    const value = @call(.{}, @field(c, name), args);
     checkForError(value) catch |err| {
 
         // We dont want to output log messages in tests, as the error might be expected
@@ -57,38 +62,38 @@ pub inline fn wrapCallWithReturn(
     return value;
 }
 
-fn checkForError(value: raw.git_error_code) git.GitError!void {
+fn checkForError(value: c.git_error_code) git.GitError!void {
     if (value >= 0) return;
     return switch (value) {
-        raw.GIT_ERROR => git.GitError.GenericError,
-        raw.GIT_ENOTFOUND => git.GitError.NotFound,
-        raw.GIT_EEXISTS => git.GitError.Exists,
-        raw.GIT_EAMBIGUOUS => git.GitError.Ambiguous,
-        raw.GIT_EBUFS => git.GitError.BufferTooShort,
-        raw.GIT_EUSER => git.GitError.User,
-        raw.GIT_EBAREREPO => git.GitError.BareRepo,
-        raw.GIT_EUNBORNBRANCH => git.GitError.UnbornBranch,
-        raw.GIT_EUNMERGED => git.GitError.Unmerged,
-        raw.GIT_ENONFASTFORWARD => git.GitError.NonFastForwardable,
-        raw.GIT_EINVALIDSPEC => git.GitError.InvalidSpec,
-        raw.GIT_ECONFLICT => git.GitError.Conflict,
-        raw.GIT_ELOCKED => git.GitError.Locked,
-        raw.GIT_EMODIFIED => git.GitError.Modifed,
-        raw.GIT_EAUTH => git.GitError.Auth,
-        raw.GIT_ECERTIFICATE => git.GitError.Certificate,
-        raw.GIT_EAPPLIED => git.GitError.Applied,
-        raw.GIT_EPEEL => git.GitError.Peel,
-        raw.GIT_EEOF => git.GitError.EndOfFile,
-        raw.GIT_EINVALID => git.GitError.Invalid,
-        raw.GIT_EUNCOMMITTED => git.GitError.Uncommited,
-        raw.GIT_EDIRECTORY => git.GitError.Directory,
-        raw.GIT_EMERGECONFLICT => git.GitError.MergeConflict,
-        raw.GIT_PASSTHROUGH => git.GitError.Passthrough,
-        raw.GIT_ITEROVER => git.GitError.IterOver,
-        raw.GIT_RETRY => git.GitError.Retry,
-        raw.GIT_EMISMATCH => git.GitError.Mismatch,
-        raw.GIT_EINDEXDIRTY => git.GitError.IndexDirty,
-        raw.GIT_EAPPLYFAIL => git.GitError.ApplyFail,
+        c.GIT_ERROR => git.GitError.GenericError,
+        c.GIT_ENOTFOUND => git.GitError.NotFound,
+        c.GIT_EEXISTS => git.GitError.Exists,
+        c.GIT_EAMBIGUOUS => git.GitError.Ambiguous,
+        c.GIT_EBUFS => git.GitError.BufferTooShort,
+        c.GIT_EUSER => git.GitError.User,
+        c.GIT_EBAREREPO => git.GitError.BareRepo,
+        c.GIT_EUNBORNBRANCH => git.GitError.UnbornBranch,
+        c.GIT_EUNMERGED => git.GitError.Unmerged,
+        c.GIT_ENONFASTFORWARD => git.GitError.NonFastForwardable,
+        c.GIT_EINVALIDSPEC => git.GitError.InvalidSpec,
+        c.GIT_ECONFLICT => git.GitError.Conflict,
+        c.GIT_ELOCKED => git.GitError.Locked,
+        c.GIT_EMODIFIED => git.GitError.Modifed,
+        c.GIT_EAUTH => git.GitError.Auth,
+        c.GIT_ECERTIFICATE => git.GitError.Certificate,
+        c.GIT_EAPPLIED => git.GitError.Applied,
+        c.GIT_EPEEL => git.GitError.Peel,
+        c.GIT_EEOF => git.GitError.EndOfFile,
+        c.GIT_EINVALID => git.GitError.Invalid,
+        c.GIT_EUNCOMMITTED => git.GitError.Uncommited,
+        c.GIT_EDIRECTORY => git.GitError.Directory,
+        c.GIT_EMERGECONFLICT => git.GitError.MergeConflict,
+        c.GIT_PASSTHROUGH => git.GitError.Passthrough,
+        c.GIT_ITEROVER => git.GitError.IterOver,
+        c.GIT_RETRY => git.GitError.Retry,
+        c.GIT_EMISMATCH => git.GitError.Mismatch,
+        c.GIT_EINDEXDIRTY => git.GitError.IndexDirty,
+        c.GIT_EAPPLYFAIL => git.GitError.ApplyFail,
         else => {
             log.err("encountered unknown libgit2 error: {}", .{value});
             unreachable;
