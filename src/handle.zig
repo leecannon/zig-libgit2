@@ -399,6 +399,91 @@ pub const Handle = struct {
         return buf;
     }
 
+    pub const CloneOptions = struct {
+        /// Options to pass to the checkout step.
+        checkout_options: git.Repository.CheckoutOptions = .{},
+
+        // options which control the fetch, including callbacks. Callbacks are for reporting fetch progress, and for
+        // acquiring credentials in the event they are needed.
+        fetch_options: git.FetchOptions = .{},
+
+        /// Set false (default) to create a standard repo or true for a bare repo.
+        bare: bool = false,
+
+        /// Whether to use a fetch or a copy of the object database.
+        local: LocalType = .LOCAL_AUTO,
+
+        /// Branch of the remote repository to checkout. Null means the default.
+        checkout_branch: ?[:0]const u8 = null,
+
+        /// A callback used to create the new repository into which to clone. If null the `bare` field will be used to
+        /// determine whether to create a bare repository.
+        repository_cb: ?fn (
+            out: [*c]?*raw.git_repository,
+            path: [*:0]const u8,
+            bare: c_int,
+            payload: *anyopaque,
+        ) callconv(.C) void = null,
+        repository_cb_payload: ?*anyopaque = null,
+
+        /// A callback used to create the git remote, prior to its being used to perform the clone option. This
+        /// parameter may be NULL, indicating that handle.Clone should provide default behavior.
+        remote_cb: ?fn (
+            out: [*c]?*raw.git_remote,
+            repo: ?*raw.git_repository,
+            name: [*:0]const u8,
+            url: [*:0]const u8,
+            payload: *anyopaque,
+        ) callconv(.C) void = null,
+        remote_cb_payload: ?*anyopaque = null,
+
+        /// Options for bypassing the git-aware transport on clone. Bypassing it means that instead of a fetch,
+        /// libgit2 will copy the object database directory instead of figuring out what it needs, which is faster.
+        pub const LocalType = enum(c_uint) {
+            LOCAL_AUTO,
+            LOCAL,
+            NO_LOCAL,
+            LOCAL_NO_LINKS,
+        };
+
+        fn toC(self: CloneOptions) raw.git_clone_options {
+            return raw.git_clone_options{
+                .version = raw.GIT_CHECKOUT_OPTIONS_VERSION,
+                .checkout_opts = self.checkout_options.makeCOptionObject(),
+                .fetch_opts = self.fetch_options.toC(),
+                .bare = @boolToInt(self.bare),
+                .local = @enumToInt(self.local),
+                .checkout_branch = if (self.checkout_branch) |b| @as(?[*]const u8, b.ptr) else null,
+                .repository_cb = @ptrCast(raw.git_repository_create_cb, self.repository_cb),
+                .repository_cb_payload = self.repository_cb_payload,
+                .remote_cb = @ptrCast(raw.git_remote_create_cb, self.remote_cb),
+                .remote_cb_payload = self.remote_cb_payload,
+            };
+        }
+    };
+
+    /// Clone a remote repository.
+    ///
+    /// ## Parameters
+    /// * `url` - URL of the remote repository to clone.
+    /// * `local_path` - Directory to clone the repository into.
+    /// * `options` - Customize how the repository is created.
+    pub fn clone(self: Handle, url: [:0]const u8, local_path: [:0]const u8, options: CloneOptions) !*git.Repository {
+        _ = self;
+
+        log.debug("Handle.clone called, url={s}, local_path={s}", .{ url, local_path });
+
+        var repo: *git.Repository = undefined;
+        try internal.wrapCall("git_clone", .{ @ptrCast(*?*raw.git_repository, &repo),
+            url.ptr,
+            local_path.ptr,
+            &options.toC(),
+        });
+
+        log.debug("repository cloned successfully", .{});
+        return repo;
+    }
+
     pub fn optionGetMaximumMmapWindowSize(self: Handle) !usize {
         _ = self;
 
