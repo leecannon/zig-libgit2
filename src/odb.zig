@@ -1,5 +1,5 @@
 const std = @import("std");
-const raw = @import("internal/raw.zig");
+const c = @import("internal/c.zig");
 const internal = @import("internal/internal.zig");
 const log = std.log.scoped(.git);
 
@@ -9,7 +9,7 @@ pub const Odb = opaque {
     pub fn deinit(self: *Odb) void {
         log.debug("Odb.deinit called", .{});
 
-        raw.git_odb_free(@ptrCast(*raw.git_odb, self));
+        c.git_odb_free(@ptrCast(*c.git_odb, self));
 
         log.debug("Odb freed successfully", .{});
     }
@@ -20,8 +20,8 @@ pub const Odb = opaque {
         var repo: *git.Repository = undefined;
 
         try internal.wrapCall("git_repository_wrap_odb", .{
-            @ptrCast(*?*raw.git_repository, &repo),
-            @ptrCast(*raw.git_odb, self),
+            @ptrCast(*?*c.git_repository, &repo),
+            @ptrCast(*c.git_odb, self),
         });
 
         log.debug("repository opened successfully", .{});

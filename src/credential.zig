@@ -1,5 +1,4 @@
 const std = @import("std");
-const raw = @import("internal/raw.zig");
 const c = @import("internal/c.zig");
 const internal = @import("internal/internal.zig");
 const bitjuggle = @import("internal/bitjuggle.zig");
@@ -8,7 +7,7 @@ const log = std.log.scoped(.git);
 const git = @import("git.zig");
 
 const hasCredential = @hasDecl(c, "git_credential");
-const RawCredentialType = if (hasCredential) raw.git_credential else raw.git_cred;
+const RawCredentialType = if (hasCredential) c.git_credential else c.git_cred;
 
 pub const Credential = extern struct {
     credtype: CredentialType,
@@ -18,9 +17,9 @@ pub const Credential = extern struct {
         log.debug("Credential.deinit called", .{});
 
         if (hasCredential) {
-            raw.git_credential_free(@ptrCast(*RawCredentialType, self));
+            c.git_credential_free(@ptrCast(*RawCredentialType, self));
         } else {
-            raw.git_cred_free(@ptrCast(*RawCredentialType, self));
+            c.git_cred_free(@ptrCast(*RawCredentialType, self));
         }
 
         log.debug("credential freed successfully", .{});
@@ -32,9 +31,9 @@ pub const Credential = extern struct {
         var ret: bool = undefined;
 
         if (hasCredential) {
-            ret = raw.git_credential_has_username(@ptrCast(*RawCredentialType, self)) != 0;
+            ret = c.git_credential_has_username(@ptrCast(*RawCredentialType, self)) != 0;
         } else {
-            ret = raw.git_cred_has_username(@ptrCast(*RawCredentialType, self)) != 0;
+            ret = c.git_cred_has_username(@ptrCast(*RawCredentialType, self)) != 0;
         }
 
         log.debug("credential has username: {}", .{ret});
@@ -48,10 +47,10 @@ pub const Credential = extern struct {
         var opt_username: [*c]const u8 = undefined;
 
         if (hasCredential) {
-            opt_username = raw.git_credential_get_username(@ptrCast(*RawCredentialType, self));
+            opt_username = c.git_credential_get_username(@ptrCast(*RawCredentialType, self));
         } else {
             if (@hasDecl(c, "git_cred_get_username")) {
-                opt_username = raw.git_cred_get_username(@ptrCast(*RawCredentialType, self));
+                opt_username = c.git_cred_get_username(@ptrCast(*RawCredentialType, self));
             } else {
                 // TODO: make this a compile error when we move to full c header
                 log.err("the version of libgit2 linked does not provide a function to fetch the username of a credential", .{});
@@ -240,8 +239,8 @@ pub const Credential = extern struct {
         comptime callback_fn: fn (
             name: []const u8,
             instruction: []const u8,
-            prompts: []*const raw.LIBSSH2_USERAUTH_KBDINT_PROMPT,
-            responses: []*raw.LIBSSH2_USERAUTH_KBDINT_RESPONSE,
+            prompts: []*const c.LIBSSH2_USERAUTH_KBDINT_PROMPT,
+            responses: []*c.LIBSSH2_USERAUTH_KBDINT_RESPONSE,
             abstract: [*c]?*anyopaque,
         ) void,
     ) !*Credential {
@@ -254,8 +253,8 @@ pub const Credential = extern struct {
                 instruction: [*c]const u8,
                 instruction_len: c_int,
                 num_prompts: c_int,
-                prompts: ?*const raw.LIBSSH2_USERAUTH_KBDINT_PROMPT,
-                responses: ?*raw.LIBSSH2_USERAUTH_KBDINT_RESPONSE,
+                prompts: ?*const c.LIBSSH2_USERAUTH_KBDINT_PROMPT,
+                responses: ?*c.LIBSSH2_USERAUTH_KBDINT_RESPONSE,
                 abstract: [*c]?*anyopaque,
             ) callconv(.C) void {
                 callback_fn(
@@ -320,7 +319,7 @@ pub const Credential = extern struct {
         publickey: []const u8,
         user_data: anytype,
         comptime callback_fn: fn (
-            session: *raw.LIBSSH2_SESSION,
+            session: *c.LIBSSH2_SESSION,
             out_signature: *[]const u8,
             data: []const u8,
             abstract: [*c]?*anyopaque,
@@ -328,7 +327,7 @@ pub const Credential = extern struct {
     ) !*Credential {
         const cb = struct {
             pub fn cb(
-                session: ?*raw.LIBSSH2_SESSION,
+                session: ?*c.LIBSSH2_SESSION,
                 sig: [*c][*c]u8,
                 sign_len: [*c]usize,
                 data: [*c]const u8,

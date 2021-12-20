@@ -1,5 +1,5 @@
 const std = @import("std");
-const raw = @import("internal/raw.zig");
+const c = @import("internal/c.zig");
 const internal = @import("internal/internal.zig");
 const log = std.log.scoped(.git);
 
@@ -47,8 +47,8 @@ pub const FilterFlags = packed struct {
     }
 
     test {
-        try std.testing.expectEqual(@sizeOf(raw.git_filter_flag_t), @sizeOf(FilterFlags));
-        try std.testing.expectEqual(@bitSizeOf(raw.git_filter_flag_t), @bitSizeOf(FilterFlags));
+        try std.testing.expectEqual(@sizeOf(c.git_filter_flag_t), @sizeOf(FilterFlags));
+        try std.testing.expectEqual(@bitSizeOf(c.git_filter_flag_t), @bitSizeOf(FilterFlags));
     }
 
     comptime {
@@ -62,11 +62,11 @@ pub const FilterOptions = struct {
     /// The commit to load attributes from, when `FilterFlags.ATTRIBUTES_FROM_COMMIT` is specified.
     commit_id: ?*git.Oid = null,
 
-    pub fn makeCOptionObject(self: FilterOptions) raw.git_filter_options {
+    pub fn makeCOptionObject(self: FilterOptions) c.git_filter_options {
         return .{
-            .version = raw.GIT_FILTER_OPTIONS_VERSION,
+            .version = c.GIT_FILTER_OPTIONS_VERSION,
             .flags = @bitCast(u32, self.flags),
-            .commit_id = @ptrCast(?*raw.git_oid, self.commit_id),
+            .commit_id = @ptrCast(?*c.git_oid, self.commit_id),
         };
     }
 };
@@ -104,7 +104,7 @@ pub const FilterList = opaque {
     pub fn contains(self: *FilterList, name: [:0]const u8) bool {
         log.debug("FilterList.contains called, name={s}", .{name});
 
-        const ret = raw.git_filter_list_contains(@ptrCast(*raw.git_filter_list, self), name.ptr) != 0;
+        const ret = c.git_filter_list_contains(@ptrCast(*c.git_filter_list, self), name.ptr) != 0;
 
         log.debug("filter list contains filter: {}", .{ret});
 
@@ -122,9 +122,9 @@ pub const FilterList = opaque {
         var ret: git.Buf = .{};
 
         try internal.wrapCall("git_filter_list_apply_to_file", .{
-            @ptrCast(*raw.git_buf, &ret),
-            @ptrCast(*raw.git_filter_list, self),
-            @ptrCast(*raw.git_repository, repo),
+            @ptrCast(*c.git_buf, &ret),
+            @ptrCast(*c.git_filter_list, self),
+            @ptrCast(*c.git_repository, repo),
             path.ptr,
         });
 
@@ -143,9 +143,9 @@ pub const FilterList = opaque {
         var ret: git.Buf = .{};
 
         try internal.wrapCall("git_filter_list_apply_to_blob", .{
-            @ptrCast(*raw.git_buf, &ret),
-            @ptrCast(*raw.git_filter_list, self),
-            @ptrCast(*raw.git_blob, blob),
+            @ptrCast(*c.git_buf, &ret),
+            @ptrCast(*c.git_filter_list, self),
+            @ptrCast(*c.git_blob, blob),
         });
 
         log.debug("result: {s}", .{ret.toSlice()});
@@ -168,10 +168,10 @@ pub const FilterList = opaque {
         log.debug("FilterList.applyToFileToStream called, repo={*}, path={s}, target={*}", .{ repo, path, target });
 
         try internal.wrapCall("git_filter_list_stream_file", .{
-            @ptrCast(*raw.git_filter_list, self),
-            @ptrCast(*raw.git_repository, repo),
+            @ptrCast(*c.git_filter_list, self),
+            @ptrCast(*c.git_repository, repo),
             path.ptr,
-            @ptrCast(*raw.git_writestream, target),
+            @ptrCast(*c.git_writestream, target),
         });
 
         log.debug("successfully filtered file to stream", .{});
@@ -186,9 +186,9 @@ pub const FilterList = opaque {
         log.debug("FilterList.applyToBlobToStream called, blob={*}, target={*}", .{ blob, target });
 
         try internal.wrapCall("git_filter_list_stream_blob", .{
-            @ptrCast(*raw.git_filter_list, self),
-            @ptrCast(*raw.git_blob, blob),
-            @ptrCast(*raw.git_writestream, target),
+            @ptrCast(*c.git_filter_list, self),
+            @ptrCast(*c.git_blob, blob),
+            @ptrCast(*c.git_writestream, target),
         });
 
         log.debug("successfully filtered blob to stream", .{});
@@ -197,7 +197,7 @@ pub const FilterList = opaque {
     pub fn deinit(self: *FilterList) void {
         log.debug("FilterList.deinit called", .{});
 
-        raw.git_filter_list_free(@ptrCast(*raw.git_filter_list, self));
+        c.git_filter_list_free(@ptrCast(*c.git_filter_list, self));
 
         log.debug("filter list freed successfully", .{});
     }
@@ -213,8 +213,8 @@ pub const FilterList = opaque {
             var ret: git.Buf = .{};
 
             try internal.wrapCall("git_filter_list_apply_to_buffer", .{
-                @ptrCast(*raw.git_buf, &ret),
-                @ptrCast(*raw.git_filter_list, self),
+                @ptrCast(*c.git_buf, &ret),
+                @ptrCast(*c.git_filter_list, self),
                 in.ptr,
                 in.len,
             });
@@ -233,10 +233,10 @@ pub const FilterList = opaque {
             log.debug("FilterList.applyToBufferToStream called, buffer={s}, target={*}", .{ buffer, target });
 
             try internal.wrapCall("git_filter_list_stream_buffer", .{
-                @ptrCast(*raw.git_filter_list, self),
+                @ptrCast(*c.git_filter_list, self),
                 buffer.ptr,
                 buffer.len,
-                @ptrCast(*raw.git_writestream, target),
+                @ptrCast(*c.git_writestream, target),
             });
 
             log.debug("successfully filtered buffer to stream", .{});

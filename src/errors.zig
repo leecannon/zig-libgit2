@@ -1,5 +1,5 @@
 const std = @import("std");
-const raw = @import("internal/raw.zig");
+const c = @import("internal/c.zig");
 const internal = @import("internal/internal.zig");
 const log = std.log.scoped(.git);
 
@@ -69,12 +69,12 @@ pub const GitError = error{
 
 /// Get detailed information regarding the last error that occured on *this* thread.
 pub fn getDetailedLastError() ?*const DetailedError {
-    return @ptrCast(?*const DetailedError, raw.git_error_last());
+    return @ptrCast(?*const DetailedError, c.git_error_last());
 }
 
 /// Clear the last error that occured on *this* thread.
 pub fn clearLastError() void {
-    raw.git_error_clear();
+    c.git_error_clear();
 }
 
 pub const DetailedError = extern struct {
@@ -125,8 +125,8 @@ pub const DetailedError = extern struct {
     }
 
     test {
-        try std.testing.expectEqual(@sizeOf(raw.git_error), @sizeOf(DetailedError));
-        try std.testing.expectEqual(@bitSizeOf(raw.git_error), @bitSizeOf(DetailedError));
+        try std.testing.expectEqual(@sizeOf(c.git_error), @sizeOf(DetailedError));
+        try std.testing.expectEqual(@bitSizeOf(c.git_error), @bitSizeOf(DetailedError));
     }
 
     comptime {

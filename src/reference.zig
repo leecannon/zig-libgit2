@@ -1,5 +1,5 @@
 const std = @import("std");
-const raw = @import("internal/raw.zig");
+const c = @import("internal/c.zig");
 const internal = @import("internal/internal.zig");
 const log = std.log.scoped(.git);
 
@@ -9,7 +9,7 @@ pub const Reference = opaque {
     pub fn deinit(self: *Reference) void {
         log.debug("Reference.deinit called", .{});
 
-        raw.git_reference_free(@ptrCast(*raw.git_reference, self));
+        c.git_reference_free(@ptrCast(*c.git_reference, self));
 
         log.debug("reference freed successfully", .{});
     }
@@ -21,7 +21,7 @@ pub const Reference = opaque {
     pub fn deleteBranch(self: *Reference) !void {
         log.debug("Reference.deleteBranch called", .{});
 
-        try internal.wrapCall("git_branch_delete", .{@ptrCast(*raw.git_reference, self)});
+        try internal.wrapCall("git_branch_delete", .{@ptrCast(*c.git_reference, self)});
 
         log.debug("successfully deleted branch", .{});
     }
@@ -32,9 +32,9 @@ pub const Reference = opaque {
         var result: *git.AnnotatedCommit = undefined;
 
         try internal.wrapCall("git_annotated_commit_from_ref", .{
-            @ptrCast(*?*raw.git_annotated_commit, &result),
-            @ptrCast(*raw.git_repository, repository),
-            @ptrCast(*const raw.git_reference, self),
+            @ptrCast(*?*c.git_annotated_commit, &result),
+            @ptrCast(*c.git_repository, repository),
+            @ptrCast(*const c.git_reference, self),
         });
 
         log.debug("successfully created annotated commit", .{});
@@ -54,8 +54,8 @@ pub const Reference = opaque {
         var ref: *Reference = undefined;
 
         try internal.wrapCall("git_branch_move", .{
-            @ptrCast(*?*raw.git_reference, &ref),
-            @ptrCast(*raw.git_reference, self),
+            @ptrCast(*?*c.git_reference, &ref),
+            @ptrCast(*c.git_reference, self),
             new_branch_name.ptr,
             @boolToInt(force),
         });
@@ -70,7 +70,7 @@ pub const Reference = opaque {
 
         var name: [*c]const u8 = undefined;
 
-        try internal.wrapCall("git_branch_name", .{ &name, @ptrCast(*const raw.git_reference, self) });
+        try internal.wrapCall("git_branch_name", .{ &name, @ptrCast(*const c.git_reference, self) });
 
         const slice = std.mem.sliceTo(name, 0);
         log.debug("successfully fetched name={s}", .{slice});
@@ -83,8 +83,8 @@ pub const Reference = opaque {
         var ref: *Reference = undefined;
 
         try internal.wrapCall("git_branch_upstream", .{
-            @ptrCast(*?*raw.git_reference, &ref),
-            @ptrCast(*const raw.git_reference, self),
+            @ptrCast(*?*c.git_reference, &ref),
+            @ptrCast(*const c.git_reference, self),
         });
 
         log.debug("successfully fetched reference={*}", .{ref});
@@ -95,7 +95,7 @@ pub const Reference = opaque {
     pub fn upstreamSet(self: *Reference, branch_name: [:0]const u8) !void {
         log.debug("Reference.upstreamSet called, branch_name={s}", .{branch_name});
 
-        try internal.wrapCall("git_branch_set_upstream", .{ @ptrCast(*raw.git_reference, self), branch_name.ptr });
+        try internal.wrapCall("git_branch_set_upstream", .{ @ptrCast(*c.git_reference, self), branch_name.ptr });
 
         log.debug("successfully set upstream branch", .{});
     }
@@ -103,7 +103,7 @@ pub const Reference = opaque {
     pub fn isHead(self: *const Reference) !bool {
         log.debug("Reference.isHead", .{});
 
-        const ret = (try internal.wrapCallWithReturn("git_branch_is_head", .{@ptrCast(*const raw.git_reference, self)})) == 1;
+        const ret = (try internal.wrapCallWithReturn("git_branch_is_head", .{@ptrCast(*const c.git_reference, self)})) == 1;
 
         log.debug("is head: {}", .{ret});
 
@@ -113,7 +113,7 @@ pub const Reference = opaque {
     pub fn isCheckedOut(self: *const Reference) !bool {
         log.debug("Reference.isCheckedOut", .{});
 
-        const ret = (try internal.wrapCallWithReturn("git_branch_is_checked_out", .{@ptrCast(*const raw.git_reference, self)})) == 1;
+        const ret = (try internal.wrapCallWithReturn("git_branch_is_checked_out", .{@ptrCast(*const c.git_reference, self)})) == 1;
 
         log.debug("is checked out: {}", .{ret});
 

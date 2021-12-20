@@ -1,5 +1,5 @@
 const std = @import("std");
-const raw = @import("internal/raw.zig");
+const c = @import("internal/c.zig");
 const internal = @import("internal/internal.zig");
 const log = std.log.scoped(.git);
 
@@ -9,7 +9,7 @@ pub const AnnotatedCommit = opaque {
     pub fn deinit(self: *AnnotatedCommit) void {
         log.debug("AnnotatedCommit.deinit called", .{});
 
-        raw.git_annotated_commit_free(@ptrCast(*raw.git_annotated_commit, self));
+        c.git_annotated_commit_free(@ptrCast(*c.git_annotated_commit, self));
 
         log.debug("annotated commit freed successfully", .{});
     }
@@ -20,7 +20,7 @@ pub const AnnotatedCommit = opaque {
 
         const oid = @ptrCast(
             *const git.Oid,
-            raw.git_annotated_commit_id(@ptrCast(*raw.git_annotated_commit, self)),
+            c.git_annotated_commit_id(@ptrCast(*c.git_annotated_commit, self)),
         );
 
         // This check is to prevent formating the oid when we are not going to print anything
@@ -37,7 +37,7 @@ pub const AnnotatedCommit = opaque {
     pub fn refname(self: *AnnotatedCommit) ![:0]const u8 {
         log.debug("AnnotatedCommit.refname called", .{});
 
-        const slice = std.mem.sliceTo(raw.git_annotated_commit_ref(@ptrCast(*raw.git_annotated_commit, self)), 0);
+        const slice = std.mem.sliceTo(c.git_annotated_commit_ref(@ptrCast(*c.git_annotated_commit, self)), 0);
 
         log.debug("annotated commit refname acquired: {s}", .{slice});
 

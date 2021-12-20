@@ -1,5 +1,5 @@
 const std = @import("std");
-const raw = @import("internal/raw.zig");
+const c = @import("internal/c.zig");
 const internal = @import("internal/internal.zig");
 const log = std.log.scoped(.git);
 
@@ -9,7 +9,7 @@ pub const Blob = opaque {
     pub fn deinit(self: *Blob) void {
         log.debug("Blob.deinit called", .{});
 
-        raw.git_blob_free(@ptrCast(*raw.git_blob, self));
+        c.git_blob_free(@ptrCast(*c.git_blob, self));
 
         log.debug("Blob freed successfully", .{});
     }
@@ -17,7 +17,7 @@ pub const Blob = opaque {
     pub fn id(self: *const Blob) *const git.Oid {
         log.debug("Blame.id called", .{});
 
-        const ret = @ptrCast(*const git.Oid, raw.git_blob_id(@ptrCast(*const raw.git_blob, self)));
+        const ret = @ptrCast(*const git.Oid, c.git_blob_id(@ptrCast(*const c.git_blob, self)));
 
         // This check is to prevent formating the oid when we are not going to print anything
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
@@ -37,7 +37,7 @@ pub const Blob = opaque {
 
         const ret = @ptrCast(
             *git.Repository,
-            raw.git_blob_owner(@ptrCast(*const raw.git_blob, self)),
+            c.git_blob_owner(@ptrCast(*const c.git_blob, self)),
         );
 
         log.debug("successfully fetched owning repository: {s}", .{ret});
@@ -48,7 +48,7 @@ pub const Blob = opaque {
     pub fn rawContent(self: *const Blob) !*const anyopaque {
         log.debug("Blame.rawContent called", .{});
 
-        if (raw.git_blob_rawcontent(@ptrCast(*const raw.git_blob, self))) |ret| {
+        if (c.git_blob_rawcontent(@ptrCast(*const c.git_blob, self))) |ret| {
             log.debug("successfully fetched raw content pointer: {*}", .{ret});
 
             return ret;
@@ -60,23 +60,32 @@ pub const Blob = opaque {
     pub fn rawContentLength(self: *const Blob) u64 {
         log.debug("Blame.rawContentLength called", .{});
 
-        const ret = raw.git_blob_rawsize(@ptrCast(*const raw.git_blob, self));
+        const return_type_signedness: std.builtin.Signedness = comptime blk: {
+            const ret_type = @typeInfo(@TypeOf(c.git_blob_rawsize)).Fn.return_type.?;
+            break :blk @typeInfo(ret_type).Int.signedness;
+        };
+
+        const ret = c.git_blob_rawsize(@ptrCast(*const c.git_blob, self));
 
         log.debug("successfully fetched raw content length: {}", .{ret});
+
+        if (return_type_signedness == .signed) {
+            return @intCast(u64, ret);
+        }
 
         return ret;
     }
 
     pub fn isBinary(self: *const Blob) bool {
-        return raw.git_blob_is_binary(@ptrCast(*const raw.git_blob, self)) == 1;
+        return c.git_blob_is_binary(@ptrCast(*const c.git_blob, self)) == 1;
     }
 
     pub fn copy(self: *Blob) !*Blob {
         var new_blob: *Blob = undefined;
 
-        const ret = raw.git_blob_dup(
-            @ptrCast(*?*raw.git_blob, &new_blob),
-            @ptrCast(*raw.git_blob, self),
+        const ret = c.git_blob_dup(
+            @ptrCast(*?*c.git_blob, &new_blob),
+            @ptrCast(*c.git_blob, self),
         );
         // This always returns 0
         std.debug.assert(ret == 0);
@@ -93,8 +102,8 @@ pub const Blob = opaque {
             var c_options = options.makeCOptionObject();
 
             try internal.wrapCall("git_blob_filter", .{
-                @ptrCast(*raw.git_buf, &buf),
-                @ptrCast(*raw.git_blob, self),
+                @ptrCast(*c.git_buf, &buf),
+                @ptrCast(*c.git_blob, self),
                 as_path.ptr,
                 &c_options,
             });
@@ -149,11 +158,11 @@ pub const Blob = opaque {
                 }
             };
 
-            pub fn makeCOptionObject(self: FilterOptions) raw.git_blob_filter_options {
+            pub fn makeCOptionObject(self: FilterOptions) c.git_blob_filter_options {
                 return .{
-                    .version = raw.GIT_BLOB_FILTER_OPTIONS_VERSION,
+                    .version = c.GIT_BLOB_FILTER_OPTIONS_VERSION,
                     .flags = @bitCast(u32, self.flags),
-                    .commit_id = @ptrCast(?*raw.git_oid, self.commit_id),
+                    .commit_id = @ptrCast(?*c.git_oid, self.commit_id),
                 };
             }
 

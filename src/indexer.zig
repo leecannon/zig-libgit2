@@ -1,5 +1,5 @@
 const std = @import("std");
-const raw = @import("internal/raw.zig");
+const c = @import("internal/c.zig");
 const internal = @import("internal/internal.zig");
 const log = std.log.scoped(.git);
 
@@ -39,8 +39,11 @@ pub const Indexer = opaque {
         received_bytes: usize,
 
         test {
-            try std.testing.expectEqual(@sizeOf(raw.git_indexer_progress), @sizeOf(Progress));
-            try std.testing.expectEqual(@bitSizeOf(raw.git_indexer_progress), @bitSizeOf(Progress));
+            // TODO: Do this better
+            if (!@hasDecl(c, "git_remote_completion_t")) return error.SkipZigTest;
+
+            try std.testing.expectEqual(@sizeOf(c.git_indexer_progress), @sizeOf(Progress));
+            try std.testing.expectEqual(@bitSizeOf(c.git_indexer_progress), @bitSizeOf(Progress));
         }
 
         comptime {
@@ -75,7 +78,7 @@ pub const Indexer = opaque {
 
         const cb = struct {
             pub fn cb(
-                stats: [*c]const raw.git_indexer_progress,
+                stats: [*c]const c.git_indexer_progress,
                 payload: ?*anyopaque,
             ) callconv(.C) c_int {
                 return callback_fn(@ptrCast(*const Progress, stats), @ptrCast(UserDataType, payload));
@@ -84,8 +87,8 @@ pub const Indexer = opaque {
 
         log.debug("Indexer.init called, path={s}, odb={*}, options={}", .{ path, odb, options });
 
-        var c_opts = raw.git_indexer_options{
-            .version = raw.GIT_INDEXER_OPTIONS_VERSION,
+        var c_opts = c.git_indexer_options{
+            .version = c.GIT_INDEXER_OPTIONS_VERSION,
             .progress_cb = cb,
             .progress_cb_payload = user_data,
             .verify = @boolToInt(options.verify),
@@ -94,10 +97,10 @@ pub const Indexer = opaque {
         var ret: *Indexer = undefined;
 
         try internal.wrapCall("git_indexer_new", .{
-            @ptrCast(*raw.git_indexer, &ret),
+            @ptrCast(*c.git_indexer, &ret),
             path.ptr,
             options.mode,
-            @ptrCast(?*raw.git_oid, odb),
+            @ptrCast(?*c.git_oid, odb),
             &c_opts,
         });
 
@@ -112,13 +115,16 @@ pub const Indexer = opaque {
     /// * `data` - the data to add
     /// * `stats` - stat storage
     pub fn append(self: *Indexer, data: []const u8, stats: *Progress) !void {
+        // TODO: Do this better
+        if (!@hasDecl(c, "git_indexer_progress")) @panic("`git_indexer_progress` is unsupported");
+
         log.debug("Indexer.append called, data_len={}, stats={}", .{ data.len, stats });
 
         try internal.wrapCall("git_indexer_append", .{
-            @ptrCast(*raw.git_indexer, self),
+            @ptrCast(*c.git_indexer, self),
             data.ptr,
             data.len,
-            @ptrCast(*raw.git_indexer_progress, stats),
+            @ptrCast(*c.git_indexer_progress, stats),
         });
 
         log.debug("successfully appended to indexer", .{});
@@ -132,11 +138,14 @@ pub const Indexer = opaque {
     /// * `data` - the data to add
     /// * `stats` - stat storage
     pub fn commit(self: *Indexer, stats: *Progress) !void {
+        // TODO: Do this better
+        if (!@hasDecl(c, "git_indexer_progress")) @panic("`git_indexer_progress` is unsupported");
+
         log.debug("Indexer.commit called, stats={}", .{stats});
 
         try internal.wrapCall("git_indexer_commit", .{
-            @ptrCast(*raw.git_indexer, self),
-            @ptrCast(*raw.git_indexer_progress, stats),
+            @ptrCast(*c.git_indexer, self),
+            @ptrCast(*c.git_indexer_progress, stats),
         });
 
         log.debug("successfully commited indexer", .{});
@@ -151,7 +160,7 @@ pub const Indexer = opaque {
 
         var opt_hash = @ptrCast(
             ?*const git.Oid,
-            raw.git_indexer_hash(@ptrCast(*const raw.git_indexer, self)),
+            c.git_indexer_hash(@ptrCast(*const c.git_indexer, self)),
         );
 
         if (opt_hash) |ret| {
@@ -176,7 +185,7 @@ pub const Indexer = opaque {
     pub fn deinit(self: *Indexer) void {
         log.debug("Indexer.deinit called", .{});
 
-        raw.git_indexer_free(@ptrCast(*raw.git_indexer, self));
+        c.git_indexer_free(@ptrCast(*c.git_indexer, self));
 
         log.debug("Indexer freed successfully", .{});
     }

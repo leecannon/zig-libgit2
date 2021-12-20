@@ -1,7 +1,7 @@
 //! This type bundles all functionality that does not act on an instance of an object
 
 const std = @import("std");
-const raw = @import("internal/raw.zig");
+const c = @import("internal/c.zig");
 const internal = @import("internal/internal.zig");
 const log = std.log.scoped(.git);
 
@@ -38,7 +38,7 @@ pub const Handle = struct {
         var index: *git.Index = undefined;
 
         try internal.wrapCall("git_index_open", .{
-            @ptrCast(*?*raw.git_index, &index),
+            @ptrCast(*?*c.git_index, &index),
             path.ptr,
         });
 
@@ -58,7 +58,7 @@ pub const Handle = struct {
         var index: *git.Index = undefined;
 
         try internal.wrapCall("git_index_new", .{
-            @ptrCast(*?*raw.git_index, &index),
+            @ptrCast(*?*c.git_index, &index),
         });
 
         log.debug("index created successfully", .{});
@@ -81,7 +81,7 @@ pub const Handle = struct {
         var repo: *git.Repository = undefined;
 
         try internal.wrapCall("git_repository_init", .{
-            @ptrCast(*?*raw.git_repository, &repo),
+            @ptrCast(*?*c.git_repository, &repo),
             path.ptr,
             @boolToInt(is_bare),
         });
@@ -106,7 +106,7 @@ pub const Handle = struct {
         var c_options = options.makeCOptionObject();
 
         try internal.wrapCall("git_repository_init_ext", .{
-            @ptrCast(*?*raw.git_repository, &repo),
+            @ptrCast(*?*c.git_repository, &repo),
             path.ptr,
             &c_options,
         });
@@ -220,9 +220,9 @@ pub const Handle = struct {
             }
         };
 
-        pub fn makeCOptionObject(self: RepositoryInitOptions) raw.git_repository_init_options {
+        pub fn makeCOptionObject(self: RepositoryInitOptions) c.git_repository_init_options {
             return .{
-                .version = raw.GIT_REPOSITORY_INIT_OPTIONS_VERSION,
+                .version = c.GIT_REPOSITORY_INIT_OPTIONS_VERSION,
                 .flags = self.flags.toInt(),
                 .mode = self.mode.toInt(),
                 .workdir_path = if (self.workdir_path) |slice| slice.ptr else null,
@@ -250,7 +250,7 @@ pub const Handle = struct {
         var repo: *git.Repository = undefined;
 
         try internal.wrapCall("git_repository_open", .{
-            @ptrCast(*?*raw.git_repository, &repo),
+            @ptrCast(*?*c.git_repository, &repo),
             path.ptr,
         });
 
@@ -283,7 +283,7 @@ pub const Handle = struct {
         const path_temp: [*c]const u8 = if (path) |slice| slice.ptr else null;
         const ceiling_dirs_temp: [*c]const u8 = if (ceiling_dirs) |slice| slice.ptr else null;
         try internal.wrapCall("git_repository_open_ext", .{
-            @ptrCast(*?*raw.git_repository, &repo),
+            @ptrCast(*?*c.git_repository, &repo),
             path_temp,
             flags.toInt(),
             ceiling_dirs_temp,
@@ -356,7 +356,7 @@ pub const Handle = struct {
         var repo: *git.Repository = undefined;
 
         try internal.wrapCall("git_repository_open_bare", .{
-            @ptrCast(*?*raw.git_repository, &repo),
+            @ptrCast(*?*c.git_repository, &repo),
             path.ptr,
         });
 
@@ -388,7 +388,7 @@ pub const Handle = struct {
         const ceiling_dirs_temp: [*c]const u8 = if (ceiling_dirs) |slice| slice.ptr else null;
 
         try internal.wrapCall("git_repository_discover", .{
-            @ptrCast(*raw.git_buf, &buf),
+            @ptrCast(*c.git_buf, &buf),
             start_path.ptr,
             @boolToInt(across_fs),
             ceiling_dirs_temp,
@@ -405,7 +405,7 @@ pub const Handle = struct {
 
         // options which control the fetch, including callbacks. Callbacks are for reporting fetch progress, and for
         // acquiring credentials in the event they are needed.
-        fetch_options: git.FetchOptions = .{},
+        fetch_options: git.Remote.FetchOptions = .{},
 
         /// Set false (default) to create a standard repo or true for a bare repo.
         bare: bool = false,
@@ -413,56 +413,85 @@ pub const Handle = struct {
         /// Whether to use a fetch or a copy of the object database.
         local: LocalType = .LOCAL_AUTO,
 
-        /// Branch of the remote repository to checkout. Null means the default.
+        /// Branch of the remote repository to checkout. `null` means the default.
         checkout_branch: ?[:0]const u8 = null,
 
-        /// A callback used to create the new repository into which to clone. If null the `bare` field will be used to
+        /// A callback used to create the new repository into which to clone. If `null` the `bare` field will be used to
         /// determine whether to create a bare repository.
+        ///
+        /// Return 0, or a negative value to indicate error
+        ///
+        /// ## Parameters
+        /// * `out` - the resulting repository
+        /// * `path` - path in which to create the repository
+        /// * `bare` - whether the repository is bare. This is the value from the clone options
+        /// * `payload` - payload specified by the options
         repository_cb: ?fn (
-            out: [*c]?*raw.git_repository,
+            out: **git.Repository,
             path: [*:0]const u8,
-            bare: c_int,
+            bare: bool,
             payload: *anyopaque,
         ) callconv(.C) void = null,
+
+        /// An opaque payload to pass to the `repository_cb` creation callback.
+        /// This parameter is ignored unless repository_cb is non-`null`.
         repository_cb_payload: ?*anyopaque = null,
 
-        /// A callback used to create the git remote, prior to its being used to perform the clone option. This
-        /// parameter may be NULL, indicating that handle.Clone should provide default behavior.
+        /// A callback used to create the git remote, prior to its being used to perform the clone option. 
+        /// This parameter may be `null`, indicating that `Handle.clone` should provide default behavior.
+        ///
+        /// Return 0, or an error code
+        ///
+        /// ## Parameters
+        /// * `out` - the resulting remote
+        /// * `repo` - the repository in which to create the remote
+        /// * `name` - the remote's name
+        /// * `url` - the remote's url
+        /// * `payload` - an opaque payload
         remote_cb: ?fn (
-            out: [*c]?*raw.git_remote,
-            repo: ?*raw.git_repository,
+            out: **git.Remote,
+            repo: *git.Repository,
             name: [*:0]const u8,
             url: [*:0]const u8,
-            payload: *anyopaque,
+            payload: ?*anyopaque,
         ) callconv(.C) void = null,
+
         remote_cb_payload: ?*anyopaque = null,
 
         /// Options for bypassing the git-aware transport on clone. Bypassing it means that instead of a fetch,
         /// libgit2 will copy the object database directory instead of figuring out what it needs, which is faster.
         pub const LocalType = enum(c_uint) {
+            /// Auto-detect (default), libgit2 will bypass the git-aware transport for local paths, but use a normal fetch for
+            /// `file://` urls.
             LOCAL_AUTO,
+            /// Bypass the git-aware transport even for a `file://` url.
             LOCAL,
+            /// Do no bypass the git-aware transport
             NO_LOCAL,
+            /// Bypass the git-aware transport, but do not try to use hardlinks.
             LOCAL_NO_LINKS,
         };
 
-        fn toC(self: CloneOptions) raw.git_clone_options {
-            return raw.git_clone_options{
-                .version = raw.GIT_CHECKOUT_OPTIONS_VERSION,
+        fn makeCOptionsObject(self: CloneOptions) c.git_clone_options {
+            return c.git_clone_options{
+                .version = c.GIT_CHECKOUT_OPTIONS_VERSION,
                 .checkout_opts = self.checkout_options.makeCOptionObject(),
-                .fetch_opts = self.fetch_options.toC(),
+                .fetch_opts = self.fetch_options.makeCOptionsObject(),
                 .bare = @boolToInt(self.bare),
                 .local = @enumToInt(self.local),
                 .checkout_branch = if (self.checkout_branch) |b| @as(?[*]const u8, b.ptr) else null,
-                .repository_cb = @ptrCast(raw.git_repository_create_cb, self.repository_cb),
+                .repository_cb = @ptrCast(c.git_repository_create_cb, self.repository_cb),
                 .repository_cb_payload = self.repository_cb_payload,
-                .remote_cb = @ptrCast(raw.git_remote_create_cb, self.remote_cb),
+                .remote_cb = @ptrCast(c.git_remote_create_cb, self.remote_cb),
                 .remote_cb_payload = self.remote_cb_payload,
             };
         }
     };
 
     /// Clone a remote repository.
+    ///
+    /// By default this creates its repository and initial remote to match git's defaults. 
+    /// You can use the options in the callback to customize how these are created.
     ///
     /// ## Parameters
     /// * `url` - URL of the remote repository to clone.
@@ -474,13 +503,18 @@ pub const Handle = struct {
         log.debug("Handle.clone called, url={s}, local_path={s}", .{ url, local_path });
 
         var repo: *git.Repository = undefined;
-        try internal.wrapCall("git_clone", .{ @ptrCast(*?*raw.git_repository, &repo),
+
+        const c_options = options.makeCOptionsObject();
+
+        try internal.wrapCall("git_clone", .{
+            @ptrCast(*?*c.git_repository, &repo),
             url.ptr,
             local_path.ptr,
-            &options.toC(),
+            &c_options,
         });
 
         log.debug("repository cloned successfully", .{});
+
         return repo;
     }
 
@@ -490,7 +524,7 @@ pub const Handle = struct {
         log.debug("Handle.optionGetMmapWindowSize called", .{});
 
         var result: usize = undefined;
-        try internal.wrapCall("git_libgit2_opts", .{ raw.GIT_OPT_GET_MWINDOW_SIZE, &result });
+        try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_GET_MWINDOW_SIZE, &result });
 
         log.debug("maximum mmap window size: {}", .{result});
 
@@ -502,7 +536,7 @@ pub const Handle = struct {
 
         log.debug("Handle.optionSetMaximumMmapWindowSize called, value={}", .{value});
 
-        try internal.wrapCall("git_libgit2_opts", .{ raw.GIT_OPT_SET_MWINDOW_SIZE, value });
+        try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_SET_MWINDOW_SIZE, value });
 
         log.debug("successfully set maximum mmap window size", .{});
     }
@@ -513,7 +547,7 @@ pub const Handle = struct {
         log.debug("Handle.optionGetMaximumMmapLimit called", .{});
 
         var result: usize = undefined;
-        try internal.wrapCall("git_libgit2_opts", .{ raw.GIT_OPT_GET_MWINDOW_MAPPED_LIMIT, &result });
+        try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_GET_MWINDOW_MAPPED_LIMIT, &result });
 
         log.debug("maximum mmap limit: {}", .{result});
 
@@ -525,19 +559,22 @@ pub const Handle = struct {
 
         log.debug("Handle.optionSetMaximumMmapLimit called, value={}", .{value});
 
-        try internal.wrapCall("git_libgit2_opts", .{ raw.GIT_OPT_SET_MWINDOW_MAPPED_LIMIT, value });
+        try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_SET_MWINDOW_MAPPED_LIMIT, value });
 
         log.debug("successfully set maximum mmap limit", .{});
     }
 
     /// zero means unlimited
     pub fn optionGetMaximumMappedFiles(self: Handle) !usize {
+        // TODO: Do this better
+        if (!@hasDecl(c, "GIT_OPT_GET_MWINDOW_FILE_LIMIT")) @panic("`GIT_OPT_GET_MWINDOW_FILE_LIMIT` is unsupported");
+
         _ = self;
 
         log.debug("Handle.optionGetMaximumMappedFiles called", .{});
 
         var result: usize = undefined;
-        try internal.wrapCall("git_libgit2_opts", .{ raw.GIT_OPT_GET_MWINDOW_FILE_LIMIT, &result });
+        try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_GET_MWINDOW_FILE_LIMIT, &result });
 
         log.debug("maximum mapped files: {}", .{result});
 
@@ -546,11 +583,14 @@ pub const Handle = struct {
 
     /// zero means unlimited
     pub fn optionSetMaximumMmapFiles(self: Handle, value: usize) !void {
+        // TODO: Do this better
+        if (!@hasDecl(c, "GIT_OPT_SET_MWINDOW_FILE_LIMIT")) @panic("`GIT_OPT_SET_MWINDOW_FILE_LIMIT` is unsupported");
+
         _ = self;
 
         log.debug("Handle.optionSetMaximumMmapFiles called, value={}", .{value});
 
-        try internal.wrapCall("git_libgit2_opts", .{ raw.GIT_OPT_SET_MWINDOW_FILE_LIMIT, value });
+        try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_SET_MWINDOW_FILE_LIMIT, value });
 
         log.debug("successfully set maximum mapped files", .{});
     }
@@ -562,9 +602,9 @@ pub const Handle = struct {
 
         var buf: git.Buf = .{};
         try internal.wrapCall("git_libgit2_opts", .{
-            raw.GIT_OPT_GET_SEARCH_PATH,
+            c.GIT_OPT_GET_SEARCH_PATH,
             @enumToInt(level),
-            @ptrCast(*raw.git_buf, &buf),
+            @ptrCast(*c.git_buf, &buf),
         });
 
         log.debug("got search path: {s}", .{buf.toSlice()});
@@ -581,7 +621,7 @@ pub const Handle = struct {
         log.debug("Handle.optionSetSearchPath called, path={s}", .{path});
 
         const path_c: [*c]const u8 = if (path) |slice| slice.ptr else null;
-        try internal.wrapCall("git_libgit2_opts", .{ raw.GIT_OPT_SET_SEARCH_PATH, @enumToInt(level), path_c });
+        try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_SET_SEARCH_PATH, @enumToInt(level), path_c });
 
         log.debug("successfully set search path", .{});
     }
@@ -591,7 +631,7 @@ pub const Handle = struct {
 
         log.debug("Handle.optionSetCacheObjectLimit called, object_type={s}, value={}", .{ @tagName(object_type), value });
 
-        try internal.wrapCall("git_libgit2_opts", .{ raw.GIT_OPT_SET_CACHE_OBJECT_LIMIT, @enumToInt(object_type), value });
+        try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_SET_CACHE_OBJECT_LIMIT, @enumToInt(object_type), value });
 
         log.debug("successfully set cache object limit", .{});
     }
@@ -601,7 +641,7 @@ pub const Handle = struct {
 
         log.debug("Handle.optionSetCacheMaximumSize called, value={}", .{value});
 
-        try internal.wrapCall("git_libgit2_opts", .{ raw.GIT_OPT_SET_CACHE_MAX_SIZE, value });
+        try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_SET_CACHE_MAX_SIZE, value });
 
         log.debug("successfully set maximum cache size", .{});
     }
@@ -611,7 +651,7 @@ pub const Handle = struct {
 
         log.debug("Handle.optionSetCaching called, enabled={}", .{enabled});
 
-        try internal.wrapCall("git_libgit2_opts", .{ raw.GIT_OPT_ENABLE_CACHING, enabled });
+        try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_ENABLE_CACHING, enabled });
 
         log.debug("successfully set caching status", .{});
     }
@@ -622,7 +662,7 @@ pub const Handle = struct {
         log.debug("Handle.optionGetCachedMemory called", .{});
 
         var result: CachedMemory = undefined;
-        try internal.wrapCall("git_libgit2_opts", .{ raw.GIT_OPT_GET_CACHED_MEMORY, &result.current, &result.allowed });
+        try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_GET_CACHED_MEMORY, &result.current, &result.allowed });
 
         log.debug("cached memory: {}", .{result});
 
@@ -641,8 +681,8 @@ pub const Handle = struct {
 
         var result: git.Buf = .{};
         try internal.wrapCall("git_libgit2_opts", .{
-            raw.GIT_OPT_GET_TEMPLATE_PATH,
-            @ptrCast(*raw.git_buf, &result),
+            c.GIT_OPT_GET_TEMPLATE_PATH,
+            @ptrCast(*c.git_buf, &result),
         });
 
         log.debug("got template path: {s}", .{result.toSlice()});
@@ -655,7 +695,7 @@ pub const Handle = struct {
 
         log.debug("Handle.optionSetTemplatePath called, path={s}", .{path});
 
-        try internal.wrapCall("git_libgit2_opts", .{ raw.GIT_OPT_SET_TEMPLATE_PATH, path.ptr });
+        try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_SET_TEMPLATE_PATH, path.ptr });
 
         log.debug("successfully set template path", .{});
     }
@@ -668,7 +708,7 @@ pub const Handle = struct {
 
         const file_c: [*c]const u8 = if (file) |ptr| ptr.ptr else null;
         const path_c: [*c]const u8 = if (path) |ptr| ptr.ptr else null;
-        try internal.wrapCall("git_libgit2_opts", .{ raw.GIT_OPT_SET_SSL_CERT_LOCATIONS, file_c, path_c });
+        try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_SET_SSL_CERT_LOCATIONS, file_c, path_c });
 
         log.debug("successfully set ssl certificate location", .{});
     }
@@ -678,7 +718,7 @@ pub const Handle = struct {
 
         log.debug("Handle.optionSetUserAgent called, user_agent={s}", .{user_agent});
 
-        try internal.wrapCall("git_libgit2_opts", .{ raw.GIT_OPT_SET_USER_AGENT, user_agent.ptr });
+        try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_SET_USER_AGENT, user_agent.ptr });
 
         log.debug("successfully set user agent", .{});
     }
@@ -690,8 +730,8 @@ pub const Handle = struct {
 
         var result: git.Buf = .{};
         try internal.wrapCall("git_libgit2_opts", .{
-            raw.GIT_OPT_GET_USER_AGENT,
-            @ptrCast(*raw.git_buf, &result),
+            c.GIT_OPT_GET_USER_AGENT,
+            @ptrCast(*c.git_buf, &result),
         });
 
         log.debug("got user agent: {s}", .{result.toSlice()});
@@ -704,7 +744,7 @@ pub const Handle = struct {
 
         log.debug("Handle.optionSetWindowsSharemode called, value={}", .{value});
 
-        try internal.wrapCall("git_libgit2_opts", .{ raw.GIT_OPT_SET_WINDOWS_SHAREMODE, value });
+        try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_SET_WINDOWS_SHAREMODE, value });
 
         log.debug("successfully set windows share mode", .{});
     }
@@ -715,7 +755,7 @@ pub const Handle = struct {
         log.debug("Handle.optionGetWindowSharemode called", .{});
 
         var result: c_uint = undefined;
-        try internal.wrapCall("git_libgit2_opts", .{ raw.GIT_OPT_GET_WINDOWS_SHAREMODE, &result });
+        try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_GET_WINDOWS_SHAREMODE, &result });
 
         log.debug("got windows share mode: {}", .{result});
 
@@ -727,7 +767,7 @@ pub const Handle = struct {
 
         log.debug("Handle.optionSetStrictObjectCreation called, enabled={}", .{enabled});
 
-        try internal.wrapCall("git_libgit2_opts", .{ raw.GIT_OPT_ENABLE_STRICT_OBJECT_CREATION, @boolToInt(enabled) });
+        try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_ENABLE_STRICT_OBJECT_CREATION, @boolToInt(enabled) });
 
         log.debug("successfully set strict object creation mode", .{});
     }
@@ -737,7 +777,7 @@ pub const Handle = struct {
 
         log.debug("Handle.optionSetStrictSymbolicRefCreations called, enabled={}", .{enabled});
 
-        try internal.wrapCall("git_libgit2_opts", .{ raw.GIT_OPT_ENABLE_STRICT_SYMBOLIC_REF_CREATION, @boolToInt(enabled) });
+        try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_ENABLE_STRICT_SYMBOLIC_REF_CREATION, @boolToInt(enabled) });
 
         log.debug("successfully set strict symbolic ref creation mode", .{});
     }
@@ -747,7 +787,7 @@ pub const Handle = struct {
 
         log.debug("Handle.optionSetSslCiphers called, ciphers={s}", .{ciphers});
 
-        try internal.wrapCall("git_libgit2_opts", .{ raw.GIT_OPT_SET_SSL_CIPHERS, ciphers.ptr });
+        try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_SET_SSL_CIPHERS, ciphers.ptr });
 
         log.debug("successfully set SSL ciphers", .{});
     }
@@ -757,7 +797,7 @@ pub const Handle = struct {
 
         log.debug("Handle.optionSetOffsetDeltas called, enabled={}", .{enabled});
 
-        try internal.wrapCall("git_libgit2_opts", .{ raw.GIT_OPT_ENABLE_OFS_DELTA, @boolToInt(enabled) });
+        try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_ENABLE_OFS_DELTA, @boolToInt(enabled) });
 
         log.debug("successfully set offset deltas mode", .{});
     }
@@ -767,7 +807,7 @@ pub const Handle = struct {
 
         log.debug("Handle.optionSetFsyncDir called, enabled={}", .{enabled});
 
-        try internal.wrapCall("git_libgit2_opts", .{ raw.GIT_OPT_ENABLE_FSYNC_GITDIR, @boolToInt(enabled) });
+        try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_ENABLE_FSYNC_GITDIR, @boolToInt(enabled) });
 
         log.debug("successfully set fsync dir mode", .{});
     }
@@ -777,7 +817,7 @@ pub const Handle = struct {
 
         log.debug("Handle.optionSetStrictHashVerification called, enabled={}", .{enabled});
 
-        try internal.wrapCall("git_libgit2_opts", .{ raw.GIT_OPT_ENABLE_STRICT_HASH_VERIFICATION, @boolToInt(enabled) });
+        try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_ENABLE_STRICT_HASH_VERIFICATION, @boolToInt(enabled) });
 
         log.debug("successfully set strict hash verification mode", .{});
     }
@@ -788,7 +828,7 @@ pub const Handle = struct {
 
         log.debug("Handle.optionSetAllocator called, allocator={*}", .{allocator});
 
-        try internal.wrapCall("git_libgit2_opts", .{ raw.GIT_OPT_SET_ALLOCATOR, allocator });
+        try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_SET_ALLOCATOR, allocator });
 
         log.debug("successfully set allocator", .{});
     }
@@ -798,7 +838,7 @@ pub const Handle = struct {
 
         log.debug("Handle.optionSetUnsafedIndexSafety called, enabled={}", .{enabled});
 
-        try internal.wrapCall("git_libgit2_opts", .{ raw.GIT_OPT_ENABLE_UNSAVED_INDEX_SAFETY, @boolToInt(enabled) });
+        try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_ENABLE_UNSAVED_INDEX_SAFETY, @boolToInt(enabled) });
 
         log.debug("successfully set unsaved index safety mode", .{});
     }
@@ -809,7 +849,7 @@ pub const Handle = struct {
         log.debug("Handle.optionGetMaximumPackObjects called", .{});
 
         var result: usize = undefined;
-        try internal.wrapCall("git_libgit2_opts", .{ raw.GIT_OPT_GET_PACK_MAX_OBJECTS, &result });
+        try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_GET_PACK_MAX_OBJECTS, &result });
 
         log.debug("maximum pack objects: {}", .{result});
 
@@ -821,27 +861,33 @@ pub const Handle = struct {
 
         log.debug("Handle.optionSetMaximumPackObjects called, value={}", .{value});
 
-        try internal.wrapCall("git_libgit2_opts", .{ raw.GIT_OPT_SET_PACK_MAX_OBJECTS, value });
+        try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_SET_PACK_MAX_OBJECTS, value });
 
         log.debug("successfully set maximum pack objects", .{});
     }
 
     pub fn optionSetDisablePackKeepFileChecks(self: Handle, enabled: bool) !void {
+        // TODO: Do this better
+        if (!@hasDecl(c, "GIT_OPT_DISABLE_PACK_KEEP_FILE_CHECKS")) @panic("`GIT_OPT_DISABLE_PACK_KEEP_FILE_CHECKS` is unsupported");
+
         _ = self;
 
         log.debug("Handle.optionSetDisablePackKeepFileChecks called, enabled={}", .{enabled});
 
-        try internal.wrapCall("git_libgit2_opts", .{ raw.GIT_OPT_DISABLE_PACK_KEEP_FILE_CHECKS, @boolToInt(enabled) });
+        try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_DISABLE_PACK_KEEP_FILE_CHECKS, @boolToInt(enabled) });
 
         log.debug("successfully set unsaved index safety mode", .{});
     }
 
     pub fn optionSetHTTPExpectContinue(self: Handle, enabled: bool) !void {
+        // TODO: Do this better
+        if (!@hasDecl(c, "GIT_OPT_ENABLE_HTTP_EXPECT_CONTINUE")) @panic("`GIT_OPT_ENABLE_HTTP_EXPECT_CONTINUE` is unsupported");
+
         _ = self;
 
         log.debug("Handle.optionSetHTTPExpectContinue called, enabled={}", .{enabled});
 
-        try internal.wrapCall("git_libgit2_opts", .{ raw.GIT_OPT_ENABLE_HTTP_EXPECT_CONTINUE, @boolToInt(enabled) });
+        try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_ENABLE_HTTP_EXPECT_CONTINUE, @boolToInt(enabled) });
 
         log.debug("successfully set HTTP expect continue mode", .{});
     }
@@ -865,7 +911,7 @@ pub const Handle = struct {
 
             log.debug("Handle.optionSetOdbPackedPriority called, value={}", .{value});
 
-            try internal.wrapCall("git_libgit2_opts", .{ raw.GIT_OPT_SET_ODB_PACKED_PRIORITY, value });
+            try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_SET_ODB_PACKED_PRIORITY, value });
 
             log.debug("successfully set odb packed priority", .{});
         }
@@ -875,7 +921,7 @@ pub const Handle = struct {
 
             log.debug("Handle.optionSetOdbLoosePriority called, value={}", .{value});
 
-            try internal.wrapCall("git_libgit2_opts", .{ raw.GIT_OPT_SET_ODB_LOOSE_PRIORITY, value });
+            try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_SET_ODB_LOOSE_PRIORITY, value });
 
             log.debug("successfully set odb loose priority", .{});
         }

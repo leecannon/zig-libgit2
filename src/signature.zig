@@ -1,5 +1,5 @@
 const std = @import("std");
-const raw = @import("internal/raw.zig");
+const c = @import("internal/c.zig");
 const internal = @import("internal/internal.zig");
 const log = std.log.scoped(.git);
 
@@ -23,15 +23,15 @@ pub const Signature = extern struct {
 
     pub const Time = extern struct {
         /// time in seconds from epoch, we use libgit2's exported time type as they handle interop with the target
-        time: raw.git_time_t,
+        time: c.git_time_t,
         /// timezone offset, in minutes
         offset: c_int,
         /// indicator for questionable '-0000' offsets in signature
         sign: u8,
 
         test {
-            try std.testing.expectEqual(@sizeOf(raw.git_time), @sizeOf(Time));
-            try std.testing.expectEqual(@bitSizeOf(raw.git_time), @bitSizeOf(Time));
+            try std.testing.expectEqual(@sizeOf(c.git_time), @sizeOf(Time));
+            try std.testing.expectEqual(@bitSizeOf(c.git_time), @bitSizeOf(Time));
         }
 
         comptime {
@@ -40,8 +40,8 @@ pub const Signature = extern struct {
     };
 
     test {
-        try std.testing.expectEqual(@sizeOf(raw.git_signature), @sizeOf(Signature));
-        try std.testing.expectEqual(@bitSizeOf(raw.git_signature), @bitSizeOf(Signature));
+        try std.testing.expectEqual(@sizeOf(c.git_signature), @sizeOf(Signature));
+        try std.testing.expectEqual(@bitSizeOf(c.git_signature), @bitSizeOf(Signature));
     }
 
     comptime {

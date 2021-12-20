@@ -1,5 +1,5 @@
 const std = @import("std");
-const raw = @import("internal/raw.zig");
+const c = @import("internal/c.zig");
 const internal = @import("internal/internal.zig");
 const log = std.log.scoped(.git);
 
@@ -17,7 +17,7 @@ pub const Diff = opaque {
     pub fn deinit(self: *Diff) void {
         log.debug("Diff.deinit called", .{});
 
-        raw.git_diff_free(@ptrCast(*raw.git_diff, self));
+        c.git_diff_free(@ptrCast(*c.git_diff, self));
 
         log.debug("diff freed successfully", .{});
     }
@@ -33,7 +33,7 @@ pub const Diff = opaque {
 /// context and other properties of how hunks are generated. Each hunk also comes with a header that described where it starts and
 /// ends in both the old and new versions in the delta.
 pub const DiffHunk = extern struct {
-    pub const HEADER_SIZE: usize = raw.GIT_DIFF_HUNK_HEADER_SIZE;
+    pub const HEADER_SIZE: usize = c.GIT_DIFF_HUNK_HEADER_SIZE;
 
     /// Starting line number in old_file
     old_start: c_int,
@@ -56,8 +56,8 @@ pub const DiffHunk = extern struct {
     }
 
     test {
-        try std.testing.expectEqual(@sizeOf(raw.git_diff_hunk), @sizeOf(DiffHunk));
-        try std.testing.expectEqual(@bitSizeOf(raw.git_diff_hunk), @bitSizeOf(DiffHunk));
+        try std.testing.expectEqual(@sizeOf(c.git_diff_hunk), @sizeOf(DiffHunk));
+        try std.testing.expectEqual(@bitSizeOf(c.git_diff_hunk), @bitSizeOf(DiffHunk));
     }
 
     comptime {
@@ -135,8 +135,8 @@ pub const DiffDelta = extern struct {
     };
 
     test {
-        try std.testing.expectEqual(@sizeOf(raw.git_diff_delta), @sizeOf(DiffDelta));
-        try std.testing.expectEqual(@bitSizeOf(raw.git_diff_delta), @bitSizeOf(DiffDelta));
+        try std.testing.expectEqual(@sizeOf(c.git_diff_delta), @sizeOf(DiffDelta));
+        try std.testing.expectEqual(@bitSizeOf(c.git_diff_delta), @bitSizeOf(DiffDelta));
     }
 
     comptime {
@@ -162,8 +162,8 @@ pub const SimilarityMetric = extern struct {
     payload: ?*anyopaque,
 
     test {
-        try std.testing.expectEqual(@sizeOf(raw.git_diff_similarity_metric), @sizeOf(SimilarityMetric));
-        try std.testing.expectEqual(@bitSizeOf(raw.git_diff_similarity_metric), @bitSizeOf(SimilarityMetric));
+        try std.testing.expectEqual(@sizeOf(c.git_diff_similarity_metric), @sizeOf(SimilarityMetric));
+        try std.testing.expectEqual(@bitSizeOf(c.git_diff_similarity_metric), @bitSizeOf(SimilarityMetric));
     }
 
     comptime {
@@ -245,8 +245,8 @@ pub const DiffFile = extern struct {
     };
 
     test {
-        try std.testing.expectEqual(@sizeOf(raw.git_diff_file), @sizeOf(DiffFile));
-        try std.testing.expectEqual(@bitSizeOf(raw.git_diff_file), @bitSizeOf(DiffFile));
+        try std.testing.expectEqual(@sizeOf(c.git_diff_file), @sizeOf(DiffFile));
+        try std.testing.expectEqual(@bitSizeOf(c.git_diff_file), @bitSizeOf(DiffFile));
     }
 
     comptime {

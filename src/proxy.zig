@@ -1,44 +1,90 @@
 const std = @import("std");
-const raw = @import("internal/raw.zig");
+const c = @import("internal/c.zig");
 const git = @import("git.zig");
 
 /// Options for connecting through a proxy.
+/// Note that not all types may be supported, depending on the platform  and compilation options.
 pub const ProxyOptions = struct {
+    /// The type of proxy to use, by URL, auto-detect.
     proxy_type: ProxyType = .NONE,
+
+    /// The URL of the proxy.
     url: ?[:0]const u8 = null,
 
-    /// A callback used to create the git remote, prior to its being used to perform the clone option. This
-    /// parameter may be NULL, indicating that handle.Clone should provide default behavior.
-    payload: ?*anyopaque = null,
+    /// This will be called if the remote host requires authentication in order to connect to it.
+    ///
+    /// Return 0 for success, < 0 to indicate an error, > 0 to indicate no credential was acquired
+    /// Returning `GIT_PASSTHROUGH` will make libgit2 behave as though this field isn't set.
+    ///
+    /// ## Parameters
+    /// * `out` - The newly created credential object.
+    /// * `url` - The resource for which we are demanding a credential.
+    /// * `username_from_url` - The username that was embedded in a "user\@host" remote url, or `null` if not included.
+    /// * `allowed_types` - A bitmask stating which credential types are OK to return.
+    /// * `payload` - The payload provided when specifying this callback.
     credentials: ?fn (
-        out: **raw.git_credential,
+        out: **git.Credential,
         url: [*:0]const u8,
         username_from_url: [*:0]const u8,
-        allowed_types: c_int,
-        payload: *anyopaque,
-    ) callconv(.C) void = null,
+        /// BUG: This is supposed to be `git.Credential.CredentialType`, but can't be due to a zig compiler bug
+        allowed_types: c_uint,
+        payload: ?*anyopaque,
+    ) callconv(.C) c_int = null,
 
+    /// If cert verification fails, this will be called to let the user make the final decision of whether to allow the
+    /// connection to proceed. Returns 0 to allow the connection or a negative value to indicate an error.
+    ///
+    /// Return 0 to proceed with the connection, < 0 to fail the connection or > 0 to indicate that the callback refused
+    /// to act and that the existing validity determination should be honored
+    ///
+    /// ## Parameters
+    /// * `cert` - The host certificate
+    /// * `valid` - Whether the libgit2 checks (OpenSSL or WinHTTP) think this certificate is valid.
+    /// * `host` - Hostname of the host libgit2 connected to
+    /// * `payload` - Payload provided by the caller
     certificate_check: ?fn (
-        cert: *raw.git_cert,
-        valid: c_int,
+        cert: *git.Certificate,
+        valid: bool,
         host: [*:0]const u8,
         payload: ?*anyopaque,
     ) callconv(.C) c_int = null,
 
+    /// Payload to be provided to the credentials and certificate check callbacks.
+    payload: ?*anyopaque = null,
+
     pub const ProxyType = enum(c_uint) {
-        NONE,
+        /// Do not attempt to connect through a proxy
+        ///
+        /// If built against libcurl, it itself may attempt to connect
+        /// to a proxy if the environment variables specify it.
+        NONE = 0,
+
+        /// Try to auto-detect the proxy from the git configuration.
         AUTO,
+
+        /// Connect via the URL given in the options
         SPECIFIED,
     };
 
-    pub fn toC(self: ProxyOptions) raw.git_proxy_options {
+    pub fn makeCOptionsObject(self: ProxyOptions) c.git_proxy_options {
+        // TODO: Do this better
+        if (!@hasDecl(c, "git_credential_acquire_cb")) @panic("`git_credential_acquire_cb` is unsupported");
+
         return .{
-            .version = raw.GIT_PROXY_OPTIONS_VERSION,
+            .version = c.GIT_PROXY_OPTIONS_VERSION,
             .@"type" = @enumToInt(self.proxy_type),
             .url = if (self.url) |s| s.ptr else null,
-            .credentials = @ptrCast(raw.git_credential_acquire_cb, self.credentials),
+            .credentials = @ptrCast(c.git_credential_acquire_cb, self.credentials),
             .payload = self.payload,
-            .certificate_check = @ptrCast(raw.git_transport_certificate_check_cb, self.certificate_check),
+            .certificate_check = @ptrCast(c.git_transport_certificate_check_cb, self.certificate_check),
         };
     }
+
+    comptime {
+        std.testing.refAllDecls(@This());
+    }
 };
+
+comptime {
+    std.testing.refAllDecls(@This());
+}

@@ -1,5 +1,5 @@
 const std = @import("std");
-const raw = @import("internal/raw.zig");
+const c = @import("internal/c.zig");
 const internal = @import("internal/internal.zig");
 const log = std.log.scoped(.git);
 
@@ -10,7 +10,7 @@ pub const Oid = extern struct {
     id: [20]u8,
 
     /// Size (in bytes) of a hex formatted oid
-    pub const HEX_BUFFER_SIZE = raw.GIT_OID_HEXSZ;
+    pub const HEX_BUFFER_SIZE = c.GIT_OID_HEXSZ;
 
     pub fn formatHexAlloc(self: Oid, allocator: *std.mem.Allocator) ![]const u8 {
         const buf = try allocator.alloc(u8, HEX_BUFFER_SIZE);
@@ -22,7 +22,7 @@ pub const Oid = extern struct {
     pub fn formatHex(self: Oid, buf: []u8) ![]const u8 {
         if (buf.len < HEX_BUFFER_SIZE) return error.BufferTooShort;
 
-        try internal.wrapCall("git_oid_fmt", .{ buf.ptr, @ptrCast(*const raw.git_oid, &self) });
+        try internal.wrapCall("git_oid_fmt", .{ buf.ptr, @ptrCast(*const c.git_oid, &self) });
 
         return buf[0..HEX_BUFFER_SIZE];
     }
@@ -37,7 +37,7 @@ pub const Oid = extern struct {
     pub fn formatHexZ(self: Oid, buf: []u8) ![:0]const u8 {
         if (buf.len < (HEX_BUFFER_SIZE + 1)) return error.BufferTooShort;
 
-        try internal.wrapCall("git_oid_fmt", .{ buf.ptr, @ptrCast(*const raw.git_oid, &self) });
+        try internal.wrapCall("git_oid_fmt", .{ buf.ptr, @ptrCast(*const c.git_oid, &self) });
         buf[HEX_BUFFER_SIZE] = 0;
 
         return buf[0..HEX_BUFFER_SIZE :0];
@@ -54,7 +54,7 @@ pub const Oid = extern struct {
     pub fn formatHexCount(self: Oid, buf: []u8, length: usize) ![]const u8 {
         if (buf.len < length) return error.BufferTooShort;
 
-        try internal.wrapCall("git_oid_nfmt", .{ buf.ptr, length, @ptrCast(*const raw.git_oid, &self) });
+        try internal.wrapCall("git_oid_nfmt", .{ buf.ptr, length, @ptrCast(*const c.git_oid, &self) });
 
         return buf[0..length];
     }
@@ -70,7 +70,7 @@ pub const Oid = extern struct {
     pub fn formatHexCountZ(self: Oid, buf: []u8, length: usize) ![:0]const u8 {
         if (buf.len < (length + 1)) return error.BufferTooShort;
 
-        try internal.wrapCall("git_oid_nfmt", .{ buf.ptr, length, @ptrCast(*const raw.git_oid, &self) });
+        try internal.wrapCall("git_oid_nfmt", .{ buf.ptr, length, @ptrCast(*const c.git_oid, &self) });
         buf[length] = 0;
 
         return buf[0..length :0];
@@ -86,7 +86,7 @@ pub const Oid = extern struct {
     pub fn formatHexPath(self: Oid, buf: []u8) ![]const u8 {
         if (buf.len < HEX_BUFFER_SIZE + 1) return error.BufferTooShort;
 
-        try internal.wrapCall("git_oid_pathfmt", .{ buf.ptr, @ptrCast(*const raw.git_oid, &self) });
+        try internal.wrapCall("git_oid_pathfmt", .{ buf.ptr, @ptrCast(*const c.git_oid, &self) });
 
         return buf[0..HEX_BUFFER_SIZE];
     }
@@ -101,7 +101,7 @@ pub const Oid = extern struct {
     pub fn formatHexPathZ(self: Oid, buf: []u8) ![:0]const u8 {
         if (buf.len < (HEX_BUFFER_SIZE + 2)) return error.BufferTooShort;
 
-        try internal.wrapCall("git_oid_pathfmt", .{ buf.ptr, @ptrCast(*const raw.git_oid, &self) });
+        try internal.wrapCall("git_oid_pathfmt", .{ buf.ptr, @ptrCast(*const c.git_oid, &self) });
         buf[HEX_BUFFER_SIZE] = 0;
 
         return buf[0..HEX_BUFFER_SIZE :0];
@@ -113,7 +113,7 @@ pub const Oid = extern struct {
 
     pub fn tryParsePtr(str: [*:0]const u8) ?Oid {
         var result: Oid = undefined;
-        internal.wrapCall("git_oid_fromstrp", .{ @ptrCast(*raw.git_oid, &result), str }) catch {
+        internal.wrapCall("git_oid_fromstrp", .{ @ptrCast(*c.git_oid, &result), str }) catch {
             return null;
         };
         return result;
@@ -126,30 +126,30 @@ pub const Oid = extern struct {
         if (buf.len < length) return error.BufferTooShort;
 
         var result: Oid = undefined;
-        try internal.wrapCall("git_oid_fromstrn", .{ @ptrCast(*raw.git_oid, &result), buf.ptr, length });
+        try internal.wrapCall("git_oid_fromstrn", .{ @ptrCast(*c.git_oid, &result), buf.ptr, length });
         return result;
     }
 
     /// <0 if a < b; 0 if a == b; >0 if a > b
     pub fn compare(a: Oid, b: Oid) c_int {
-        return raw.git_oid_cmp(@ptrCast(*const raw.git_oid, &a), @ptrCast(*const raw.git_oid, &b));
+        return c.git_oid_cmp(@ptrCast(*const c.git_oid, &a), @ptrCast(*const c.git_oid, &b));
     }
 
     pub fn equal(self: Oid, other: Oid) bool {
-        return raw.git_oid_equal(@ptrCast(*const raw.git_oid, &self), @ptrCast(*const raw.git_oid, &other)) == 1;
+        return c.git_oid_equal(@ptrCast(*const c.git_oid, &self), @ptrCast(*const c.git_oid, &other)) == 1;
     }
 
     pub fn compareCount(self: Oid, other: Oid, count: usize) bool {
-        return raw.git_oid_ncmp(@ptrCast(*const raw.git_oid, &self), @ptrCast(*const raw.git_oid, &other), count) == 0;
+        return c.git_oid_ncmp(@ptrCast(*const c.git_oid, &self), @ptrCast(*const c.git_oid, &other), count) == 0;
     }
 
     pub fn equalStr(self: Oid, str: [:0]const u8) bool {
-        return raw.git_oid_streq(@ptrCast(*const raw.git_oid, &self), str.ptr) == 0;
+        return c.git_oid_streq(@ptrCast(*const c.git_oid, &self), str.ptr) == 0;
     }
 
     /// <0 if a < str; 0 if a == str; >0 if a > str
     pub fn compareStr(a: Oid, str: [:0]const u8) c_int {
-        return raw.git_oid_strcmp(@ptrCast(*const raw.git_oid, &a), str.ptr);
+        return c.git_oid_strcmp(@ptrCast(*const c.git_oid, &a), str.ptr);
     }
 
     pub fn allZeros(self: Oid) bool {
@@ -162,8 +162,8 @@ pub const Oid = extern struct {
     }
 
     test {
-        try std.testing.expectEqual(@sizeOf(raw.git_oid), @sizeOf(Oid));
-        try std.testing.expectEqual(@bitSizeOf(raw.git_oid), @bitSizeOf(Oid));
+        try std.testing.expectEqual(@sizeOf(c.git_oid), @sizeOf(Oid));
+        try std.testing.expectEqual(@bitSizeOf(c.git_oid), @bitSizeOf(Oid));
     }
 
     comptime {
@@ -181,7 +181,7 @@ pub const OidShortener = opaque {
     pub fn init(min_length: usize) !*OidShortener {
         log.debug("OidShortener.init called, min_length={}", .{min_length});
 
-        if (raw.git_oid_shorten_new(min_length)) |ret| {
+        if (c.git_oid_shorten_new(min_length)) |ret| {
             log.debug("Oid shortener created successfully", .{});
 
             return @ptrCast(*OidShortener, ret);
@@ -195,7 +195,7 @@ pub const OidShortener = opaque {
 
         if (str.len < Oid.HEX_BUFFER_SIZE) return error.BufferTooShort;
         const ret = try internal.wrapCallWithReturn("git_oid_shorten_add", .{
-            @ptrCast(*raw.git_oid_shorten, self),
+            @ptrCast(*c.git_oid_shorten, self),
             str.ptr,
         });
 
@@ -207,7 +207,7 @@ pub const OidShortener = opaque {
     pub fn deinit(self: *OidShortener) void {
         log.debug("OidShortener.deinit called", .{});
 
-        raw.git_oid_shorten_free(@ptrCast(*raw.git_oid_shorten, self));
+        c.git_oid_shorten_free(@ptrCast(*c.git_oid_shorten, self));
 
         log.debug("Oid shortener freed successfully", .{});
     }

@@ -1,5 +1,5 @@
 const std = @import("std");
-const raw = @import("internal/raw.zig");
+const c = @import("internal/c.zig");
 const internal = @import("internal/internal.zig");
 const log = std.log.scoped(.git);
 
@@ -9,7 +9,7 @@ pub const Worktree = opaque {
     pub fn deinit(self: *Worktree) void {
         log.debug("Worktree.deinit called", .{});
 
-        raw.git_worktree_free(@ptrCast(*raw.git_worktree, self));
+        c.git_worktree_free(@ptrCast(*c.git_worktree, self));
 
         log.debug("worktree freed successfully", .{});
     }
@@ -20,8 +20,8 @@ pub const Worktree = opaque {
         var repo: *git.Repository = undefined;
 
         try internal.wrapCall("git_repository_open_from_worktree", .{
-            @ptrCast(*?*raw.git_repository, &repo),
-            @ptrCast(*raw.git_worktree, self),
+            @ptrCast(*?*c.git_repository, &repo),
+            @ptrCast(*c.git_worktree, self),
         });
 
         log.debug("repository opened successfully", .{});

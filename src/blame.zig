@@ -1,5 +1,5 @@
 const std = @import("std");
-const raw = @import("internal/raw.zig");
+const c = @import("internal/c.zig");
 const internal = @import("internal/internal.zig");
 const log = std.log.scoped(.git);
 
@@ -9,7 +9,7 @@ pub const Blame = opaque {
     pub fn deinit(self: *Blame) void {
         log.debug("Blame.deinit called", .{});
 
-        raw.git_blame_free(@ptrCast(*raw.git_blame, self));
+        c.git_blame_free(@ptrCast(*c.git_blame, self));
 
         log.debug("blame freed successfully", .{});
     }
@@ -17,7 +17,7 @@ pub const Blame = opaque {
     pub fn hunkCount(self: *Blame) u32 {
         log.debug("Blame.hunkCount called", .{});
 
-        const ret = raw.git_blame_get_hunk_count(@ptrCast(*raw.git_blame, self));
+        const ret = c.git_blame_get_hunk_count(@ptrCast(*c.git_blame, self));
 
         log.debug("blame hunk count: {}", .{ret});
 
@@ -27,7 +27,7 @@ pub const Blame = opaque {
     pub fn hunkByIndex(self: *Blame, index: u32) ?*const BlameHunk {
         log.debug("Blame.hunkByIndex called, index={}", .{index});
 
-        if (raw.git_blame_get_hunk_byindex(@ptrCast(*raw.git_blame, self), index)) |c_ret| {
+        if (c.git_blame_get_hunk_byindex(@ptrCast(*c.git_blame, self), index)) |c_ret| {
             const ret = @ptrCast(*const git.BlameHunk, c_ret);
             log.debug("successfully fetched hunk: {*}", .{ret});
             return ret;
@@ -39,7 +39,7 @@ pub const Blame = opaque {
     pub fn hunkByLine(self: *Blame, line: usize) ?*const BlameHunk {
         log.debug("Blame.hunkByLine called, line={}", .{line});
 
-        if (raw.git_blame_get_hunk_byline(@ptrCast(*raw.git_blame, self), line)) |c_ret| {
+        if (c.git_blame_get_hunk_byline(@ptrCast(*c.git_blame, self), line)) |c_ret| {
             const ret = @ptrCast(*const git.BlameHunk, c_ret);
             log.debug("successfully fetched hunk: {*}", .{ret});
             return ret;
@@ -59,8 +59,8 @@ pub const Blame = opaque {
         var blame: *git.Blame = undefined;
 
         try internal.wrapCall("git_blame_buffer", .{
-            @ptrCast(*?*raw.git_blame, &blame),
-            @ptrCast(*raw.git_blame, self),
+            @ptrCast(*?*c.git_blame, &blame),
+            @ptrCast(*c.git_blame, self),
             buffer.ptr,
             buffer.len,
         });
@@ -117,8 +117,8 @@ pub const BlameHunk = extern struct {
     }
 
     test {
-        try std.testing.expectEqual(@sizeOf(raw.git_blame_hunk), @sizeOf(BlameHunk));
-        try std.testing.expectEqual(@bitSizeOf(raw.git_blame_hunk), @bitSizeOf(BlameHunk));
+        try std.testing.expectEqual(@sizeOf(c.git_blame_hunk), @sizeOf(BlameHunk));
+        try std.testing.expectEqual(@bitSizeOf(c.git_blame_hunk), @bitSizeOf(BlameHunk));
     }
 
     comptime {
