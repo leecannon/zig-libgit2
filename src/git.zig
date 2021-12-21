@@ -44,6 +44,16 @@ pub usingnamespace @import("tree.zig");
 pub usingnamespace @import("worktree.zig");
 pub usingnamespace @import("writestream.zig");
 
+/// Valid modes for index and tree entries.
+pub const FileMode = enum(u16) {
+    UNREADABLE = 0o000000,
+    TREE = 0o040000,
+    BLOB = 0o100644,
+    BLOB_EXECUTABLE = 0o100755,
+    LINK = 0o120000,
+    COMMIT = 0o160000,
+};
+
 const git = @This();
 
 /// Initialize global state. This function must be called before any other function.

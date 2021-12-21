@@ -67,7 +67,5 @@ There is currently no plan to port the headers within "include/git2/sys", if any
 - [ ] trace.h
 - [ ] transaction.h
 - [ ] transport.h
-- [ ] tree.h
-- [ ] types.h
-- [ ] version.h
+- [X] tree.h
 - [X] worktree.h

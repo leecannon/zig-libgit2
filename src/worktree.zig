@@ -101,9 +101,7 @@ pub const Worktree = opaque {
     pub fn name(self: *Worktree) ![:0]const u8 {
         log.debug("Worktree.name called", .{});
 
-        const ptr = try internal.wrapCallWithReturn("git_worktree_name", .{
-            @ptrCast(*c.git_worktree, self),
-        });
+        const ptr = c.git_worktree_name(@ptrCast(*c.git_worktree, self));
 
         const slice = std.mem.sliceTo(ptr, 0);
 
@@ -118,9 +116,7 @@ pub const Worktree = opaque {
     pub fn path(self: *Worktree) ![:0]const u8 {
         log.debug("Worktree.path called", .{});
 
-        const ptr = try internal.wrapCallWithReturn("git_worktree_path", .{
-            @ptrCast(*c.git_worktree, self),
-        });
+        const ptr = c.git_worktree_path(@ptrCast(*c.git_worktree, self));
 
         const slice = std.mem.sliceTo(ptr, 0);
 

@@ -228,21 +228,11 @@ pub const DiffFile = extern struct {
     size: u64,
     flags: DiffFlags,
     /// Roughly, the stat() `st_mode` value for the item.
-    mode: FileMode,
+    mode: git.FileMode,
     /// Represents the known length of the `id` field, when converted to a hex string.  It is generally `GIT_OID_HEXSZ`,
     /// unless this delta was created from reading a patch file, in which case it may be abbreviated to something reasonable,
     /// like 7 characters.
     id_abbrev: u16,
-
-    /// Valid modes for index and tree entries.
-    pub const FileMode = enum(u16) {
-        UNREADABLE = 0o000000,
-        TREE = 0o040000,
-        BLOB = 0o100644,
-        BLOB_EXECUTABLE = 0o100755,
-        LINK = 0o120000,
-        COMMIT = 0o160000,
-    };
 
     test {
         try std.testing.expectEqual(@sizeOf(c.git_diff_file), @sizeOf(DiffFile));

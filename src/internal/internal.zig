@@ -34,53 +34,22 @@ pub inline fn wrapCallWithReturn(
 ) git.GitError!@typeInfo(@TypeOf(@field(c, name))).Fn.return_type.? {
     const value = @call(.{}, @field(c, name), args);
 
-    const is_optional_pointer = comptime blk: {
-        var result: bool = false;
-
-        const ret_type: std.builtin.TypeInfo = @typeInfo(@TypeOf(value));
-
-        if (ret_type == .Optional and @typeInfo(ret_type.Optional.child) == .Pointer) {
-            result = true;
-        } else if (ret_type == .Pointer and ret_type.Pointer.size == .C) {
-            result = true;
+    checkForError(value) catch |err| {
+        // We dont want to output log messages in tests, as the error might be expected
+        // also dont incur the cost of calling `getDetailedLastError` if we are not going to use it
+        if (!@import("builtin").is_test and @enumToInt(std.log.Level.warn) <= @enumToInt(std.log.level)) {
+            if (git.getDetailedLastError()) |detailed| {
+                log.warn(name ++ " failed with error {s}/{s} - {s}", .{
+                    @errorName(err),
+                    @tagName(detailed.class),
+                    detailed.message(),
+                });
+            } else {
+                log.warn(name ++ " failed with error {s}", .{@errorName(err)});
+            }
         }
-
-        break :blk result;
+        return err;
     };
-
-    if (is_optional_pointer) {
-        if (value == null) {
-            // We dont want to output log messages in tests, as the error might be expected
-            // also dont incur the cost of calling `getDetailedLastError` if we are not going to use it
-            if (!@import("builtin").is_test and @enumToInt(std.log.Level.warn) <= @enumToInt(std.log.level)) {
-                if (git.getDetailedLastError()) |detailed| {
-                    log.warn(name ++ " returned null pointer: {s} - {s}", .{
-                        @tagName(detailed.class),
-                        detailed.message(),
-                    });
-                } else {
-                    log.warn(name ++ " returned null pointer", .{});
-                }
-            }
-        }
-    } else {
-        checkForError(value) catch |err| {
-            // We dont want to output log messages in tests, as the error might be expected
-            // also dont incur the cost of calling `getDetailedLastError` if we are not going to use it
-            if (!@import("builtin").is_test and @enumToInt(std.log.Level.warn) <= @enumToInt(std.log.level)) {
-                if (git.getDetailedLastError()) |detailed| {
-                    log.warn(name ++ " failed with error {s}/{s} - {s}", .{
-                        @errorName(err),
-                        @tagName(detailed.class),
-                        detailed.message(),
-                    });
-                } else {
-                    log.warn(name ++ " failed with error {s}", .{@errorName(err)});
-                }
-            }
-            return err;
-        };
-    }
 
     return value;
 }

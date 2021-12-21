@@ -3333,6 +3333,154 @@ pub const Repository = opaque {
         return ret;
     }
 
+    /// Lookup a tree object from the repository.
+    ///
+    /// ## Parameters
+    /// * `id` - identity of the tree to locate.
+    pub fn treeLookup(self: *Repository, id: *const git.Oid) !*git.Tree {
+        // This check is to prevent formating the oid when we are not going to print anything
+        if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
+            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            const slice = try id.formatHex(&buf);
+            log.debug("Repository.treeLookup called, id={s}", .{slice});
+        }
+
+        var ret: *git.Tree = undefined;
+
+        try internal.wrapCall("git_tree_lookup", .{
+            @ptrCast(*?*c.git_tree, &ret),
+            @ptrCast(*c.git_repository, self),
+            @ptrCast(*const c.git_oid, id),
+        });
+
+        log.debug("successfully located tree: {*}", .{ret});
+
+        return ret;
+    }
+
+    /// Lookup a tree object from the repository, given a prefix of its identifier (short id).
+    ///
+    /// ## Parameters
+    /// * `id` - identity of the tree to locate.
+    /// * `len` - the length of the short identifier
+    pub fn treeLookupPrefix(self: *Repository, id: *const git.Oid, len: usize) !*git.Tree {
+        // This check is to prevent formating the oid when we are not going to print anything
+        if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
+            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            const slice = try id.formatHexCount(&buf, len);
+            log.debug("Repository.treeLookupPrefix, id={s}, len={}", .{ slice, len });
+        }
+
+        var ret: *git.Tree = undefined;
+
+        try internal.wrapCall("git_tree_lookup_prefix", .{
+            @ptrCast(*?*c.git_tree, &ret),
+            @ptrCast(*c.git_repository, self),
+            @ptrCast(*const c.git_oid, id),
+            len,
+        });
+
+        log.debug("successfully located tree: {*}", .{ret});
+
+        return ret;
+    }
+
+    /// Convert a tree entry to the git_object it points to.
+    ///
+    /// You must call `git.Object.deint` on the object when you are done with it.
+    pub fn treeEntrytoObject(self: *Repository, entry: *const git.Tree.Entry) !*git.Object {
+        log.debug("Repository.treeEntrytoObject called, entry={*}", .{entry});
+
+        var ret: *git.Object = undefined;
+
+        try internal.wrapCall("git_tree_entry_to_object", .{
+            @ptrCast(*?*c.git_object, &ret),
+            @ptrCast(*c.git_repository, self),
+            @ptrCast(*const c.git_tree_entry, entry),
+        });
+
+        log.debug("successfully fetched object: {*}", .{ret});
+
+        return ret;
+    }
+
+    /// Create a new tree builder.
+    ///
+    /// The tree builder can be used to create or modify trees in memory and write them as tree objects to the database.
+    ///
+    /// If the `source` parameter is not `null`, the tree builder will be initialized with the entries of the given tree.
+    ///
+    /// If the `source` parameter is `null`, the tree builder will start with no entries and will have to be filled manually.
+    pub fn treebuilderNew(self: *Repository, source: ?*const git.Tree) !*git.TreeBuilder {
+        log.debug("Repository.treebuilderNew called, source={*}", .{source});
+
+        var ret: *git.TreeBuilder = undefined;
+
+        try internal.wrapCall("git_treebuilder_new", .{
+            @ptrCast(*?*c.git_treebuilder, &ret),
+            @ptrCast(*c.git_repository, self),
+            @ptrCast(?*const c.git_tree, source),
+        });
+
+        log.debug("successfully created treebuilder: {*}", .{ret});
+
+        return ret;
+    }
+
+    pub const TreeUpdateAction = extern struct {
+        /// Update action. If it's an removal, only the path is looked at
+        action: Action,
+        /// The entry's id 
+        id: git.Oid,
+        /// The filemode/kind of object
+        filemode: git.FileMode,
+        // The full path from the root tree
+        path: [*:0]const u8,
+
+        pub const Action = enum(c_uint) {
+            /// Update or insert an entry at the specified path
+            UPSERT = 0,
+            /// Remove an entry from the specified path
+            REMOVE = 1,
+        };
+    };
+
+    /// Create a tree based on another one with the specified modifications
+    ///
+    /// Given the `baseline` perform the changes described in the list of `updates` and create a new tree.
+    ///
+    /// This function is optimized for common file/directory addition, removal and replacement in trees.
+    /// It is much more efficient than reading the tree into a `git.Index` and modifying that, but in exchange it is not as
+    /// flexible.
+    ///
+    /// Deleting and adding the same entry is undefined behaviour, changing a tree to a blob or viceversa is not supported.
+    ///
+    /// ## Parameters
+    /// * `baseline` - the tree to base these changes on, must be the repository `baseline` is in
+    /// * `updates` - the updates to perform
+    pub fn createUpdatedTree(self: *Repository, baseline: *git.Tree, updates: []const TreeUpdateAction) !git.Oid {
+        log.debug("Repository.createUpdatedTree called, baseline={*}, number of updates={}", .{ baseline, updates.len });
+
+        var ret: git.Oid = undefined;
+
+        try internal.wrapCall("git_tree_create_updated", .{
+            @ptrCast(*c.git_oid, &ret),
+            @ptrCast(*c.git_repository, self),
+            @ptrCast(*c.git_tree, baseline),
+            updates.len,
+            @ptrCast([*]const c.git_tree_update, updates.ptr),
+        });
+
+        // This check is to prevent formating the oid when we are not going to print anything
+        if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
+            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            const slice = try ret.formatHex(&buf);
+            log.debug("successfully created new tree: {s}", .{slice});
+        }
+
+        return ret;
+    }
+
     comptime {
         std.testing.refAllDecls(@This());
     }
