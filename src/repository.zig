@@ -1319,9 +1319,6 @@ pub const Repository = opaque {
         flags: ApplyOptionsFlags = .{},
 
         pub fn makeCOptionObject(self: ApplyOptions) c.git_apply_options {
-            // TODO: Do this better
-            if (!@hasField(c.git_apply_options, "flags")) @panic("`git_apply_options` has no `flags` field");
-
             return .{
                 .version = c.GIT_APPLY_OPTIONS_VERSION,
                 .delta_cb = @ptrCast(c.git_apply_delta_cb, self.delta_cb),
@@ -1613,9 +1610,11 @@ pub const Repository = opaque {
 
             /// Passing the `INCLUDE_COMMIT` flag will use attributes from a `.gitattributes` file in a specific
             /// commit.
-            INCLUDE_COMMIT: if (internal.available(.@"1.2.0")) bool else void = if (internal.available(.@"1.2.0")) false else {},
+            INCLUDE_COMMIT: if (HAS_INCLUDE_COMMIT) bool else void = if (HAS_INCLUDE_COMMIT) false else {},
 
-            z_padding2: if (internal.available(.@"1.2.0")) u27 else u28 = 0,
+            z_padding2: if (HAS_INCLUDE_COMMIT) u27 else u28 = 0,
+
+            const HAS_INCLUDE_COMMIT = @hasDecl(c, "GIT_ATTR_CHECK_INCLUDE_COMMIT");
 
             pub fn format(
                 value: Extended,
@@ -1656,15 +1655,11 @@ pub const Repository = opaque {
             }
 
             if (self.extended.INCLUDE_HEAD) {
-                // TODO: Do this better
-                if (!@hasDecl(c, "GIT_ATTR_CHECK_INCLUDE_HEAD")) @panic("`GIT_ATTR_CHECK_INCLUDE_HEAD` is unsupported");
                 result |= c.GIT_ATTR_CHECK_INCLUDE_HEAD;
             }
 
-            if (comptime internal.available(.@"1.2.0")) {
-                if (self.extended.INCLUDE_COMMIT) {
-                    result |= c.GIT_ATTR_CHECK_INCLUDE_COMMIT;
-                }
+            if (self.extended.INCLUDE_COMMIT) {
+                result |= c.GIT_ATTR_CHECK_INCLUDE_COMMIT;
             }
 
             return result;
@@ -2848,398 +2843,392 @@ pub const Repository = opaque {
         return ret;
     }
 
-    pub usingnamespace if (internal.available(.@"1.1.1")) struct {
-        /// Load the filter list for a given path.
-        ///
-        /// This will return null if no filters are requested for the given file.
-        ///
-        /// ## Parameters
-        /// * `blob` - The blob to which the filter will be applied (if known)
-        /// * `path` - Relative path of the file to be filtered
-        /// * `mode` - Filtering direction (WT->ODB or ODB->WT)
-        /// * `options` - Filter options
-        pub fn filterListLoadExtended(
-            self: *Repository,
-            blob: ?*git.Blob,
-            path: [:0]const u8,
-            mode: git.FilterMode,
-            options: git.FilterOptions,
-        ) !?*git.FilterList {
-            log.debug(
-                "Repository.filterListLoad called, blob={*}, path={s}, mode={}, options={}",
-                .{ blob, path, mode, options },
-            );
+    /// Load the filter list for a given path.
+    ///
+    /// This will return null if no filters are requested for the given file.
+    ///
+    /// ## Parameters
+    /// * `blob` - The blob to which the filter will be applied (if known)
+    /// * `path` - Relative path of the file to be filtered
+    /// * `mode` - Filtering direction (WT->ODB or ODB->WT)
+    /// * `options` - Filter options
+    pub fn filterListLoadExtended(
+        self: *Repository,
+        blob: ?*git.Blob,
+        path: [:0]const u8,
+        mode: git.FilterMode,
+        options: git.FilterOptions,
+    ) !?*git.FilterList {
+        log.debug(
+            "Repository.filterListLoad called, blob={*}, path={s}, mode={}, options={}",
+            .{ blob, path, mode, options },
+        );
 
-            var opt: ?*git.FilterList = undefined;
+        var opt: ?*git.FilterList = undefined;
 
-            var c_options = options.makeCOptionObject();
+        var c_options = options.makeCOptionObject();
 
-            try internal.wrapCall("git_filter_list_load_ext", .{
-                @ptrCast(*?*c.git_filter_list, &opt),
-                @ptrCast(*c.git_repository, self),
-                @ptrCast(?*c.git_blob, blob),
-                path.ptr,
-                @enumToInt(mode),
-                &c_options,
-            });
+        try internal.wrapCall("git_filter_list_load_ext", .{
+            @ptrCast(*?*c.git_filter_list, &opt),
+            @ptrCast(*c.git_repository, self),
+            @ptrCast(?*c.git_blob, blob),
+            path.ptr,
+            @enumToInt(mode),
+            &c_options,
+        });
 
-            if (opt) |ret| {
-                log.debug("successfully acquired filters for the given path: {*}", .{ret});
-
-                return ret;
-            }
-
-            log.debug("no filters for the given path", .{});
-
-            return null;
-        }
-
-        /// Determine if a commit is reachable from any of a list of commits by following parent edges.
-        ///
-        /// ## Parameters
-        /// * `commit` - a previously loaded commit
-        /// * `decendants` - oids of the commits
-        pub fn graphReachableFromAny(
-            self: *Repository,
-            commit: *const git.Oid,
-            decendants: []const git.Oid,
-        ) !bool {
-            // This check is to prevent formating the oid when we are not going to print anything
-            if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-                var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
-                const slice = try commit.formatHex(&buf);
-                log.debug("Repository.graphReachableFromAny called, commit={s}, number of decendants={}", .{ slice, decendants.len });
-            }
-
-            const ret = (try internal.wrapCallWithReturn("git_graph_reachable_from_any", .{
-                @ptrCast(*c.git_repository, self),
-                @ptrCast(*const c.git_oid, commit),
-                @ptrCast([*]const c.git_oid, decendants.ptr),
-                decendants.len,
-            })) != 0;
-
-            log.debug("commit is an ancestor: {}", .{ret});
+        if (opt) |ret| {
+            log.debug("successfully acquired filters for the given path: {*}", .{ret});
 
             return ret;
         }
-    } else struct {};
 
-    pub usingnamespace if (internal.available(.@"1.2.0")) struct {
-        /// Retrieve the upstream merge of a local branch
-        ///
-        /// This will return the currently configured "branch.*.remote" for a given branch. This branch must be local.
-        pub fn remoteUpstreamMerge(self: *Repository, refname: [:0]const u8) !git.Buf {
-            log.debug("Repository.remoteUpstreamMerge called, refname={s}", .{refname});
+        log.debug("no filters for the given path", .{});
 
-            var buf: git.Buf = .{};
+        return null;
+    }
 
-            try internal.wrapCall("git_branch_upstream_merge", .{
-                @ptrCast(*c.git_buf, &buf),
-                @ptrCast(*c.git_repository, self),
-                refname.ptr,
-            });
-
-            log.debug("upstream remote name acquired successfully, name={s}", .{buf.toSlice()});
-
-            return buf;
+    /// Determine if a commit is reachable from any of a list of commits by following parent edges.
+    ///
+    /// ## Parameters
+    /// * `commit` - a previously loaded commit
+    /// * `decendants` - oids of the commits
+    pub fn graphReachableFromAny(
+        self: *Repository,
+        commit: *const git.Oid,
+        decendants: []const git.Oid,
+    ) !bool {
+        // This check is to prevent formating the oid when we are not going to print anything
+        if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
+            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            const slice = try commit.formatHex(&buf);
+            log.debug("Repository.graphReachableFromAny called, commit={s}, number of decendants={}", .{ slice, decendants.len });
         }
 
-        /// Look up the value of one git attribute for path with extended options.
-        ///
-        /// ## Parameters
-        /// * `options` - options for fetching attributes
-        /// * `path` - The path to check for attributes.  Relative paths are interpreted relative to the repo root. The file does not
-        /// have to exist, but if it does not, then it will be treated as a plain file (not a directory).
-        /// * `name` - The name of the attribute to look up.
-        pub fn attributeExtended(
-            self: *Repository,
-            options: AttributeOptions,
-            path: [:0]const u8,
+        const ret = (try internal.wrapCallWithReturn("git_graph_reachable_from_any", .{
+            @ptrCast(*c.git_repository, self),
+            @ptrCast(*const c.git_oid, commit),
+            @ptrCast([*]const c.git_oid, decendants.ptr),
+            decendants.len,
+        })) != 0;
+
+        log.debug("commit is an ancestor: {}", .{ret});
+
+        return ret;
+    }
+
+    /// Retrieve the upstream merge of a local branch
+    ///
+    /// This will return the currently configured "branch.*.remote" for a given branch. This branch must be local.
+    pub fn remoteUpstreamMerge(self: *Repository, refname: [:0]const u8) !git.Buf {
+        log.debug("Repository.remoteUpstreamMerge called, refname={s}", .{refname});
+
+        var buf: git.Buf = .{};
+
+        try internal.wrapCall("git_branch_upstream_merge", .{
+            @ptrCast(*c.git_buf, &buf),
+            @ptrCast(*c.git_repository, self),
+            refname.ptr,
+        });
+
+        log.debug("upstream remote name acquired successfully, name={s}", .{buf.toSlice()});
+
+        return buf;
+    }
+
+    /// Look up the value of one git attribute for path with extended options.
+    ///
+    /// ## Parameters
+    /// * `options` - options for fetching attributes
+    /// * `path` - The path to check for attributes.  Relative paths are interpreted relative to the repo root. The file does not
+    /// have to exist, but if it does not, then it will be treated as a plain file (not a directory).
+    /// * `name` - The name of the attribute to look up.
+    pub fn attributeExtended(
+        self: *Repository,
+        options: AttributeOptions,
+        path: [:0]const u8,
+        name: [:0]const u8,
+    ) !git.Attribute {
+        log.debug("Repository.attributeExtended called, options={}, path={s}, name={s}", .{ options, path, name });
+
+        var c_options = options.makeCOptionObject();
+
+        var result: [*c]const u8 = undefined;
+        try internal.wrapCall("git_attr_get_ext", .{
+            &result,
+            @ptrCast(*c.git_repository, self),
+            &c_options,
+            path.ptr,
+            name.ptr,
+        });
+
+        log.debug("fetched attribute", .{});
+
+        return git.Attribute{
+            .z_attr = result,
+        };
+    }
+
+    /// Look up a list of git attributes for path with extended options.
+    ///
+    /// Use this if you have a known list of attributes that you want to look up in a single call. This is somewhat more efficient
+    /// than calling `attributeGet` multiple times.
+    ///
+    /// ## Parameters
+    /// * `output_buffer` - output buffer, *must* be atleast as long as `names`
+    /// * `options` - options for fetching attributes
+    /// * `path` - The path to check for attributes.  Relative paths are interpreted relative to the repo root. The file does not
+    /// have to exist, but if it does not, then it will be treated as a plain file (not a directory).
+    /// * `names` - The names of the attributes to look up.
+    pub fn attributeManyExtended(
+        self: *Repository,
+        output_buffer: [][*:0]const u8,
+        options: AttributeOptions,
+        path: [:0]const u8,
+        names: [][*:0]const u8,
+    ) ![]const [*:0]const u8 {
+        if (output_buffer.len < names.len) return error.BufferTooShort;
+
+        log.debug("Repository.attributeManyExtended called, options={}, path={s}", .{ options, path });
+
+        var c_options = options.makeCOptionObject();
+
+        try internal.wrapCall("git_attr_get_many_ext", .{
+            @ptrCast([*c][*c]const u8, output_buffer.ptr),
+            @ptrCast(*c.git_repository, self),
+            &c_options,
+            path.ptr,
+            names.len,
+            @ptrCast([*c][*c]const u8, names.ptr),
+        });
+
+        log.debug("fetched attributes", .{});
+
+        return output_buffer[0..names.len];
+    }
+
+    /// Invoke `callback_fn` for all the git attributes for a path with extended options.
+    ///
+    ///
+    /// ## Parameters
+    /// * `options` - options for fetching attributes
+    /// * `path` - The path to check for attributes.  Relative paths are interpreted relative to the repo root. The file does not
+    /// have to exist, but if it does not, then it will be treated as a plain file (not a directory).
+    /// * `callback_fn` - the callback function
+    ///
+    /// ## Callback Parameters
+    /// * `name` - The attribute name
+    /// * `value` - The attribute value. May be `null` if the attribute is explicitly set to UNSPECIFIED using the '!' sign.
+    pub fn attributeForeachExtended(
+        self: *const Repository,
+        options: AttributeOptions,
+        path: [:0]const u8,
+        comptime callback_fn: fn (
             name: [:0]const u8,
-        ) !git.Attribute {
-            log.debug("Repository.attributeExtended called, options={}, path={s}, name={s}", .{ options, path, name });
+            value: ?[:0]const u8,
+        ) c_int,
+    ) !c_int {
+        const cb = struct {
+            pub fn cb(
+                name: [*c]const u8,
+                value: [*c]const u8,
+                payload: ?*anyopaque,
+            ) callconv(.C) c_int {
+                _ = payload;
+                return callback_fn(
+                    std.mem.sliceTo(name, 0),
+                    if (value) |ptr| std.mem.sliceTo(ptr, 0) else null,
+                );
+            }
+        }.cb;
 
-            var c_options = options.makeCOptionObject();
+        log.debug("Repository.attributeForeach called, options={}, path={s}", .{ options, path });
 
-            var result: [*c]const u8 = undefined;
-            try internal.wrapCall("git_attr_get_ext", .{
-                &result,
-                @ptrCast(*c.git_repository, self),
-                &c_options,
-                path.ptr,
-                name.ptr,
-            });
+        const c_options = options.makeCOptionObject();
 
-            log.debug("fetched attribute", .{});
+        const ret = try internal.wrapCallWithReturn("git_attr_foreach_ext", .{
+            @ptrCast(*const c.git_repository, self),
+            &c_options,
+            path.ptr,
+            cb,
+            null,
+        });
 
-            return git.Attribute{
-                .z_attr = result,
+        log.debug("callback returned: {}", .{ret});
+
+        return ret;
+    }
+
+    /// Invoke `callback_fn` for all the git attributes for a path with extended options.
+    ///
+    /// Return a non-zero value from the callback to stop the loop. This non-zero value is returned by the function.
+    ///
+    /// ## Parameters
+    /// * `options` - options for fetching attributes
+    /// * `path` - The path to check for attributes.  Relative paths are interpreted relative to the repo root. The file does not
+    /// have to exist, but if it does not, then it will be treated as a plain file (not a directory).
+    /// * `callback_fn` - the callback function
+    ///
+    /// ## Callback Parameters
+    /// * `name` - The attribute name
+    /// * `value` - The attribute value. May be `null` if the attribute is explicitly set to UNSPECIFIED using the '!' sign.
+    /// * `user_data_ptr` - pointer to user data
+    pub fn attributeForeachWithUserDataExtended(
+        self: *const Repository,
+        options: AttributeOptions,
+        path: [:0]const u8,
+        user_data: anytype,
+        comptime callback_fn: fn (
+            name: [:0]const u8,
+            value: ?[:0]const u8,
+            user_data_ptr: @TypeOf(user_data),
+        ) c_int,
+    ) !c_int {
+        const UserDataType = @TypeOf(user_data);
+
+        const cb = struct {
+            pub fn cb(
+                name: [*c]const u8,
+                value: [*c]const u8,
+                payload: ?*anyopaque,
+            ) callconv(.C) c_int {
+                return callback_fn(
+                    std.mem.sliceTo(name, 0),
+                    if (value) |ptr| std.mem.sliceTo(ptr, 0) else null,
+                    @ptrCast(UserDataType, payload),
+                );
+            }
+        }.cb;
+
+        log.debug("Repository.attributeForeachWithUserData called, options={}, path={s}", .{ options, path });
+
+        const c_options = options.makeCOptionObject();
+
+        const ret = try internal.wrapCallWithReturn("git_attr_foreach_ext", .{
+            @ptrCast(*const c.git_repository, self),
+            &c_options,
+            path.ptr,
+            cb,
+            user_data,
+        });
+
+        log.debug("callback returned: {}", .{ret});
+
+        return ret;
+    }
+
+    pub const AttributeOptions = struct {
+        flags: AttributeFlags,
+        commit_id: *git.Oid,
+
+        pub fn makeCOptionObject(self: AttributeOptions) c.git_attr_options {
+            return .{
+                .version = c.GIT_ATTR_OPTIONS_VERSION,
+                .flags = self.flags.toCType(),
+                .commit_id = @ptrCast(*c.git_oid, self.commit_id),
             };
         }
 
-        /// Look up a list of git attributes for path with extended options.
-        ///
-        /// Use this if you have a known list of attributes that you want to look up in a single call. This is somewhat more efficient
-        /// than calling `attributeGet` multiple times.
-        ///
-        /// ## Parameters
-        /// * `output_buffer` - output buffer, *must* be atleast as long as `names`
-        /// * `options` - options for fetching attributes
-        /// * `path` - The path to check for attributes.  Relative paths are interpreted relative to the repo root. The file does not
-        /// have to exist, but if it does not, then it will be treated as a plain file (not a directory).
-        /// * `names` - The names of the attributes to look up.
-        pub fn attributeManyExtended(
-            self: *Repository,
-            output_buffer: [][*:0]const u8,
-            options: AttributeOptions,
-            path: [:0]const u8,
-            names: [][*:0]const u8,
-        ) ![]const [*:0]const u8 {
-            if (output_buffer.len < names.len) return error.BufferTooShort;
+        comptime {
+            std.testing.refAllDecls(@This());
+        }
+    };
 
-            log.debug("Repository.attributeManyExtended called, options={}, path={s}", .{ options, path });
+    /// Read a file from the filesystem and write its content to the Object Database as a loose blob
+    pub fn blobFromBuffer(self: *Repository, buffer: []const u8) !git.Oid {
+        log.debug("Repository.blobFromBuffer called, buffer={s}", .{buffer});
 
-            var c_options = options.makeCOptionObject();
+        var ret: git.Oid = undefined;
 
-            try internal.wrapCall("git_attr_get_many_ext", .{
-                @ptrCast([*c][*c]const u8, output_buffer.ptr),
-                @ptrCast(*c.git_repository, self),
-                &c_options,
-                path.ptr,
-                names.len,
-                @ptrCast([*c][*c]const u8, names.ptr),
-            });
+        try internal.wrapCall("git_blob_create_from_buffer", .{
+            @ptrCast(*c.git_oid, &ret),
+            @ptrCast(*c.git_repository, self),
+            buffer.ptr,
+            buffer.len,
+        });
 
-            log.debug("fetched attributes", .{});
-
-            return output_buffer[0..names.len];
+        // This check is to prevent formating the oid when we are not going to print anything
+        if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
+            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            const slice = try ret.formatHex(&buf);
+            log.debug("successfully read blob: {s}", .{slice});
         }
 
-        /// Invoke `callback_fn` for all the git attributes for a path with extended options.
-        ///
-        ///
-        /// ## Parameters
-        /// * `options` - options for fetching attributes
-        /// * `path` - The path to check for attributes.  Relative paths are interpreted relative to the repo root. The file does not
-        /// have to exist, but if it does not, then it will be treated as a plain file (not a directory).
-        /// * `callback_fn` - the callback function
-        ///
-        /// ## Callback Parameters
-        /// * `name` - The attribute name
-        /// * `value` - The attribute value. May be `null` if the attribute is explicitly set to UNSPECIFIED using the '!' sign.
-        pub fn attributeForeachExtended(
-            self: *const Repository,
-            options: AttributeOptions,
-            path: [:0]const u8,
-            comptime callback_fn: fn (
-                name: [:0]const u8,
-                value: ?[:0]const u8,
-            ) c_int,
-        ) !c_int {
-            const cb = struct {
-                pub fn cb(
-                    name: [*c]const u8,
-                    value: [*c]const u8,
-                    payload: ?*anyopaque,
-                ) callconv(.C) c_int {
-                    _ = payload;
-                    return callback_fn(
-                        std.mem.sliceTo(name, 0),
-                        if (value) |ptr| std.mem.sliceTo(ptr, 0) else null,
-                    );
-                }
-            }.cb;
+        return ret;
+    }
 
-            log.debug("Repository.attributeForeach called, options={}, path={s}", .{ options, path });
+    /// Create a stream to write a new blob into the object db
+    ///
+    /// This function may need to buffer the data on disk and will in general not be the right choice if you know the size of the
+    /// data to write. If you have data in memory, use `blobFromBuffer()`. If you do not, but know the size of the contents
+    /// (and don't want/need to perform filtering), use `Odb.openWriteStream()`.
+    ///
+    /// Don't close this stream yourself but pass it to `WriteStream.commit()` to commit the write to the object db and get the
+    /// object id.
+    ///
+    /// If the `hintpath` parameter is filled, it will be used to determine what git filters should be applied to the object
+    /// before it is written to the object database.
+    pub fn blobFromStream(self: *Repository, hint_path: ?[:0]const u8) !*git.WriteStream {
+        log.debug("Repository.blobFromDisk called, hint_path={s}", .{hint_path});
 
-            const c_options = options.makeCOptionObject();
+        var write_stream: *git.WriteStream = undefined;
 
-            const ret = try internal.wrapCallWithReturn("git_attr_foreach_ext", .{
-                @ptrCast(*const c.git_repository, self),
-                &c_options,
-                path.ptr,
-                cb,
-                null,
-            });
+        const hint_path_c = if (hint_path) |ptr| ptr.ptr else null;
 
-            log.debug("callback returned: {}", .{ret});
+        try internal.wrapCall("git_blob_create_from_stream", .{
+            @ptrCast(*?*c.git_writestream, &write_stream),
+            @ptrCast(*c.git_repository, self),
+            hint_path_c,
+        });
 
-            return ret;
+        log.debug("successfully created writestream {*}", .{write_stream});
+
+        return write_stream;
+    }
+
+    /// Read a file from the filesystem and write its content to the Object Database as a loose blob
+    pub fn blobFromDisk(self: *Repository, path: [:0]const u8) !git.Oid {
+        log.debug("Repository.blobFromDisk called, path={s}", .{path});
+
+        var ret: git.Oid = undefined;
+
+        try internal.wrapCall("git_blob_create_from_disk", .{
+            @ptrCast(*c.git_oid, &ret),
+            @ptrCast(*c.git_repository, self),
+            path.ptr,
+        });
+
+        // This check is to prevent formating the oid when we are not going to print anything
+        if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
+            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            const slice = try ret.formatHex(&buf);
+            log.debug("successfully read blob: {s}", .{slice});
         }
 
-        /// Invoke `callback_fn` for all the git attributes for a path with extended options.
-        ///
-        /// Return a non-zero value from the callback to stop the loop. This non-zero value is returned by the function.
-        ///
-        /// ## Parameters
-        /// * `options` - options for fetching attributes
-        /// * `path` - The path to check for attributes.  Relative paths are interpreted relative to the repo root. The file does not
-        /// have to exist, but if it does not, then it will be treated as a plain file (not a directory).
-        /// * `callback_fn` - the callback function
-        ///
-        /// ## Callback Parameters
-        /// * `name` - The attribute name
-        /// * `value` - The attribute value. May be `null` if the attribute is explicitly set to UNSPECIFIED using the '!' sign.
-        /// * `user_data_ptr` - pointer to user data
-        pub fn attributeForeachWithUserDataExtended(
-            self: *const Repository,
-            options: AttributeOptions,
-            path: [:0]const u8,
-            user_data: anytype,
-            comptime callback_fn: fn (
-                name: [:0]const u8,
-                value: ?[:0]const u8,
-                user_data_ptr: @TypeOf(user_data),
-            ) c_int,
-        ) !c_int {
-            const UserDataType = @TypeOf(user_data);
+        return ret;
+    }
 
-            const cb = struct {
-                pub fn cb(
-                    name: [*c]const u8,
-                    value: [*c]const u8,
-                    payload: ?*anyopaque,
-                ) callconv(.C) c_int {
-                    return callback_fn(
-                        std.mem.sliceTo(name, 0),
-                        if (value) |ptr| std.mem.sliceTo(ptr, 0) else null,
-                        @ptrCast(UserDataType, payload),
-                    );
-                }
-            }.cb;
+    /// Read a file from the working folder of a repository and write it to the Object Database as a loose blob
+    pub fn blobFromWorkdir(self: *Repository, relative_path: [:0]const u8) !git.Oid {
+        log.debug("Repository.blobFromWorkdir called, relative_path={s}", .{relative_path});
 
-            log.debug("Repository.attributeForeachWithUserData called, options={}, path={s}", .{ options, path });
+        var ret: git.Oid = undefined;
 
-            const c_options = options.makeCOptionObject();
+        try internal.wrapCall("git_blob_create_from_workdir", .{
+            @ptrCast(*c.git_oid, &ret),
+            @ptrCast(*c.git_repository, self),
+            relative_path.ptr,
+        });
 
-            const ret = try internal.wrapCallWithReturn("git_attr_foreach_ext", .{
-                @ptrCast(*const c.git_repository, self),
-                &c_options,
-                path.ptr,
-                cb,
-                user_data,
-            });
-
-            log.debug("callback returned: {}", .{ret});
-
-            return ret;
+        // This check is to prevent formating the oid when we are not going to print anything
+        if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
+            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            const slice = try ret.formatHex(&buf);
+            log.debug("successfully read blob: {s}", .{slice});
         }
 
-        pub const AttributeOptions = struct {
-            flags: AttributeFlags,
-            commit_id: *git.Oid,
-
-            pub fn makeCOptionObject(self: AttributeOptions) c.git_attr_options {
-                return .{
-                    .version = c.GIT_ATTR_OPTIONS_VERSION,
-                    .flags = self.flags.toCType(),
-                    .commit_id = @ptrCast(*c.git_oid, self.commit_id),
-                };
-            }
-
-            comptime {
-                std.testing.refAllDecls(@This());
-            }
-        };
-    } else struct {};
-
-    pub usingnamespace if (internal.available(.@"0.99.0")) struct {
-        /// Read a file from the filesystem and write its content to the Object Database as a loose blob
-        pub fn blobFromBuffer(self: *Repository, buffer: []const u8) !git.Oid {
-            log.debug("Repository.blobFromBuffer called, buffer={s}", .{buffer});
-
-            var ret: git.Oid = undefined;
-
-            try internal.wrapCall("git_blob_create_from_buffer", .{
-                @ptrCast(*c.git_oid, &ret),
-                @ptrCast(*c.git_repository, self),
-                buffer.ptr,
-                buffer.len,
-            });
-
-            // This check is to prevent formating the oid when we are not going to print anything
-            if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-                var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
-                const slice = try ret.formatHex(&buf);
-                log.debug("successfully read blob: {s}", .{slice});
-            }
-
-            return ret;
-        }
-
-        /// Create a stream to write a new blob into the object db
-        ///
-        /// This function may need to buffer the data on disk and will in general not be the right choice if you know the size of the
-        /// data to write. If you have data in memory, use `blobFromBuffer()`. If you do not, but know the size of the contents
-        /// (and don't want/need to perform filtering), use `Odb.openWriteStream()`.
-        ///
-        /// Don't close this stream yourself but pass it to `WriteStream.commit()` to commit the write to the object db and get the
-        /// object id.
-        ///
-        /// If the `hintpath` parameter is filled, it will be used to determine what git filters should be applied to the object
-        /// before it is written to the object database.
-        pub fn blobFromStream(self: *Repository, hint_path: ?[:0]const u8) !*git.WriteStream {
-            log.debug("Repository.blobFromDisk called, hint_path={s}", .{hint_path});
-
-            var write_stream: *git.WriteStream = undefined;
-
-            const hint_path_c = if (hint_path) |ptr| ptr.ptr else null;
-
-            try internal.wrapCall("git_blob_create_from_stream", .{
-                @ptrCast(*?*c.git_writestream, &write_stream),
-                @ptrCast(*c.git_repository, self),
-                hint_path_c,
-            });
-
-            log.debug("successfully created writestream {*}", .{write_stream});
-
-            return write_stream;
-        }
-
-        /// Read a file from the filesystem and write its content to the Object Database as a loose blob
-        pub fn blobFromDisk(self: *Repository, path: [:0]const u8) !git.Oid {
-            log.debug("Repository.blobFromDisk called, path={s}", .{path});
-
-            var ret: git.Oid = undefined;
-
-            try internal.wrapCall("git_blob_create_from_disk", .{
-                @ptrCast(*c.git_oid, &ret),
-                @ptrCast(*c.git_repository, self),
-                path.ptr,
-            });
-
-            // This check is to prevent formating the oid when we are not going to print anything
-            if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-                var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
-                const slice = try ret.formatHex(&buf);
-                log.debug("successfully read blob: {s}", .{slice});
-            }
-
-            return ret;
-        }
-
-        /// Read a file from the working folder of a repository and write it to the Object Database as a loose blob
-        pub fn blobFromWorkdir(self: *Repository, relative_path: [:0]const u8) !git.Oid {
-            log.debug("Repository.blobFromWorkdir called, relative_path={s}", .{relative_path});
-
-            var ret: git.Oid = undefined;
-
-            try internal.wrapCall("git_blob_create_from_workdir", .{
-                @ptrCast(*c.git_oid, &ret),
-                @ptrCast(*c.git_repository, self),
-                relative_path.ptr,
-            });
-
-            // This check is to prevent formating the oid when we are not going to print anything
-            if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-                var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
-                const slice = try ret.formatHex(&buf);
-                log.debug("successfully read blob: {s}", .{slice});
-            }
-
-            return ret;
-        }
-    } else struct {};
+        return ret;
+    }
 
     comptime {
         std.testing.refAllDecls(@This());

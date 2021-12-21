@@ -311,7 +311,7 @@ pub const Index = opaque {
             buffer.len,
         });
 
-        if (comptime internal.available(.@"1.0.0")) {
+        if (@hasDecl(c, "git_index_add_from_buffer")) {
             try internal.wrapCall(
                 "git_index_add_from_buffer",
                 .{ @ptrCast(*c.git_index, self), @ptrCast(*const c.git_index_entry, index_entry), buffer.ptr, buffer.len },

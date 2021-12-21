@@ -67,9 +67,6 @@ pub const ProxyOptions = struct {
     };
 
     pub fn makeCOptionsObject(self: ProxyOptions) c.git_proxy_options {
-        // TODO: Do this better
-        if (!@hasDecl(c, "git_credential_acquire_cb")) @panic("`git_credential_acquire_cb` is unsupported");
-
         return .{
             .version = c.GIT_PROXY_OPTIONS_VERSION,
             .@"type" = @enumToInt(self.proxy_type),

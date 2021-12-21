@@ -526,9 +526,6 @@ pub const Config = opaque {
     };
 
     pub fn getMapped(self: *const Config, name: [:0]const u8, maps: []const ConfigMap) !c_int {
-        // TODO: Do this better
-        if (!@hasDecl(c, "git_configmap")) @panic("`git_configmap` is unsupported");
-
         log.debug("Config.getMapped called, name={s}", .{name});
 
         var value: c_int = undefined;
@@ -583,9 +580,6 @@ pub const Config = opaque {
         };
 
         pub fn lookupMapValue(maps: []const ConfigMap, value: [:0]const u8) !c_int {
-            // TODO: Do this better
-            if (!@hasDecl(c, "git_configmap")) @panic("`git_configmap` is unsupported");
-
             log.debug("ConfigMap.lookupMapValue called, value={s}", .{value});
 
             var result: c_int = undefined;
@@ -603,9 +597,6 @@ pub const Config = opaque {
         }
 
         test {
-            // TODO: Do this better
-            if (!@hasDecl(c, "git_remote_completion_t")) return error.SkipZigTest;
-
             try std.testing.expectEqual(@sizeOf(c.git_configmap), @sizeOf(ConfigMap));
             try std.testing.expectEqual(@bitSizeOf(c.git_configmap), @bitSizeOf(ConfigMap));
         }

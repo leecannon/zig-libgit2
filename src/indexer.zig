@@ -39,9 +39,6 @@ pub const Indexer = opaque {
         received_bytes: usize,
 
         test {
-            // TODO: Do this better
-            if (!@hasDecl(c, "git_remote_completion_t")) return error.SkipZigTest;
-
             try std.testing.expectEqual(@sizeOf(c.git_indexer_progress), @sizeOf(Progress));
             try std.testing.expectEqual(@bitSizeOf(c.git_indexer_progress), @bitSizeOf(Progress));
         }
@@ -115,9 +112,6 @@ pub const Indexer = opaque {
     /// * `data` - the data to add
     /// * `stats` - stat storage
     pub fn append(self: *Indexer, data: []const u8, stats: *Progress) !void {
-        // TODO: Do this better
-        if (!@hasDecl(c, "git_indexer_progress")) @panic("`git_indexer_progress` is unsupported");
-
         log.debug("Indexer.append called, data_len={}, stats={}", .{ data.len, stats });
 
         try internal.wrapCall("git_indexer_append", .{
@@ -138,9 +132,6 @@ pub const Indexer = opaque {
     /// * `data` - the data to add
     /// * `stats` - stat storage
     pub fn commit(self: *Indexer, stats: *Progress) !void {
-        // TODO: Do this better
-        if (!@hasDecl(c, "git_indexer_progress")) @panic("`git_indexer_progress` is unsupported");
-
         log.debug("Indexer.commit called, stats={}", .{stats});
 
         try internal.wrapCall("git_indexer_commit", .{

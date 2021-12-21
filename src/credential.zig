@@ -44,19 +44,10 @@ pub const Credential = extern struct {
     pub fn getUsername(self: *Credential) ?[:0]const u8 {
         log.debug("Credential.getUsername called", .{});
 
-        var opt_username: [*c]const u8 = undefined;
-
-        if (hasCredential) {
-            opt_username = c.git_credential_get_username(@ptrCast(*RawCredentialType, self));
-        } else {
-            if (@hasDecl(c, "git_cred_get_username")) {
-                opt_username = c.git_cred_get_username(@ptrCast(*RawCredentialType, self));
-            } else {
-                // TODO: make this a compile error when we move to full c header
-                log.err("the version of libgit2 linked does not provide a function to fetch the username of a credential", .{});
-                return null;
-            }
-        }
+        const opt_username: [*c]const u8 = if (hasCredential)
+            c.git_credential_get_username(@ptrCast(*RawCredentialType, self))
+        else
+            c.git_cred_get_username(@ptrCast(*RawCredentialType, self));
 
         if (opt_username) |username| {
             const slice = std.mem.sliceTo(username, 0);

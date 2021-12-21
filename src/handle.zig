@@ -566,9 +566,6 @@ pub const Handle = struct {
 
     /// zero means unlimited
     pub fn optionGetMaximumMappedFiles(self: Handle) !usize {
-        // TODO: Do this better
-        if (!@hasDecl(c, "GIT_OPT_GET_MWINDOW_FILE_LIMIT")) @panic("`GIT_OPT_GET_MWINDOW_FILE_LIMIT` is unsupported");
-
         _ = self;
 
         log.debug("Handle.optionGetMaximumMappedFiles called", .{});
@@ -583,9 +580,6 @@ pub const Handle = struct {
 
     /// zero means unlimited
     pub fn optionSetMaximumMmapFiles(self: Handle, value: usize) !void {
-        // TODO: Do this better
-        if (!@hasDecl(c, "GIT_OPT_SET_MWINDOW_FILE_LIMIT")) @panic("`GIT_OPT_SET_MWINDOW_FILE_LIMIT` is unsupported");
-
         _ = self;
 
         log.debug("Handle.optionSetMaximumMmapFiles called, value={}", .{value});
@@ -867,9 +861,6 @@ pub const Handle = struct {
     }
 
     pub fn optionSetDisablePackKeepFileChecks(self: Handle, enabled: bool) !void {
-        // TODO: Do this better
-        if (!@hasDecl(c, "GIT_OPT_DISABLE_PACK_KEEP_FILE_CHECKS")) @panic("`GIT_OPT_DISABLE_PACK_KEEP_FILE_CHECKS` is unsupported");
-
         _ = self;
 
         log.debug("Handle.optionSetDisablePackKeepFileChecks called, enabled={}", .{enabled});
@@ -880,9 +871,6 @@ pub const Handle = struct {
     }
 
     pub fn optionSetHTTPExpectContinue(self: Handle, enabled: bool) !void {
-        // TODO: Do this better
-        if (!@hasDecl(c, "GIT_OPT_ENABLE_HTTP_EXPECT_CONTINUE")) @panic("`GIT_OPT_ENABLE_HTTP_EXPECT_CONTINUE` is unsupported");
-
         _ = self;
 
         log.debug("Handle.optionSetHTTPExpectContinue called, enabled={}", .{enabled});
@@ -892,40 +880,38 @@ pub const Handle = struct {
         log.debug("successfully set HTTP expect continue mode", .{});
     }
 
-    pub usingnamespace if (internal.available(.@"1.2.0")) struct {
-        pub fn branchNameIsValid(name: [:0]const u8) !bool {
-            log.debug("Handle.branchNameIsValid, name={s}", .{name});
+    pub fn branchNameIsValid(name: [:0]const u8) !bool {
+        log.debug("Handle.branchNameIsValid, name={s}", .{name});
 
-            var valid: c_int = undefined;
-            try internal.wrapCall("git_branch_name_is_valid", .{ &valid, name.ptr });
+        var valid: c_int = undefined;
+        try internal.wrapCall("git_branch_name_is_valid", .{ &valid, name.ptr });
 
-            const ret = valid == 1;
+        const ret = valid == 1;
 
-            log.debug("branch name valid: {}", .{ret});
+        log.debug("branch name valid: {}", .{ret});
 
-            return ret;
-        }
+        return ret;
+    }
 
-        pub fn optionSetOdbPackedPriority(self: Handle, value: usize) !void {
-            _ = self;
+    pub fn optionSetOdbPackedPriority(self: Handle, value: usize) !void {
+        _ = self;
 
-            log.debug("Handle.optionSetOdbPackedPriority called, value={}", .{value});
+        log.debug("Handle.optionSetOdbPackedPriority called, value={}", .{value});
 
-            try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_SET_ODB_PACKED_PRIORITY, value });
+        try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_SET_ODB_PACKED_PRIORITY, value });
 
-            log.debug("successfully set odb packed priority", .{});
-        }
+        log.debug("successfully set odb packed priority", .{});
+    }
 
-        pub fn optionSetOdbLoosePriority(self: Handle, value: usize) !void {
-            _ = self;
+    pub fn optionSetOdbLoosePriority(self: Handle, value: usize) !void {
+        _ = self;
 
-            log.debug("Handle.optionSetOdbLoosePriority called, value={}", .{value});
+        log.debug("Handle.optionSetOdbLoosePriority called, value={}", .{value});
 
-            try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_SET_ODB_LOOSE_PRIORITY, value });
+        try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_SET_ODB_LOOSE_PRIORITY, value });
 
-            log.debug("successfully set odb loose priority", .{});
-        }
-    } else struct {};
+        log.debug("successfully set odb loose priority", .{});
+    }
 
     comptime {
         std.testing.refAllDecls(@This());

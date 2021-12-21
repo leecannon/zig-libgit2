@@ -12,27 +12,25 @@ pub const WriteStream = extern struct {
     close: fn (self: *WriteStream) callconv(.C) c_int,
     free: fn (self: *WriteStream) callconv(.C) void,
 
-    pub usingnamespace if (internal.available(.@"0.99.0")) struct {
-        pub fn commit(self: *WriteStream) !git.Oid {
-            log.debug("WriteStream.commit called", .{});
+    pub fn commit(self: *WriteStream) !git.Oid {
+        log.debug("WriteStream.commit called", .{});
 
-            var ret: git.Oid = undefined;
+        var ret: git.Oid = undefined;
 
-            try internal.wrapCall("git_blob_create_from_stream_commit", .{
-                @ptrCast(*c.git_oid, &ret),
-                @ptrCast(*c.git_writestream, self),
-            });
+        try internal.wrapCall("git_blob_create_from_stream_commit", .{
+            @ptrCast(*c.git_oid, &ret),
+            @ptrCast(*c.git_writestream, self),
+        });
 
-            // This check is to prevent formating the oid when we are not going to print anything
-            if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-                var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
-                const slice = try ret.formatHex(&buf);
-                log.debug("successfully fetched blob id: {s}", .{slice});
-            }
-
-            return ret;
+        // This check is to prevent formating the oid when we are not going to print anything
+        if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
+            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            const slice = try ret.formatHex(&buf);
+            log.debug("successfully fetched blob id: {s}", .{slice});
         }
-    } else struct {};
+
+        return ret;
+    }
 
     test {
         try std.testing.expectEqual(@sizeOf(c.git_writestream), @sizeOf(WriteStream));

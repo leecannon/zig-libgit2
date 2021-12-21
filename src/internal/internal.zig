@@ -2,23 +2,14 @@ const std = @import("std");
 const c = @import("c.zig");
 const git = @import("../git.zig");
 const log = std.log.scoped(.git);
-pub const LibraryVersion = @import("version.zig").LibraryVersion;
-
-pub const version: LibraryVersion = @intToEnum(LibraryVersion, @import("build_options").raw_version);
-
-pub inline fn available(comptime minimum_version: LibraryVersion) bool {
-    return @enumToInt(minimum_version) <= @import("build_options").raw_version;
-}
 
 pub inline fn wrapCall(comptime name: []const u8, args: anytype) git.GitError!void {
-    // TODO: Do this better, in pre 1.0 version some functions could not error
     if (@typeInfo(@TypeOf(@field(c, name))).Fn.return_type.? == void) {
         @call(.{}, @field(c, name), args);
         return;
     }
 
     checkForError(@call(.{}, @field(c, name), args)) catch |err| {
-
         // We dont want to output log messages in tests, as the error might be expected
         // also dont incur the cost of calling `getDetailedLastError` if we are not going to use it
         if (!@import("builtin").is_test and @enumToInt(std.log.Level.warn) <= @enumToInt(std.log.level)) {

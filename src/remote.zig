@@ -209,9 +209,6 @@ pub const Remote = opaque {
         ) callconv(.C) c_int = null,
 
         pub fn makeCOptionsObject(self: RemoteCallbacks) c.git_remote_callbacks {
-            // TODO: Do this better
-            if (!@hasDecl(c, "git_remote_completion_t")) @panic("`git_remote_completion_t` is unsupported");
-
             return .{
                 .version = c.GIT_CHECKOUT_OPTIONS_VERSION,
                 .sideband_progress = @ptrCast(c.git_transport_message_cb, self.sideband_progress),

@@ -202,46 +202,44 @@ pub const FilterList = opaque {
         log.debug("filter list freed successfully", .{});
     }
 
-    pub usingnamespace if (internal.available(.@"1.1.1")) struct {
-        /// Apply filter list to a data buffer.
-        ///
-        /// ## Parameters
-        /// * `name` - Buffer containing the data to filter
-        pub fn applyToBuffer(self: *FilterList, in: [:0]const u8) !git.Buf {
-            log.debug("FilterList.applyToBuffer called, in={s}", .{in});
+    /// Apply filter list to a data buffer.
+    ///
+    /// ## Parameters
+    /// * `name` - Buffer containing the data to filter
+    pub fn applyToBuffer(self: *FilterList, in: [:0]const u8) !git.Buf {
+        log.debug("FilterList.applyToBuffer called, in={s}", .{in});
 
-            var ret: git.Buf = .{};
+        var ret: git.Buf = .{};
 
-            try internal.wrapCall("git_filter_list_apply_to_buffer", .{
-                @ptrCast(*c.git_buf, &ret),
-                @ptrCast(*c.git_filter_list, self),
-                in.ptr,
-                in.len,
-            });
+        try internal.wrapCall("git_filter_list_apply_to_buffer", .{
+            @ptrCast(*c.git_buf, &ret),
+            @ptrCast(*c.git_filter_list, self),
+            in.ptr,
+            in.len,
+        });
 
-            log.debug("result: {s}", .{ret.toSlice()});
+        log.debug("result: {s}", .{ret.toSlice()});
 
-            return ret;
-        }
+        return ret;
+    }
 
-        /// Apply a filter list to an arbitrary buffer as a stream
-        ///
-        /// ## Parameters
-        /// * `buffer` - the buffer to filter
-        /// * `target` - the stream into which the data will be written
-        pub fn applyToBufferToStream(self: *FilterList, buffer: [:0]const u8, target: *git.WriteStream) !void {
-            log.debug("FilterList.applyToBufferToStream called, buffer={s}, target={*}", .{ buffer, target });
+    /// Apply a filter list to an arbitrary buffer as a stream
+    ///
+    /// ## Parameters
+    /// * `buffer` - the buffer to filter
+    /// * `target` - the stream into which the data will be written
+    pub fn applyToBufferToStream(self: *FilterList, buffer: [:0]const u8, target: *git.WriteStream) !void {
+        log.debug("FilterList.applyToBufferToStream called, buffer={s}, target={*}", .{ buffer, target });
 
-            try internal.wrapCall("git_filter_list_stream_buffer", .{
-                @ptrCast(*c.git_filter_list, self),
-                buffer.ptr,
-                buffer.len,
-                @ptrCast(*c.git_writestream, target),
-            });
+        try internal.wrapCall("git_filter_list_stream_buffer", .{
+            @ptrCast(*c.git_filter_list, self),
+            buffer.ptr,
+            buffer.len,
+            @ptrCast(*c.git_writestream, target),
+        });
 
-            log.debug("successfully filtered buffer to stream", .{});
-        }
-    } else struct {};
+        log.debug("successfully filtered buffer to stream", .{});
+    }
 
     comptime {
         std.testing.refAllDecls(@This());
