@@ -1,12 +1,12 @@
 name: CI
 
 on:
-  push:
-    paths:
-      - '**.zig'
-  pull_request:
-     paths:
-      - '**.zig'
+  # push:
+  #   paths:
+  #     - '**.zig'
+  # pull_request:
+  #    paths:
+  #     - '**.zig'
   workflow_dispatch:
 
 jobs:
