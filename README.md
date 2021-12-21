@@ -70,4 +70,4 @@ There is currently no plan to port the headers within "include/git2/sys", if any
 - [ ] tree.h
 - [ ] types.h
 - [ ] version.h
-- [ ] worktree.h
+- [X] worktree.h

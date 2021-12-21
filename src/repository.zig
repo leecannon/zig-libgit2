@@ -3230,6 +3230,109 @@ pub const Repository = opaque {
         return ret;
     }
 
+    /// List names of linked working trees
+    ///
+    /// The returned list needs to be `deinit`-ed
+    pub fn worktreeList(self: *Repository) !git.StrArray {
+        log.debug("Repository.worktreeList called", .{});
+
+        var ret: git.StrArray = undefined;
+
+        try internal.wrapCall("git_worktree_list", .{
+            @ptrCast(*c.git_strarray, &ret),
+            @ptrCast(*c.git_repository, self),
+        });
+
+        log.debug("successfully fetched worktree list of {} items", .{ret.count});
+
+        return ret;
+    }
+
+    /// Lookup a working tree by its name for a given repository
+    pub fn worktreeByName(self: *Repository, name: [:0]const u8) !*git.Worktree {
+        log.debug("Repository.worktreeByName called, name={s}", .{name});
+
+        var ret: *git.Worktree = undefined;
+
+        try internal.wrapCall("git_worktree_lookup", .{
+            @ptrCast(*?*c.git_worktree, &ret),
+            @ptrCast(*c.git_repository, self),
+            name.ptr,
+        });
+
+        log.debug("successfully fetched worktree {*}", .{ret});
+
+        return ret;
+    }
+
+    /// Open a worktree of a given repository
+    ///
+    /// If a repository is not the main tree but a worktree, this function will look up the worktree inside the parent
+    /// repository and create a new `git.Worktree` structure.
+    pub fn worktreeOpenFromRepository(self: *Repository) !*git.Worktree {
+        log.debug("Repository.worktreeOpenFromRepository called", .{});
+
+        var ret: *git.Worktree = undefined;
+
+        try internal.wrapCall("git_worktree_open_from_repository", .{
+            @ptrCast(*?*c.git_worktree, &ret),
+            @ptrCast(*c.git_repository, self),
+        });
+
+        log.debug("successfully fetched worktree {*}", .{ret});
+
+        return ret;
+    }
+
+    pub const WorktreeAddOptions = struct {
+        /// lock newly created worktree
+        lock: bool = false,
+
+        /// reference to use for the new worktree HEAD
+        ref: ?*git.Reference = null,
+
+        pub fn makeCOptionObject(self: WorktreeAddOptions) c.git_worktree_add_options {
+            return .{
+                .version = c.GIT_WORKTREE_ADD_OPTIONS_VERSION,
+                .lock = @boolToInt(self.lock),
+                .ref = @ptrCast(?*c.git_reference, self.ref),
+            };
+        }
+
+        comptime {
+            std.testing.refAllDecls(@This());
+        }
+    };
+
+    /// Add a new working tree
+    ///
+    /// Add a new working tree for the repository, that is create the required data structures inside the repository and
+    /// check out the current HEAD at `path`
+    ///
+    /// ## Parameters
+    /// * `name` - Name of the working tree
+    /// * `path` - Path to create working tree at
+    /// * `options` - Options to modify default behavior.
+    pub fn worktreeAdd(self: *Repository, name: [:0]const u8, path: [:0]const u8, options: WorktreeAddOptions) !*git.Worktree {
+        log.debug("Repository.worktreeAdd called, name={s}, path={s}, options={}", .{ name, path, options });
+
+        var ret: *git.Worktree = undefined;
+
+        const c_options = options.makeCOptionObject();
+
+        try internal.wrapCall("git_worktree_add", .{
+            @ptrCast(*?*c.git_worktree, &ret),
+            @ptrCast(*c.git_repository, self),
+            name.ptr,
+            path.ptr,
+            &c_options,
+        });
+
+        log.debug("successfully created worktree {*}", .{ret});
+
+        return ret;
+    }
+
     comptime {
         std.testing.refAllDecls(@This());
     }
