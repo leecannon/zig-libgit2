@@ -1,5 +1,3 @@
-//! This type bundles all functionality that does not act on an instance of an object
-
 const std = @import("std");
 const c = @import("internal/c.zig");
 const internal = @import("internal/internal.zig");
@@ -7,6 +5,7 @@ const log = std.log.scoped(.git);
 
 const git = @import("git.zig");
 
+/// This type bundles all functionality that does not act on an instance of an object
 pub const Handle = struct {
 
     /// De-initialize the libraries global state.
@@ -911,6 +910,62 @@ pub const Handle = struct {
         try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_SET_ODB_LOOSE_PRIORITY, value });
 
         log.debug("successfully set odb loose priority", .{});
+    }
+
+    /// Clean up excess whitespace and make sure there is a trailing newline in the message.
+    ///
+    /// Optionally, it can remove lines which start with the comment character.
+    ///
+    /// ## Parameters
+    /// * `message` - the message to be prettified.
+    /// * `strip_comment_char` - if non-`null` lines starting with this character are considered to be comments and removed
+    pub fn messagePrettify(self: Handle, message: [:0]const u8, strip_comment_char: ?u8) !git.Buf {
+        _ = self;
+
+        log.debug("Handle.messagePrettify called, message={s}, strip_comment_char={}", .{ message, strip_comment_char });
+
+        var ret: git.Buf = .{};
+
+        if (strip_comment_char) |char| {
+            try internal.wrapCall("git_message_prettify", .{
+                @ptrCast(*c.git_buf, &ret),
+                message.ptr,
+                1,
+                char,
+            });
+        } else {
+            try internal.wrapCall("git_message_prettify", .{
+                @ptrCast(*c.git_buf, &ret),
+                message.ptr,
+                0,
+                0,
+            });
+        }
+
+        log.debug("prettified message: {s}", .{ret.toSlice()});
+
+        return ret;
+    }
+
+    /// Parse trailers out of a message
+    ///
+    /// Trailers are key/value pairs in the last paragraph of a message, not including any patches or conflicts that may
+    /// be present.
+    pub fn messageParseTrailers(self: Handle, message: [:0]const u8) !git.MessageTrailerArray {
+        _ = self;
+
+        log.debug("Handle.messageParseTrailers called, message={s}", .{message});
+
+        var ret: git.MessageTrailerArray = undefined;
+
+        try internal.wrapCall("git_message_trailers", .{
+            @ptrCast(*c.git_message_trailer_array, &ret),
+            message.ptr,
+        });
+
+        log.debug("successfully parsed {} message trailers", .{ret.count});
+
+        return ret;
     }
 
     comptime {

@@ -25,6 +25,7 @@ pub usingnamespace @import("index.zig");
 pub usingnamespace @import("indexer.zig");
 pub usingnamespace @import("mailmap.zig");
 pub usingnamespace @import("merge.zig");
+pub usingnamespace @import("message.zig");
 pub usingnamespace @import("net.zig");
 pub usingnamespace @import("object.zig");
 pub usingnamespace @import("odb.zig");

@@ -22,7 +22,6 @@ There is currently no plan to port the headers within "include/git2/sys", if any
 - [X] commit.h
 - [X] common.h
 - [X] config.h
-- [ ] credential_helpers.h
 - [X] credential.h
 - [X] describe.h
 - [ ] diff.h
@@ -35,7 +34,7 @@ There is currently no plan to port the headers within "include/git2/sys", if any
 - [X] indexer.h
 - [X] mailmap.h
 - [ ] merge.h
-- [ ] message.h
+- [X] message.h
 - [ ] net.h
 - [ ] notes.h
 - [ ] object.h
