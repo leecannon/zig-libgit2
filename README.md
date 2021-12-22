@@ -15,10 +15,10 @@ There is currently no plan to port the headers within "include/git2/sys", if any
 - [X] blob.h
 - [X] branch.h
 - [X] buffer.h
-- [ ] cert.h
+- [X] cert.h
 - [X] checkout.h
 - [X] cherrypick.h
-- [ ] clone.h
+- [X] clone.h
 - [X] commit.h
 - [X] common.h
 - [X] config.h
