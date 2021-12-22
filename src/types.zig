@@ -9,17 +9,17 @@ const git = @import("git.zig");
 pub const Refspec = opaque {
     /// Get the refspec's string.
     pub fn string(self: *const Refspec) [:0]const u8 {
-        return std.mem.span(c.git_refspec_string(@ptrCast(*c.git_refspec, self)));
+        return std.mem.span(c.git_refspec_string(@ptrCast(*const c.git_refspec, self)));
     }
 
     /// Get the source specifier.
     pub fn src(self: *const Refspec) [:0]const u8 {
-        return std.mem.span(c.git_refspec_src(@ptrCast(*c.git_refspec, self)));
+        return std.mem.span(c.git_refspec_src(@ptrCast(*const c.git_refspec, self)));
     }
 
     /// Get the destination specifier.
     pub fn dest(self: *const Refspec) [:0]const u8 {
-        return std.mem.span(c.git_refspec_dest(@ptrCast(*c.git_refspec, self)));
+        return std.mem.span(c.git_refspec_dest(@ptrCast(*const c.git_refspec, self)));
     }
 
     /// Get the force update setting.
