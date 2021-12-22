@@ -3481,6 +3481,377 @@ pub const Repository = opaque {
         return ret;
     }
 
+    /// Creates a new iterator for notes
+    ///
+    /// ## Parameters
+    /// * `notes_ref` - canonical name of the reference to use; if `null` defaults to "refs/notes/commits"
+    pub fn noteIterator(self: *Repository, notes_ref: ?[:0]const u8) !*git.NoteIterator {
+        log.debug("Repository.noteIterator called, notes_ref={s}", .{notes_ref});
+
+        var ret: *git.NoteIterator = undefined;
+
+        const c_notes: [*c]const u8 = if (notes_ref) |p| p.ptr else null;
+
+        try internal.wrapCall("git_note_iterator_new", .{
+            @ptrCast(*?*c.git_note_iterator, &ret),
+            @ptrCast(*c.git_repository, self),
+            c_notes,
+        });
+
+        return ret;
+    }
+
+    /// Read the note for an object
+    ///
+    /// ## Parameters
+    /// * `oid` - OID of the git object to read the note from
+    /// * `notes_ref` - canonical name of the reference to use; if `null` defaults to "refs/notes/commits"
+    pub fn noteRead(self: *Repository, oid: *const git.Oid, notes_ref: ?[:0]const u8) !*git.Note {
+        // This check is to prevent formating the oid when we are not going to print anything
+        if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
+            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            const slice = try oid.formatHex(&buf);
+            log.debug("Repository.noteRead called, oid={s}, notes_ref={s}", .{ slice, notes_ref });
+        }
+
+        var ret: *git.Note = undefined;
+
+        const c_notes: [*c]const u8 = if (notes_ref) |p| p.ptr else null;
+
+        try internal.wrapCall("git_note_read", .{
+            @ptrCast(*?*c.git_note, &ret),
+            @ptrCast(*c.git_repository, self),
+            c_notes,
+            @ptrCast(*const c.git_oid, oid),
+        });
+
+        log.debug("successfully read note: {*}", .{ret});
+
+        return ret;
+    }
+
+    /// Read the note for an object
+    ///
+    /// ## Parameters
+    /// * `oid` - OID of the git object to read the note from
+    /// * `notes_ref` - canonical name of the reference to use; if `null` defaults to "refs/notes/commits"
+    pub fn noteReadFromNoteCommit(self: *Repository, oid: *const git.Oid, note_commit: *git.Commit) !*git.Note {
+        // This check is to prevent formating the oid when we are not going to print anything
+        if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
+            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            const slice = try oid.formatHex(&buf);
+            log.debug("Repository.noteReadFromNoteCommit called, oid={s}, note_commit={*}", .{ slice, note_commit });
+        }
+
+        var ret: *git.Note = undefined;
+
+        try internal.wrapCall("git_note_commit_read", .{
+            @ptrCast(*?*c.git_note, &ret),
+            @ptrCast(*c.git_repository, self),
+            @ptrCast(*c.git_commit, note_commit),
+            @ptrCast(*const c.git_oid, oid),
+        });
+
+        log.debug("successfully read note: {*}", .{ret});
+
+        return ret;
+    }
+
+    /// Add a note for an object
+    ///
+    /// ## Parameters
+    /// * `notes_ref` - canonical name of the reference to use; if `null` defaults to "refs/notes/commits"
+    /// * `author` - signature of the notes commit author
+    /// * `commiter` - signature of the notes commit committer
+    /// * `oid` - OID of the git object to decorate
+    /// * `note` - Content of the note to add for object oid
+    /// * `force` - Overwrite existing note
+    pub fn noteCreate(
+        self: *Repository,
+        notes_ref: ?[:0]const u8,
+        author: *const git.Signature,
+        commiter: *const git.Signature,
+        oid: *const git.Oid,
+        note: [:0]const u8,
+        force: bool,
+    ) !git.Oid {
+        // This check is to prevent formating the oid when we are not going to print anything
+        if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
+            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            const slice = try oid.formatHex(&buf);
+            log.debug("Repository.noteCreate called, notes_ref={s}, author={s}, commiter={s}, oid={s}, note={s}, force={}", .{
+                notes_ref,
+                author.name(),
+                commiter.name(),
+                slice,
+                note,
+                force,
+            });
+        }
+
+        var ret: git.Oid = undefined;
+
+        const c_notes: [*c]const u8 = if (notes_ref) |p| p.ptr else null;
+
+        try internal.wrapCall("git_note_create", .{
+            @ptrCast(*c.git_oid, &ret),
+            @ptrCast(*c.git_repository, self),
+            c_notes,
+            @ptrCast(*const c.git_signature, author),
+            @ptrCast(*const c.git_signature, commiter),
+            @ptrCast(*const c.git_oid, oid),
+            note.ptr,
+            @boolToInt(force),
+        });
+
+        log.debug("successfully created note", .{});
+
+        return ret;
+    }
+
+    pub const NoteCommitResult = struct {
+        note_commit: git.Oid,
+        note_blob: git.Oid,
+    };
+
+    /// Add a note for an object from a commit
+    ///
+    /// This function will create a notes commit for a given object, the commit is a dangling commit, no reference is created.
+    ///
+    /// ## Parameters
+    /// * `notes_ref` - canonical name of the reference to use; if `null` defaults to "refs/notes/commits"
+    /// * `author` - signature of the notes commit author
+    /// * `commiter` - signature of the notes commit committer
+    /// * `oid` - OID of the git object to decorate
+    /// * `note` - Content of the note to add for object oid
+    /// * `allow_note_overwrite` - Overwrite existing note
+    pub fn noteCommitCreate(
+        self: *Repository,
+        parent: *git.Commit,
+        author: *const git.Signature,
+        commiter: *const git.Signature,
+        oid: *const git.Oid,
+        note: [:0]const u8,
+        allow_note_overwrite: bool,
+    ) !NoteCommitResult {
+        // This check is to prevent formating the oid when we are not going to print anything
+        if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
+            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            const slice = try oid.formatHex(&buf);
+            log.debug("Repository.noteCommitCreate called, parent={*}, author={s}, commiter={s}, oid={s}, note={s}, allow_note_overwrite={}", .{
+                parent,
+                author.name(),
+                commiter.name(),
+                slice,
+                note,
+                allow_note_overwrite,
+            });
+        }
+
+        var ret: NoteCommitResult = undefined;
+
+        try internal.wrapCall("git_note_commit_create", .{
+            @ptrCast(*c.git_oid, &ret.note_commit),
+            @ptrCast(*c.git_oid, &ret.note_blob),
+            @ptrCast(*c.git_repository, self),
+            @ptrCast(*c.git_commit, parent),
+            @ptrCast(*const c.git_signature, author),
+            @ptrCast(*const c.git_signature, commiter),
+            @ptrCast(*const c.git_oid, oid),
+            note.ptr,
+            @boolToInt(allow_note_overwrite),
+        });
+
+        log.debug("successfully created note commit", .{});
+
+        return ret;
+    }
+
+    /// Remove the note for an object
+    ///
+    /// ## Parameters
+    /// * `notes_ref` - canonical name of the reference to use; if `null` defaults to "refs/notes/commits"
+    /// * `author` - signature of the notes commit author
+    /// * `commiter` - signature of the notes commit committer
+    /// * `oid` - OID of the git object to remove the note from
+    pub fn noteRemove(
+        self: *Repository,
+        notes_ref: ?[:0]const u8,
+        author: *const git.Signature,
+        commiter: *const git.Signature,
+        oid: *const git.Oid,
+    ) !void {
+        // This check is to prevent formating the oid when we are not going to print anything
+        if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
+            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            const slice = try oid.formatHex(&buf);
+            log.debug("Repository.noteRemove called, notes_ref={s}, author={s}, commiter={s}, oid={s}", .{
+                notes_ref,
+                author.name(),
+                commiter.name(),
+                slice,
+            });
+        }
+
+        const c_notes: [*c]const u8 = if (notes_ref) |p| p.ptr else null;
+
+        try internal.wrapCall("git_note_remove", .{
+            @ptrCast(*c.git_repository, self),
+            c_notes,
+            @ptrCast(*const c.git_signature, author),
+            @ptrCast(*const c.git_signature, commiter),
+            @ptrCast(*const c.git_oid, oid),
+        });
+
+        log.debug("successfully removed note", .{});
+    }
+
+    /// Remove the note for an object
+    ///
+    /// ## Parameters
+    /// * `notes_ref` - canonical name of the reference to use; if `null` defaults to "refs/notes/commits"
+    /// * `author` - signature of the notes commit author
+    /// * `commiter` - signature of the notes commit committer
+    /// * `oid` - OID of the git object to remove the note from
+    pub fn noteCommitRemove(
+        self: *Repository,
+        note_commit: *git.Commit,
+        author: *const git.Signature,
+        commiter: *const git.Signature,
+        oid: *const git.Oid,
+    ) !git.Oid {
+        // This check is to prevent formating the oid when we are not going to print anything
+        if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
+            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            const slice = try oid.formatHex(&buf);
+            log.debug("Repository.noteCommitRemove called, note_commit={*}, author={s}, commiter={s}, oid={s}", .{
+                note_commit,
+                author.name(),
+                commiter.name(),
+                slice,
+            });
+        }
+
+        var ret: git.Oid = undefined;
+
+        try internal.wrapCall("git_note_commit_remove", .{
+            @ptrCast(*c.git_oid, &ret),
+            @ptrCast(*c.git_repository, self),
+            @ptrCast(*c.git_commit, note_commit),
+            @ptrCast(*const c.git_signature, author),
+            @ptrCast(*const c.git_signature, commiter),
+            @ptrCast(*const c.git_oid, oid),
+        });
+
+        log.debug("successfully removed note commit", .{});
+
+        return ret;
+    }
+
+    /// Get the default notes reference for a repository
+    pub fn noteDefaultRef(self: *Repository) !git.Buf {
+        log.debug("Repository.noteDefaultRef called", .{});
+
+        var ret: git.Buf = .{};
+
+        try internal.wrapCall("git_note_default_ref", .{
+            @ptrCast(*c.git_buf, &ret),
+            @ptrCast(*c.git_repository, self),
+        });
+
+        log.debug("default ref: {s}", .{ret.toSlice()});
+
+        return ret;
+    }
+
+    /// Loop over all the notes within a specified namespace and issue a callback for each one.
+    ///
+    /// Return a non-zero value from the callback to stop the loop. This non-zero value is returned by the function.
+    ///
+    /// ## Parameters
+    /// * `notes_ref` - canonical name of the reference to use; if `null` defaults to "refs/notes/commits"
+    /// * `callback_fn` - the callback function
+    ///
+    /// ## Callback Parameters
+    /// * `blob_id` - Oid of the blob containing the message
+    /// * `annotated_object_id` - Oid of the git object being annotated
+    pub fn noteForeach(
+        self: *Repository,
+        notes_ref: ?[:0]const u8,
+        comptime callback_fn: fn (
+            blob_id: *const git.Oid,
+            annotated_object_id: *const git.Oid,
+        ) c_int,
+    ) !c_int {
+        const cb = struct {
+            pub fn cb(
+                blob_id: *const git.Oid,
+                annotated_object_id: *const git.Oid,
+                _: *u8,
+            ) c_int {
+                return callback_fn(blob_id, annotated_object_id);
+            }
+        }.cb;
+
+        var dummy_data: u8 = undefined;
+        return self.noteForeachWithUserData(&dummy_data, notes_ref, cb);
+    }
+
+    /// Loop over all the notes within a specified namespace and issue a callback for each one.
+    ///
+    /// Return a non-zero value from the callback to stop the loop. This non-zero value is returned by the function.
+    ///
+    /// ## Parameters
+    /// * `notes_ref` - canonical name of the reference to use; if `null` defaults to "refs/notes/commits"
+    /// * `user_data` - pointer to user data to be passed to the callback
+    /// * `callback_fn` - the callback function
+    ///
+    /// ## Callback Parameters
+    /// * `blob_id` - Oid of the blob containing the message
+    /// * `annotated_object_id` - Oid of the git object being annotated
+    /// * `user_data_ptr` - pointer to user data
+    pub fn noteForeachWithUserData(
+        self: *Repository,
+        notes_ref: ?[:0]const u8,
+        user_data: anytype,
+        comptime callback_fn: fn (
+            blob_id: *const git.Oid,
+            annotated_object_id: *const git.Oid,
+            user_data_ptr: @TypeOf(user_data),
+        ) c_int,
+    ) !c_int {
+        const UserDataType = @TypeOf(user_data);
+
+        const cb = struct {
+            pub fn cb(
+                blob_id: *const c.git_oid,
+                annotated_object_id: *const c.git_oid,
+                payload: ?*anyopaque,
+            ) callconv(.C) c_int {
+                return callback_fn(
+                    @ptrCast(*const git.Oid, blob_id),
+                    @ptrCast(*const git.Oid, annotated_object_id),
+                    @ptrCast(UserDataType, payload),
+                );
+            }
+        }.cb;
+
+        log.debug("Repository.noteForeachWithUserData called, notes_ref={s}", .{notes_ref});
+
+        const c_notes: [*c]const u8 = if (notes_ref) |p| p.ptr else null;
+
+        const ret = try internal.wrapCallWithReturn("git_note_foreach", .{
+            @ptrCast(*c.git_repository, self),
+            c_notes,
+            cb,
+            user_data,
+        });
+
+        log.debug("callback returned: {}", .{ret});
+
+        return ret;
+    }
+
     comptime {
         std.testing.refAllDecls(@This());
     }

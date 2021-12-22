@@ -14,6 +14,19 @@ pub const Commit = opaque {
         log.debug("Commit freed successfully", .{});
     }
 
+    pub fn noteIterator(self: *Commit) !*git.NoteIterator {
+        log.debug("Commit.noteIterator called", .{});
+
+        var ret: *git.NoteIterator = undefined;
+
+        try internal.wrapCall("git_note_commit_iterator_new", .{
+            @ptrCast(*?*c.git_note_iterator, &ret),
+            @ptrCast(*c.git_commit, self),
+        });
+
+        return ret;
+    }
+
     pub fn id(self: *const Commit) *const git.Oid {
         log.debug("Commit.id called", .{});
 
