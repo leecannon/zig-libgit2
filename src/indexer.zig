@@ -55,13 +55,43 @@ pub const Indexer = opaque {
     /// * `odb` - object database from which to read base objects when fixing thin packs. Pass `null` if no thin pack is expected
     ///           (an error will be returned if there are bases missing)
     /// * `options` - options
+    /// * `callback_fn` - the callback function; a value less than zero to cancel the indexing or download
+    ///
+    /// ## Callback Parameters
+    /// * `stats` - state of the transfer
+    pub fn init(
+        path: [:0]const u8,
+        odb: ?*git.Odb,
+        options: Options,
+        comptime callback_fn: fn (stats: *const Progress) c_int,
+    ) !*git.Indexer {
+        const cb = struct {
+            pub fn cb(
+                stats: *const Progress,
+                _: *u8,
+            ) c_int {
+                return callback_fn(stats);
+            }
+        }.cb;
+
+        var dummy_data: u8 = undefined;
+        return initWithUserData(path, odb, options, &dummy_data, cb);
+    }
+
+    /// Create a new indexer instance
+    ///
+    /// ## Parameters
+    /// * `path` - to the directory where the packfile should be stored
+    /// * `odb` - object database from which to read base objects when fixing thin packs. Pass `null` if no thin pack is expected
+    ///           (an error will be returned if there are bases missing)
+    /// * `options` - options
     /// * `user_data` - pointer to user data to be passed to the callback
     /// * `callback_fn` - the callback function; a value less than zero to cancel the indexing or download
     ///
     /// ## Callback Parameters
     /// * `stats` - state of the transfer
     /// * `user_data_ptr` - The user data
-    pub fn init(
+    pub fn initWithUserData(
         path: [:0]const u8,
         odb: ?*git.Odb,
         options: Options,
