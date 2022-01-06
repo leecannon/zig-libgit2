@@ -30,8 +30,7 @@ pub const Worktree = opaque {
 
     /// Lock worktree if not already locked
     ///
-    /// Lock a worktree, optionally specifying a reason why the linked
-    /// working tree is being locked.
+    /// Lock a worktree, optionally specifying a reason why the linked working tree is being locked.
     ///
     /// ## Parameters
     /// * `reason` - Reason why the working tree is being locked
@@ -45,7 +44,7 @@ pub const Worktree = opaque {
             c_reason,
         }) catch |err| {
             if (err == error.Locked) {
-                log.err("worktree is already locked", .{});
+                log.debug("worktree is already locked", .{});
             }
             return err;
         };

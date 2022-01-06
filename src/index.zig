@@ -24,7 +24,7 @@ pub const Index = opaque {
             log.debug("successfully fetched index version={s}", .{@tagName(version)});
             return version;
         } else |_| {
-            log.warn("failed to fetch valid index version, recieved={}", .{raw_value});
+            log.debug("failed to fetch valid index version, recieved={}", .{raw_value});
             return error.InvalidVersion;
         }
     }

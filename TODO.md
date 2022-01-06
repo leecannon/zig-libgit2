@@ -4,6 +4,6 @@
 - [ ] Update with all API changes up to latest master
 - [ ] Build against each version from latest to oldest and mark added APIs using `@hasDecl`
 - [ ] Option to disable logging
-- [ ] add documentation to *every* function
+- [ ] add documentation to *every* function and type
 - [ ] add functionality to build.zig to include package as either static or dynamic
 - [ ] package with zigmod/gyro
