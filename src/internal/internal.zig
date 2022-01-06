@@ -9,54 +9,26 @@ pub inline fn wrapCall(comptime name: []const u8, args: anytype) git.GitError!vo
         return;
     }
 
-    checkForError(@call(.{}, @field(c, name), args)) catch |err| {
-        // We dont want to output log messages in tests, as the error might be expected
-        // also dont incur the cost of calling `getDetailedLastError` if we are not going to use it
-        if (!@import("builtin").is_test and @enumToInt(std.log.Level.warn) <= @enumToInt(std.log.level)) {
-            if (git.getDetailedLastError()) |detailed| {
-                log.warn(name ++ " failed with error {s}/{s} - {s}", .{
-                    @errorName(err),
-                    @tagName(detailed.class),
-                    detailed.message(),
-                });
-            } else {
-                log.warn(name ++ " failed with error {s}", .{@errorName(err)});
-            }
-        }
+    const result = @call(.{}, @field(c, name), args);
 
-        return err;
-    };
+    if (result >= 0) return;
+
+    return unwrapError(name, result);
 }
 
 pub inline fn wrapCallWithReturn(
     comptime name: []const u8,
     args: anytype,
 ) git.GitError!@typeInfo(@TypeOf(@field(c, name))).Fn.return_type.? {
-    const value = @call(.{}, @field(c, name), args);
+    const result = @call(.{}, @field(c, name), args);
 
-    checkForError(value) catch |err| {
-        // We dont want to output log messages in tests, as the error might be expected
-        // also dont incur the cost of calling `getDetailedLastError` if we are not going to use it
-        if (!@import("builtin").is_test and @enumToInt(std.log.Level.warn) <= @enumToInt(std.log.level)) {
-            if (git.getDetailedLastError()) |detailed| {
-                log.warn(name ++ " failed with error {s}/{s} - {s}", .{
-                    @errorName(err),
-                    @tagName(detailed.class),
-                    detailed.message(),
-                });
-            } else {
-                log.warn(name ++ " failed with error {s}", .{@errorName(err)});
-            }
-        }
-        return err;
-    };
+    if (result >= 0) return result;
 
-    return value;
+    return unwrapError(name, result);
 }
 
-fn checkForError(value: c.git_error_code) git.GitError!void {
-    if (value >= 0) return;
-    return switch (value) {
+fn unwrapError(name: []const u8, value: c.git_error_code) git.GitError {
+    const err = switch (value) {
         c.GIT_ERROR => git.GitError.GenericError,
         c.GIT_ENOTFOUND => git.GitError.NotFound,
         c.GIT_EEXISTS => git.GitError.Exists,
@@ -91,9 +63,34 @@ fn checkForError(value: c.git_error_code) git.GitError!void {
             unreachable;
         },
     };
+
+    // We dont want to output log messages in tests, as the error might be expected
+    // also dont incur the cost of calling `getDetailedLastError` if we are not going to use it
+    if (!@import("builtin").is_test and @enumToInt(std.log.Level.warn) <= @enumToInt(std.log.level)) {
+        if (git.getDetailedLastError()) |detailed| {
+            log.warn("{s} failed with error {s}/{s} - {s}", .{
+                name,
+                @errorName(err),
+                @tagName(detailed.class),
+                detailed.message(),
+            });
+        } else {
+            log.warn("{s} failed with error {s}", .{
+                name,
+                @errorName(err),
+            });
+        }
+    }
+
+    return err;
 }
 
-pub fn formatWithoutFields(value: anytype, options: std.fmt.FormatOptions, writer: anytype, comptime blacklist: []const []const u8) !void {
+pub fn formatWithoutFields(
+    value: anytype,
+    options: std.fmt.FormatOptions,
+    writer: anytype,
+    comptime blacklist: []const []const u8,
+) !void {
     // This ANY const is a workaround for: https://github.com/ziglang/zig/issues/7948
     const ANY = "any";
 
