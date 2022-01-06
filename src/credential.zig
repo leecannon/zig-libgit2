@@ -411,10 +411,20 @@ pub const Credential = extern struct {
 
         value: c_uint,
 
+        test {
+            try std.testing.expectEqual(@sizeOf(c_uint), @sizeOf(CredentialType));
+            try std.testing.expectEqual(@bitSizeOf(c_uint), @bitSizeOf(CredentialType));
+        }
+
         comptime {
             std.testing.refAllDecls(@This());
         }
     };
+
+    test {
+        try std.testing.expectEqual(@sizeOf(c.git_cred), @sizeOf(Credential));
+        try std.testing.expectEqual(@bitSizeOf(c.git_cred), @bitSizeOf(Credential));
+    }
 
     comptime {
         std.testing.refAllDecls(@This());

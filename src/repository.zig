@@ -2214,6 +2214,10 @@ pub const Repository = opaque {
                 try std.testing.expectEqual(@sizeOf(c.git_checkout_perfdata), @sizeOf(PerfData));
                 try std.testing.expectEqual(@bitSizeOf(c.git_checkout_perfdata), @bitSizeOf(PerfData));
             }
+
+            comptime {
+                std.testing.refAllDecls(@This());
+            }
         };
 
         pub const Strategy = packed struct {
@@ -3443,6 +3447,15 @@ pub const Repository = opaque {
             /// Remove an entry from the specified path
             REMOVE = 1,
         };
+
+        test {
+            try std.testing.expectEqual(@sizeOf(c.git_tree_update), @sizeOf(TreeUpdateAction));
+            try std.testing.expectEqual(@bitSizeOf(c.git_tree_update), @bitSizeOf(TreeUpdateAction));
+        }
+
+        comptime {
+            std.testing.refAllDecls(@This());
+        }
     };
 
     /// Create a tree based on another one with the specified modifications

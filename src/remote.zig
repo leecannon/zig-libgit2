@@ -249,6 +249,11 @@ pub const Remote = opaque {
         /// The new target for the reference
         dst: git.Oid,
 
+        test {
+            try std.testing.expectEqual(@sizeOf(c.git_push_update), @sizeOf(PushUpdate));
+            try std.testing.expectEqual(@bitSizeOf(c.git_push_update), @bitSizeOf(PushUpdate));
+        }
+
         comptime {
             std.testing.refAllDecls(@This());
         }

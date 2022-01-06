@@ -101,6 +101,11 @@ pub const Certificate = extern struct {
             KEY_ED25519 = 6,
         };
 
+        test {
+            try std.testing.expectEqual(@sizeOf(c.git_cert_hostkey), @sizeOf(HostkeyCertificate));
+            try std.testing.expectEqual(@bitSizeOf(c.git_cert_hostkey), @bitSizeOf(HostkeyCertificate));
+        }
+
         comptime {
             std.testing.refAllDecls(@This());
         }
@@ -116,10 +121,20 @@ pub const Certificate = extern struct {
         /// Length of the memory block pointed to by `data`.
         length: usize,
 
+        test {
+            try std.testing.expectEqual(@sizeOf(c.git_cert_x509), @sizeOf(X509Certificate));
+            try std.testing.expectEqual(@bitSizeOf(c.git_cert_x509), @bitSizeOf(X509Certificate));
+        }
+
         comptime {
             std.testing.refAllDecls(@This());
         }
     };
+
+    test {
+        try std.testing.expectEqual(@sizeOf(c.git_cert), @sizeOf(Certificate));
+        try std.testing.expectEqual(@bitSizeOf(c.git_cert), @bitSizeOf(Certificate));
+    }
 
     comptime {
         std.testing.refAllDecls(@This());

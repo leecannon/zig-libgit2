@@ -30,10 +30,20 @@ pub const MessageTrailerArray = extern struct {
         key: [*:0]const u8,
         value: [*:0]const u8,
 
+        test {
+            try std.testing.expectEqual(@sizeOf(c.git_message_trailer), @sizeOf(MessageTrailer));
+            try std.testing.expectEqual(@bitSizeOf(c.git_message_trailer), @bitSizeOf(MessageTrailer));
+        }
+
         comptime {
             std.testing.refAllDecls(@This());
         }
     };
+
+    test {
+        try std.testing.expectEqual(@sizeOf(c.git_message_trailer_array), @sizeOf(MessageTrailerArray));
+        try std.testing.expectEqual(@bitSizeOf(c.git_message_trailer_array), @bitSizeOf(MessageTrailerArray));
+    }
 
     comptime {
         std.testing.refAllDecls(@This());
