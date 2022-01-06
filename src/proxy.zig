@@ -14,7 +14,7 @@ pub const ProxyOptions = struct {
     /// This will be called if the remote host requires authentication in order to connect to it.
     ///
     /// Return 0 for success, < 0 to indicate an error, > 0 to indicate no credential was acquired
-    /// Returning `GIT_PASSTHROUGH` will make libgit2 behave as though this field isn't set.
+    /// Returning `GitError.Passthrough` will make libgit2 behave as though this field isn't set.
     ///
     /// ## Parameters
     /// * `out` - The newly created credential object.

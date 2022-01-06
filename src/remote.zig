@@ -93,10 +93,10 @@ pub const Remote = opaque {
         completion: ?fn (@"type": RemoteCompletion, payload: ?*anyopaque) callconv(.C) c_int = null,
 
         /// This will be called if the remote host requires authentication in order to connect to it. Returning
-        /// GIT_PASSTHROUGH will make libgit2 behave as though this field isn't set.
+        /// `GitError.Passthrough` will make libgit2 behave as though this field isn't set.
         ///
         /// Return 0 for success, < 0 to indicate an error, > 0 to indicate no credential was acquired
-        /// Returning `GIT_PASSTHROUGH` will make libgit2 behave as though this field isn't set.
+        /// Returning `GitError.Passthrough` will make libgit2 behave as though this field isn't set.
         ///
         /// ## Parameters
         /// * `out` - The newly created credential object.
@@ -193,8 +193,8 @@ pub const Remote = opaque {
         /// Resolve URL before connecting to remote. The returned URL will be used to connect to the remote instead. 
         /// This callback is deprecated; users should use git_remote_ready_cb and configure the instance URL instead.
         ///
-        /// Return 0 on success, `GIT_PASSTHROUGH` or an error
-        /// If you return `GIT_PASSTHROUGH`, you don't need to write anything to url_resolved.
+        /// Return 0 on success, `GitError.Passthrough` or an error
+        /// If you return `GitError.Passthrough`, you don't need to write anything to url_resolved.
         ///
         /// ## Parameters
         /// * `url_resolved` - The buffer to write the resolved URL to

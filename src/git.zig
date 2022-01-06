@@ -4,7 +4,6 @@ const internal = @import("internal/internal.zig");
 const log = std.log.scoped(.git);
 
 pub const PATH_LIST_SEPARATOR = c.GIT_PATH_LIST_SEPARATOR;
-pub const GIT_PASSTHROUGH = c.GIT_PASSTHROUGH;
 
 pub usingnamespace @import("alloc.zig");
 pub usingnamespace @import("annotated_commit.zig");
