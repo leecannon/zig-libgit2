@@ -958,12 +958,22 @@ pub const Index = opaque {
             stage: bitjuggle.Bitfield(u16, 12, 2),
             extended: bitjuggle.Bit(u16, 14),
             valid: bitjuggle.Bit(u16, 15),
+
+            test {
+                try std.testing.expectEqual(@sizeOf(u16), @sizeOf(Flags));
+                try std.testing.expectEqual(@bitSizeOf(u16), @bitSizeOf(Flags));
+            }
         };
 
         pub const ExtendedFlags = extern union {
             intent_to_add: bitjuggle.Bit(u16, 13),
             skip_worktree: bitjuggle.Bit(u16, 14),
             uptodate: bitjuggle.Bit(u16, 2),
+
+            test {
+                try std.testing.expectEqual(@sizeOf(u16), @sizeOf(ExtendedFlags));
+                try std.testing.expectEqual(@bitSizeOf(u16), @bitSizeOf(ExtendedFlags));
+            }
         };
 
         test {
