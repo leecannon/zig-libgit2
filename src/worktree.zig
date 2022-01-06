@@ -1,6 +1,5 @@
 const std = @import("std");
 const c = @import("internal/c.zig");
-const bitjuggle = @import("internal/bitjuggle.zig");
 const internal = @import("internal/internal.zig");
 const log = std.log.scoped(.git);
 

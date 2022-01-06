@@ -1,7 +1,6 @@
 const std = @import("std");
 const c = @import("internal/c.zig");
 const internal = @import("internal/internal.zig");
-const bitjuggle = @import("internal/bitjuggle.zig");
 const log = std.log.scoped(.git);
 
 const git = @import("git.zig");
@@ -370,55 +369,33 @@ pub const Credential = extern struct {
         return cred;
     }
 
-    pub const CredentialType = extern union {
+    pub const CredentialType = enum(c_uint) {
         /// A vanilla user/password request
-        /// @see git_credential_userpass_plaintext_new
-        userpass_plaintext: bitjuggle.Boolean(c_uint, 0),
+        USERPASS_PLAINTEXT = 1 << 0,
 
         /// An SSH key-based authentication request
-        /// @see git_credential_ssh_key_new
-        ssh_key: bitjuggle.Boolean(c_uint, 1),
+        SSH_KEY = 1 << 1,
 
         /// An SSH key-based authentication request, with a custom signature
-        /// @see git_credential_ssh_custom_new
-        ssh_custom: bitjuggle.Boolean(c_uint, 2),
+        SSH_CUSTOM = 1 << 2,
 
         /// An NTLM/Negotiate-based authentication request.
-        /// @see git_credential_default
-        default: bitjuggle.Boolean(c_uint, 3),
+        DEFAULT = 1 << 3,
 
         /// An SSH interactive authentication request
-        /// @see git_credential_ssh_interactive_new
-        ssh_interactive: bitjuggle.Boolean(c_uint, 4),
+        SSH_INTERACTIVE = 1 << 4,
 
         /// Username-only authentication request
         ///
-        /// Used as a pre-authentication step if the underlying transport
-        /// (eg. SSH, with no username in its URL) does not know which username
-        /// to use.
-        ///
-        /// @see git_credential_username_new
-        username: bitjuggle.Boolean(c_uint, 5),
+        /// Used as a pre-authentication step if the underlying transport (eg. SSH, with no username in its URL) does not know
+        /// which username to use.
+        USERNAME = 1 << 5,
 
         /// An SSH key-based authentication request
         ///
         /// Allows credentials to be read from memory instead of files.
-        /// Note that because of differences in crypto backend support, it might
-        /// not be functional.
-        ///
-        /// @see git_credential_ssh_key_memory_new
-        ssh_memory: bitjuggle.Boolean(c_uint, 6),
-
-        value: c_uint,
-
-        test {
-            try std.testing.expectEqual(@sizeOf(c_uint), @sizeOf(CredentialType));
-            try std.testing.expectEqual(@bitSizeOf(c_uint), @bitSizeOf(CredentialType));
-        }
-
-        comptime {
-            std.testing.refAllDecls(@This());
-        }
+        /// Note that because of differences in crypto backend support, it might not be functional.
+        SSH_MEMORY = 1 << 6,
     };
 
     test {
