@@ -3852,6 +3852,83 @@ pub const Repository = opaque {
         return ret;
     }
 
+    /// Lookup a reference to one of the objects in a repository.
+    ///
+    /// The generated reference is owned by the repository and should be closed with `git.Object.deinit`.
+    ///
+    /// The 'object_type' parameter must match the type of the object in the odb; the method will fail otherwise.
+    /// The special value 'git.ObjectType.ANY' may be passed to let the method guess the object's type.
+    ///
+    /// ## Parameters
+    /// * `id` - the unique identifier for the object
+    /// * `object_type` - the type of the object
+    pub fn objectLookup(self: *Repository, id: *const git.Oid, object_type: git.ObjectType) !*git.Object {
+        // This check is to prevent formating the oid when we are not going to print anything
+        if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
+            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            const slice = try id.formatHex(&buf);
+            log.debug("Repository.objectLookup called, id={s}, object_type={}", .{
+                slice,
+                object_type,
+            });
+        }
+
+        var ret: *git.Object = undefined;
+
+        try internal.wrapCall("git_object_lookup", .{
+            @ptrCast(*?*c.git_object, &ret),
+            @ptrCast(*c.git_repository, self),
+            @ptrCast(*const c.git_oid, id),
+            @enumToInt(object_type),
+        });
+
+        log.debug("successfully located object: {*}", .{ret});
+
+        return ret;
+    }
+
+    /// Lookup a reference to one of the objects in a repository, given a prefix of its identifier (short id).
+    ///
+    /// The object obtained will be so that its identifier matches the first 'len' hexadecimal characters (packets of 4 bits) of
+    /// the given 'id'.
+    /// 'len' must be at least `git.Oid.MIN_PREFIX_LEN`, and long enough to identify a unique object matching/ the prefix;
+    /// otherwise the method will fail.
+    ///
+    /// The generated reference is owned by the repository and should be closed with `git.Object.deinit`.
+    ///
+    /// The 'object_type' parameter must match the type of the object in the odb; the method will fail otherwise.
+    /// The special value 'git.ObjectType.ANY' may be passed to let the method guess the object's type.
+    ///
+    /// ## Parameters
+    /// * `id` - a short identifier for the object
+    /// * `len` - the length of the short identifier
+    /// * `object_type` - the type of the object
+    pub fn objectLookupPrefix(self: *Repository, id: *const git.Oid, len: usize, object_type: git.ObjectType) !*git.Object {
+        // This check is to prevent formating the oid when we are not going to print anything
+        if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
+            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            const slice = try id.formatHexCount(&buf, len);
+            log.debug("Repository.objectLookupPrefix called, id={s}, object_type={}", .{
+                slice,
+                object_type,
+            });
+        }
+
+        var ret: *git.Object = undefined;
+
+        try internal.wrapCall("git_object_lookup_prefix", .{
+            @ptrCast(*?*c.git_object, &ret),
+            @ptrCast(*c.git_repository, self),
+            @ptrCast(*const c.git_oid, id),
+            len,
+            @enumToInt(object_type),
+        });
+
+        log.debug("successfully located object: {*}", .{ret});
+
+        return ret;
+    }
+
     comptime {
         std.testing.refAllDecls(@This());
     }

@@ -9,6 +9,9 @@ const git = @import("git.zig");
 pub const Oid = extern struct {
     id: [20]u8,
 
+    /// Minimum length (in number of hex characters, i.e. packets of 4 bits) of an oid prefix
+    pub const MIN_PREFIX_LEN = c.GIT_OID_MINPREFIXLEN;
+
     /// Size (in bytes) of a hex formatted oid
     pub const HEX_BUFFER_SIZE = c.GIT_OID_HEXSZ;
 

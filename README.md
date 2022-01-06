@@ -36,7 +36,7 @@ There is currently no plan to port the headers within "include/git2/sys", if any
 - [ ] merge.h
 - [X] message.h
 - [X] notes.h
-- [ ] object.h
+- [X] object.h
 - [ ] odb_backend.h
 - [ ] odb.h
 - [X] oid.h
