@@ -37,6 +37,7 @@ pub usingnamespace @import("ref_db.zig");
 pub usingnamespace @import("reference.zig");
 pub usingnamespace @import("remote.zig");
 pub usingnamespace @import("repository.zig");
+pub usingnamespace @import("revwalk.zig");
 pub usingnamespace @import("signature.zig");
 pub usingnamespace @import("status_list.zig");
 pub usingnamespace @import("str_array.zig");

@@ -151,7 +151,7 @@ pub const Remote = opaque {
 
         /// Function to call with progress information during pack building. Be aware that this is called inline with pack
         /// building operations, so perfomance may be affected.
-        pack_progress: ?fn (stage: git.PackbuildStage, current: u32, total: u32, payload: ?*anyopaque) callconv(.C) c_int = null,
+        pack_progress: ?fn (stage: git.PackbuilderStage, current: u32, total: u32, payload: ?*anyopaque) callconv(.C) c_int = null,
 
         /// Function to call with progress information during the upload portion nof a push. Be aware that this is called
         /// inline with pack building operations, so performance may be affected.

@@ -3942,6 +3942,22 @@ pub const Repository = opaque {
         return ret;
     }
 
+    /// Initialize a new packbuilder
+    pub fn packbuilderNew(self: *Repository) !*git.PackBuilder {
+        log.debug("Repository.packbuilderNew called", .{});
+
+        var ret: *git.PackBuilder = undefined;
+
+        try internal.wrapCall("git_packbuilder_new", .{
+            @ptrCast(*?*c.git_packbuilder, &ret),
+            @ptrCast(*c.git_repository, self),
+        });
+
+        log.debug("successfully created a new packbuilder: {*}", .{ret});
+
+        return ret;
+    }
+
     comptime {
         std.testing.refAllDecls(@This());
     }
