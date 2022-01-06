@@ -30,6 +30,7 @@ pub usingnamespace @import("notes.zig");
 pub usingnamespace @import("object.zig");
 pub usingnamespace @import("odb.zig");
 pub usingnamespace @import("oid.zig");
+pub usingnamespace @import("oidarray.zig");
 pub usingnamespace @import("pack.zig");
 pub usingnamespace @import("proxy.zig");
 pub usingnamespace @import("ref_db.zig");

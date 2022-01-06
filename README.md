@@ -40,7 +40,7 @@ There is currently no plan to port the headers within "include/git2/sys", if any
 - [ ] odb_backend.h
 - [ ] odb.h
 - [X] oid.h
-- [ ] oidarray.h
+- [X] oidarray.h
 - [ ] pack.h
 - [ ] patch.h
 - [ ] pathspec.h
