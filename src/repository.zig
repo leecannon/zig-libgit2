@@ -3857,6 +3857,16 @@ pub const Repository = opaque {
     }
 };
 
+/// Valid modes for index and tree entries.
+pub const FileMode = enum(u16) {
+    UNREADABLE = 0o000000,
+    TREE = 0o040000,
+    BLOB = 0o100644,
+    BLOB_EXECUTABLE = 0o100755,
+    LINK = 0o120000,
+    COMMIT = 0o160000,
+};
+
 pub const FileStatus = packed struct {
     CURRENT: bool = false,
     INDEX_NEW: bool = false,
@@ -3899,26 +3909,6 @@ pub const FileStatus = packed struct {
     comptime {
         std.testing.refAllDecls(@This());
     }
-};
-
-/// Basic type (loose or packed) of any Git object.
-pub const ObjectType = enum(c_int) {
-    /// Object can be any of the following
-    ANY = -2,
-    /// Object is invalid.
-    INVALID = -1,
-    /// A commit object.
-    COMMIT = 1,
-    /// A tree (directory listing) object.
-    TREE = 2,
-    /// A file revision object.
-    BLOB = 3,
-    /// An annotated tag object.
-    TAG = 4,
-    /// A delta, base is given by an offset.
-    OFS_DELTA = 6,
-    /// A delta, base is given by object id.
-    REF_DELTA = 7,
 };
 
 comptime {

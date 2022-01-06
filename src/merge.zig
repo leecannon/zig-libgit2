@@ -5,6 +5,33 @@ const log = std.log.scoped(.git);
 
 const git = @import("git.zig");
 
+pub const SimilarityMetric = extern struct {
+    file_signature: fn (out: *?*anyopaque, file: *const git.DiffFile, full_path: [*:0]const u8, payload: ?*anyopaque) callconv(.C) c_int,
+
+    buffer_signature: fn (
+        out: *?*anyopaque,
+        file: *const git.DiffFile,
+        buf: [*:0]const u8,
+        buf_len: usize,
+        payload: ?*anyopaque,
+    ) callconv(.C) c_int,
+
+    free_signature: fn (sig: ?*anyopaque, payload: ?*anyopaque) callconv(.C) void,
+
+    similarity: fn (score: *c_int, siga: ?*anyopaque, sigb: ?*anyopaque, payload: ?*anyopaque) callconv(.C) c_int,
+
+    payload: ?*anyopaque,
+
+    test {
+        try std.testing.expectEqual(@sizeOf(c.git_diff_similarity_metric), @sizeOf(SimilarityMetric));
+        try std.testing.expectEqual(@bitSizeOf(c.git_diff_similarity_metric), @bitSizeOf(SimilarityMetric));
+    }
+
+    comptime {
+        std.testing.refAllDecls(@This());
+    }
+};
+
 pub const FileFavor = enum(c_uint) {
     /// When a region of a file is changed in both branches, a conflict will be recorded in the index so that `git_checkout` can
     /// produce a merge file with conflict markers in the working directory.
@@ -39,7 +66,7 @@ pub const MergeOptions = struct {
     target_limit: c_uint = 0,
 
     ///  Pluggable similarity metric; pass `null` to use internal metric
-    metric: ?*git.SimilarityMetric = null,
+    metric: ?*SimilarityMetric = null,
 
     /// Maximum number of times to merge common ancestors to build a virtual merge base when faced with criss-cross merges. When
     /// this limit is reached, the next ancestor will simply be used instead of attempting to merge it. The default is unlimited.

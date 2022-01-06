@@ -47,6 +47,26 @@ pub const Object = opaque {
     }
 };
 
+/// Basic type (loose or packed) of any Git object.
+pub const ObjectType = enum(c_int) {
+    /// Object can be any of the following
+    ANY = -2,
+    /// Object is invalid.
+    INVALID = -1,
+    /// A commit object.
+    COMMIT = 1,
+    /// A tree (directory listing) object.
+    TREE = 2,
+    /// A file revision object.
+    BLOB = 3,
+    /// An annotated tag object.
+    TAG = 4,
+    /// A delta, base is given by an offset.
+    OFS_DELTA = 6,
+    /// A delta, base is given by object id.
+    REF_DELTA = 7,
+};
+
 comptime {
     std.testing.refAllDecls(@This());
 }
