@@ -50,7 +50,7 @@ There is currently no plan to port the headers within "include/git2/sys", if any
 - [ ] reflog.h
 - [ ] refs.h
 - [X] refspec.h
-- [ ] remote.h
+- [X] remote.h
 - [X] repository.h
 - [ ] reset.h
 - [ ] revert.h

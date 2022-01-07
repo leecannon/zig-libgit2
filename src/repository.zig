@@ -3240,7 +3240,7 @@ pub const Repository = opaque {
     pub fn worktreeList(self: *Repository) !git.StrArray {
         log.debug("Repository.worktreeList called", .{});
 
-        var ret: git.StrArray = undefined;
+        var ret: git.StrArray = .{};
 
         try internal.wrapCall("git_worktree_list", .{
             @ptrCast(*c.git_strarray, &ret),
@@ -3956,6 +3956,264 @@ pub const Repository = opaque {
         log.debug("successfully created a new packbuilder: {*}", .{ret});
 
         return ret;
+    }
+
+    /// Add a remote with the default fetch refspec to the repository's configuration.
+    ///
+    /// ## Parameters
+    /// * `name` - the remote's name.
+    /// * `url` - the remote's url.
+    pub fn remoteCreate(self: *Repository, name: [:0]const u8, url: [:0]const u8) !*git.Remote {
+        log.debug("Repository.remoteCreate called, name={s}, url={s}", .{ name, url });
+
+        var remote: *git.Remote = undefined;
+
+        try internal.wrapCall("git_remote_create", .{
+            @ptrCast(*?*c.git_remote, &remote),
+            @ptrCast(*c.git_repository, self),
+            name.ptr,
+            url.ptr,
+        });
+
+        log.debug("successfully created remote", .{});
+
+        return remote;
+    }
+
+    /// Add a remote with the provided refspec (or default if `null`) to the repository's configuration.
+    ///
+    /// ## Parameters
+    /// * `name` - the remote's name.
+    /// * `url` - the remote's url.
+    /// * `fetch` - the remote fetch value.
+    pub fn remoteCreateWithFetchspec(
+        repository: *Repository,
+        name: [:0]const u8,
+        url: [:0]const u8,
+        fetch: ?[:0]const u8,
+    ) !*git.Remote {
+        log.debug("Repository.remoteCreateWithFetchspec called, name={s}, url={s}, fetch={s}", .{ name, url, fetch });
+
+        var remote: *git.Remote = undefined;
+
+        const c_fetch = if (fetch) |s| s.ptr else null;
+
+        try internal.wrapCall("git_remote_create_with_fetchspec", .{
+            @ptrCast(*?*c.git_remote, &remote),
+            @ptrCast(*c.git_repository, repository),
+            name.ptr,
+            url.ptr,
+            c_fetch,
+        });
+
+        log.debug("successfully created remote: {*}", .{remote});
+
+        return remote;
+    }
+
+    /// Create a remote with the given url in-memory. You can use this when you have a url instead of a remote's name.
+    ///
+    /// ## Parameters
+    /// * `name` - the remote's name.
+    /// * `url` - the remote's url.
+    pub fn remoteCreateAnonymous(repository: *Repository, url: [:0]const u8) !*git.Remote {
+        log.debug("Repository.remoteCreateAnonymous called, url={s}", .{url});
+
+        var remote: *git.Remote = undefined;
+
+        try internal.wrapCall("git_remote_create_anonymous", .{
+            @ptrCast(*?*c.git_remote, &remote),
+            @ptrCast(*c.git_repository, repository),
+            url.ptr,
+        });
+
+        log.debug("successfully created remote: {*}", .{remote});
+
+        return remote;
+    }
+
+    /// Get the information for a particular remote.
+    ///
+    /// ## Parameters
+    /// * `name` - the remote's name
+    pub fn remoteLookup(repository: *Repository, name: [:0]const u8) !*git.Remote {
+        log.debug("Repository.remoteLookup called, name=\"{s}\"", .{name});
+
+        var remote: *git.Remote = undefined;
+
+        try internal.wrapCall("git_remote_lookup", .{
+            @ptrCast(*?*c.git_remote, &remote),
+            @ptrCast(*c.git_repository, repository),
+            name.ptr,
+        });
+
+        log.debug("successfully found remote: {*}", .{remote});
+
+        return remote;
+    }
+
+    /// Set the remote's url in the configuration
+    ///
+    /// Remote objects already in memory will not be affected. This assumes the common case of a single-url remote and will
+    /// otherwise return an error.
+    ///
+    /// ## Parameters
+    /// * `remote` - the remote's name.
+    /// * `url` - the url to set.
+    pub fn remoteSetUrl(repository: *Repository, remote: [:0]const u8, url: [:0]const u8) !void {
+        log.debug("Repository.remoteSetUrl called, remote={s}, url={s}", .{ remote, url });
+
+        try internal.wrapCall("git_remote_set_url", .{
+            @ptrCast(*c.git_repository, repository),
+            remote.ptr,
+            url.ptr,
+        });
+
+        log.debug("successfully set url", .{});
+    }
+
+    /// Set the remote's url for pushing in the configuration.
+    ///
+    /// Remote objects already in memory will not be affected. This assumes the common case of a single-url remote and will
+    /// otherwise return an error.
+    ///
+    /// ## Parameters
+    /// * `remote` - the remote's name.
+    /// * `url` - the url to set.
+    pub fn remoteSetPushurl(repository: *Repository, remote: [:0]const u8, url: [:0]const u8) !void {
+        log.debug("Repository.remoteSetPushurl called, remote={s}, url={s}", .{ remote, url });
+
+        try internal.wrapCall("git_remote_set_pushurl", .{
+            @ptrCast(*c.git_repository, repository),
+            remote.ptr,
+            url.ptr,
+        });
+
+        log.debug("successfully set pushurl", .{});
+    }
+
+    /// Add a fetch refspec to the remote's configuration.
+    ///
+    /// Add the given refspec to the fetch list in the configuration. No loaded remote instances will be affected.
+    ///
+    /// ## Parameters
+    /// * `remote` - name of the remote to change.
+    /// * `refspec` - the new fetch refspec.
+    pub fn remoteAddFetch(repository: *Repository, remote: [:0]const u8, refspec: [:0]const u8) !void {
+        log.debug("Repository.remoteAddFetch called, remote={s}, refspec={s}", .{ remote, refspec });
+
+        try internal.wrapCall("git_remote_add_fetch", .{
+            @ptrCast(*c.git_repository, repository),
+            remote.ptr,
+            refspec.ptr,
+        });
+
+        log.debug("successfully added fetch", .{});
+    }
+
+    /// Add a pull refspec to the remote's configuration.
+    ///
+    /// Add the given refspec to the push list in the configuration. No loaded remote instances will be affected.
+    ///
+    /// ## Parameters
+    /// * `remote` - name of the remote to change.
+    /// * `refspec` - the new push refspec.
+    pub fn remoteAddPush(repository: *Repository, remote: [:0]const u8, refspec: [:0]const u8) !void {
+        log.debug("Repository.remoteAddPush called, remote={s}, refspecs={s}", .{ remote, refspec });
+
+        try internal.wrapCall("git_remote_add_push", .{
+            @ptrCast(*c.git_repository, repository),
+            remote.ptr,
+            refspec.ptr,
+        });
+
+        log.debug("successfully added push", .{});
+    }
+
+    /// Get a list of the configured remotes for a repo
+    ///
+    /// The returned array must be deinit by user.
+    pub fn remoteList(self: *Repository) !git.StrArray {
+        log.debug("Repository.remoteList called", .{});
+
+        var str: git.StrArray = .{};
+
+        try internal.wrapCall("git_remote_list", .{
+            @ptrCast(*c.git_strarray, &str),
+            @ptrCast(*c.git_repository, self),
+        });
+
+        log.debug("successfully got remotes list", .{});
+
+        return str;
+    }
+
+    /// Set the remote's tag following setting.
+    ///
+    /// The change will be made in the configuration. No loaded remotes will be affected.
+    ///
+    /// ## Parameters
+    /// * `remote` - the name of the remote.
+    /// * `value` - the new value to take.
+    pub fn remoteSetAutotag(self: *Repository, remote: [:0]const u8, value: git.Remote.AutoTagOption) !void {
+        log.debug("Remote.setAutotag called, remote={s}, value={}", .{ remote, value });
+
+        try internal.wrapCall("git_remote_set_autotag", .{
+            @ptrCast(*c.git_repository, self),
+            remote.ptr,
+            @enumToInt(value),
+        });
+
+        log.debug("successfully set autotag", .{});
+    }
+
+    /// Give the remote a new name
+    ///
+    /// All remote-tracking branches and configuration settings for the remote are updated.
+    ///
+    /// TODO: Fix `git_tag_create()` once tag.h has been done
+    /// The new name will be checked for validity. See git_tag_create() for rules about valid names.
+    ///
+    /// No loaded instances of a the remote with the old name will change their name or their list of refspecs.
+    ///
+    /// Non-default refspecs cannot be renamed and will be returned for further processing by the caller.
+    /// Always free the returned `git.StrArray`.
+    ///
+    /// ## Problems
+    /// * `name` - the current name of the remote
+    /// * `new_name` - the new name the remote should bear
+    pub fn remoteRename(self: *Repository, name: [:0]const u8, new_name: [:0]const u8) !git.StrArray {
+        log.debug("Repository.remoteRename called, name={s}, new_name={s}", .{ name, new_name });
+
+        var problems: git.StrArray = .{};
+
+        try internal.wrapCall("git_remote_rename", .{
+            @ptrCast(*c.git_strarray, &problems),
+            @ptrCast(*c.git_repository, self),
+            name.ptr,
+            new_name.ptr,
+        });
+
+        log.debug("successfully renamed remote", .{});
+
+        return problems;
+    }
+
+    /// Delete an existing persisted remote.
+    ///
+    /// All remote-tracking branches and configuration settings for the remote will be removed.
+    ///
+    /// ## Parameters
+    /// * `name` - the remote to delete
+    pub fn remoteDelete(self: *Repository, name: [:0]const u8) !void {
+        log.debug("Repository.remoteDelete called, name={s}", .{name});
+
+        try internal.wrapCall("git_remote_delete", .{
+            @ptrCast(*c.git_repository, self),
+            name.ptr,
+        });
+
+        log.debug("successfully deleted remote", .{});
     }
 
     comptime {

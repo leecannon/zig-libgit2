@@ -14,7 +14,7 @@ pub const ProxyOptions = struct {
     /// This will be called if the remote host requires authentication in order to connect to it.
     ///
     /// Return 0 for success, < 0 to indicate an error, > 0 to indicate no credential was acquired
-    /// Returning `GitError.Passthrough` will make libgit2 behave as though this field isn't set.
+    /// Returning `errorToCInt(GitError.Passthrough)` will make libgit2 behave as though this field isn't set.
     ///
     /// ## Parameters
     /// * `out` - The newly created credential object.
@@ -26,8 +26,7 @@ pub const ProxyOptions = struct {
         out: **git.Credential,
         url: [*:0]const u8,
         username_from_url: [*:0]const u8,
-        /// BUG: This is supposed to be `git.Credential.CredentialType`, but can't be due to a zig compiler bug
-        allowed_types: c_uint,
+        allowed_types: git.Credential.CredentialType,
         payload: ?*anyopaque,
     ) callconv(.C) c_int = null,
 

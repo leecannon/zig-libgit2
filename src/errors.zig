@@ -67,6 +67,41 @@ pub const GitError = error{
     ApplyFail,
 };
 
+/// Transform a `GitError` into the matching `libgit2` error code
+pub fn errorToCInt(err: GitError) c_int {
+    return switch (err) {
+        git.GitError.GenericError => c.GIT_ERROR,
+        git.GitError.NotFound => c.GIT_ENOTFOUND,
+        git.GitError.Exists => c.GIT_EEXISTS,
+        git.GitError.Ambiguous => c.GIT_EAMBIGUOUS,
+        git.GitError.BufferTooShort => c.GIT_EBUFS,
+        git.GitError.User => c.GIT_EUSER,
+        git.GitError.BareRepo => c.GIT_EBAREREPO,
+        git.GitError.UnbornBranch => c.GIT_EUNBORNBRANCH,
+        git.GitError.Unmerged => c.GIT_EUNMERGED,
+        git.GitError.NonFastForwardable => c.GIT_ENONFASTFORWARD,
+        git.GitError.InvalidSpec => c.GIT_EINVALIDSPEC,
+        git.GitError.Conflict => c.GIT_ECONFLICT,
+        git.GitError.Locked => c.GIT_ELOCKED,
+        git.GitError.Modifed => c.GIT_EMODIFIED,
+        git.GitError.Auth => c.GIT_EAUTH,
+        git.GitError.Certificate => c.GIT_ECERTIFICATE,
+        git.GitError.Applied => c.GIT_EAPPLIED,
+        git.GitError.Peel => c.GIT_EPEEL,
+        git.GitError.EndOfFile => c.GIT_EEOF,
+        git.GitError.Invalid => c.GIT_EINVALID,
+        git.GitError.Uncommited => c.GIT_EUNCOMMITTED,
+        git.GitError.Directory => c.GIT_EDIRECTORY,
+        git.GitError.MergeConflict => c.GIT_EMERGECONFLICT,
+        git.GitError.Passthrough => c.GIT_PASSTHROUGH,
+        git.GitError.IterOver => c.GIT_ITEROVER,
+        git.GitError.Retry => c.GIT_RETRY,
+        git.GitError.Mismatch => c.GIT_EMISMATCH,
+        git.GitError.IndexDirty => c.GIT_EINDEXDIRTY,
+        git.GitError.ApplyFail => c.GIT_EAPPLYFAIL,
+    };
+}
+
 /// Get detailed information regarding the last error that occured on *this* thread.
 pub fn getDetailedLastError() ?*const DetailedError {
     return @ptrCast(?*const DetailedError, c.git_error_last());
