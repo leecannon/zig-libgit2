@@ -537,20 +537,6 @@ pub const Remote = opaque {
         return ret;
     }
 
-    /// Ensure the remote name is well-formed.
-    pub fn nameIsValid(remote_name: [:0]const u8) !bool {
-        log.debug("Remote.nameIsValid called, remote_name={s}", .{remote_name});
-
-        var ret: c_int = undefined;
-        try internal.wrapCall("git_remote_name_is_valid", .{
-            &ret,
-            remote_name.ptr,
-        });
-
-        log.debug("successfully checked name, valid={}", .{ret != 0});
-        return ret != 0;
-    }
-
     /// Get the remote's repository.
     pub fn getOwner(self: *const Remote) ?*git.Repository {
         log.debug("Remote.owner called", .{});
@@ -681,38 +667,6 @@ pub const Remote = opaque {
         });
 
         log.debug("successfully set autotag", .{});
-    }
-
-    /// Set the push url for this particular url instance. The URL in the configuration will be ignored, and will not
-    /// be changed.
-    ///
-    /// ## Parameters
-    /// * `url` - The url to set.
-    pub fn setInstancePushurl(self: *Remote, url: [:0]const u8) !void {
-        log.debug("Remote.setInstancePushurl called, url={s}", .{url});
-
-        try internal.wrapCall("git_remote_set_instance_pushurl", .{
-            @ptrCast(*c.git_remote, self),
-            url.ptr,
-        });
-
-        log.debug("successfully set instance pushurl", .{});
-    }
-
-    /// Set the url for this particular url instance. The URL in the configuration will be ignored, and will not be
-    /// changed.
-    ///
-    /// ## Parameters
-    /// * `url` - The url to set.
-    pub fn setInstanceUrl(self: *Remote, url: [:0]const u8) !void {
-        log.debug("Remote.setInstanceUrl called, url={s}", .{url});
-
-        try internal.wrapCall("git_remote_set_instance_url", .{
-            @ptrCast(*c.git_remote, self),
-            url.ptr,
-        });
-
-        log.debug("successfully set instance url", .{});
     }
 
     /// Set the remote's url for pushing in the configuration.
