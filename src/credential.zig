@@ -369,33 +369,59 @@ pub const Credential = extern struct {
         return cred;
     }
 
-    pub const CredentialType = enum(c_uint) {
+    pub const CredentialType = packed struct {
         /// A vanilla user/password request
-        USERPASS_PLAINTEXT = 1 << 0,
+        USERPASS_PLAINTEXT: bool = false,
 
         /// An SSH key-based authentication request
-        SSH_KEY = 1 << 1,
+        SSH_KEY: bool = false,
 
         /// An SSH key-based authentication request, with a custom signature
-        SSH_CUSTOM = 1 << 2,
+        SSH_CUSTOM: bool = false,
 
         /// An NTLM/Negotiate-based authentication request.
-        DEFAULT = 1 << 3,
+        DEFAULT: bool = false,
 
         /// An SSH interactive authentication request
-        SSH_INTERACTIVE = 1 << 4,
+        SSH_INTERACTIVE: bool = false,
 
         /// Username-only authentication request
         ///
         /// Used as a pre-authentication step if the underlying transport (eg. SSH, with no username in its URL) does not know
         /// which username to use.
-        USERNAME = 1 << 5,
+        USERNAME: bool = false,
 
         /// An SSH key-based authentication request
         ///
         /// Allows credentials to be read from memory instead of files.
         /// Note that because of differences in crypto backend support, it might not be functional.
-        SSH_MEMORY = 1 << 6,
+        SSH_MEMORY: bool = false,
+
+        z_padding: u25 = 0,
+
+        pub fn format(
+            value: CredentialType,
+            comptime fmt: []const u8,
+            options: std.fmt.FormatOptions,
+            writer: anytype,
+        ) !void {
+            _ = fmt;
+            return internal.formatWithoutFields(
+                value,
+                options,
+                writer,
+                &.{"z_padding"},
+            );
+        }
+
+        test {
+            try std.testing.expectEqual(@sizeOf(c_uint), @sizeOf(CredentialType));
+            try std.testing.expectEqual(@bitSizeOf(c_uint), @bitSizeOf(CredentialType));
+        }
+
+        comptime {
+            std.testing.refAllDecls(@This());
+        }
     };
 
     test {

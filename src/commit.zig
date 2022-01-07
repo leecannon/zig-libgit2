@@ -416,8 +416,8 @@ pub const Commit = opaque {
         return ret;
     }
 
-    pub fn dupe(self: *Commit) !*Commit {
-        log.debug("Commit.dupe called", .{});
+    pub fn duplicate(self: *Commit) !*Commit {
+        log.debug("Commit.duplicate called", .{});
 
         var commit: *Commit = undefined;
 
