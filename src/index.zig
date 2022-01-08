@@ -986,6 +986,43 @@ pub const Index = opaque {
         }
     };
 
+    /// Match a pathspec against entries in an index.
+    ///
+    /// This matches the pathspec against the files in the repository index.
+    ///
+    /// NOTE: At the moment, the case sensitivity of this match is controlled by the current case-sensitivity of the index object
+    /// itself and the `MatchOptions.USE_CASE` and `MatchOptions.IGNORE_CASE` options will have no effect.
+    /// This behavior will be corrected in a future release.
+    ///
+    /// If `match_list` is not `null`, this returns a `git.PathspecMatchList`. That contains the list of all matched filenames
+    /// (unless you pass the `MatchOptions.FAILURES_ONLY` options) and may also contain the list of pathspecs with no match (if
+    /// you used the `MatchOptions.FIND_FAILURES` option).
+    /// You must call `PathspecMatchList.deinit()` on this object.
+    ///
+    /// ## Parameters
+    /// * `pathspec` - pathspec to be matched
+    /// * `options` - options to control match
+    /// * `match_list` - output list of matches; pass `null` to just get return value
+    pub fn pathspecMatch(
+        self: *Index,
+        pathspec: *git.Pathspec,
+        options: git.Pathspec.MatchOptions,
+        match_list: ?**git.PathspecMatchList,
+    ) !bool {
+        log.debug("Index.pathspecMatch called, options={}, pathspec={*}", .{ options, pathspec });
+
+        const ret = (try internal.wrapCallWithReturn("git_pathspec_match_index", .{
+            @ptrCast(?*?*c.git_pathspec_match_list, match_list),
+            @ptrCast(*c.git_index, self),
+            @bitCast(c.git_pathspec_flag_t, options),
+            @ptrCast(*c.git_pathspec, pathspec),
+        })) != 0;
+
+        log.debug("match: {}", .{ret});
+
+        return ret;
+    }
+
     comptime {
         std.testing.refAllDecls(@This());
     }

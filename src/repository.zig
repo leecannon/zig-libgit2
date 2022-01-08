@@ -4216,6 +4216,41 @@ pub const Repository = opaque {
         log.debug("successfully deleted remote", .{});
     }
 
+    /// Match a pathspec against the working directory of a repository.
+    ///
+    /// This matches the pathspec against the current files in the working directory of the repository. It is an error to invoke
+    /// this on a bare repo. This handles git ignores (i.e. ignored files will not be considered to match the `pathspec` unless
+    /// the file is tracked in the index).
+    ///
+    /// If `match_list` is not `null`, this returns a `git.PathspecMatchList`. That contains the list of all matched filenames
+    /// (unless you pass the `MatchOptions.FAILURES_ONLY` options) and may also contain the list of pathspecs with no match (if
+    /// you used the `MatchOptions.FIND_FAILURES` option).
+    /// You must call `PathspecMatchList.deinit()` on this object.
+    ///
+    /// ## Parameters
+    /// * `pathspec` - pathspec to be matched
+    /// * `options` - options to control match
+    /// * `match_list` - output list of matches; pass `null` to just get return value
+    pub fn pathspecMatchWorkdir(
+        self: *Repository,
+        pathspec: *git.Pathspec,
+        options: git.Pathspec.MatchOptions,
+        match_list: ?**git.PathspecMatchList,
+    ) !bool {
+        log.debug("Repository.pathspecMatchWorkdir called, options={}, pathspec={*}", .{ options, pathspec });
+
+        const ret = (try internal.wrapCallWithReturn("git_pathspec_match_workdir", .{
+            @ptrCast(?*?*c.git_pathspec_match_list, match_list),
+            @ptrCast(*c.git_repository, self),
+            @bitCast(c.git_pathspec_flag_t, options),
+            @ptrCast(*c.git_pathspec, pathspec),
+        })) != 0;
+
+        log.debug("match: {}", .{ret});
+
+        return ret;
+    }
+
     comptime {
         std.testing.refAllDecls(@This());
     }

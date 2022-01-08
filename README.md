@@ -43,7 +43,7 @@ There is currently no plan to port the headers within "include/git2/sys", if any
 - [X] oidarray.h
 - [X] pack.h
 - [ ] patch.h
-- [ ] pathspec.h
+- [X] pathspec.h
 - [ ] proxy.h
 - [ ] rebase.h
 - [ ] refdb.h

@@ -32,6 +32,7 @@ pub usingnamespace @import("odb.zig");
 pub usingnamespace @import("oid.zig");
 pub usingnamespace @import("oidarray.zig");
 pub usingnamespace @import("pack.zig");
+pub usingnamespace @import("pathspec.zig");
 pub usingnamespace @import("proxy.zig");
 pub usingnamespace @import("ref_db.zig");
 pub usingnamespace @import("reference.zig");

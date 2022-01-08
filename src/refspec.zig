@@ -10,8 +10,8 @@ pub const Refspec = opaque {
     /// Parse a given refspec string.
     ///
     /// ## Parameters
-    /// * `input` the refspec string
-    /// * `is_fetch` is this a refspec for a fetch
+    /// * `input` - the refspec string
+    /// * `is_fetch` - is this a refspec for a fetch
     pub fn parse(input: [:0]const u8, is_fetch: bool) !*Refspec {
         log.debug("Refspec.parse called, input: {s}, is_fetch={}", .{ input, is_fetch });
 
@@ -147,7 +147,7 @@ pub const Refspec = opaque {
     /// Transform a reference to its target following the refspec's rules
     ///
     /// # Parameters
-    /// * `name` - The name of the reference to transform.
+    /// * `name` - the name of the reference to transform.
     pub fn transform(refspec: *const Refspec, name: [:0]const u8) !git.Buf {
         log.debug("Refspec.transform called, name={s}", .{name});
 
@@ -167,7 +167,7 @@ pub const Refspec = opaque {
     /// Transform a target reference to its source reference following the refspec's rules
     ///
     /// # Parameters
-    /// * `name` - The name of the reference to transform.
+    /// * `name` - the name of the reference to transform.
     pub fn rtransform(refspec: *const Refspec, name: [:0]const u8) !git.Buf {
         log.debug("Refspec.rtransform called, name={s}", .{name});
 
