@@ -4251,6 +4251,143 @@ pub const Repository = opaque {
         return ret;
     }
 
+    /// Find a single object, as specified by a revision string.
+    ///
+    /// See `man gitrevisions`, or http://git-scm.com/docs/git-rev-parse.html#_specifying_revisions for information on the syntax
+    /// accepted.
+    ///
+    /// The returned object should be released with `Object.deinit()` when no longer needed.
+    ///
+    /// ## Parameters
+    /// * `spec` - the textual specification for an object
+    pub fn revisionParseSingle(self: *Repository, spec: [:0]const u8) !*git.Object {
+        log.debug("Repository.revisionParseSingle called, spec: {s}", .{spec});
+
+        var ret: *git.Object = undefined;
+
+        try internal.wrapCall("git_revparse_single", .{
+            @ptrCast(*?*c.git_object, &ret),
+            @ptrCast(*c.git_repository, self),
+            spec.ptr,
+        });
+
+        log.debug("successfully found object: {*}", .{ret});
+
+        return ret;
+    }
+
+    /// Find a single object and intermediate reference by a revision string.
+    ///
+    /// See `man gitrevisions`, or http://git-scm.com/docs/git-rev-parse.html#_specifying_revisions for information on the syntax
+    /// accepted.
+    ///
+    /// In some cases (`@{<-n>}` or `<branchname>@{upstream}`), the expression may point to an intermediate reference. When such
+    //// expressions are being passed in, `reference` will be valued as well.
+    ///
+    /// The returned object should be released with `Object.deinit()` when no longer needed.
+    ///
+    /// ## Parameters
+    /// * `reference` - pointer to output reference or `null`
+    /// * `spec` - the textual specification for an object
+    pub fn revisionParseExtended(
+        self: *Repository,
+        reference: ?**git.Reference,
+        spec: [:0]const u8,
+    ) !*git.Object {
+        log.debug("Repository.revisionParseExtended called, reference: {*}, spec: {s}", .{ reference, spec });
+
+        var ret: *git.Object = undefined;
+
+        try internal.wrapCall("git_revparse_ext", .{
+            @ptrCast(*?*c.git_object, &ret),
+            @ptrCast(?*?*c.git_reference, reference),
+            @ptrCast(*c.git_repository, self),
+            spec.ptr,
+        });
+
+        log.debug("successfully found object: {*}", .{ret});
+
+        return ret;
+    }
+
+    pub const RevSpec = extern struct {
+        /// The left element of the revspec; must be freed by the user
+        from: ?*git.Object,
+        /// The right element of the revspec; must be freed by the user
+        to: ?*git.Object,
+        /// The intent of the revspec
+        flags: RevSpecFlags,
+
+        pub const RevSpecFlags = packed struct {
+            /// The spec targeted a single object.
+            SINGLE: bool = false,
+            /// The spec targeted a range of commits.
+            RANGE: bool = false,
+            /// The spec used the '...' operator, which invokes special semantics.
+            MERGE_BASE: bool = false,
+
+            z_padding: u29 = 0,
+
+            pub fn format(
+                value: RevSpecFlags,
+                comptime fmt: []const u8,
+                options: std.fmt.FormatOptions,
+                writer: anytype,
+            ) !void {
+                _ = fmt;
+                return internal.formatWithoutFields(
+                    value,
+                    options,
+                    writer,
+                    &.{"z_padding"},
+                );
+            }
+
+            test {
+                try std.testing.expectEqual(@sizeOf(c.git_revspec_t), @sizeOf(RevSpecFlags));
+                try std.testing.expectEqual(@bitSizeOf(c.git_revspec_t), @bitSizeOf(RevSpecFlags));
+            }
+
+            comptime {
+                std.testing.refAllDecls(@This());
+            }
+        };
+
+        test {
+            try std.testing.expectEqual(@sizeOf(c.git_revspec), @sizeOf(RevSpec));
+            try std.testing.expectEqual(@bitSizeOf(c.git_revspec), @bitSizeOf(RevSpec));
+        }
+
+        comptime {
+            std.testing.refAllDecls(@This());
+        }
+    };
+
+    /// Parse a revision string for `from`, `to`, and intent.
+    ///
+    /// See `man gitrevisions`, or http://git-scm.com/docs/git-rev-parse.html#_specifying_revisions for information on the syntax
+    /// accepted.
+    ///
+    /// The returned `RevSpec` contains two `git.Object`'s that should be freed by the user.
+    ///
+    /// ## Parameters
+    /// * `spec` - the rev-parse spec to parse
+    pub fn revisionParse(self: *Repository, spec: [:0]const u8) !RevSpec {
+        log.debug("Repository.revisionParse called, spec: {s}", .{spec});
+
+        var ret: RevSpec = undefined;
+
+        try internal.wrapCall("git_revparse", .{
+            @ptrCast(*c.git_revspec, &ret),
+            @ptrCast(*c.git_repository, self),
+            spec.ptr,
+        });
+
+        log.debug("successfully parsed revision string", .{});
+
+        return ret;
+    }
+
     comptime {
         std.testing.refAllDecls(@This());
     }

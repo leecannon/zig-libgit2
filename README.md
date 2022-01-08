@@ -54,7 +54,7 @@ There is currently no plan to port the headers within "include/git2/sys", if any
 - [X] repository.h
 - [ ] reset.h
 - [ ] revert.h
-- [ ] revparse.h
+- [X] revparse.h
 - [ ] revwalk.h
 - [ ] signature.h
 - [ ] stash.h
