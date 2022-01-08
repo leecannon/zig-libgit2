@@ -115,8 +115,8 @@ pub const MergeOptions = struct {
         }
 
         test {
-            try std.testing.expectEqual(@sizeOf(u32), @sizeOf(MergeFlags));
-            try std.testing.expectEqual(@bitSizeOf(u32), @bitSizeOf(MergeFlags));
+            try std.testing.expectEqual(@sizeOf(c.git_merge_flag_t), @sizeOf(MergeFlags));
+            try std.testing.expectEqual(@bitSizeOf(c.git_merge_flag_t), @bitSizeOf(MergeFlags));
         }
 
         comptime {
@@ -168,8 +168,8 @@ pub const MergeOptions = struct {
         }
 
         test {
-            try std.testing.expectEqual(@sizeOf(u32), @sizeOf(FileFlags));
-            try std.testing.expectEqual(@bitSizeOf(u32), @bitSizeOf(FileFlags));
+            try std.testing.expectEqual(@sizeOf(c.git_merge_file_flag_t), @sizeOf(FileFlags));
+            try std.testing.expectEqual(@bitSizeOf(c.git_merge_file_flag_t), @bitSizeOf(FileFlags));
         }
 
         comptime {

@@ -171,8 +171,8 @@ pub const Worktree = opaque {
         }
 
         test {
-            try std.testing.expectEqual(@sizeOf(u32), @sizeOf(PruneOptions));
-            try std.testing.expectEqual(@bitSizeOf(u32), @bitSizeOf(PruneOptions));
+            try std.testing.expectEqual(@sizeOf(c.git_worktree_prune_t), @sizeOf(PruneOptions));
+            try std.testing.expectEqual(@bitSizeOf(c.git_worktree_prune_t), @bitSizeOf(PruneOptions));
         }
 
         comptime {

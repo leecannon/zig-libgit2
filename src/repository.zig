@@ -1780,8 +1780,8 @@ pub const Repository = opaque {
             }
 
             test {
-                try std.testing.expectEqual(@sizeOf(u32), @sizeOf(BlameFlags));
-                try std.testing.expectEqual(@bitSizeOf(u32), @bitSizeOf(BlameFlags));
+                try std.testing.expectEqual(@sizeOf(c.git_blame_flag_t), @sizeOf(BlameFlags));
+                try std.testing.expectEqual(@bitSizeOf(c.git_blame_flag_t), @bitSizeOf(BlameFlags));
             }
 
             comptime {

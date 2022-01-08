@@ -148,8 +148,8 @@ pub const Blob = opaque {
             }
 
             test {
-                try std.testing.expectEqual(@sizeOf(u32), @sizeOf(BlobFilterFlags));
-                try std.testing.expectEqual(@bitSizeOf(u32), @bitSizeOf(BlobFilterFlags));
+                try std.testing.expectEqual(@sizeOf(c.git_blob_filter_flag_t), @sizeOf(BlobFilterFlags));
+                try std.testing.expectEqual(@bitSizeOf(c.git_blob_filter_flag_t), @bitSizeOf(BlobFilterFlags));
             }
 
             comptime {
