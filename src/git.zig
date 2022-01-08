@@ -35,6 +35,7 @@ pub usingnamespace @import("pack.zig");
 pub usingnamespace @import("proxy.zig");
 pub usingnamespace @import("ref_db.zig");
 pub usingnamespace @import("reference.zig");
+pub usingnamespace @import("refspec.zig");
 pub usingnamespace @import("remote.zig");
 pub usingnamespace @import("repository.zig");
 pub usingnamespace @import("revwalk.zig");
