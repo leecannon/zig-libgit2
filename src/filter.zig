@@ -102,7 +102,7 @@ pub const FilterList = opaque {
     /// ## Parameters
     /// * `name` - The name of the filter to query
     pub fn contains(self: *FilterList, name: [:0]const u8) bool {
-        log.debug("FilterList.contains called, name={s}", .{name});
+        log.debug("FilterList.contains called, name: {s}", .{name});
 
         const ret = c.git_filter_list_contains(@ptrCast(*c.git_filter_list, self), name.ptr) != 0;
 
@@ -117,7 +117,7 @@ pub const FilterList = opaque {
     /// * `repo` - the repository in which to perform the filtering
     /// * `path` - the path of the file to filter, a relative path will be taken as relative to the workdir
     pub fn applyToFile(self: *FilterList, repo: *git.Repository, path: [:0]const u8) !git.Buf {
-        log.debug("FilterList.applyToFile called, repo={*}, path={s}", .{ repo, path });
+        log.debug("FilterList.applyToFile called, repo: {*}, path: {s}", .{ repo, path });
 
         var ret: git.Buf = .{};
 
@@ -138,7 +138,7 @@ pub const FilterList = opaque {
     /// ## Parameters
     /// * `blob` - the blob to filter
     pub fn applyToBlob(self: *FilterList, blob: *git.Blob) !git.Buf {
-        log.debug("FilterList.applyToBlob called, blob={*}", .{blob});
+        log.debug("FilterList.applyToBlob called, blob: {*}", .{blob});
 
         var ret: git.Buf = .{};
 
@@ -165,7 +165,7 @@ pub const FilterList = opaque {
         path: [:0]const u8,
         target: *git.WriteStream,
     ) !void {
-        log.debug("FilterList.applyToFileToStream called, repo={*}, path={s}, target={*}", .{ repo, path, target });
+        log.debug("FilterList.applyToFileToStream called, repo: {*}, path: {s}, target: {*}", .{ repo, path, target });
 
         try internal.wrapCall("git_filter_list_stream_file", .{
             @ptrCast(*c.git_filter_list, self),
@@ -183,7 +183,7 @@ pub const FilterList = opaque {
     /// * `blob` - the blob to filter
     /// * `target` - the stream into which the data will be written
     pub fn applyToBlobToStream(self: *FilterList, blob: *git.Blob, target: *git.WriteStream) !void {
-        log.debug("FilterList.applyToBlobToStream called, blob={*}, target={*}", .{ blob, target });
+        log.debug("FilterList.applyToBlobToStream called, blob: {*}, target: {*}", .{ blob, target });
 
         try internal.wrapCall("git_filter_list_stream_blob", .{
             @ptrCast(*c.git_filter_list, self),
@@ -207,7 +207,7 @@ pub const FilterList = opaque {
     /// ## Parameters
     /// * `name` - Buffer containing the data to filter
     pub fn applyToBuffer(self: *FilterList, in: [:0]const u8) !git.Buf {
-        log.debug("FilterList.applyToBuffer called, in={s}", .{in});
+        log.debug("FilterList.applyToBuffer called, in: {s}", .{in});
 
         var ret: git.Buf = .{};
 
@@ -229,7 +229,7 @@ pub const FilterList = opaque {
     /// * `buffer` - the buffer to filter
     /// * `target` - the stream into which the data will be written
     pub fn applyToBufferToStream(self: *FilterList, buffer: [:0]const u8, target: *git.WriteStream) !void {
-        log.debug("FilterList.applyToBufferToStream called, buffer={s}, target={*}", .{ buffer, target });
+        log.debug("FilterList.applyToBufferToStream called, buffer: {s}, target: {*}", .{ buffer, target });
 
         try internal.wrapCall("git_filter_list_stream_buffer", .{
             @ptrCast(*c.git_filter_list, self),

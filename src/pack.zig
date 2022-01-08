@@ -18,7 +18,7 @@ pub const PackBuilder = opaque {
     ///
     /// By default, libgit2 won't spawn any threads at all; when set to 0, libgit2 will autodetect the number of CPUs.
     pub fn setThreads(self: *PackBuilder, n: c_uint) c_uint {
-        log.debug("PackBuilder.setThreads called, n={}", .{n});
+        log.debug("PackBuilder.setThreads called, n: {}", .{n});
 
         const ret = c.git_packbuilder_set_threads(
             @ptrCast(*c.git_packbuilder, self),
@@ -60,7 +60,7 @@ pub const PackBuilder = opaque {
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
             var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
             const slice = try id.formatHex(&buf);
-            log.debug("PackBuilder.insert called, id={s}, name={s}", .{
+            log.debug("PackBuilder.insert called, id: {s}, name: {s}", .{
                 slice,
                 name,
             });
@@ -83,7 +83,7 @@ pub const PackBuilder = opaque {
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
             var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
             const slice = try id.formatHex(&buf);
-            log.debug("PackBuilder.insertRecursive called, id={s}, name={s}", .{
+            log.debug("PackBuilder.insertRecursive called, id: {s}, name: {s}", .{
                 slice,
                 name,
             });
@@ -106,7 +106,7 @@ pub const PackBuilder = opaque {
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
             var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
             const slice = try id.formatHex(&buf);
-            log.debug("PackBuilder.insertTree called, id={s}", .{
+            log.debug("PackBuilder.insertTree called, id: {s}", .{
                 slice,
             });
         }
@@ -127,7 +127,7 @@ pub const PackBuilder = opaque {
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
             var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
             const slice = try id.formatHex(&buf);
-            log.debug("PackBuilder.insertCommit called, id={s}", .{
+            log.debug("PackBuilder.insertCommit called, id: {s}", .{
                 slice,
             });
         }
@@ -144,7 +144,7 @@ pub const PackBuilder = opaque {
     ///
     /// Those commits and all objects they reference will be inserted into the packbuilder.
     pub fn insertWalk(self: *PackBuilder, walk: *git.RevWalk) !void {
-        log.debug("PackBuilder.insertWalk called, walk={*}", .{walk});
+        log.debug("PackBuilder.insertWalk called, walk: {*}", .{walk});
 
         try internal.wrapCall("git_packbuilder_insert_walk", .{
             @ptrCast(*c.git_packbuilder, self),
@@ -178,7 +178,7 @@ pub const PackBuilder = opaque {
     /// * `path` - Path to the directory where the packfile and index should be stored, or `null` for default location
     /// * `mode` - permissions to use creating a packfile or 0 for defaults
     pub fn writeToFile(self: *PackBuilder, path: ?[:0]const u8, mode: c_uint) !void {
-        log.debug("PackBuilder.writeToFile called, path={s}, mode={o}", .{ path, mode });
+        log.debug("PackBuilder.writeToFile called, path: {s}, mode: {o}", .{ path, mode });
 
         const path_c = if (path) |str| str.ptr else null;
 
@@ -253,7 +253,7 @@ pub const PackBuilder = opaque {
             }
         }.cb;
 
-        log.debug("PackBuilder.writeToFileCallbackWithUserData called, path={s}, mode={o}", .{ path, mode });
+        log.debug("PackBuilder.writeToFileCallbackWithUserData called, path: {s}, mode: {o}", .{ path, mode });
 
         const path_c = if (path) |str| str.ptr else null;
 

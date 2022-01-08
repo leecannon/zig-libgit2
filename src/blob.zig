@@ -94,7 +94,7 @@ pub const Blob = opaque {
     }
 
     pub fn filter(self: *Blob, as_path: [:0]const u8, options: FilterOptions) !git.Buf {
-        log.debug("Blob.filter called, as_path={s}, options={}", .{ as_path, options });
+        log.debug("Blob.filter called, as_path: {s}, options: {}", .{ as_path, options });
 
         var buf: git.Buf = .{};
 

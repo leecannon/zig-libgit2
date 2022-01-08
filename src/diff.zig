@@ -41,7 +41,7 @@ pub const Diff = opaque {
         options: git.Pathspec.MatchOptions,
         match_list: ?**git.PathspecMatchList,
     ) !bool {
-        log.debug("Diff.pathspecMatch called, options={}, pathspec={*}", .{ options, pathspec });
+        log.debug("Diff.pathspecMatch called, options: {}, pathspec: {*}", .{ options, pathspec });
 
         const ret = (try internal.wrapCallWithReturn("git_pathspec_match_diff", .{
             @ptrCast(?*?*c.git_pathspec_match_list, match_list),

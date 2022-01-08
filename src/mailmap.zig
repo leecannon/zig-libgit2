@@ -48,7 +48,7 @@ pub const Mailmap = opaque {
         replace_email: [:0]const u8,
     ) !void {
         log.debug(
-            "Mailmap.addEntry called, real_name={s}, real_email={s}, replace_name={s}, replace_email={s}",
+            "Mailmap.addEntry called, real_name: {s}, real_email: {s}, replace_name: {s}, replace_email: {s}",
             .{ real_name, real_email, replace_name, replace_email },
         );
 
@@ -81,7 +81,7 @@ pub const Mailmap = opaque {
     /// * `name` - the name to look up
     /// * `email` - the email to look up
     pub fn resolve(self: ?*const Mailmap, name: [:0]const u8, email: [:0]const u8) !ResolveResult {
-        log.debug("Mailmap.resolve called, name={s}, email={s}", .{ name, email });
+        log.debug("Mailmap.resolve called, name: {s}, email: {s}", .{ name, email });
 
         var real_name: [*c]const u8 = undefined;
         var real_email: [*c]const u8 = undefined;
@@ -111,7 +111,7 @@ pub const Mailmap = opaque {
     /// ## Parameters
     /// * `signature` - signature to resolve
     pub fn resolveSignature(self: *const Mailmap, signature: *const git.Signature) !*git.Signature {
-        log.debug("Mailmap.resolveSignature called, signature={*}", .{signature});
+        log.debug("Mailmap.resolveSignature called, signature: {*}", .{signature});
 
         var sig: *git.Signature = undefined;
 

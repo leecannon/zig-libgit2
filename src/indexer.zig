@@ -112,7 +112,7 @@ pub const Indexer = opaque {
             }
         }.cb;
 
-        log.debug("Indexer.init called, path={s}, odb={*}, options={}", .{ path, odb, options });
+        log.debug("Indexer.init called, path: {s}, odb: {*}, options: {}", .{ path, odb, options });
 
         var c_opts = c.git_indexer_options{
             .version = c.GIT_INDEXER_OPTIONS_VERSION,
@@ -142,7 +142,7 @@ pub const Indexer = opaque {
     /// * `data` - the data to add
     /// * `stats` - stat storage
     pub fn append(self: *Indexer, data: []const u8, stats: *Progress) !void {
-        log.debug("Indexer.append called, data_len={}, stats={}", .{ data.len, stats });
+        log.debug("Indexer.append called, data_len: {}, stats: {}", .{ data.len, stats });
 
         try internal.wrapCall("git_indexer_append", .{
             @ptrCast(*c.git_indexer, self),
@@ -162,7 +162,7 @@ pub const Indexer = opaque {
     /// * `data` - the data to add
     /// * `stats` - stat storage
     pub fn commit(self: *Indexer, stats: *Progress) !void {
-        log.debug("Indexer.commit called, stats={}", .{stats});
+        log.debug("Indexer.commit called, stats: {}", .{stats});
 
         try internal.wrapCall("git_indexer_commit", .{
             @ptrCast(*c.git_indexer, self),

@@ -25,7 +25,7 @@ pub const StatusList = opaque {
     }
 
     pub fn statusByIndex(self: *StatusList, index: usize) ?*const StatusEntry {
-        log.debug("StatusList.statusByIndex called, index={}", .{index});
+        log.debug("StatusList.statusByIndex called, index: {}", .{index});
 
         const ret_opt = @ptrCast(
             ?*const StatusEntry,

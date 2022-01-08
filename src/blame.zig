@@ -25,7 +25,7 @@ pub const Blame = opaque {
     }
 
     pub fn hunkByIndex(self: *Blame, index: u32) ?*const BlameHunk {
-        log.debug("Blame.hunkByIndex called, index={}", .{index});
+        log.debug("Blame.hunkByIndex called, index: {}", .{index});
 
         if (c.git_blame_get_hunk_byindex(@ptrCast(*c.git_blame, self), index)) |c_ret| {
             const ret = @ptrCast(*const git.BlameHunk, c_ret);
@@ -37,7 +37,7 @@ pub const Blame = opaque {
     }
 
     pub fn hunkByLine(self: *Blame, line: usize) ?*const BlameHunk {
-        log.debug("Blame.hunkByLine called, line={}", .{line});
+        log.debug("Blame.hunkByLine called, line: {}", .{line});
 
         if (c.git_blame_get_hunk_byline(@ptrCast(*c.git_blame, self), line)) |c_ret| {
             const ret = @ptrCast(*const git.BlameHunk, c_ret);
@@ -54,7 +54,7 @@ pub const Blame = opaque {
     ///
     /// Lines that differ between the buffer and the committed version are marked as having a zero OID for their final_commit_id.
     pub fn blameBuffer(self: *Blame, buffer: [:0]const u8) !*git.Blame {
-        log.debug("Blame.blameBuffer called, buffer={s}", .{buffer});
+        log.debug("Blame.blameBuffer called, buffer: {s}", .{buffer});
 
         var blame: *git.Blame = undefined;
 

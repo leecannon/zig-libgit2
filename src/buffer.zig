@@ -45,7 +45,7 @@ pub const Buf = extern struct {
     /// If the allocation fails, this will return an error and the buffer will be marked as invalid for future operations,
     /// invaliding the contents.
     pub fn grow(self: *Buf, target_size: usize) !void {
-        log.debug("Buf.grow called, target_size={}", .{target_size});
+        log.debug("Buf.grow called, target_size: {}", .{target_size});
 
         try internal.wrapCall("git_buf_grow", .{ @ptrCast(*c.git_buf, self), target_size });
 

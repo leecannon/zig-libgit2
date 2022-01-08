@@ -43,7 +43,7 @@ pub const Repository = opaque {
     ///
     /// Perform the describe operation on the current commit and the worktree.
     pub fn describe(self: *Repository, options: git.DescribeOptions) !*git.DescribeResult {
-        log.debug("Repository.describe called, options={}", .{options});
+        log.debug("Repository.describe called, options: {}", .{options});
 
         var result: *git.DescribeResult = undefined;
 
@@ -72,7 +72,7 @@ pub const Repository = opaque {
         const name: ?[:0]const u8 = if (c_name) |ptr| std.mem.sliceTo(ptr, 0) else null;
         const email: ?[:0]const u8 = if (c_email) |ptr| std.mem.sliceTo(ptr, 0) else null;
 
-        log.debug("identity acquired: name={s}, email={s}", .{ name, email });
+        log.debug("identity acquired: name: {s}, email: {s}", .{ name, email });
 
         return Identity{ .name = name, .email = email };
     }
@@ -82,7 +82,7 @@ pub const Repository = opaque {
     /// If both are set, this name and email will be used to write to the reflog.
     /// Set to `null` to unset; When unset, the identity will be taken from the repository's configuration.
     pub fn identitySet(self: *Repository, identity: Identity) !void {
-        log.debug("Repository.identitySet called, identity.name={s}, identity.email={s}", .{ identity.name, identity.email });
+        log.debug("Repository.identitySet called, identity.name: {s}, identity.email: {s}", .{ identity.name, identity.email });
 
         const name_temp: [*c]const u8 = if (identity.name) |slice| slice.ptr else null;
         const email_temp: [*c]const u8 = if (identity.email) |slice| slice.ptr else null;
@@ -120,7 +120,7 @@ pub const Repository = opaque {
     /// * `namespace` - The namespace. This should not include the refs folder, e.g. to namespace all references under 
     ///                 "refs/namespaces/foo/", use "foo" as the namespace.
     pub fn namespaceSet(self: *Repository, namespace: [:0]const u8) !void {
-        log.debug("Repository.namespaceSet called, namespace={s}", .{namespace});
+        log.debug("Repository.namespaceSet called, namespace: {s}", .{namespace});
 
         try internal.wrapCall("git_repository_set_namespace", .{ @ptrCast(*c.git_repository, self), namespace.ptr });
 
@@ -166,7 +166,7 @@ pub const Repository = opaque {
     /// ## Parameters
     /// * `ref_name` - Canonical name of the reference the HEAD should point at
     pub fn headSet(self: *Repository, ref_name: [:0]const u8) !void {
-        log.debug("Repository.headSet called, workdir={s}", .{ref_name});
+        log.debug("Repository.headSet called, workdir: {s}", .{ref_name});
 
         try internal.wrapCall("git_repository_set_head", .{ @ptrCast(*c.git_repository, self), ref_name.ptr });
 
@@ -186,7 +186,7 @@ pub const Repository = opaque {
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
             var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
             const slice = try commit.formatHex(&buf);
-            log.debug("Repository.headDetachedSet called, commit={s}", .{slice});
+            log.debug("Repository.headDetachedSet called, commit: {s}", .{slice});
         }
 
         try internal.wrapCall("git_repository_set_head_detached", .{
@@ -209,7 +209,7 @@ pub const Repository = opaque {
             var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
             const oid = try commitish.commitId();
             const slice = try oid.formatHex(&buf);
-            log.debug("Repository.setHeadDetachedFromAnnotated called, commitish={s}", .{slice});
+            log.debug("Repository.setHeadDetachedFromAnnotated called, commitish: {s}", .{slice});
         }
 
         try internal.wrapCall("git_repository_set_head_detached_from_annotated", .{
@@ -235,7 +235,7 @@ pub const Repository = opaque {
     }
 
     pub fn isHeadForWorktreeDetached(self: *Repository, name: [:0]const u8) !bool {
-        log.debug("Repository.isHeadForWorktreeDetached called, name={s}", .{name});
+        log.debug("Repository.isHeadForWorktreeDetached called, name: {s}", .{name});
 
         const ret = (try internal.wrapCallWithReturn(
             "git_repository_head_detached_for_worktree",
@@ -248,7 +248,7 @@ pub const Repository = opaque {
     }
 
     pub fn headForWorktree(self: *Repository, name: [:0]const u8) !*git.Reference {
-        log.debug("Repository.headForWorktree called, name={s}", .{name});
+        log.debug("Repository.headForWorktree called, name: {s}", .{name});
 
         var ref: *git.Reference = undefined;
 
@@ -315,7 +315,7 @@ pub const Repository = opaque {
 
     /// Get the location of a specific repository file or directory
     pub fn itemPath(self: *const Repository, item: RepositoryItem) !git.Buf {
-        log.debug("Repository.itemPath called, item={s}", .{item});
+        log.debug("Repository.itemPath called, item: {s}", .{item});
 
         var buf: git.Buf = .{};
 
@@ -374,7 +374,7 @@ pub const Repository = opaque {
     }
 
     pub fn workdirSet(self: *Repository, workdir: [:0]const u8, update_gitlink: bool) !void {
-        log.debug("Repository.workdirSet called, workdir={s}, update_gitlink={}", .{ workdir, update_gitlink });
+        log.debug("Repository.workdirSet called, workdir: {s}, update_gitlink: {}", .{ workdir, update_gitlink });
 
         try internal.wrapCall("git_repository_set_workdir", .{
             @ptrCast(*c.git_repository, self),
@@ -702,7 +702,7 @@ pub const Repository = opaque {
         object_type: git.ObjectType,
         as_path: ?[:0]const u8,
     ) !git.Oid {
-        log.debug("Repository.hashFile called, path={s}, object_type={}, as_path={s}", .{ path, object_type, as_path });
+        log.debug("Repository.hashFile called, path: {s}, object_type: {}, as_path: {s}", .{ path, object_type, as_path });
 
         var oid: git.Oid = undefined;
 
@@ -719,7 +719,7 @@ pub const Repository = opaque {
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
             var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
             const slice = try oid.formatHex(&buf);
-            log.debug("file hash acquired successfully, hash={s}", .{slice});
+            log.debug("file hash acquired successfully, hash: {s}", .{slice});
         }
 
         return oid;
@@ -735,7 +735,7 @@ pub const Repository = opaque {
     ///
     /// This does not do any sort of rename detection.
     pub fn fileStatus(self: *Repository, path: [:0]const u8) !git.FileStatus {
-        log.debug("Repository.fileStatus called, path={s}", .{path});
+        log.debug("Repository.fileStatus called, path: {s}", .{path});
 
         var flags: c_uint = undefined;
 
@@ -899,7 +899,7 @@ pub const Repository = opaque {
             }
         }.cb;
 
-        log.debug("Repository.fileStatusForeachExtendedWithUserData called, options={}", .{options});
+        log.debug("Repository.fileStatusForeachExtendedWithUserData called, options: {}", .{options});
 
         const c_options = options.makeCOptionObject();
 
@@ -924,7 +924,7 @@ pub const Repository = opaque {
     /// ## Parameters
     /// * `options` - options regarding which files to get the status of
     pub fn statusList(self: *Repository, options: FileStatusOptions) !*git.StatusList {
-        log.debug("Repository.statusList called, options={}", .{options});
+        log.debug("Repository.statusList called, options: {}", .{options});
 
         var status_list: *git.StatusList = undefined;
 
@@ -1092,7 +1092,7 @@ pub const Repository = opaque {
     /// ## Parameters
     /// * `path` - The file to check ignores for, rooted at the repo's workdir.
     pub fn statusShouldIgnore(self: *Repository, path: [:0]const u8) !bool {
-        log.debug("Repository.statusShouldIgnore called, path={s}", .{path});
+        log.debug("Repository.statusShouldIgnore called, path: {s}", .{path});
 
         var result: c_int = undefined;
         try internal.wrapCall("git_status_should_ignore", .{ &result, @ptrCast(*c.git_repository, self), path.ptr });
@@ -1115,7 +1115,7 @@ pub const Repository = opaque {
             var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
             const slice = try id.formatHex(&buf);
             log.debug(
-                "Repository.annotatedCommitCreateFromFetchHead called, branch_name={s}, remote_url={s}, id={s}",
+                "Repository.annotatedCommitCreateFromFetchHead called, branch_name: {s}, remote_url: {s}, id: {s}",
                 .{
                     branch_name,
                     remote_url,
@@ -1144,7 +1144,7 @@ pub const Repository = opaque {
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
             var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
             const slice = try id.formatHex(&buf);
-            log.debug("Repository.annotatedCommitCreateFromLookup called, id={s}", .{slice});
+            log.debug("Repository.annotatedCommitCreateFromLookup called, id: {s}", .{slice});
         }
 
         var result: *git.AnnotatedCommit = undefined;
@@ -1161,7 +1161,7 @@ pub const Repository = opaque {
     }
 
     pub fn annotatedCommitCreateFromRevisionString(self: *Repository, revspec: [:0]const u8) !*git.AnnotatedCommit {
-        log.debug("Repository.annotatedCommitCreateFromRevisionString called, revspec={s}", .{revspec});
+        log.debug("Repository.annotatedCommitCreateFromRevisionString called, revspec: {s}", .{revspec});
 
         var result: *git.AnnotatedCommit = undefined;
 
@@ -1188,7 +1188,7 @@ pub const Repository = opaque {
         location: ApplyLocation,
         options: ApplyOptions,
     ) !void {
-        log.debug("Repository.applyDiff called, diff={*}, location={}, options={}", .{ diff, location, options });
+        log.debug("Repository.applyDiff called, diff: {*}, location: {}, options: {}", .{ diff, location, options });
 
         const c_options = options.makeCOptionObject();
 
@@ -1216,7 +1216,7 @@ pub const Repository = opaque {
         location: ApplyLocation,
         options: ApplyOptionsWithUserData(T),
     ) !void {
-        log.debug("Repository.applyDiffWithUserData(" ++ @typeName(T) ++ ") called, diff={*}, location={}, options={}", .{ diff, location, options });
+        log.debug("Repository.applyDiffWithUserData(" ++ @typeName(T) ++ ") called, diff: {*}, location: {}, options: {}", .{ diff, location, options });
 
         const c_options = options.makeCOptionObject();
 
@@ -1243,7 +1243,7 @@ pub const Repository = opaque {
         options: ApplyOptions,
     ) !*git.Index {
         log.debug(
-            "Repository.applyDiffToTree called, diff={*}, preimage={*}, options={}",
+            "Repository.applyDiffToTree called, diff: {*}, preimage: {*}, options: {}",
             .{ diff, preimage, options },
         );
 
@@ -1259,7 +1259,7 @@ pub const Repository = opaque {
             &c_options,
         });
 
-        log.debug("apply completed, index={*}", .{ret});
+        log.debug("apply completed, index: {*}", .{ret});
 
         return ret;
     }
@@ -1278,7 +1278,7 @@ pub const Repository = opaque {
         options: ApplyOptionsWithUserData(T),
     ) !*git.Index {
         log.debug(
-            "Repository.applyDiffToTreeWithUserData(" ++ @typeName(T) ++ ") called, diff={*}, preimage={*}, options={}",
+            "Repository.applyDiffToTreeWithUserData(" ++ @typeName(T) ++ ") called, diff: {*}, preimage: {*}, options: {}",
             .{ diff, preimage, options },
         );
 
@@ -1294,7 +1294,7 @@ pub const Repository = opaque {
             &c_options,
         });
 
-        log.debug("apply completed, index={*}", .{ret});
+        log.debug("apply completed, index: {*}", .{ret});
 
         return ret;
     }
@@ -1424,7 +1424,7 @@ pub const Repository = opaque {
     /// have to exist, but if it does not, then it will be treated as a plain file (not a directory).
     /// * `name` - The name of the attribute to look up.
     pub fn attribute(self: *Repository, flags: AttributeFlags, path: [:0]const u8, name: [:0]const u8) !git.Attribute {
-        log.debug("Repository.attribute called, flags={}, path={s}, name={s}", .{ flags, path, name });
+        log.debug("Repository.attribute called, flags: {}, path: {s}, name: {s}", .{ flags, path, name });
 
         var result: [*c]const u8 = undefined;
         try internal.wrapCall("git_attr_get", .{
@@ -1462,7 +1462,7 @@ pub const Repository = opaque {
     ) ![]const [*:0]const u8 {
         if (output_buffer.len < names.len) return error.BufferTooShort;
 
-        log.debug("Repository.attributeMany called, flags={}, path={s}", .{ flags, path });
+        log.debug("Repository.attributeMany called, flags: {}, path: {s}", .{ flags, path });
 
         try internal.wrapCall("git_attr_get_many", .{
             @ptrCast([*c][*c]const u8, output_buffer.ptr),
@@ -1513,7 +1513,7 @@ pub const Repository = opaque {
             }
         }.cb;
 
-        log.debug("Repository.attributeForeach called, flags={}, path={s}", .{ flags, path });
+        log.debug("Repository.attributeForeach called, flags: {}, path: {s}", .{ flags, path });
 
         const ret = try internal.wrapCallWithReturn("git_attr_foreach", .{
             @ptrCast(*const c.git_repository, self),
@@ -1569,7 +1569,7 @@ pub const Repository = opaque {
             }
         }.cb;
 
-        log.debug("Repository.attributeForeachWithUserData called, flags={}, path={s}", .{ flags, path });
+        log.debug("Repository.attributeForeachWithUserData called, flags: {}, path: {s}", .{ flags, path });
 
         const ret = try internal.wrapCallWithReturn("git_attr_foreach", .{
             @ptrCast(*const c.git_repository, self),
@@ -1679,7 +1679,7 @@ pub const Repository = opaque {
     }
 
     pub fn attributeAddMacro(self: *Repository, name: [:0]const u8, values: [:0]const u8) !void {
-        log.debug("Repository.attributeCacheFlush called, name={s}, values={s}", .{ name, values });
+        log.debug("Repository.attributeCacheFlush called, name: {s}, values: {s}", .{ name, values });
 
         try internal.wrapCall("git_attr_add_macro", .{ @ptrCast(*c.git_repository, self), name.ptr, values.ptr });
 
@@ -1687,7 +1687,7 @@ pub const Repository = opaque {
     }
 
     pub fn blameFile(self: *Repository, path: [:0]const u8, options: BlameOptions) !*git.Blame {
-        log.debug("Repository.blameFile called, path={s}, options={}", .{ path, options });
+        log.debug("Repository.blameFile called, path: {s}, options: {}", .{ path, options });
 
         var blame: *git.Blame = undefined;
 
@@ -1811,7 +1811,7 @@ pub const Repository = opaque {
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
             var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
             const slice = try id.formatHex(&buf);
-            log.debug("Repository.blobLookup called, id={s}", .{slice});
+            log.debug("Repository.blobLookup called, id: {s}", .{slice});
         }
 
         var blob: *git.Blob = undefined;
@@ -1833,7 +1833,7 @@ pub const Repository = opaque {
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
             var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
             const slice = try id.formatHex(&buf);
-            log.debug("Repository.blobLookup called, id={s}, len={}", .{ slice, len });
+            log.debug("Repository.blobLookup called, id: {s}, len: {}", .{ slice, len });
         }
 
         var blob: *git.Blob = undefined;
@@ -1865,7 +1865,7 @@ pub const Repository = opaque {
     /// * `target` - Commit to which this branch should point. This object must belong to the given `repo`.
     /// * `force` - Overwrite existing branch.
     pub fn branchCreate(self: *Repository, branch_name: [:0]const u8, target: *const git.Commit, force: bool) !*git.Reference {
-        log.debug("Repository.branchCreate called, branch_name={s}, target={*}, force={}", .{ branch_name, target, force });
+        log.debug("Repository.branchCreate called, branch_name: {s}, target: {*}, force: {}", .{ branch_name, target, force });
 
         var reference: *git.Reference = undefined;
 
@@ -1898,7 +1898,7 @@ pub const Repository = opaque {
         target: *const git.AnnotatedCommit,
         force: bool,
     ) !*git.Reference {
-        log.debug("Repository.branchCreateFromAnnotated called, branch_name={s}, target={*}, force={}", .{ branch_name, target, force });
+        log.debug("Repository.branchCreateFromAnnotated called, branch_name: {s}, target: {*}, force: {}", .{ branch_name, target, force });
 
         var reference: *git.Reference = undefined;
 
@@ -1989,7 +1989,7 @@ pub const Repository = opaque {
     /// The generated reference must be freed by the user.
     /// The branch name will be checked for validity.
     pub fn branchLookup(self: *Repository, branch_name: [:0]const u8, branch_type: BranchType) !*git.Reference {
-        log.debug("Repository.branchLookup called, branch_name={s}, branch_type={}", .{ branch_name, branch_type });
+        log.debug("Repository.branchLookup called, branch_name: {s}, branch_type: {}", .{ branch_name, branch_type });
 
         var ref: *git.Reference = undefined;
 
@@ -2011,7 +2011,7 @@ pub const Repository = opaque {
     /// "refs/remotes/test/master", it will extract the "test" part. If refspecs from multiple remotes match, the function will
     /// return `GitError.AMBIGUOUS`.
     pub fn remoteGetName(self: *Repository, refname: [:0]const u8) !git.Buf {
-        log.debug("Repository.remoteGetName called, refname={s}", .{refname});
+        log.debug("Repository.remoteGetName called, refname: {s}", .{refname});
 
         var buf: git.Buf = .{};
 
@@ -2021,7 +2021,7 @@ pub const Repository = opaque {
             refname.ptr,
         });
 
-        log.debug("remote name acquired successfully, name={s}", .{buf.toSlice()});
+        log.debug("remote name acquired successfully, name: {s}", .{buf.toSlice()});
 
         return buf;
     }
@@ -2030,7 +2030,7 @@ pub const Repository = opaque {
     ///
     /// This will return the currently configured "branch.*.remote" for a given branch. This branch must be local.
     pub fn remoteUpstreamRemote(self: *Repository, refname: [:0]const u8) !git.Buf {
-        log.debug("Repository.remoteUpstreamRemote called, refname={s}", .{refname});
+        log.debug("Repository.remoteUpstreamRemote called, refname: {s}", .{refname});
 
         var buf: git.Buf = .{};
 
@@ -2040,7 +2040,7 @@ pub const Repository = opaque {
             refname.ptr,
         });
 
-        log.debug("upstream remote name acquired successfully, name={s}", .{buf.toSlice()});
+        log.debug("upstream remote name acquired successfully, name: {s}", .{buf.toSlice()});
 
         return buf;
     }
@@ -2050,7 +2050,7 @@ pub const Repository = opaque {
     /// Given a local branch, this will return its remote-tracking branch information, as a full reference name, ie.
     /// "feature/nice" would become "refs/remote/origin/feature/nice", depending on that branch's configuration.
     pub fn upstreamGetName(self: *Repository, refname: [:0]const u8) !git.Buf {
-        log.debug("Repository.upstreamGetName called, refname={s}", .{refname});
+        log.debug("Repository.upstreamGetName called, refname: {s}", .{refname});
 
         var buf: git.Buf = .{};
 
@@ -2060,7 +2060,7 @@ pub const Repository = opaque {
             refname.ptr,
         });
 
-        log.debug("upstream name acquired successfully, name={s}", .{buf.toSlice()});
+        log.debug("upstream name acquired successfully, name: {s}", .{buf.toSlice()});
 
         return buf;
     }
@@ -2074,7 +2074,7 @@ pub const Repository = opaque {
     ///
     /// Returns a non-zero value is the `notify_cb` callback returns non-zero.
     pub fn checkoutHead(self: *Repository, options: CheckoutOptions) !c_uint {
-        log.debug("Repository.checkoutHead called, options={}", .{options});
+        log.debug("Repository.checkoutHead called, options: {}", .{options});
 
         const c_options = options.makeCOptionObject();
 
@@ -2092,7 +2092,7 @@ pub const Repository = opaque {
     ///
     /// Returns a non-zero value is the `notify_cb` callback returns non-zero.
     pub fn checkoutIndex(self: *Repository, index: *git.Index, options: CheckoutOptions) !c_uint {
-        log.debug("Repository.checkoutHead called, options={}", .{options});
+        log.debug("Repository.checkoutHead called, options: {}", .{options});
 
         const c_options = options.makeCOptionObject();
 
@@ -2111,7 +2111,7 @@ pub const Repository = opaque {
     ///
     /// Returns a non-zero value is the `notify_cb` callback returns non-zero.
     pub fn checkoutTree(self: *Repository, treeish: *const git.Object, options: CheckoutOptions) !c_uint {
-        log.debug("Repository.checkoutHead called, options={}", .{options});
+        log.debug("Repository.checkoutHead called, options: {}", .{options});
 
         const c_option = options.makeCOptionObject();
 
@@ -2395,7 +2395,7 @@ pub const Repository = opaque {
         options: git.MergeOptions,
     ) !*git.Index {
         log.debug(
-            "Repository.cherrypickCommit called, cherrypick_commit={*}, our_commit={*}, mainline={}, options={}",
+            "Repository.cherrypickCommit called, cherrypick_commit: {*}, our_commit: {*}, mainline: {}, options: {}",
             .{ cherrypick_commit, our_commit, mainline, options },
         );
 
@@ -2412,7 +2412,7 @@ pub const Repository = opaque {
             &c_options,
         });
 
-        log.debug("successfully cherrypicked, index={*}", .{index});
+        log.debug("successfully cherrypicked, index: {*}", .{index});
 
         return index;
     }
@@ -2423,7 +2423,7 @@ pub const Repository = opaque {
         options: CherrypickOptions,
     ) !void {
         log.debug(
-            "Repository.cherrypick called, commit={*}, options={}",
+            "Repository.cherrypick called, commit: {*}, options: {}",
             .{ commit, options },
         );
 
@@ -2463,7 +2463,7 @@ pub const Repository = opaque {
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
             var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
             const slice = try oid.formatHex(&buf);
-            log.debug("Repository.commitLookup called, oid={s}", .{slice});
+            log.debug("Repository.commitLookup called, oid: {s}", .{slice});
         }
 
         var commit: *git.Commit = undefined;
@@ -2474,7 +2474,7 @@ pub const Repository = opaque {
             @ptrCast(*const c.git_oid, oid),
         });
 
-        log.debug("successfully looked up commit, commit={*}", .{commit});
+        log.debug("successfully looked up commit, commit: {*}", .{commit});
 
         return commit;
     }
@@ -2485,7 +2485,7 @@ pub const Repository = opaque {
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
             var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
             const slice = try oid.formatHex(&buf);
-            log.debug("Repository.commitLookupPrefix called, oid={s}, size={}", .{ slice, size });
+            log.debug("Repository.commitLookupPrefix called, oid: {s}, size: {}", .{ slice, size });
         }
 
         var commit: *git.Commit = undefined;
@@ -2497,7 +2497,7 @@ pub const Repository = opaque {
             size,
         });
 
-        log.debug("successfully looked up commit, commit={*}", .{commit});
+        log.debug("successfully looked up commit, commit: {*}", .{commit});
 
         return commit;
     }
@@ -2507,7 +2507,7 @@ pub const Repository = opaque {
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
             var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
             const slice = try commit.formatHex(&buf);
-            log.debug("Repository.commitExtractSignature called, commit={s}, field={s}", .{ slice, field });
+            log.debug("Repository.commitExtractSignature called, commit: {s}, field: {s}", .{ slice, field });
         }
 
         var result: ExtractSignatureResult = .{};
@@ -2539,7 +2539,7 @@ pub const Repository = opaque {
         tree: *const git.Tree,
         parents: []*const git.Commit,
     ) !git.Oid {
-        log.debug("Repository.commitCreate called, update_ref={s}, author={*}, committer={*}, message_encoding={s}, message={s}, tree={*}", .{
+        log.debug("Repository.commitCreate called, update_ref: {s}, author: {*}, committer: {*}, message_encoding: {s}, message: {s}, tree: {*}", .{
             update_ref,
             author,
             committer,
@@ -2585,7 +2585,7 @@ pub const Repository = opaque {
         tree: *const git.Tree,
         parents: []*const git.Commit,
     ) !git.Buf {
-        log.debug("Repository.commitCreateBuffer called, author={*}, committer={*}, message_encoding={s}, message={s}, tree={*}", .{
+        log.debug("Repository.commitCreateBuffer called, author: {*}, committer: {*}, message_encoding: {s}, message: {s}, tree: {*}", .{
             author,
             committer,
             message_encoding,
@@ -2620,7 +2620,7 @@ pub const Repository = opaque {
         signature: ?[:0]const u8,
         signature_field: ?[:0]const u8,
     ) !git.Oid {
-        log.debug("Repository.commitCreateWithSignature called, commit_content={s}, signature={s}, signature_field={s}", .{
+        log.debug("Repository.commitCreateWithSignature called, commit_content: {s}, signature: {s}, signature_field: {s}", .{
             commit_content,
             signature,
             signature_field,
@@ -2688,7 +2688,7 @@ pub const Repository = opaque {
         flags: git.FilterFlags,
     ) !?*git.FilterList {
         log.debug(
-            "Repository.filterListLoad called, blob={*}, path={s}, mode={}, flags={}",
+            "Repository.filterListLoad called, blob: {*}, path: {s}, mode: {}, flags: {}",
             .{ blob, path, mode, flags },
         );
 
@@ -2733,7 +2733,7 @@ pub const Repository = opaque {
             var buf2: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
             const slice1 = try local.formatHex(&buf1);
             const slice2 = try upstream.formatHex(&buf2);
-            log.debug("Repository.graphAheadBehind called, local={s}, upstream={s}", .{ slice1, slice2 });
+            log.debug("Repository.graphAheadBehind called, local: {s}, upstream: {s}", .{ slice1, slice2 });
         }
 
         var ret: GraphAheadBehindResult = undefined;
@@ -2767,7 +2767,7 @@ pub const Repository = opaque {
             var buf2: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
             const slice1 = try commit.formatHex(&buf1);
             const slice2 = try ancestor.formatHex(&buf2);
-            log.debug("Repository.graphDecendantOf called, commit={s}, ancestor={s}", .{ slice1, slice2 });
+            log.debug("Repository.graphDecendantOf called, commit: {s}, ancestor: {s}", .{ slice1, slice2 });
         }
 
         const ret = (try internal.wrapCallWithReturn("git_graph_descendant_of", .{
@@ -2799,7 +2799,7 @@ pub const Repository = opaque {
     /// * `rules` - Text of rules, a la the contents of a .gitignore file. It is okay to have multiple rules in the text; if so,
     ///             each rule should be terminated with a newline.
     pub fn ignoreAddRule(self: *Repository, rules: [:0]const u8) !void {
-        log.debug("Repository.ignoreAddRule called, rules={s}", .{rules});
+        log.debug("Repository.ignoreAddRule called, rules: {s}", .{rules});
 
         try internal.wrapCall("git_ignore_add_rule", .{ @ptrCast(*c.git_repository, self), rules.ptr });
 
@@ -2830,7 +2830,7 @@ pub const Repository = opaque {
     /// ## Parameters
     /// * `path` - the file to check ignores for, relative to the repo's workdir.
     pub fn ignorePathIsIgnored(self: *Repository, path: [:0]const u8) !bool {
-        log.debug("Repository.ignorePathIsIgnored called, path={s}", .{path});
+        log.debug("Repository.ignorePathIsIgnored called, path: {s}", .{path});
 
         var ignored: c_int = undefined;
 
@@ -2864,7 +2864,7 @@ pub const Repository = opaque {
         options: git.FilterOptions,
     ) !?*git.FilterList {
         log.debug(
-            "Repository.filterListLoad called, blob={*}, path={s}, mode={}, options={}",
+            "Repository.filterListLoad called, blob: {*}, path: {s}, mode: {}, options: {}",
             .{ blob, path, mode, options },
         );
 
@@ -2906,7 +2906,7 @@ pub const Repository = opaque {
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
             var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
             const slice = try commit.formatHex(&buf);
-            log.debug("Repository.graphReachableFromAny called, commit={s}, number of decendants={}", .{ slice, decendants.len });
+            log.debug("Repository.graphReachableFromAny called, commit: {s}, number of decendants: {}", .{ slice, decendants.len });
         }
 
         const ret = (try internal.wrapCallWithReturn("git_graph_reachable_from_any", .{
@@ -2925,7 +2925,7 @@ pub const Repository = opaque {
     ///
     /// This will return the currently configured "branch.*.remote" for a given branch. This branch must be local.
     pub fn remoteUpstreamMerge(self: *Repository, refname: [:0]const u8) !git.Buf {
-        log.debug("Repository.remoteUpstreamMerge called, refname={s}", .{refname});
+        log.debug("Repository.remoteUpstreamMerge called, refname: {s}", .{refname});
 
         var buf: git.Buf = .{};
 
@@ -2935,7 +2935,7 @@ pub const Repository = opaque {
             refname.ptr,
         });
 
-        log.debug("upstream remote name acquired successfully, name={s}", .{buf.toSlice()});
+        log.debug("upstream remote name acquired successfully, name: {s}", .{buf.toSlice()});
 
         return buf;
     }
@@ -2953,7 +2953,7 @@ pub const Repository = opaque {
         path: [:0]const u8,
         name: [:0]const u8,
     ) !git.Attribute {
-        log.debug("Repository.attributeExtended called, options={}, path={s}, name={s}", .{ options, path, name });
+        log.debug("Repository.attributeExtended called, options: {}, path: {s}, name: {s}", .{ options, path, name });
 
         var c_options = options.makeCOptionObject();
 
@@ -2993,7 +2993,7 @@ pub const Repository = opaque {
     ) ![]const [*:0]const u8 {
         if (output_buffer.len < names.len) return error.BufferTooShort;
 
-        log.debug("Repository.attributeManyExtended called, options={}, path={s}", .{ options, path });
+        log.debug("Repository.attributeManyExtended called, options: {}, path: {s}", .{ options, path });
 
         var c_options = options.makeCOptionObject();
 
@@ -3046,7 +3046,7 @@ pub const Repository = opaque {
             }
         }.cb;
 
-        log.debug("Repository.attributeForeach called, options={}, path={s}", .{ options, path });
+        log.debug("Repository.attributeForeach called, options: {}, path: {s}", .{ options, path });
 
         const c_options = options.makeCOptionObject();
 
@@ -3104,7 +3104,7 @@ pub const Repository = opaque {
             }
         }.cb;
 
-        log.debug("Repository.attributeForeachWithUserData called, options={}, path={s}", .{ options, path });
+        log.debug("Repository.attributeForeachWithUserData called, options: {}, path: {s}", .{ options, path });
 
         const c_options = options.makeCOptionObject();
 
@@ -3140,7 +3140,7 @@ pub const Repository = opaque {
 
     /// Read a file from the filesystem and write its content to the Object Database as a loose blob
     pub fn blobFromBuffer(self: *Repository, buffer: []const u8) !git.Oid {
-        log.debug("Repository.blobFromBuffer called, buffer={s}", .{buffer});
+        log.debug("Repository.blobFromBuffer called, buffer: {s}", .{buffer});
 
         var ret: git.Oid = undefined;
 
@@ -3173,7 +3173,7 @@ pub const Repository = opaque {
     /// If the `hintpath` parameter is filled, it will be used to determine what git filters should be applied to the object
     /// before it is written to the object database.
     pub fn blobFromStream(self: *Repository, hint_path: ?[:0]const u8) !*git.WriteStream {
-        log.debug("Repository.blobFromDisk called, hint_path={s}", .{hint_path});
+        log.debug("Repository.blobFromDisk called, hint_path: {s}", .{hint_path});
 
         var write_stream: *git.WriteStream = undefined;
 
@@ -3192,7 +3192,7 @@ pub const Repository = opaque {
 
     /// Read a file from the filesystem and write its content to the Object Database as a loose blob
     pub fn blobFromDisk(self: *Repository, path: [:0]const u8) !git.Oid {
-        log.debug("Repository.blobFromDisk called, path={s}", .{path});
+        log.debug("Repository.blobFromDisk called, path: {s}", .{path});
 
         var ret: git.Oid = undefined;
 
@@ -3214,7 +3214,7 @@ pub const Repository = opaque {
 
     /// Read a file from the working folder of a repository and write it to the Object Database as a loose blob
     pub fn blobFromWorkdir(self: *Repository, relative_path: [:0]const u8) !git.Oid {
-        log.debug("Repository.blobFromWorkdir called, relative_path={s}", .{relative_path});
+        log.debug("Repository.blobFromWorkdir called, relative_path: {s}", .{relative_path});
 
         var ret: git.Oid = undefined;
 
@@ -3254,7 +3254,7 @@ pub const Repository = opaque {
 
     /// Lookup a working tree by its name for a given repository
     pub fn worktreeByName(self: *Repository, name: [:0]const u8) !*git.Worktree {
-        log.debug("Repository.worktreeByName called, name={s}", .{name});
+        log.debug("Repository.worktreeByName called, name: {s}", .{name});
 
         var ret: *git.Worktree = undefined;
 
@@ -3318,7 +3318,7 @@ pub const Repository = opaque {
     /// * `path` - Path to create working tree at
     /// * `options` - Options to modify default behavior.
     pub fn worktreeAdd(self: *Repository, name: [:0]const u8, path: [:0]const u8, options: WorktreeAddOptions) !*git.Worktree {
-        log.debug("Repository.worktreeAdd called, name={s}, path={s}, options={}", .{ name, path, options });
+        log.debug("Repository.worktreeAdd called, name: {s}, path: {s}, options: {}", .{ name, path, options });
 
         var ret: *git.Worktree = undefined;
 
@@ -3346,7 +3346,7 @@ pub const Repository = opaque {
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
             var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
             const slice = try id.formatHex(&buf);
-            log.debug("Repository.treeLookup called, id={s}", .{slice});
+            log.debug("Repository.treeLookup called, id: {s}", .{slice});
         }
 
         var ret: *git.Tree = undefined;
@@ -3372,7 +3372,7 @@ pub const Repository = opaque {
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
             var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
             const slice = try id.formatHexCount(&buf, len);
-            log.debug("Repository.treeLookupPrefix, id={s}, len={}", .{ slice, len });
+            log.debug("Repository.treeLookupPrefix, id: {s}, len: {}", .{ slice, len });
         }
 
         var ret: *git.Tree = undefined;
@@ -3393,7 +3393,7 @@ pub const Repository = opaque {
     ///
     /// You must call `git.Object.deint` on the object when you are done with it.
     pub fn treeEntrytoObject(self: *Repository, entry: *const git.Tree.Entry) !*git.Object {
-        log.debug("Repository.treeEntrytoObject called, entry={*}", .{entry});
+        log.debug("Repository.treeEntrytoObject called, entry: {*}", .{entry});
 
         var ret: *git.Object = undefined;
 
@@ -3416,7 +3416,7 @@ pub const Repository = opaque {
     ///
     /// If the `source` parameter is `null`, the tree builder will start with no entries and will have to be filled manually.
     pub fn treebuilderNew(self: *Repository, source: ?*const git.Tree) !*git.TreeBuilder {
-        log.debug("Repository.treebuilderNew called, source={*}", .{source});
+        log.debug("Repository.treebuilderNew called, source: {*}", .{source});
 
         var ret: *git.TreeBuilder = undefined;
 
@@ -3472,7 +3472,7 @@ pub const Repository = opaque {
     /// * `baseline` - the tree to base these changes on, must be the repository `baseline` is in
     /// * `updates` - the updates to perform
     pub fn createUpdatedTree(self: *Repository, baseline: *git.Tree, updates: []const TreeUpdateAction) !git.Oid {
-        log.debug("Repository.createUpdatedTree called, baseline={*}, number of updates={}", .{ baseline, updates.len });
+        log.debug("Repository.createUpdatedTree called, baseline: {*}, number of updates: {}", .{ baseline, updates.len });
 
         var ret: git.Oid = undefined;
 
@@ -3499,7 +3499,7 @@ pub const Repository = opaque {
     /// ## Parameters
     /// * `notes_ref` - canonical name of the reference to use; if `null` defaults to "refs/notes/commits"
     pub fn noteIterator(self: *Repository, notes_ref: ?[:0]const u8) !*git.NoteIterator {
-        log.debug("Repository.noteIterator called, notes_ref={s}", .{notes_ref});
+        log.debug("Repository.noteIterator called, notes_ref: {s}", .{notes_ref});
 
         var ret: *git.NoteIterator = undefined;
 
@@ -3524,7 +3524,7 @@ pub const Repository = opaque {
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
             var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
             const slice = try oid.formatHex(&buf);
-            log.debug("Repository.noteRead called, oid={s}, notes_ref={s}", .{ slice, notes_ref });
+            log.debug("Repository.noteRead called, oid: {s}, notes_ref: {s}", .{ slice, notes_ref });
         }
 
         var ret: *git.Note = undefined;
@@ -3553,7 +3553,7 @@ pub const Repository = opaque {
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
             var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
             const slice = try oid.formatHex(&buf);
-            log.debug("Repository.noteReadFromNoteCommit called, oid={s}, note_commit={*}", .{ slice, note_commit });
+            log.debug("Repository.noteReadFromNoteCommit called, oid: {s}, note_commit: {*}", .{ slice, note_commit });
         }
 
         var ret: *git.Note = undefined;
@@ -3592,7 +3592,7 @@ pub const Repository = opaque {
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
             var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
             const slice = try oid.formatHex(&buf);
-            log.debug("Repository.noteCreate called, notes_ref={s}, author={s}, commiter={s}, oid={s}, note={s}, force={}", .{
+            log.debug("Repository.noteCreate called, notes_ref: {s}, author: {s}, commiter: {s}, oid: {s}, note: {s}, force: {}", .{
                 notes_ref,
                 author.name(),
                 commiter.name(),
@@ -3651,7 +3651,7 @@ pub const Repository = opaque {
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
             var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
             const slice = try oid.formatHex(&buf);
-            log.debug("Repository.noteCommitCreate called, parent={*}, author={s}, commiter={s}, oid={s}, note={s}, allow_note_overwrite={}", .{
+            log.debug("Repository.noteCommitCreate called, parent: {*}, author: {s}, commiter: {s}, oid: {s}, note: {s}, allow_note_overwrite: {}", .{
                 parent,
                 author.name(),
                 commiter.name(),
@@ -3698,7 +3698,7 @@ pub const Repository = opaque {
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
             var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
             const slice = try oid.formatHex(&buf);
-            log.debug("Repository.noteRemove called, notes_ref={s}, author={s}, commiter={s}, oid={s}", .{
+            log.debug("Repository.noteRemove called, notes_ref: {s}, author: {s}, commiter: {s}, oid: {s}", .{
                 notes_ref,
                 author.name(),
                 commiter.name(),
@@ -3737,7 +3737,7 @@ pub const Repository = opaque {
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
             var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
             const slice = try oid.formatHex(&buf);
-            log.debug("Repository.noteCommitRemove called, note_commit={*}, author={s}, commiter={s}, oid={s}", .{
+            log.debug("Repository.noteCommitRemove called, note_commit: {*}, author: {s}, commiter: {s}, oid: {s}", .{
                 note_commit,
                 author.name(),
                 commiter.name(),
@@ -3849,7 +3849,7 @@ pub const Repository = opaque {
             }
         }.cb;
 
-        log.debug("Repository.noteForeachWithUserData called, notes_ref={s}", .{notes_ref});
+        log.debug("Repository.noteForeachWithUserData called, notes_ref: {s}", .{notes_ref});
 
         const c_notes: [*c]const u8 = if (notes_ref) |p| p.ptr else null;
 
@@ -3880,7 +3880,7 @@ pub const Repository = opaque {
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
             var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
             const slice = try id.formatHex(&buf);
-            log.debug("Repository.objectLookup called, id={s}, object_type={}", .{
+            log.debug("Repository.objectLookup called, id: {s}, object_type: {}", .{
                 slice,
                 object_type,
             });
@@ -3921,7 +3921,7 @@ pub const Repository = opaque {
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
             var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
             const slice = try id.formatHexCount(&buf, len);
-            log.debug("Repository.objectLookupPrefix called, id={s}, object_type={}", .{
+            log.debug("Repository.objectLookupPrefix called, id: {s}, object_type: {}", .{
                 slice,
                 object_type,
             });
@@ -3964,7 +3964,7 @@ pub const Repository = opaque {
     /// * `name` - the remote's name.
     /// * `url` - the remote's url.
     pub fn remoteCreate(self: *Repository, name: [:0]const u8, url: [:0]const u8) !*git.Remote {
-        log.debug("Repository.remoteCreate called, name={s}, url={s}", .{ name, url });
+        log.debug("Repository.remoteCreate called, name: {s}, url: {s}", .{ name, url });
 
         var remote: *git.Remote = undefined;
 
@@ -3992,7 +3992,7 @@ pub const Repository = opaque {
         url: [:0]const u8,
         fetch: ?[:0]const u8,
     ) !*git.Remote {
-        log.debug("Repository.remoteCreateWithFetchspec called, name={s}, url={s}, fetch={s}", .{ name, url, fetch });
+        log.debug("Repository.remoteCreateWithFetchspec called, name: {s}, url: {s}, fetch: {s}", .{ name, url, fetch });
 
         var remote: *git.Remote = undefined;
 
@@ -4017,7 +4017,7 @@ pub const Repository = opaque {
     /// * `name` - the remote's name.
     /// * `url` - the remote's url.
     pub fn remoteCreateAnonymous(repository: *Repository, url: [:0]const u8) !*git.Remote {
-        log.debug("Repository.remoteCreateAnonymous called, url={s}", .{url});
+        log.debug("Repository.remoteCreateAnonymous called, url: {s}", .{url});
 
         var remote: *git.Remote = undefined;
 
@@ -4061,7 +4061,7 @@ pub const Repository = opaque {
     /// * `remote` - the remote's name.
     /// * `url` - the url to set.
     pub fn remoteSetUrl(repository: *Repository, remote: [:0]const u8, url: [:0]const u8) !void {
-        log.debug("Repository.remoteSetUrl called, remote={s}, url={s}", .{ remote, url });
+        log.debug("Repository.remoteSetUrl called, remote: {s}, url: {s}", .{ remote, url });
 
         try internal.wrapCall("git_remote_set_url", .{
             @ptrCast(*c.git_repository, repository),
@@ -4081,7 +4081,7 @@ pub const Repository = opaque {
     /// * `remote` - the remote's name.
     /// * `url` - the url to set.
     pub fn remoteSetPushurl(repository: *Repository, remote: [:0]const u8, url: [:0]const u8) !void {
-        log.debug("Repository.remoteSetPushurl called, remote={s}, url={s}", .{ remote, url });
+        log.debug("Repository.remoteSetPushurl called, remote: {s}, url: {s}", .{ remote, url });
 
         try internal.wrapCall("git_remote_set_pushurl", .{
             @ptrCast(*c.git_repository, repository),
@@ -4100,7 +4100,7 @@ pub const Repository = opaque {
     /// * `remote` - name of the remote to change.
     /// * `refspec` - the new fetch refspec.
     pub fn remoteAddFetch(repository: *Repository, remote: [:0]const u8, refspec: [:0]const u8) !void {
-        log.debug("Repository.remoteAddFetch called, remote={s}, refspec={s}", .{ remote, refspec });
+        log.debug("Repository.remoteAddFetch called, remote: {s}, refspec: {s}", .{ remote, refspec });
 
         try internal.wrapCall("git_remote_add_fetch", .{
             @ptrCast(*c.git_repository, repository),
@@ -4119,7 +4119,7 @@ pub const Repository = opaque {
     /// * `remote` - name of the remote to change.
     /// * `refspec` - the new push refspec.
     pub fn remoteAddPush(repository: *Repository, remote: [:0]const u8, refspec: [:0]const u8) !void {
-        log.debug("Repository.remoteAddPush called, remote={s}, refspecs={s}", .{ remote, refspec });
+        log.debug("Repository.remoteAddPush called, remote: {s}, refspecs: {s}", .{ remote, refspec });
 
         try internal.wrapCall("git_remote_add_push", .{
             @ptrCast(*c.git_repository, repository),
@@ -4156,7 +4156,7 @@ pub const Repository = opaque {
     /// * `remote` - the name of the remote.
     /// * `value` - the new value to take.
     pub fn remoteSetAutotag(self: *Repository, remote: [:0]const u8, value: git.Remote.AutoTagOption) !void {
-        log.debug("Remote.setAutotag called, remote={s}, value={}", .{ remote, value });
+        log.debug("Remote.setAutotag called, remote: {s}, value: {}", .{ remote, value });
 
         try internal.wrapCall("git_remote_set_autotag", .{
             @ptrCast(*c.git_repository, self),
@@ -4183,7 +4183,7 @@ pub const Repository = opaque {
     /// * `name` - the current name of the remote
     /// * `new_name` - the new name the remote should bear
     pub fn remoteRename(self: *Repository, name: [:0]const u8, new_name: [:0]const u8) !git.StrArray {
-        log.debug("Repository.remoteRename called, name={s}, new_name={s}", .{ name, new_name });
+        log.debug("Repository.remoteRename called, name: {s}, new_name: {s}", .{ name, new_name });
 
         var problems: git.StrArray = .{};
 
@@ -4206,7 +4206,7 @@ pub const Repository = opaque {
     /// ## Parameters
     /// * `name` - the remote to delete
     pub fn remoteDelete(self: *Repository, name: [:0]const u8) !void {
-        log.debug("Repository.remoteDelete called, name={s}", .{name});
+        log.debug("Repository.remoteDelete called, name: {s}", .{name});
 
         try internal.wrapCall("git_remote_delete", .{
             @ptrCast(*c.git_repository, self),
@@ -4237,7 +4237,7 @@ pub const Repository = opaque {
         options: git.Pathspec.MatchOptions,
         match_list: ?**git.PathspecMatchList,
     ) !bool {
-        log.debug("Repository.pathspecMatchWorkdir called, options={}, pathspec={*}", .{ options, pathspec });
+        log.debug("Repository.pathspecMatchWorkdir called, options: {}, pathspec: {*}", .{ options, pathspec });
 
         const ret = (try internal.wrapCallWithReturn("git_pathspec_match_workdir", .{
             @ptrCast(?*?*c.git_pathspec_match_list, match_list),

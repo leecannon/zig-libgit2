@@ -13,7 +13,7 @@ pub const Refspec = opaque {
     /// * `input` - the refspec string
     /// * `is_fetch` - is this a refspec for a fetch
     pub fn parse(input: [:0]const u8, is_fetch: bool) !*Refspec {
-        log.debug("Refspec.parse called, input: {s}, is_fetch={}", .{ input, is_fetch });
+        log.debug("Refspec.parse called, input: {s}, is_fetch: {}", .{ input, is_fetch });
 
         var ret: *Refspec = undefined;
 
@@ -118,7 +118,7 @@ pub const Refspec = opaque {
 
     /// Check if a refspec's source descriptor matches a reference
     pub fn srcMatches(refspec: *const Refspec, refname: [:0]const u8) bool {
-        log.debug("Refspec.srcMatches called, refname={s}", .{refname});
+        log.debug("Refspec.srcMatches called, refname: {s}", .{refname});
 
         const ret = c.git_refspec_src_matches(
             @ptrCast(*const c.git_refspec, refspec),
@@ -132,7 +132,7 @@ pub const Refspec = opaque {
 
     /// Check if a refspec's destination descriptor matches a reference
     pub fn destMatches(refspec: *const Refspec, refname: [:0]const u8) bool {
-        log.debug("Refspec.destMatches called, refname={s}", .{refname});
+        log.debug("Refspec.destMatches called, refname: {s}", .{refname});
 
         const ret = c.git_refspec_dst_matches(
             @ptrCast(*const c.git_refspec, refspec),
@@ -149,7 +149,7 @@ pub const Refspec = opaque {
     /// # Parameters
     /// * `name` - the name of the reference to transform.
     pub fn transform(refspec: *const Refspec, name: [:0]const u8) !git.Buf {
-        log.debug("Refspec.transform called, name={s}", .{name});
+        log.debug("Refspec.transform called, name: {s}", .{name});
 
         var ret: git.Buf = .{};
 
@@ -159,7 +159,7 @@ pub const Refspec = opaque {
             name.ptr,
         });
 
-        log.debug("refspec transform completed, out={s}", .{ret.toSlice()});
+        log.debug("refspec transform completed, out: {s}", .{ret.toSlice()});
 
         return ret;
     }
@@ -169,7 +169,7 @@ pub const Refspec = opaque {
     /// # Parameters
     /// * `name` - the name of the reference to transform.
     pub fn rtransform(refspec: *const Refspec, name: [:0]const u8) !git.Buf {
-        log.debug("Refspec.rtransform called, name={s}", .{name});
+        log.debug("Refspec.rtransform called, name: {s}", .{name});
 
         var ret: git.Buf = .{};
 
@@ -179,7 +179,7 @@ pub const Refspec = opaque {
             name.ptr,
         });
 
-        log.debug("refspec rtransform completed, out={s}", .{ret.toSlice()});
+        log.debug("refspec rtransform completed, out: {s}", .{ret.toSlice()});
         return ret;
     }
 

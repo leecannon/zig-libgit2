@@ -182,7 +182,7 @@ pub const OidShortener = opaque {
 
     /// `min_length` is the minimal length for all identifiers, which will be used even if shorter OIDs would still be unique.
     pub fn init(min_length: usize) !*OidShortener {
-        log.debug("OidShortener.init called, min_length={}", .{min_length});
+        log.debug("OidShortener.init called, min_length: {}", .{min_length});
 
         if (c.git_oid_shorten_new(min_length)) |ret| {
             log.debug("Oid shortener created successfully", .{});
@@ -194,7 +194,7 @@ pub const OidShortener = opaque {
     }
 
     pub fn add(self: *OidShortener, str: []const u8) !c_uint {
-        log.debug("OidShortener.add called, str={s}", .{str});
+        log.debug("OidShortener.add called, str: {s}", .{str});
 
         if (str.len < Oid.HEX_BUFFER_SIZE) return error.BufferTooShort;
         const ret = try internal.wrapCallWithReturn("git_oid_shorten_add", .{

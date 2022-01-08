@@ -27,7 +27,7 @@ pub const Reference = opaque {
     }
 
     pub fn annotatedCommitCreate(self: *const Reference, repository: *git.Repository) !*git.AnnotatedCommit {
-        log.debug("Reference.annotatedCommitCreate called, repository={*}", .{repository});
+        log.debug("Reference.annotatedCommitCreate called, repository: {*}", .{repository});
 
         var result: *git.AnnotatedCommit = undefined;
 
@@ -49,7 +49,7 @@ pub const Reference = opaque {
     /// Note that if the move succeeds, the old reference will not be valid anymore, and should be freed immediately by the user
     /// using `deinit`.
     pub fn move(self: *Reference, new_branch_name: [:0]const u8, force: bool) !*Reference {
-        log.debug("Reference.move called, new_branch_name={s}, force={}", .{ new_branch_name, force });
+        log.debug("Reference.move called, new_branch_name: {s}, force: {}", .{ new_branch_name, force });
 
         var ref: *Reference = undefined;
 
@@ -73,7 +73,7 @@ pub const Reference = opaque {
         try internal.wrapCall("git_branch_name", .{ &name, @ptrCast(*const c.git_reference, self) });
 
         const slice = std.mem.sliceTo(name, 0);
-        log.debug("successfully fetched name={s}", .{slice});
+        log.debug("successfully fetched name: {s}", .{slice});
         return slice;
     }
 
@@ -87,13 +87,13 @@ pub const Reference = opaque {
             @ptrCast(*const c.git_reference, self),
         });
 
-        log.debug("successfully fetched reference={*}", .{ref});
+        log.debug("successfully fetched reference: {*}", .{ref});
 
         return ref;
     }
 
     pub fn upstreamSet(self: *Reference, branch_name: [:0]const u8) !void {
-        log.debug("Reference.upstreamSet called, branch_name={s}", .{branch_name});
+        log.debug("Reference.upstreamSet called, branch_name: {s}", .{branch_name});
 
         try internal.wrapCall("git_branch_set_upstream", .{ @ptrCast(*c.git_reference, self), branch_name.ptr });
 

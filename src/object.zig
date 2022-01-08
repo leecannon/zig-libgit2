@@ -94,7 +94,7 @@ pub const Object = opaque {
     ///
     /// Perform the describe operation on the given committish object.
     pub fn describe(self: *Object, options: git.DescribeOptions) !*git.DescribeResult {
-        log.debug("Object.describe called, options={}", .{options});
+        log.debug("Object.describe called, options: {}", .{options});
 
         var result: *git.DescribeResult = undefined;
 
@@ -117,7 +117,7 @@ pub const Object = opaque {
     /// * `path` - relative path from the root object to the desired object
     /// * `object_type` - type of object desired
     pub fn lookupByPath(treeish: *const Object, path: [:0]const u8, object_type: ObjectType) !*Object {
-        log.debug("Object.lookupByPath called, path={s}, object_type={}", .{ path, object_type });
+        log.debug("Object.lookupByPath called, path: {s}, object_type: {}", .{ path, object_type });
 
         var ret: *Object = undefined;
 
@@ -150,7 +150,7 @@ pub const Object = opaque {
     /// ## Parameters
     /// * `target_type` - The type of the requested object
     pub fn peel(self: *const Object, target_type: ObjectType) !*git.Object {
-        log.debug("Object.peel called, target_type={}", .{target_type});
+        log.debug("Object.peel called, target_type: {}", .{target_type});
 
         var ret: *Object = undefined;
 

@@ -218,7 +218,7 @@ pub const Commit = opaque {
     }
 
     pub fn committerWithMailmap(self: *const Commit, mail_map: ?*const git.Mailmap) !*git.Signature {
-        log.debug("Commit.committerWithMailmap called, mail_map={*}", .{mail_map});
+        log.debug("Commit.committerWithMailmap called, mail_map: {*}", .{mail_map});
 
         var signature: *git.Signature = undefined;
 
@@ -234,7 +234,7 @@ pub const Commit = opaque {
     }
 
     pub fn authorWithMailmap(self: *const Commit, mail_map: ?*const git.Mailmap) !*git.Signature {
-        log.debug("Commit.authorWithMailmap called, mail_map={*}", .{mail_map});
+        log.debug("Commit.authorWithMailmap called, mail_map: {*}", .{mail_map});
 
         var signature: *git.Signature = undefined;
 
@@ -296,7 +296,7 @@ pub const Commit = opaque {
     }
 
     pub fn getParent(self: *const Commit, parent_number: u32) !*Commit {
-        log.debug("Commit.getParent called, parent_number={}", .{parent_number});
+        log.debug("Commit.getParent called, parent_number: {}", .{parent_number});
 
         var commit: *Commit = undefined;
 
@@ -340,7 +340,7 @@ pub const Commit = opaque {
     }
 
     pub fn getAncestor(self: *const Commit, ancestor_number: u32) !*Commit {
-        log.debug("Commit.getAncestor called, ancestor_number={}", .{ancestor_number});
+        log.debug("Commit.getAncestor called, ancestor_number: {}", .{ancestor_number});
 
         var commit: *Commit = undefined;
 
@@ -356,7 +356,7 @@ pub const Commit = opaque {
     }
 
     pub fn getHeaderField(self: *const Commit, field: [:0]const u8) !git.Buf {
-        log.debug("Commit.getHeaderField called, field={s}", .{field});
+        log.debug("Commit.getHeaderField called, field: {s}", .{field});
 
         var buf: git.Buf = .{};
 
@@ -380,7 +380,7 @@ pub const Commit = opaque {
         message: ?[:0]const u8,
         tree: ?*const git.Tree,
     ) !git.Oid {
-        log.debug("Commit.amend called, update_ref={s}, author={*}, committer={*}, message_encoding={s}, message={s}, tree={*}", .{
+        log.debug("Commit.amend called, update_ref: {s}, author: {*}, committer: {*}, message_encoding: {s}, message: {s}, tree: {*}", .{
             update_ref,
             author,
             committer,

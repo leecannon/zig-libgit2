@@ -32,7 +32,7 @@ pub const Handle = struct {
     pub fn indexOpen(self: Handle, path: [:0]const u8) !*git.Index {
         _ = self;
 
-        log.debug("Handle.indexOpen called, path={s}", .{path});
+        log.debug("Handle.indexOpen called, path: {s}", .{path});
 
         var index: *git.Index = undefined;
 
@@ -75,7 +75,7 @@ pub const Handle = struct {
     pub fn repositoryInit(self: Handle, path: [:0]const u8, is_bare: bool) !*git.Repository {
         _ = self;
 
-        log.debug("Handle.repositoryInit called, path={s}, is_bare={}", .{ path, is_bare });
+        log.debug("Handle.repositoryInit called, path: {s}, is_bare: {}", .{ path, is_bare });
 
         var repo: *git.Repository = undefined;
 
@@ -98,7 +98,7 @@ pub const Handle = struct {
     pub fn repositoryInitExtended(self: Handle, path: [:0]const u8, options: RepositoryInitOptions) !*git.Repository {
         _ = self;
 
-        log.debug("Handle.repositoryInitExtended called, path={s}, options={}", .{ path, options });
+        log.debug("Handle.repositoryInitExtended called, path: {s}, options: {}", .{ path, options });
 
         var repo: *git.Repository = undefined;
 
@@ -244,7 +244,7 @@ pub const Handle = struct {
     pub fn repositoryOpen(self: Handle, path: [:0]const u8) !*git.Repository {
         _ = self;
 
-        log.debug("Handle.repositoryOpen called, path={s}", .{path});
+        log.debug("Handle.repositoryOpen called, path: {s}", .{path});
 
         var repo: *git.Repository = undefined;
 
@@ -275,7 +275,7 @@ pub const Handle = struct {
     ) !*git.Repository {
         _ = self;
 
-        log.debug("Handle.repositoryOpenExtended called, path={s}, flags={}, ceiling_dirs={s}", .{ path, flags, ceiling_dirs });
+        log.debug("Handle.repositoryOpenExtended called, path: {s}, flags: {}, ceiling_dirs: {s}", .{ path, flags, ceiling_dirs });
 
         var repo: *git.Repository = undefined;
 
@@ -350,7 +350,7 @@ pub const Handle = struct {
     pub fn repositoryOpenBare(self: Handle, path: [:0]const u8) !*git.Repository {
         _ = self;
 
-        log.debug("Handle.repositoryOpenBare called, path={s}", .{path});
+        log.debug("Handle.repositoryOpenBare called, path: {s}", .{path});
 
         var repo: *git.Repository = undefined;
 
@@ -378,7 +378,7 @@ pub const Handle = struct {
         _ = self;
 
         log.debug(
-            "Handle.repositoryDiscover called, start_path={s}, across_fs={}, ceiling_dirs={s}",
+            "Handle.repositoryDiscover called, start_path: {s}, across_fs: {}, ceiling_dirs: {s}",
             .{ start_path, across_fs, ceiling_dirs },
         );
 
@@ -499,7 +499,7 @@ pub const Handle = struct {
     pub fn clone(self: Handle, url: [:0]const u8, local_path: [:0]const u8, options: CloneOptions) !*git.Repository {
         _ = self;
 
-        log.debug("Handle.clone called, url={s}, local_path={s}", .{ url, local_path });
+        log.debug("Handle.clone called, url: {s}, local_path: {s}", .{ url, local_path });
 
         var repo: *git.Repository = undefined;
 
@@ -533,7 +533,7 @@ pub const Handle = struct {
     pub fn optionSetMaximumMmapWindowSize(self: Handle, value: usize) !void {
         _ = self;
 
-        log.debug("Handle.optionSetMaximumMmapWindowSize called, value={}", .{value});
+        log.debug("Handle.optionSetMaximumMmapWindowSize called, value: {}", .{value});
 
         try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_SET_MWINDOW_SIZE, value });
 
@@ -556,7 +556,7 @@ pub const Handle = struct {
     pub fn optionSetMaximumMmapLimit(self: Handle, value: usize) !void {
         _ = self;
 
-        log.debug("Handle.optionSetMaximumMmapLimit called, value={}", .{value});
+        log.debug("Handle.optionSetMaximumMmapLimit called, value: {}", .{value});
 
         try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_SET_MWINDOW_MAPPED_LIMIT, value });
 
@@ -581,7 +581,7 @@ pub const Handle = struct {
     pub fn optionSetMaximumMmapFiles(self: Handle, value: usize) !void {
         _ = self;
 
-        log.debug("Handle.optionSetMaximumMmapFiles called, value={}", .{value});
+        log.debug("Handle.optionSetMaximumMmapFiles called, value: {}", .{value});
 
         try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_SET_MWINDOW_FILE_LIMIT, value });
 
@@ -591,7 +591,7 @@ pub const Handle = struct {
     pub fn optionGetSearchPath(self: Handle, level: git.Config.Level) !git.Buf {
         _ = self;
 
-        log.debug("Handle.optionGetSearchPath called, level={s}", .{@tagName(level)});
+        log.debug("Handle.optionGetSearchPath called, level: {s}", .{@tagName(level)});
 
         var buf: git.Buf = .{};
         try internal.wrapCall("git_libgit2_opts", .{
@@ -611,7 +611,7 @@ pub const Handle = struct {
     pub fn optionSetSearchPath(self: Handle, level: git.Config.Level, path: ?[:0]const u8) !void {
         _ = self;
 
-        log.debug("Handle.optionSetSearchPath called, path={s}", .{path});
+        log.debug("Handle.optionSetSearchPath called, path: {s}", .{path});
 
         const path_c: [*c]const u8 = if (path) |slice| slice.ptr else null;
         try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_SET_SEARCH_PATH, @enumToInt(level), path_c });
@@ -622,7 +622,7 @@ pub const Handle = struct {
     pub fn optionSetCacheObjectLimit(self: Handle, object_type: git.ObjectType, value: usize) !void {
         _ = self;
 
-        log.debug("Handle.optionSetCacheObjectLimit called, object_type={s}, value={}", .{ @tagName(object_type), value });
+        log.debug("Handle.optionSetCacheObjectLimit called, object_type: {s}, value: {}", .{ @tagName(object_type), value });
 
         try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_SET_CACHE_OBJECT_LIMIT, @enumToInt(object_type), value });
 
@@ -632,7 +632,7 @@ pub const Handle = struct {
     pub fn optionSetMaximumCacheSize(self: Handle, value: usize) !void {
         _ = self;
 
-        log.debug("Handle.optionSetCacheMaximumSize called, value={}", .{value});
+        log.debug("Handle.optionSetCacheMaximumSize called, value: {}", .{value});
 
         try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_SET_CACHE_MAX_SIZE, value });
 
@@ -642,7 +642,7 @@ pub const Handle = struct {
     pub fn optionSetCaching(self: Handle, enabled: bool) !void {
         _ = self;
 
-        log.debug("Handle.optionSetCaching called, enabled={}", .{enabled});
+        log.debug("Handle.optionSetCaching called, enabled: {}", .{enabled});
 
         try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_ENABLE_CACHING, enabled });
 
@@ -686,7 +686,7 @@ pub const Handle = struct {
     pub fn optionSetTemplatePath(self: Handle, path: [:0]const u8) !void {
         _ = self;
 
-        log.debug("Handle.optionSetTemplatePath called, path={s}", .{path});
+        log.debug("Handle.optionSetTemplatePath called, path: {s}", .{path});
 
         try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_SET_TEMPLATE_PATH, path.ptr });
 
@@ -697,7 +697,7 @@ pub const Handle = struct {
     pub fn optionSetSslCertLocations(self: Handle, file: ?[:0]const u8, path: ?[:0]const u8) !void {
         _ = self;
 
-        log.debug("Handle.optionSetSslCertLocations called, file={s}, path={s}", .{ file, path });
+        log.debug("Handle.optionSetSslCertLocations called, file: {s}, path: {s}", .{ file, path });
 
         const file_c: [*c]const u8 = if (file) |ptr| ptr.ptr else null;
         const path_c: [*c]const u8 = if (path) |ptr| ptr.ptr else null;
@@ -709,7 +709,7 @@ pub const Handle = struct {
     pub fn optionSetUserAgent(self: Handle, user_agent: [:0]const u8) !void {
         _ = self;
 
-        log.debug("Handle.optionSetUserAgent called, user_agent={s}", .{user_agent});
+        log.debug("Handle.optionSetUserAgent called, user_agent: {s}", .{user_agent});
 
         try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_SET_USER_AGENT, user_agent.ptr });
 
@@ -735,7 +735,7 @@ pub const Handle = struct {
     pub fn optionSetWindowsSharemode(self: Handle, value: c_uint) !void {
         _ = self;
 
-        log.debug("Handle.optionSetWindowsSharemode called, value={}", .{value});
+        log.debug("Handle.optionSetWindowsSharemode called, value: {}", .{value});
 
         try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_SET_WINDOWS_SHAREMODE, value });
 
@@ -758,7 +758,7 @@ pub const Handle = struct {
     pub fn optionSetStrictObjectCreation(self: Handle, enabled: bool) !void {
         _ = self;
 
-        log.debug("Handle.optionSetStrictObjectCreation called, enabled={}", .{enabled});
+        log.debug("Handle.optionSetStrictObjectCreation called, enabled: {}", .{enabled});
 
         try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_ENABLE_STRICT_OBJECT_CREATION, @boolToInt(enabled) });
 
@@ -768,7 +768,7 @@ pub const Handle = struct {
     pub fn optionSetStrictSymbolicRefCreations(self: Handle, enabled: bool) !void {
         _ = self;
 
-        log.debug("Handle.optionSetStrictSymbolicRefCreations called, enabled={}", .{enabled});
+        log.debug("Handle.optionSetStrictSymbolicRefCreations called, enabled: {}", .{enabled});
 
         try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_ENABLE_STRICT_SYMBOLIC_REF_CREATION, @boolToInt(enabled) });
 
@@ -778,7 +778,7 @@ pub const Handle = struct {
     pub fn optionSetSslCiphers(self: Handle, ciphers: [:0]const u8) !void {
         _ = self;
 
-        log.debug("Handle.optionSetSslCiphers called, ciphers={s}", .{ciphers});
+        log.debug("Handle.optionSetSslCiphers called, ciphers: {s}", .{ciphers});
 
         try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_SET_SSL_CIPHERS, ciphers.ptr });
 
@@ -788,7 +788,7 @@ pub const Handle = struct {
     pub fn optionSetOffsetDeltas(self: Handle, enabled: bool) !void {
         _ = self;
 
-        log.debug("Handle.optionSetOffsetDeltas called, enabled={}", .{enabled});
+        log.debug("Handle.optionSetOffsetDeltas called, enabled: {}", .{enabled});
 
         try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_ENABLE_OFS_DELTA, @boolToInt(enabled) });
 
@@ -798,7 +798,7 @@ pub const Handle = struct {
     pub fn optionSetFsyncDir(self: Handle, enabled: bool) !void {
         _ = self;
 
-        log.debug("Handle.optionSetFsyncDir called, enabled={}", .{enabled});
+        log.debug("Handle.optionSetFsyncDir called, enabled: {}", .{enabled});
 
         try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_ENABLE_FSYNC_GITDIR, @boolToInt(enabled) });
 
@@ -808,7 +808,7 @@ pub const Handle = struct {
     pub fn optionSetStrictHashVerification(self: Handle, enabled: bool) !void {
         _ = self;
 
-        log.debug("Handle.optionSetStrictHashVerification called, enabled={}", .{enabled});
+        log.debug("Handle.optionSetStrictHashVerification called, enabled: {}", .{enabled});
 
         try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_ENABLE_STRICT_HASH_VERIFICATION, @boolToInt(enabled) });
 
@@ -819,7 +819,7 @@ pub const Handle = struct {
     pub fn optionSetAllocator(self: Handle, allocator: ?*git.GitAllocator) !void {
         _ = self;
 
-        log.debug("Handle.optionSetAllocator called, allocator={*}", .{allocator});
+        log.debug("Handle.optionSetAllocator called, allocator: {*}", .{allocator});
 
         try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_SET_ALLOCATOR, allocator });
 
@@ -829,7 +829,7 @@ pub const Handle = struct {
     pub fn optionSetUnsafedIndexSafety(self: Handle, enabled: bool) !void {
         _ = self;
 
-        log.debug("Handle.optionSetUnsafedIndexSafety called, enabled={}", .{enabled});
+        log.debug("Handle.optionSetUnsafedIndexSafety called, enabled: {}", .{enabled});
 
         try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_ENABLE_UNSAVED_INDEX_SAFETY, @boolToInt(enabled) });
 
@@ -852,7 +852,7 @@ pub const Handle = struct {
     pub fn optionSetMaximumPackObjects(self: Handle, value: usize) !void {
         _ = self;
 
-        log.debug("Handle.optionSetMaximumPackObjects called, value={}", .{value});
+        log.debug("Handle.optionSetMaximumPackObjects called, value: {}", .{value});
 
         try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_SET_PACK_MAX_OBJECTS, value });
 
@@ -862,7 +862,7 @@ pub const Handle = struct {
     pub fn optionSetDisablePackKeepFileChecks(self: Handle, enabled: bool) !void {
         _ = self;
 
-        log.debug("Handle.optionSetDisablePackKeepFileChecks called, enabled={}", .{enabled});
+        log.debug("Handle.optionSetDisablePackKeepFileChecks called, enabled: {}", .{enabled});
 
         try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_DISABLE_PACK_KEEP_FILE_CHECKS, @boolToInt(enabled) });
 
@@ -872,7 +872,7 @@ pub const Handle = struct {
     pub fn optionSetHTTPExpectContinue(self: Handle, enabled: bool) !void {
         _ = self;
 
-        log.debug("Handle.optionSetHTTPExpectContinue called, enabled={}", .{enabled});
+        log.debug("Handle.optionSetHTTPExpectContinue called, enabled: {}", .{enabled});
 
         try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_ENABLE_HTTP_EXPECT_CONTINUE, @boolToInt(enabled) });
 
@@ -880,7 +880,7 @@ pub const Handle = struct {
     }
 
     pub fn branchNameIsValid(name: [:0]const u8) !bool {
-        log.debug("Handle.branchNameIsValid, name={s}", .{name});
+        log.debug("Handle.branchNameIsValid, name: {s}", .{name});
 
         var valid: c_int = undefined;
         try internal.wrapCall("git_branch_name_is_valid", .{ &valid, name.ptr });
@@ -895,7 +895,7 @@ pub const Handle = struct {
     pub fn optionSetOdbPackedPriority(self: Handle, value: usize) !void {
         _ = self;
 
-        log.debug("Handle.optionSetOdbPackedPriority called, value={}", .{value});
+        log.debug("Handle.optionSetOdbPackedPriority called, value: {}", .{value});
 
         try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_SET_ODB_PACKED_PRIORITY, value });
 
@@ -905,7 +905,7 @@ pub const Handle = struct {
     pub fn optionSetOdbLoosePriority(self: Handle, value: usize) !void {
         _ = self;
 
-        log.debug("Handle.optionSetOdbLoosePriority called, value={}", .{value});
+        log.debug("Handle.optionSetOdbLoosePriority called, value: {}", .{value});
 
         try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_SET_ODB_LOOSE_PRIORITY, value });
 
@@ -922,7 +922,7 @@ pub const Handle = struct {
     pub fn messagePrettify(self: Handle, message: [:0]const u8, strip_comment_char: ?u8) !git.Buf {
         _ = self;
 
-        log.debug("Handle.messagePrettify called, message={s}, strip_comment_char={}", .{ message, strip_comment_char });
+        log.debug("Handle.messagePrettify called, message: {s}, strip_comment_char: {}", .{ message, strip_comment_char });
 
         var ret: git.Buf = .{};
 
@@ -954,7 +954,7 @@ pub const Handle = struct {
     pub fn messageParseTrailers(self: Handle, message: [:0]const u8) !git.MessageTrailerArray {
         _ = self;
 
-        log.debug("Handle.messageParseTrailers called, message={s}", .{message});
+        log.debug("Handle.messageParseTrailers called, message: {s}", .{message});
 
         var ret: git.MessageTrailerArray = undefined;
 

@@ -21,16 +21,16 @@ pub const Index = opaque {
         const raw_value = c.git_index_version(@ptrCast(*c.git_index, self));
 
         if (std.meta.intToEnum(IndexVersion, raw_value)) |version| {
-            log.debug("successfully fetched index version={s}", .{@tagName(version)});
+            log.debug("successfully fetched index version: {s}", .{@tagName(version)});
             return version;
         } else |_| {
-            log.debug("failed to fetch valid index version, recieved={}", .{raw_value});
+            log.debug("failed to fetch valid index version, recieved: {}", .{raw_value});
             return error.InvalidVersion;
         }
     }
 
     pub fn versionSet(self: *Index, version: IndexVersion) !void {
-        log.debug("Index.setVersion called, version={s}", .{@tagName(version)});
+        log.debug("Index.setVersion called, version: {s}", .{@tagName(version)});
 
         try internal.wrapCall("git_index_set_version", .{ @ptrCast(*c.git_index, self), @enumToInt(version) });
 
@@ -47,7 +47,7 @@ pub const Index = opaque {
     ///
     /// If `force` is true, in-memory changes are discarded.
     pub fn readIndexFromDisk(self: *Index, force: bool) !void {
-        log.debug("Index.readIndexFromDisk called, force={}", .{force});
+        log.debug("Index.readIndexFromDisk called, force: {}", .{force});
 
         try internal.wrapCall("git_index_read", .{ @ptrCast(*c.git_index, self), @boolToInt(force) });
 
@@ -67,7 +67,7 @@ pub const Index = opaque {
 
         if (c.git_index_path(@ptrCast(*const c.git_index, self))) |ptr| {
             const slice = std.mem.sliceTo(ptr, 0);
-            log.debug("successfully fetched index path={s}", .{slice});
+            log.debug("successfully fetched index path: {s}", .{slice});
             return slice;
         }
 
@@ -105,14 +105,14 @@ pub const Index = opaque {
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
             var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
             const slice = try oid.formatHex(&buf);
-            log.debug("index checksum acquired successfully, checksum={s}", .{slice});
+            log.debug("index checksum acquired successfully, checksum: {s}", .{slice});
         }
 
         return oid;
     }
 
     pub fn setToTree(self: *Index, tree: *const git.Tree) !void {
-        log.debug("Index.setToTree called, tree={*}", .{tree});
+        log.debug("Index.setToTree called, tree: {*}", .{tree});
 
         try internal.wrapCall("git_index_read_tree", .{
             @ptrCast(*c.git_index, self),
@@ -156,7 +156,7 @@ pub const Index = opaque {
     }
 
     pub fn writeToTreeInRepository(self: *Index, repository: *git.Repository) !git.Oid {
-        log.debug("Index.writeToTreeIngit.Repository called, repository={*}", .{repository});
+        log.debug("Index.writeToTreeIngit.Repository called, repository: {*}", .{repository});
 
         var oid: git.Oid = undefined;
 
@@ -176,7 +176,7 @@ pub const Index = opaque {
 
         const cap = @bitCast(IndexCapabilities, c.git_index_caps(@ptrCast(*const c.git_index, self)));
 
-        log.debug("successfully fetched index capabilities={}", .{cap});
+        log.debug("successfully fetched index capabilities: {}", .{cap});
 
         return cap;
     }
@@ -184,7 +184,7 @@ pub const Index = opaque {
     /// If you pass `IndexCapabilities.FROM_OWNER` for the capabilities, then capabilities will be read from the config of the
     /// owner object, looking at `core.ignorecase`, `core.filemode`, `core.symlinks`.
     pub fn indexCapabilitiesSet(self: *Index, capabilities: IndexCapabilities) !void {
-        log.debug("Index.getIndexCapabilities called, capabilities={}", .{capabilities});
+        log.debug("Index.getIndexCapabilities called, capabilities: {}", .{capabilities});
 
         try internal.wrapCall("git_index_set_caps", .{ @ptrCast(*c.git_index, self), @bitCast(c_int, capabilities) });
 
@@ -233,7 +233,7 @@ pub const Index = opaque {
     };
 
     pub fn entryByIndex(self: *Index, index: usize) ?*const IndexEntry {
-        log.debug("Index.entryByIndex called, index={}", .{index});
+        log.debug("Index.entryByIndex called, index: {}", .{index});
 
         const ret_opt = @ptrCast(
             ?*const IndexEntry,
@@ -251,7 +251,7 @@ pub const Index = opaque {
     }
 
     pub fn entryByPath(self: *Index, path: [:0]const u8, stage: c_int) ?*const IndexEntry {
-        log.debug("Index.entryByPath called, path={s}, stage={}", .{ path, stage });
+        log.debug("Index.entryByPath called, path: {s}, stage: {}", .{ path, stage });
 
         const ret_opt = @ptrCast(
             ?*const IndexEntry,
@@ -269,7 +269,7 @@ pub const Index = opaque {
     }
 
     pub fn remove(self: *Index, path: [:0]const u8, stage: c_int) !void {
-        log.debug("Index.remove called, path={s}, stage={}", .{ path, stage });
+        log.debug("Index.remove called, path: {s}, stage: {}", .{ path, stage });
 
         try internal.wrapCall("git_index_remove", .{ @ptrCast(*c.git_index, self), path.ptr, stage });
 
@@ -277,7 +277,7 @@ pub const Index = opaque {
     }
 
     pub fn directoryRemove(self: *Index, path: [:0]const u8, stage: c_int) !void {
-        log.debug("Index.directoryRemove called, path={s}, stage={}", .{ path, stage });
+        log.debug("Index.directoryRemove called, path: {s}, stage: {}", .{ path, stage });
 
         try internal.wrapCall("git_index_remove_directory", .{ @ptrCast(*c.git_index, self), path.ptr, stage });
 
@@ -285,7 +285,7 @@ pub const Index = opaque {
     }
 
     pub fn add(self: *Index, entry: *const IndexEntry) !void {
-        log.debug("Index.add called, entry={*}", .{entry});
+        log.debug("Index.add called, entry: {*}", .{entry});
 
         try internal.wrapCall("git_index_add", .{ @ptrCast(*c.git_index, self), @ptrCast(*const c.git_index_entry, entry) });
 
@@ -297,7 +297,7 @@ pub const Index = opaque {
     /// This forces the file to be added to the index, not looking at gitignore rules. Those rules can be evaluated using
     /// `git.Repository.statusShouldIgnore`.
     pub fn addByPath(self: *Index, path: [:0]const u8) !void {
-        log.debug("Index.addByPath called, path={s}", .{path});
+        log.debug("Index.addByPath called, path: {s}", .{path});
 
         try internal.wrapCall("git_index_add_bypath", .{ @ptrCast(*c.git_index, self), path.ptr });
 
@@ -305,7 +305,7 @@ pub const Index = opaque {
     }
 
     pub fn addFromBuffer(self: *Index, index_entry: *const IndexEntry, buffer: []const u8) !void {
-        log.debug("Index.addFromBuffer called, index_entry={*}, buffer.ptr={*}, buffer.len={}", .{
+        log.debug("Index.addFromBuffer called, index_entry: {*}, buffer.ptr: {*}, buffer.len: {}", .{
             index_entry,
             buffer.ptr,
             buffer.len,
@@ -327,7 +327,7 @@ pub const Index = opaque {
     }
 
     pub fn removeByPath(self: *Index, path: [:0]const u8) !void {
-        log.debug("Index.removeByPath called, path={s}", .{path});
+        log.debug("Index.removeByPath called, path: {s}", .{path});
 
         try internal.wrapCall("git_index_remove_bypath", .{ @ptrCast(*c.git_index, self), path.ptr });
 
@@ -760,25 +760,25 @@ pub const Index = opaque {
     };
 
     pub fn find(self: *Index, path: [:0]const u8) !usize {
-        log.debug("Index.find called, path={s}", .{path});
+        log.debug("Index.find called, path: {s}", .{path});
 
         var position: usize = 0;
 
         try internal.wrapCall("git_index_find", .{ &position, @ptrCast(*c.git_index, self), path.ptr });
 
-        log.debug("successfully fetched position={}", .{position});
+        log.debug("successfully fetched position: {}", .{position});
 
         return position;
     }
 
     pub fn findPrefix(self: *Index, prefix: [:0]const u8) !usize {
-        log.debug("Index.find called, prefix={s}", .{prefix});
+        log.debug("Index.find called, prefix: {s}", .{prefix});
 
         var position: usize = 0;
 
         try internal.wrapCall("git_index_find_prefix", .{ &position, @ptrCast(*c.git_index, self), prefix.ptr });
 
-        log.debug("successfully fetched position={}", .{position});
+        log.debug("successfully fetched position: {}", .{position});
 
         return position;
     }
@@ -794,7 +794,7 @@ pub const Index = opaque {
         our_entry: ?*const IndexEntry,
         their_entry: ?*const IndexEntry,
     ) !void {
-        log.debug("Index.conflictAdd called, ancestor_entry={*}, our_entry={*}, their_entry={*}", .{
+        log.debug("Index.conflictAdd called, ancestor_entry: {*}, our_entry: {*}, their_entry: {*}", .{
             ancestor_entry,
             our_entry,
             their_entry,
@@ -814,7 +814,7 @@ pub const Index = opaque {
     ///
     /// *IMPORTANT*: These entries should *not* be freed.
     pub fn conflictGet(index: *Index, path: [:0]const u8) !Conflicts {
-        log.debug("Index.conflictGet called, path={s}", .{path});
+        log.debug("Index.conflictGet called, path: {s}", .{path});
 
         var ancestor_out: *const IndexEntry = undefined;
         var our_out: *const IndexEntry = undefined;
@@ -838,7 +838,7 @@ pub const Index = opaque {
     }
 
     pub fn conlfictRemove(self: *Index, path: [:0]const u8) !void {
-        log.debug("Index.conlfictRemove called, path={s}", .{path});
+        log.debug("Index.conlfictRemove called, path: {s}", .{path});
 
         try internal.wrapCall("git_index_conflict_remove", .{ @ptrCast(*c.git_index, self), path.ptr });
 
@@ -1009,7 +1009,7 @@ pub const Index = opaque {
         options: git.Pathspec.MatchOptions,
         match_list: ?**git.PathspecMatchList,
     ) !bool {
-        log.debug("Index.pathspecMatch called, options={}, pathspec={*}", .{ options, pathspec });
+        log.debug("Index.pathspecMatch called, options: {}, pathspec: {*}", .{ options, pathspec });
 
         const ret = (try internal.wrapCallWithReturn("git_pathspec_match_index", .{
             @ptrCast(?*?*c.git_pathspec_match_list, match_list),

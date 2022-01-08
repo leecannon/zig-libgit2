@@ -194,7 +194,7 @@ pub const Worktree = opaque {
     /// If the worktree is not valid and not locked or if the above flags have been passed in, this function will return a
     /// `true`
     pub fn isPruneable(self: *Worktree, options: PruneOptions) !bool {
-        log.debug("Worktree.isPruneable called, options={}", .{options});
+        log.debug("Worktree.isPruneable called, options: {}", .{options});
 
         var c_options = options.makeCOptionsObject();
 
@@ -213,7 +213,7 @@ pub const Worktree = opaque {
     /// Prune the working tree, that is remove the git data structures on disk. The repository will only be pruned of
     /// `Worktree.isPruneable` succeeds.    
     pub fn prune(self: *Worktree, options: PruneOptions) !void {
-        log.debug("Worktree.prune called, options={}", .{options});
+        log.debug("Worktree.prune called, options: {}", .{options});
 
         var c_options = options.makeCOptionsObject();
 

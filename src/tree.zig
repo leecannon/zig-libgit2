@@ -63,7 +63,7 @@ pub const Tree = opaque {
     /// This returns a `git.Tree.Entry` that is owned by the `git.Tree`.  
     /// You don't have to free it, but you must not use it after the `git.Tree` is `deinit`ed.
     pub fn entryByName(self: *const Tree, name: [:0]const u8) ?*const Tree.Entry {
-        log.debug("Tree.entryByName called, name={s}", .{name});
+        log.debug("Tree.entryByName called, name: {s}", .{name});
 
         const opt_ret = @ptrCast(?*const Tree.Entry, c.git_tree_entry_byname(
             @ptrCast(*const c.git_tree, self),
@@ -84,7 +84,7 @@ pub const Tree = opaque {
     /// This returns a `git.Tree.Entry` that is owned by the `git.Tree`.  
     /// You don't have to free it, but you must not use it after the `git.Tree` is `deinit`ed.
     pub fn entryByIndex(self: *const Tree, index: usize) ?*const Tree.Entry {
-        log.debug("Tree.entryByIndex called, index={}", .{index});
+        log.debug("Tree.entryByIndex called, index: {}", .{index});
 
         const opt_ret = @ptrCast(?*const Tree.Entry, c.git_tree_entry_byindex(
             @ptrCast(*const c.git_tree, self),
@@ -128,7 +128,7 @@ pub const Tree = opaque {
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
             var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
             if (id.formatHex(&buf)) |slice| {
-                log.debug("Tree.entryById called, id={s}", .{slice});
+                log.debug("Tree.entryById called, id: {s}", .{slice});
             } else |_| {}
         }
 
@@ -151,7 +151,7 @@ pub const Tree = opaque {
     /// Unlike the other lookup functions, the returned tree entry is owned by the user and must be freed explicitly with 
     /// `Entry.deinit`.
     pub fn entryByPath(root: *const Tree, path: [:0]const u8) !*Tree.Entry {
-        log.debug("Tree.entryByPath called, path={s}", .{path});
+        log.debug("Tree.entryByPath called, path: {s}", .{path});
 
         var ret: *Entry = undefined;
 
@@ -254,7 +254,7 @@ pub const Tree = opaque {
             }
         }.cb;
 
-        log.debug("Tree.walkWithUserData called, mode={}", .{mode});
+        log.debug("Tree.walkWithUserData called, mode: {}", .{mode});
 
         _ = try internal.wrapCallWithReturn("git_tree_walk", .{
             @ptrCast(*c.git_tree, self),
@@ -424,7 +424,7 @@ pub const TreeBuilder = opaque {
     ///
     /// The returned entry is owned by the builder and should not be freed manually.
     pub fn get(self: *TreeBuilder, filename: [:0]const u8) ?*const git.Tree.Entry {
-        log.debug("TreeBuilder.get called, filename={s}", .{filename});
+        log.debug("TreeBuilder.get called, filename: {s}", .{filename});
 
         const opt_ret = @ptrCast(
             ?*const git.Tree.Entry,
@@ -457,7 +457,7 @@ pub const TreeBuilder = opaque {
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
             var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
             if (id.formatHex(&buf)) |slice| {
-                log.debug("TreeBuilder.insert called, filename={s}, id={s}, filemode={}", .{ filename, slice, filemode });
+                log.debug("TreeBuilder.insert called, filename: {s}, id: {s}, filemode: {}", .{ filename, slice, filemode });
             } else |_| {}
         }
 
@@ -478,7 +478,7 @@ pub const TreeBuilder = opaque {
 
     /// Remove an entry from the builder by its filename
     pub fn remove(self: *TreeBuilder, filename: [:0]const u8) !void {
-        log.debug("TreeBuilder.remove called, filename={s}", .{filename});
+        log.debug("TreeBuilder.remove called, filename: {s}", .{filename});
 
         try internal.wrapCall("git_treebuilder_remove", .{
             @ptrCast(*c.git_treebuilder, self),
@@ -595,7 +595,7 @@ pub const TreeBuilder = opaque {
         options: git.Pathspec.MatchOptions,
         match_list: ?**git.PathspecMatchList,
     ) !bool {
-        log.debug("Tree.pathspecMatch called, options={}, pathspec={*}", .{ options, pathspec });
+        log.debug("Tree.pathspecMatch called, options: {}, pathspec: {*}", .{ options, pathspec });
 
         const ret = (try internal.wrapCallWithReturn("git_pathspec_match_tree", .{
             @ptrCast(?*?*c.git_pathspec_match_list, match_list),

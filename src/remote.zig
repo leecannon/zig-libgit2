@@ -23,7 +23,7 @@ pub const Remote = opaque {
     /// * `url` - the remote's url.
     /// * `options` - the remote creation options.
     pub fn createWithOptions(url: [:0]const u8, options: CreateOptions) !*Remote {
-        log.debug("Remote.createWithOptions called, url={s}, options={}", .{ url, options });
+        log.debug("Remote.createWithOptions called, url: {s}, options: {}", .{ url, options });
 
         var remote: *Remote = undefined;
 
@@ -116,7 +116,7 @@ pub const Remote = opaque {
     /// ## Parameters
     /// * `url` - the remote's url.
     pub fn createDetached(url: [:0]const u8) !*Remote {
-        log.debug("Remote.createDetached called, url={s}", .{url});
+        log.debug("Remote.createDetached called, url: {s}", .{url});
 
         var remote: *Remote = undefined;
 
@@ -674,7 +674,7 @@ pub const Remote = opaque {
     /// * `refspecs` - the refspecs to use for this negotiation and download. Use an empty array to use the base refspecs
     /// * `options` - the options to use for this fetch
     pub fn download(self: *Remote, refspecs: git.StrArray, options: FetchOptions) !void {
-        log.debug("Remote.download called, options={}", .{options});
+        log.debug("Remote.download called, options: {}", .{options});
 
         const c_options = options.makeCOptionsObject();
 
@@ -696,7 +696,7 @@ pub const Remote = opaque {
     /// * refspecs - the refspecs to use for this negotiation and upload. Use an empty array to use the base refspecs.
     /// * options - the options to use for this push.
     pub fn upload(self: *Remote, refspecs: git.StrArray, options: PushOptions) !void {
-        log.debug("Remote.upload called, options={}", .{options});
+        log.debug("Remote.upload called, options: {}", .{options});
 
         const c_options = options.makeCOptionsObject();
 
@@ -728,7 +728,7 @@ pub const Remote = opaque {
         download_tags: AutoTagOption,
         reflog_message: ?[:0]const u8,
     ) !void {
-        log.debug("Remote.updateTips called, update_fetchhead={}, download_tags={}, reflog_message={s}", .{
+        log.debug("Remote.updateTips called, update_fetchhead: {}, download_tags: {}, reflog_message: {s}", .{
             update_fetchead,
             download_tags,
             reflog_message,
@@ -759,7 +759,7 @@ pub const Remote = opaque {
         options: FetchOptions,
         reflog_message: ?[:0]const u8,
     ) !void {
-        log.debug("Remote.fetch called, options={}, reflog_message={s}", .{ options, reflog_message });
+        log.debug("Remote.fetch called, options: {}, reflog_message: {s}", .{ options, reflog_message });
 
         const c_reflog_message = if (reflog_message) |s| s.ptr else null;
         const c_options = options.makeCOptionsObject();
@@ -795,7 +795,7 @@ pub const Remote = opaque {
     /// * `refspecs` - The refspecs to use for pushing. If an empty array is provided, the configured refspecs will be used.
     /// * `options`  - The options to use for this push.
     pub fn push(self: *Remote, refspecs: git.StrArray, options: PushOptions) !void {
-        log.debug("Remote.push called, options={}", .{options});
+        log.debug("Remote.push called, options: {}", .{options});
 
         const c_options = options.makeCOptionsObject();
 

@@ -59,7 +59,7 @@ pub const Credential = extern struct {
     }
 
     pub fn initUserPassPlaintext(username: [:0]const u8, password: [:0]const u8) !*Credential {
-        log.debug("Credential.initUserPassPlaintext called, username={s}, password={s}", .{ username, password });
+        log.debug("Credential.initUserPassPlaintext called, username: {s}, password: {s}", .{ username, password });
 
         var cred: *Credential = undefined;
 
@@ -107,7 +107,7 @@ pub const Credential = extern struct {
     ///
     /// This is used with ssh authentication to query for the username if none is specified in the url.
     pub fn initUsername(username: [:0]const u8) !*Credential {
-        log.debug("Credential.initUsername called, username={s}", .{username});
+        log.debug("Credential.initUsername called, username: {s}", .{username});
 
         var cred: *Credential = undefined;
 
@@ -142,7 +142,7 @@ pub const Credential = extern struct {
         passphrase: ?[:0]const u8,
     ) !*Credential {
         log.debug(
-            "Credential.initSshKey called, username={s}, publickey={s}, privatekey={s}, passphrase={s}",
+            "Credential.initSshKey called, username: {s}, publickey: {s}, privatekey: {s}, passphrase: {s}",
             .{ username, publickey, privatekey, passphrase },
         );
 
@@ -257,7 +257,7 @@ pub const Credential = extern struct {
             }
         }.cb;
 
-        log.debug("Credential.initSshKeyInteractive called, username={s}", .{username});
+        log.debug("Credential.initSshKeyInteractive called, username: {s}", .{username});
 
         var cred: *Credential = undefined;
 
@@ -283,7 +283,7 @@ pub const Credential = extern struct {
     }
 
     pub fn initSshKeyFromAgent(username: [:0]const u8) !*Credential {
-        log.debug("Credential.initSshKeyFromAgent called, username={s}", .{username});
+        log.debug("Credential.initSshKeyFromAgent called, username: {s}", .{username});
 
         var cred: *Credential = undefined;
 
@@ -340,7 +340,7 @@ pub const Credential = extern struct {
             }
         }.cb;
 
-        log.debug("Credential.initSshKeyCustom called, username={s}", .{username});
+        log.debug("Credential.initSshKeyCustom called, username: {s}", .{username});
 
         var cred: *Credential = undefined;
 
