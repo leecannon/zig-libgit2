@@ -62,8 +62,7 @@ There is currently no plan to port the headers within "include/git2/sys", if any
 - [X] strarray.h
 - [ ] submodule.h
 - [ ] tag.h
-- [ ] trace.h
+- [X] trace.h
 - [ ] transaction.h
-- [ ] transport.h
 - [X] tree.h
 - [X] worktree.h

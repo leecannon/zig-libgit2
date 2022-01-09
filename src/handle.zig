@@ -971,6 +971,64 @@ pub const Handle = struct {
         return ret;
     }
 
+    /// Available tracing levels.
+    /// When tracing is set to a particular level, callers will be provided tracing at the given level and all lower levels.
+    pub const TraceLevel = enum(c_uint) {
+        /// No tracing will be performed.
+        NONE = 0,
+        /// Severe errors that may impact the program's execution
+        FATAL = 1,
+        /// Errors that do not impact the program's execution
+        ERROR = 2,
+        /// Warnings that suggest abnormal data
+        WARN = 3,
+        /// Informational messages about program execution
+        INFO = 4,
+        /// Detailed data that allows for debugging
+        DEBUG = 5,
+        /// Exceptionally detailed debugging data
+        TRACE = 6,
+    };
+
+    /// Sets the system tracing configuration to the specified level with the specified callback.
+    /// When system events occur at a level equal to, or lower than, the given level they will be reported to the given callback.
+    ///
+    /// ## Parameters
+    /// * `level` - level to set tracing to
+    /// * `callback_fn` - the callback function to call with trace data
+    ///
+    /// ## Callback Parameters
+    /// * `level` - the trace level
+    /// * `message` - the message
+    pub fn traceSet(
+        self: Handle,
+        level: TraceLevel,
+        comptime callback_fn: fn (level: TraceLevel, message: [:0]const u8) void,
+    ) !void {
+        _ = self;
+
+        log.debug("Handle.traceSet called, level: {}", .{level});
+
+        const cb = struct {
+            pub fn cb(
+                c_level: c.git_trace_level_t,
+                msg: ?[*:0]const u8,
+            ) callconv(.C) void {
+                callback_fn(
+                    @intToEnum(TraceLevel, c_level),
+                    std.mem.sliceTo(msg.?, 0),
+                );
+            }
+        }.cb;
+
+        try internal.wrapCall("git_trace_set", .{
+            @enumToInt(level),
+            cb,
+        });
+
+        log.debug("successfully enabled tracing", .{});
+    }
+
     comptime {
         std.testing.refAllDecls(@This());
     }

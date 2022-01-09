@@ -12,8 +12,6 @@
 - [ ] Add functionality to build.zig to include package as either static or dynamic
 - [ ] Package with zigmod/gyro
 
-42 transport.h
-67 trace.h
 68 refdb.h
 91 revert.h
 98 proxy.h
