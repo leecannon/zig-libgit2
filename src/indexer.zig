@@ -179,28 +179,10 @@ pub const Indexer = opaque {
     pub fn hash(self: *const Indexer) ?*const git.Oid {
         log.debug("Indexer.hash called", .{});
 
-        var opt_hash = @ptrCast(
+        return @ptrCast(
             ?*const git.Oid,
             c.git_indexer_hash(@ptrCast(*const c.git_indexer, self)),
         );
-
-        if (opt_hash) |ret| {
-            // This check is to prevent formating the oid when we are not going to print anything
-            if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-                var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
-                if (ret.formatHex(&buf)) |slice| {
-                    log.debug("successfully fetched packfile hash: {s}", .{slice});
-                } else |_| {
-                    log.debug("successfully fetched packfile, but unable to format it", .{});
-                }
-            }
-
-            return ret;
-        }
-
-        log.debug("received null hash", .{});
-
-        return null;
     }
 
     pub fn deinit(self: *Indexer) void {

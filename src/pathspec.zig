@@ -169,21 +169,13 @@ pub const PathspecMatchList = opaque {
     pub fn getDiffEntry(self: *const PathspecMatchList, index: usize) ?*const git.DiffDelta {
         log.debug("PathspecMatchList.getDiffEntry called, index: {}", .{index});
 
-        const opt_ptr = @ptrCast(
+        return @ptrCast(
             ?*const git.DiffDelta,
             c.git_pathspec_match_list_diff_entry(
                 @ptrCast(*const c.git_pathspec_match_list, self),
                 index,
             ),
         );
-
-        if (opt_ptr) |ptr| {
-            log.debug("entry: {*}", .{ptr});
-            return ptr;
-        } else {
-            log.debug("no such match", .{});
-            return null;
-        }
     }
 
     /// Get the number of pathspec items that did not match.

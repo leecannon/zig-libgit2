@@ -78,15 +78,10 @@ pub const Index = opaque {
     pub fn repositoryGet(self: *const Index) ?*git.Repository {
         log.debug("Index.repositoryGet called", .{});
 
-        const ret = c.git_index_owner(@ptrCast(*const c.git_index, self));
-
-        if (ret) |ptr| {
-            log.debug("successfully fetched owning repository", .{});
-            return @ptrCast(*git.Repository, ptr);
-        }
-
-        log.debug("no owning repository", .{});
-        return null;
+        return @ptrCast(
+            ?*git.Repository,
+            c.git_index_owner(@ptrCast(*const c.git_index, self)),
+        );
     }
 
     /// Get the checksum of the index
@@ -235,37 +230,19 @@ pub const Index = opaque {
     pub fn entryByIndex(self: *Index, index: usize) ?*const IndexEntry {
         log.debug("Index.entryByIndex called, index: {}", .{index});
 
-        const ret_opt = @ptrCast(
+        return @ptrCast(
             ?*const IndexEntry,
             c.git_index_get_byindex(@ptrCast(*c.git_index, self), index),
         );
-
-        if (ret_opt) |result| {
-            log.debug("successfully fetched index entry: {}", .{result});
-
-            return result;
-        } else {
-            log.debug("index out of bounds", .{});
-            return null;
-        }
     }
 
     pub fn entryByPath(self: *Index, path: [:0]const u8, stage: c_int) ?*const IndexEntry {
         log.debug("Index.entryByPath called, path: {s}, stage: {}", .{ path, stage });
 
-        const ret_opt = @ptrCast(
+        return @ptrCast(
             ?*const IndexEntry,
             c.git_index_get_bypath(@ptrCast(*c.git_index, self), path.ptr, stage),
         );
-
-        if (ret_opt) |result| {
-            log.debug("successfully fetched index entry: {}", .{result});
-
-            return result;
-        } else {
-            log.debug("path not found", .{});
-            return null;
-        }
     }
 
     pub fn remove(self: *Index, path: [:0]const u8, stage: c_int) !void {

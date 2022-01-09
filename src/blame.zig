@@ -27,25 +27,19 @@ pub const Blame = opaque {
     pub fn hunkByIndex(self: *Blame, index: u32) ?*const BlameHunk {
         log.debug("Blame.hunkByIndex called, index: {}", .{index});
 
-        if (c.git_blame_get_hunk_byindex(@ptrCast(*c.git_blame, self), index)) |c_ret| {
-            const ret = @ptrCast(*const git.BlameHunk, c_ret);
-            log.debug("successfully fetched hunk: {*}", .{ret});
-            return ret;
-        }
-
-        return null;
+        return @ptrCast(
+            ?*const git.BlameHunk,
+            c.git_blame_get_hunk_byindex(@ptrCast(*c.git_blame, self), index),
+        );
     }
 
     pub fn hunkByLine(self: *Blame, line: usize) ?*const BlameHunk {
         log.debug("Blame.hunkByLine called, line: {}", .{line});
 
-        if (c.git_blame_get_hunk_byline(@ptrCast(*c.git_blame, self), line)) |c_ret| {
-            const ret = @ptrCast(*const git.BlameHunk, c_ret);
-            log.debug("successfully fetched hunk: {*}", .{ret});
-            return ret;
-        }
-
-        return null;
+        return @ptrCast(
+            ?*const git.BlameHunk,
+            c.git_blame_get_hunk_byline(@ptrCast(*c.git_blame, self), line),
+        );
     }
 
     /// Get blame data for a file that has been modified in memory. The `reference` parameter is a pre-calculated blame for the

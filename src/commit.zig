@@ -314,29 +314,13 @@ pub const Commit = opaque {
     pub fn getParentId(self: *const Commit, parent_number: u32) ?*const git.Oid {
         log.debug("Commit.getParentId called", .{});
 
-        const opt_ret = @ptrCast(
+        return @ptrCast(
             ?*const git.Oid,
             c.git_commit_parent_id(
                 @ptrCast(*const c.git_commit, self),
                 parent_number,
             ),
         );
-
-        if (opt_ret) |ret| {
-            // This check is to prevent formating the oid when we are not going to print anything
-            if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-                var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
-                if (ret.formatHex(&buf)) |slice| {
-                    log.debug("successfully fetched commit parent id: {s}", .{slice});
-                } else |_| {
-                    log.debug("successfully fetched commit parent id, but unable to format it", .{});
-                }
-            }
-
-            return ret;
-        }
-
-        return null;
     }
 
     pub fn getAncestor(self: *const Commit, ancestor_number: u32) !*Commit {

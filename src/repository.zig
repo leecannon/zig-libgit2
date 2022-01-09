@@ -64,8 +64,8 @@ pub const Repository = opaque {
     pub fn identityGet(self: *const Repository) !Identity {
         log.debug("Repository.identityGet called", .{});
 
-        var c_name: [*c]u8 = undefined;
-        var c_email: [*c]u8 = undefined;
+        var c_name: ?[*:0]u8 = undefined;
+        var c_email: ?[*:0]u8 = undefined;
 
         try internal.wrapCall("git_repository_ident", .{ &c_name, &c_email, @ptrCast(*const c.git_repository, self) });
 
@@ -84,8 +84,8 @@ pub const Repository = opaque {
     pub fn identitySet(self: *Repository, identity: Identity) !void {
         log.debug("Repository.identitySet called, identity.name: {s}, identity.email: {s}", .{ identity.name, identity.email });
 
-        const name_temp: [*c]const u8 = if (identity.name) |slice| slice.ptr else null;
-        const email_temp: [*c]const u8 = if (identity.email) |slice| slice.ptr else null;
+        const name_temp = if (identity.name) |slice| slice.ptr else null;
+        const email_temp = if (identity.email) |slice| slice.ptr else null;
         try internal.wrapCall("git_repository_set_ident", .{ @ptrCast(*c.git_repository, self), name_temp, email_temp });
 
         log.debug("successfully set identity", .{});
@@ -706,7 +706,8 @@ pub const Repository = opaque {
 
         var oid: git.Oid = undefined;
 
-        const as_path_temp: [*c]const u8 = if (as_path) |slice| slice.ptr else null;
+        const as_path_temp = if (as_path) |slice| slice.ptr else null;
+
         try internal.wrapCall("git_repository_hashfile", .{
             @ptrCast(*c.git_oid, &oid),
             @ptrCast(*c.git_repository, self),
@@ -2512,7 +2513,8 @@ pub const Repository = opaque {
 
         var result: ExtractSignatureResult = .{};
 
-        const field_temp: [*c]const u8 = if (field) |slice| slice.ptr else null;
+        const field_temp = if (field) |slice| slice.ptr else null;
+
         try internal.wrapCall("git_commit_extract_signature", .{
             @ptrCast(*c.git_buf, &result.signature),
             @ptrCast(*c.git_buf, &result.signed_data),
@@ -2550,8 +2552,8 @@ pub const Repository = opaque {
 
         var ret: git.Oid = undefined;
 
-        const update_ref_temp: [*c]const u8 = if (update_ref) |slice| slice.ptr else null;
-        const encoding_temp: [*c]const u8 = if (message_encoding) |slice| slice.ptr else null;
+        const update_ref_temp = if (update_ref) |slice| slice.ptr else null;
+        const encoding_temp = if (message_encoding) |slice| slice.ptr else null;
 
         try internal.wrapCall("git_commit_create", .{
             @ptrCast(*c.git_oid, &ret),
@@ -2595,7 +2597,7 @@ pub const Repository = opaque {
 
         var ret: git.Buf = .{};
 
-        const encoding_temp: [*c]const u8 = if (message_encoding) |slice| slice.ptr else null;
+        const encoding_temp = if (message_encoding) |slice| slice.ptr else null;
 
         try internal.wrapCall("git_commit_create_buffer", .{
             @ptrCast(*c.git_buf, &ret),
@@ -2628,8 +2630,8 @@ pub const Repository = opaque {
 
         var ret: git.Oid = undefined;
 
-        const signature_temp: [*c]const u8 = if (signature) |slice| slice.ptr else null;
-        const signature_field_temp: [*c]const u8 = if (signature_field) |slice| slice.ptr else null;
+        const signature_temp = if (signature) |slice| slice.ptr else null;
+        const signature_field_temp = if (signature_field) |slice| slice.ptr else null;
 
         try internal.wrapCall("git_commit_create_with_signature", .{
             @ptrCast(*c.git_oid, &ret),
@@ -3503,7 +3505,7 @@ pub const Repository = opaque {
 
         var ret: *git.NoteIterator = undefined;
 
-        const c_notes: [*c]const u8 = if (notes_ref) |p| p.ptr else null;
+        const c_notes = if (notes_ref) |p| p.ptr else null;
 
         try internal.wrapCall("git_note_iterator_new", .{
             @ptrCast(*?*c.git_note_iterator, &ret),
@@ -3529,7 +3531,7 @@ pub const Repository = opaque {
 
         var ret: *git.Note = undefined;
 
-        const c_notes: [*c]const u8 = if (notes_ref) |p| p.ptr else null;
+        const c_notes = if (notes_ref) |p| p.ptr else null;
 
         try internal.wrapCall("git_note_read", .{
             @ptrCast(*?*c.git_note, &ret),
@@ -3604,7 +3606,7 @@ pub const Repository = opaque {
 
         var ret: git.Oid = undefined;
 
-        const c_notes: [*c]const u8 = if (notes_ref) |p| p.ptr else null;
+        const c_notes = if (notes_ref) |p| p.ptr else null;
 
         try internal.wrapCall("git_note_create", .{
             @ptrCast(*c.git_oid, &ret),
@@ -3706,7 +3708,7 @@ pub const Repository = opaque {
             });
         }
 
-        const c_notes: [*c]const u8 = if (notes_ref) |p| p.ptr else null;
+        const c_notes = if (notes_ref) |p| p.ptr else null;
 
         try internal.wrapCall("git_note_remove", .{
             @ptrCast(*c.git_repository, self),
@@ -3851,7 +3853,7 @@ pub const Repository = opaque {
 
         log.debug("Repository.noteForeachWithUserData called, notes_ref: {s}", .{notes_ref});
 
-        const c_notes: [*c]const u8 = if (notes_ref) |p| p.ptr else null;
+        const c_notes = if (notes_ref) |p| p.ptr else null;
 
         const ret = try internal.wrapCallWithReturn("git_note_foreach", .{
             @ptrCast(*c.git_repository, self),

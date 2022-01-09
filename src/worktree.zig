@@ -37,7 +37,7 @@ pub const Worktree = opaque {
     pub fn lock(self: *Worktree, reason: ?[:0]const u8) !void {
         log.debug("Worktree.lock called", .{});
 
-        const c_reason: [*c]const u8 = if (reason) |s| s.ptr else null;
+        const c_reason = if (reason) |s| s.ptr else null;
 
         internal.wrapCall("git_worktree_lock", .{
             @ptrCast(*c.git_worktree, self),

@@ -179,7 +179,6 @@ pub const Oid = extern struct {
 ///
 /// E.g. look at the result of `git log --abbrev-commit`.
 pub const OidShortener = opaque {
-
     /// `min_length` is the minimal length for all identifiers, which will be used even if shorter OIDs would still be unique.
     pub fn init(min_length: usize) !*OidShortener {
         log.debug("OidShortener.init called, min_length: {}", .{min_length});

@@ -27,19 +27,10 @@ pub const StatusList = opaque {
     pub fn statusByIndex(self: *StatusList, index: usize) ?*const StatusEntry {
         log.debug("StatusList.statusByIndex called, index: {}", .{index});
 
-        const ret_opt = @ptrCast(
+        return @ptrCast(
             ?*const StatusEntry,
             c.git_status_byindex(@ptrCast(*c.git_status_list, self), index),
         );
-
-        if (ret_opt) |ret| {
-            log.debug("successfully fetched status entry: {}", .{ret});
-
-            return ret;
-        } else {
-            log.debug("index out of bounds", .{});
-            return null;
-        }
     }
 
     /// A status entry, providing the differences between the file as it exists in HEAD and the index, and providing the 

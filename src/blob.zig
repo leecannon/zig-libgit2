@@ -50,7 +50,6 @@ pub const Blob = opaque {
 
         if (c.git_blob_rawcontent(@ptrCast(*const c.git_blob, self))) |ret| {
             log.debug("successfully fetched raw content pointer: {*}", .{ret});
-
             return ret;
         } else {
             return error.Invalid;

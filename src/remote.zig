@@ -345,8 +345,16 @@ pub const Remote = opaque {
 
         /// If the server send a symref mapping for this ref, this will point to the target.
         pub fn getSymrefTarget(self: Head) ?[:0]const u8 {
-            if (self.z_symref_target) |s| return std.mem.sliceTo(s, 0);
-            return null;
+            log.debug("Remote.getUrl called", .{});
+
+            const symref = if (self.z_symref_target) |s|
+                std.mem.sliceTo(s, 0)
+            else
+                null;
+
+            log.debug("symref: {s}", .{symref});
+
+            return symref;
         }
 
         test {
