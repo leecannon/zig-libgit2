@@ -246,7 +246,7 @@ pub const PackBuilder = opaque {
 
         const cb = struct {
             pub fn cb(
-                stats: [*c]const c.git_indexer_progress,
+                stats: *const c.git_indexer_progress,
                 payload: ?*anyopaque,
             ) callconv(.C) c_int {
                 return callback_fn(@ptrCast(*const git.Indexer.Progress, stats), @ptrCast(UserDataType, payload));

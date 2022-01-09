@@ -6,7 +6,7 @@ const log = std.log.scoped(.git);
 const git = @import("git.zig");
 
 pub const Attribute = struct {
-    z_attr: [*c]const u8,
+    z_attr: ?[*:0]const u8,
 
     /// Check if an attribute is set on. In core git parlance, this the value for "Set" attributes.
     ///

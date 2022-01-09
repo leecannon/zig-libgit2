@@ -313,7 +313,7 @@ pub const Remote = opaque {
         var head_n: usize = undefined;
 
         try internal.wrapCall("git_remote_ls", .{
-            @ptrCast([*c][*c][*c]const c.git_remote_head, &head_ptr),
+            @ptrCast(*?[*]?*const c.git_remote_head, &head_ptr),
             &head_n,
             @ptrCast(*c.git_remote, self),
         });

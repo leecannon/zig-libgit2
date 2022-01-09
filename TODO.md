@@ -7,7 +7,6 @@
 - [ ] Option to disable logging
 - [ ] Add documentation to *every* function and type
 - [ ] Check all functions that dont take a "self" pointer to a libgit2 type and decide if they should be moved to `Handle`
-- [ ] Check every use of `[*c]`
 - [ ] Match zig language style, e.g. enum style should be snake_case
 - [ ] Add functionality to build.zig to include package as either static or dynamic
 - [ ] Package with zigmod/gyro

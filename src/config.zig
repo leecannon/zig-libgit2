@@ -125,11 +125,15 @@ pub const Config = opaque {
     pub fn getString(self: *const Config, name: [:0]const u8) ![:0]const u8 {
         log.debug("Config.getString called, name: {s}", .{name});
 
-        var str: [*c]const u8 = undefined;
+        var str: ?[*:0]const u8 = undefined;
 
-        try internal.wrapCall("git_config_get_string", .{ &str, @ptrCast(*const c.git_config, self), name.ptr });
+        try internal.wrapCall("git_config_get_string", .{
+            &str,
+            @ptrCast(*const c.git_config, self),
+            name.ptr,
+        });
 
-        const slice = std.mem.sliceTo(str, 0);
+        const slice = std.mem.sliceTo(str.?, 0);
 
         log.debug("got string value: {s}", .{slice});
 
@@ -179,7 +183,7 @@ pub const Config = opaque {
 
         const cb = struct {
             pub fn cb(
-                entry: [*c]const c.git_config_entry,
+                entry: *const c.git_config_entry,
                 payload: ?*anyopaque,
             ) callconv(.C) c_int {
                 return callback_fn(
@@ -215,7 +219,7 @@ pub const Config = opaque {
 
         const cb = struct {
             pub fn cb(
-                entry: [*c]const c.git_config_entry,
+                entry: *const c.git_config_entry,
                 payload: ?*anyopaque,
             ) callconv(.C) c_int {
                 return callback_fn(
@@ -248,7 +252,7 @@ pub const Config = opaque {
 
         const cb = struct {
             pub fn cb(
-                entry: [*c]const c.git_config_entry,
+                entry: *const c.git_config_entry,
                 payload: ?*anyopaque,
             ) callconv(.C) c_int {
                 return callback_fn(
@@ -534,7 +538,7 @@ pub const Config = opaque {
             &value,
             @ptrCast(*const c.git_config, self),
             name.ptr,
-            @ptrCast([*c]const c.git_configmap, maps.ptr),
+            @ptrCast([*]const c.git_configmap, maps.ptr),
             maps.len,
         });
 
@@ -586,7 +590,7 @@ pub const Config = opaque {
 
             try internal.wrapCall("git_config_lookup_map_value", .{
                 &result,
-                @ptrCast([*c]const c.git_configmap, maps.ptr),
+                @ptrCast([*]const c.git_configmap, maps.ptr),
                 maps.len,
                 value.ptr,
             });
@@ -635,7 +639,7 @@ pub const Config = opaque {
         /// Which config file this was found in
         level: Level,
         /// Free function for this entry 
-        free_fn: ?fn ([*c]ConfigEntry) callconv(.C) void,
+        free_fn: ?fn (?*ConfigEntry) callconv(.C) void,
         /// Opaque value for the free function. Do not read or write
         payload: *anyopaque,
 
@@ -673,7 +677,7 @@ pub const ConfigBackend = opaque {
 
         const cb = struct {
             pub fn cb(
-                entry: [*c]const c.git_config_entry,
+                entry: *const c.git_config_entry,
                 payload: ?*anyopaque,
             ) callconv(.C) c_int {
                 return callback_fn(

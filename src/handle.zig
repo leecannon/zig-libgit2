@@ -279,8 +279,9 @@ pub const Handle = struct {
 
         var repo: *git.Repository = undefined;
 
-        const path_temp: [*c]const u8 = if (path) |slice| slice.ptr else null;
-        const ceiling_dirs_temp: [*c]const u8 = if (ceiling_dirs) |slice| slice.ptr else null;
+        const path_temp = if (path) |slice| slice.ptr else null;
+        const ceiling_dirs_temp = if (ceiling_dirs) |slice| slice.ptr else null;
+
         try internal.wrapCall("git_repository_open_ext", .{
             @ptrCast(*?*c.git_repository, &repo),
             path_temp,
@@ -384,7 +385,7 @@ pub const Handle = struct {
 
         var buf: git.Buf = .{};
 
-        const ceiling_dirs_temp: [*c]const u8 = if (ceiling_dirs) |slice| slice.ptr else null;
+        const ceiling_dirs_temp = if (ceiling_dirs) |slice| slice.ptr else null;
 
         try internal.wrapCall("git_repository_discover", .{
             @ptrCast(*c.git_buf, &buf),
@@ -613,7 +614,8 @@ pub const Handle = struct {
 
         log.debug("Handle.optionSetSearchPath called, path: {s}", .{path});
 
-        const path_c: [*c]const u8 = if (path) |slice| slice.ptr else null;
+        const path_c = if (path) |slice| slice.ptr else null;
+
         try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_SET_SEARCH_PATH, @enumToInt(level), path_c });
 
         log.debug("successfully set search path", .{});
@@ -699,8 +701,9 @@ pub const Handle = struct {
 
         log.debug("Handle.optionSetSslCertLocations called, file: {s}, path: {s}", .{ file, path });
 
-        const file_c: [*c]const u8 = if (file) |ptr| ptr.ptr else null;
-        const path_c: [*c]const u8 = if (path) |ptr| ptr.ptr else null;
+        const file_c = if (file) |ptr| ptr.ptr else null;
+        const path_c = if (path) |ptr| ptr.ptr else null;
+
         try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_SET_SSL_CERT_LOCATIONS, file_c, path_c });
 
         log.debug("successfully set ssl certificate location", .{});

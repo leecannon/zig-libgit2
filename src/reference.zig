@@ -68,11 +68,11 @@ pub const Reference = opaque {
     pub fn nameGet(self: *Reference) ![:0]const u8 {
         log.debug("Reference.nameGet called", .{});
 
-        var name: [*c]const u8 = undefined;
+        var name: ?[*:0]const u8 = undefined;
 
         try internal.wrapCall("git_branch_name", .{ &name, @ptrCast(*const c.git_reference, self) });
 
-        const slice = std.mem.sliceTo(name, 0);
+        const slice = std.mem.sliceTo(name.?, 0);
         log.debug("successfully fetched name: {s}", .{slice});
         return slice;
     }

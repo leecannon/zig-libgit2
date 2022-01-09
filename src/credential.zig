@@ -43,7 +43,7 @@ pub const Credential = extern struct {
     pub fn getUsername(self: *Credential) ?[:0]const u8 {
         log.debug("Credential.getUsername called", .{});
 
-        const opt_username: [*c]const u8 = if (hasCredential)
+        const opt_username = if (hasCredential)
             c.git_credential_get_username(@ptrCast(*RawCredentialType, self))
         else
             c.git_cred_get_username(@ptrCast(*RawCredentialType, self));
@@ -65,13 +65,13 @@ pub const Credential = extern struct {
 
         if (hasCredential) {
             try internal.wrapCall("git_credential_userpass_plaintext_new", .{
-                @ptrCast(*[*c]RawCredentialType, &cred),
+                @ptrCast(*?*RawCredentialType, &cred),
                 username.ptr,
                 password.ptr,
             });
         } else {
             try internal.wrapCall("git_cred_userpass_plaintext_new", .{
-                @ptrCast(*[*c]RawCredentialType, &cred),
+                @ptrCast(*?*RawCredentialType, &cred),
                 username.ptr,
                 password.ptr,
             });
@@ -90,11 +90,11 @@ pub const Credential = extern struct {
 
         if (hasCredential) {
             try internal.wrapCall("git_credential_default_new", .{
-                @ptrCast(*[*c]RawCredentialType, &cred),
+                @ptrCast(*?*RawCredentialType, &cred),
             });
         } else {
             try internal.wrapCall("git_cred_default_new", .{
-                @ptrCast(*[*c]RawCredentialType, &cred),
+                @ptrCast(*?*RawCredentialType, &cred),
             });
         }
 
@@ -113,12 +113,12 @@ pub const Credential = extern struct {
 
         if (hasCredential) {
             try internal.wrapCall("git_credential_username_new", .{
-                @ptrCast(*[*c]RawCredentialType, &cred),
+                @ptrCast(*?*RawCredentialType, &cred),
                 username.ptr,
             });
         } else {
             try internal.wrapCall("git_cred_username_new", .{
-                @ptrCast(*[*c]RawCredentialType, &cred),
+                @ptrCast(*?*RawCredentialType, &cred),
                 username.ptr,
             });
         }
@@ -153,7 +153,7 @@ pub const Credential = extern struct {
 
         if (hasCredential) {
             try internal.wrapCall("git_credential_ssh_key_new", .{
-                @ptrCast(*[*c]RawCredentialType, &cred),
+                @ptrCast(*?*RawCredentialType, &cred),
                 username.ptr,
                 publickey_c,
                 privatekey.ptr,
@@ -161,7 +161,7 @@ pub const Credential = extern struct {
             });
         } else {
             try internal.wrapCall("git_cred_ssh_key_new", .{
-                @ptrCast(*[*c]RawCredentialType, &cred),
+                @ptrCast(*?*RawCredentialType, &cred),
                 username.ptr,
                 publickey_c,
                 privatekey.ptr,
@@ -196,7 +196,7 @@ pub const Credential = extern struct {
 
         if (hasCredential) {
             try internal.wrapCall("git_credential_ssh_key_memory_new", .{
-                @ptrCast(*[*c]RawCredentialType, &cred),
+                @ptrCast(*?*RawCredentialType, &cred),
                 username.ptr,
                 publickey_c,
                 privatekey.ptr,
@@ -204,7 +204,7 @@ pub const Credential = extern struct {
             });
         } else {
             try internal.wrapCall("git_cred_ssh_key_memory_new", .{
-                @ptrCast(*[*c]RawCredentialType, &cred),
+                @ptrCast(*?*RawCredentialType, &cred),
                 username.ptr,
                 publickey_c,
                 privatekey.ptr,
@@ -231,21 +231,21 @@ pub const Credential = extern struct {
             instruction: []const u8,
             prompts: []*const c.LIBSSH2_USERAUTH_KBDINT_PROMPT,
             responses: []*c.LIBSSH2_USERAUTH_KBDINT_RESPONSE,
-            abstract: [*c]?*anyopaque,
+            abstract: ?*?*anyopaque,
         ) void,
     ) !*Credential {
         // TODO: This callback needs to be massively cleaned up
 
         const cb = struct {
             pub fn cb(
-                name: [*c]const u8,
+                name: [*]const u8,
                 name_len: c_int,
-                instruction: [*c]const u8,
+                instruction: [*]const u8,
                 instruction_len: c_int,
                 num_prompts: c_int,
                 prompts: ?*const c.LIBSSH2_USERAUTH_KBDINT_PROMPT,
                 responses: ?*c.LIBSSH2_USERAUTH_KBDINT_RESPONSE,
-                abstract: [*c]?*anyopaque,
+                abstract: ?*?*anyopaque,
             ) callconv(.C) void {
                 callback_fn(
                     name[0..name_len],
@@ -263,14 +263,14 @@ pub const Credential = extern struct {
 
         if (hasCredential) {
             try internal.wrapCall("git_credential_ssh_interactive_new", .{
-                @ptrCast(*[*c]RawCredentialType, &cred),
+                @ptrCast(*?*RawCredentialType, &cred),
                 username.ptr,
                 cb,
                 user_data,
             });
         } else {
             try internal.wrapCall("git_cred_ssh_interactive_new", .{
-                @ptrCast(*[*c]RawCredentialType, &cred),
+                @ptrCast(*?*RawCredentialType, &cred),
                 username.ptr,
                 cb,
                 user_data,
@@ -289,12 +289,12 @@ pub const Credential = extern struct {
 
         if (hasCredential) {
             try internal.wrapCall("git_credential_ssh_key_from_agent", .{
-                @ptrCast(*[*c]RawCredentialType, &cred),
+                @ptrCast(*?*RawCredentialType, &cred),
                 username.ptr,
             });
         } else {
             try internal.wrapCall("git_cred_ssh_key_from_agent", .{
-                @ptrCast(*[*c]RawCredentialType, &cred),
+                @ptrCast(*?*RawCredentialType, &cred),
                 username.ptr,
             });
         }
@@ -312,17 +312,17 @@ pub const Credential = extern struct {
             session: *c.LIBSSH2_SESSION,
             out_signature: *[]const u8,
             data: []const u8,
-            abstract: [*c]?*anyopaque,
+            abstract: ?*?*anyopaque,
         ) c_int,
     ) !*Credential {
         const cb = struct {
             pub fn cb(
                 session: ?*c.LIBSSH2_SESSION,
-                sig: [*c][*c]u8,
-                sign_len: [*c]usize,
-                data: [*c]const u8,
+                sig: *[*:0]u8,
+                sig_len: *usize,
+                data: [*]const u8,
                 data_len: usize,
-                abstract: [*c]?*anyopaque,
+                abstract: ?*?*anyopaque,
             ) callconv(.C) c_int {
                 var out_sig: []const u8 = undefined;
 
@@ -334,7 +334,7 @@ pub const Credential = extern struct {
                 );
 
                 sig.* = out_sig.ptr;
-                sign_len.* = out_sig.len;
+                sig_len.* = out_sig.len;
 
                 return result;
             }
@@ -346,7 +346,7 @@ pub const Credential = extern struct {
 
         if (hasCredential) {
             try internal.wrapCall("git_credential_ssh_custom_new", .{
-                @ptrCast(*[*c]RawCredentialType, &cred),
+                @ptrCast(*?*RawCredentialType, &cred),
                 username.ptr,
                 publickey.ptr,
                 publickey.len,
@@ -355,7 +355,7 @@ pub const Credential = extern struct {
             });
         } else {
             try internal.wrapCall("git_cred_ssh_custom_new", .{
-                @ptrCast(*[*c]RawCredentialType, &cred),
+                @ptrCast(*?*RawCredentialType, &cred),
                 username.ptr,
                 publickey.ptr,
                 publickey.len,

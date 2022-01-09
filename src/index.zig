@@ -333,7 +333,7 @@ pub const Index = opaque {
             var index_entry: *const IndexEntry = undefined;
 
             internal.wrapCall("git_index_iterator_next", .{
-                @ptrCast(*[*c]c.git_index_entry, &index_entry),
+                @ptrCast(*?*c.git_index_entry, &index_entry),
                 @ptrCast(*c.git_index_iterator, self),
             }) catch |err| switch (err) {
                 git.GitError.IterOver => {
@@ -430,8 +430,8 @@ pub const Index = opaque {
 
             const cb = struct {
                 pub fn cb(
-                    path: [*c]const u8,
-                    matched_pathspec: [*c]const u8,
+                    path: [*:0]const u8,
+                    matched_pathspec: [*:0]const u8,
                     payload: ?*anyopaque,
                 ) callconv(.C) c_int {
                     return callback(
@@ -537,8 +537,8 @@ pub const Index = opaque {
 
             const cb = struct {
                 pub fn cb(
-                    path: [*c]const u8,
-                    matched_pathspec: [*c]const u8,
+                    path: [*:0]const u8,
+                    matched_pathspec: [*:0]const u8,
                     payload: ?*anyopaque,
                 ) callconv(.C) c_int {
                     return callback(
@@ -664,8 +664,8 @@ pub const Index = opaque {
 
             const cb = struct {
                 pub fn cb(
-                    path: [*c]const u8,
-                    matched_pathspec: [*c]const u8,
+                    path: [*:0]const u8,
+                    matched_pathspec: [*:0]const u8,
                     payload: ?*anyopaque,
                 ) callconv(.C) c_int {
                     return callback(
@@ -798,9 +798,9 @@ pub const Index = opaque {
         var their_out: *const IndexEntry = undefined;
 
         try internal.wrapCall("git_index_conflict_get", .{
-            @ptrCast(*[*c]const c.git_index_entry, &ancestor_out),
-            @ptrCast(*[*c]const c.git_index_entry, &our_out),
-            @ptrCast(*[*c]const c.git_index_entry, &their_out),
+            @ptrCast(*?*const c.git_index_entry, &ancestor_out),
+            @ptrCast(*?*const c.git_index_entry, &our_out),
+            @ptrCast(*?*const c.git_index_entry, &their_out),
             @ptrCast(*c.git_index, index),
             path.ptr,
         });
@@ -850,9 +850,9 @@ pub const Index = opaque {
             var their_out: *const IndexEntry = undefined;
 
             internal.wrapCall("git_index_conflict_next", .{
-                @ptrCast(*[*c]const c.git_index_entry, &ancestor_out),
-                @ptrCast(*[*c]const c.git_index_entry, &our_out),
-                @ptrCast(*[*c]const c.git_index_entry, &their_out),
+                @ptrCast(*?*const c.git_index_entry, &ancestor_out),
+                @ptrCast(*?*const c.git_index_entry, &our_out),
+                @ptrCast(*?*const c.git_index_entry, &their_out),
                 @ptrCast(*c.git_index_conflict_iterator, self),
             }) catch |err| switch (err) {
                 git.GitError.IterOver => {

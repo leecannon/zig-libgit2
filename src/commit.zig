@@ -223,7 +223,7 @@ pub const Commit = opaque {
         var signature: *git.Signature = undefined;
 
         try internal.wrapCall("git_commit_committer_with_mailmap", .{
-            @ptrCast(*[*c]c.git_signature, &signature),
+            @ptrCast(*?*c.git_signature, &signature),
             @ptrCast(*const c.git_commit, self),
             @ptrCast(?*const c.git_mailmap, self),
         });
@@ -239,7 +239,7 @@ pub const Commit = opaque {
         var signature: *git.Signature = undefined;
 
         try internal.wrapCall("git_commit_author_with_mailmap", .{
-            @ptrCast(*[*c]c.git_signature, &signature),
+            @ptrCast(*?*c.git_signature, &signature),
             @ptrCast(*const c.git_commit, self),
             @ptrCast(?*const c.git_mailmap, mail_map),
         });
@@ -375,9 +375,9 @@ pub const Commit = opaque {
 
         var ret: git.Oid = undefined;
 
-        const update_ref_temp: [*c]const u8 = if (update_ref) |slice| slice.ptr else null;
-        const encoding_temp: [*c]const u8 = if (message_encoding) |slice| slice.ptr else null;
-        const message_temp: [*c]const u8 = if (message) |slice| slice.ptr else null;
+        const update_ref_temp = if (update_ref) |slice| slice.ptr else null;
+        const encoding_temp = if (message_encoding) |slice| slice.ptr else null;
+        const message_temp = if (message) |slice| slice.ptr else null;
 
         try internal.wrapCall("git_commit_amend", .{
             @ptrCast(*c.git_oid, &ret),

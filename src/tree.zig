@@ -399,11 +399,11 @@ pub const TreeBuilder = opaque {
     /// Get an entry from the builder from its filename
     ///
     /// The returned entry is owned by the builder and should not be freed manually.
-    pub fn get(self: *TreeBuilder, filename: [:0]const u8) ?*const git.TreeEntry {
+    pub fn get(self: *TreeBuilder, filename: [:0]const u8) ?*const Tree.TreeEntry {
         log.debug("TreeBuilder.get called, filename: {s}", .{filename});
 
         return @ptrCast(
-            ?*const git.TreeEntry,
+            ?*const Tree.TreeEntry,
             c.git_treebuilder_get(
                 @ptrCast(*c.git_treebuilder, self),
                 filename.ptr,
@@ -421,7 +421,7 @@ pub const TreeBuilder = opaque {
     ///
     /// By default the entry that you are inserting will be checked for validity; that it exists in the object database and
     /// is of the correct type. If you do not want this behavior, set `Handle.optionSetStrictObjectCreation` to false.
-    pub fn insert(self: *TreeBuilder, filename: [:0]const u8, id: *const git.Oid, filemode: git.FileMode) !*const TreeEntry {
+    pub fn insert(self: *TreeBuilder, filename: [:0]const u8, id: *const git.Oid, filemode: git.FileMode) !*const Tree.TreeEntry {
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
             var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
             if (id.formatHex(&buf)) |slice| {
@@ -429,7 +429,7 @@ pub const TreeBuilder = opaque {
             } else |_| {}
         }
 
-        var ret: *const TreeEntry = undefined;
+        var ret: *const Tree.TreeEntry = undefined;
 
         try internal.wrapCall("git_treebuilder_insert", .{
             @ptrCast(*?*const c.git_tree_entry, &ret),
@@ -468,11 +468,11 @@ pub const TreeBuilder = opaque {
     /// * `entry` - The entry
     pub fn filter(
         self: *TreeBuilder,
-        comptime callback_fn: fn (entry: *const TreeEntry) bool,
+        comptime callback_fn: fn (entry: *const Tree.TreeEntry) bool,
     ) !void {
         const cb = struct {
             pub fn cb(
-                entry: *const TreeEntry,
+                entry: *const Tree.TreeEntry,
                 _: *u8,
             ) bool {
                 return callback_fn(entry);
@@ -499,7 +499,7 @@ pub const TreeBuilder = opaque {
         self: *TreeBuilder,
         user_data: anytype,
         comptime callback_fn: fn (
-            entry: *const TreeEntry,
+            entry: *const Tree.TreeEntry,
             user_data_ptr: @TypeOf(user_data),
         ) bool,
     ) !void {
@@ -511,7 +511,7 @@ pub const TreeBuilder = opaque {
                 payload: ?*anyopaque,
             ) callconv(.C) c_int {
                 return callback_fn(
-                    @ptrCast(*const TreeEntry, entry),
+                    @ptrCast(*const Tree.TreeEntry, entry),
                     @ptrCast(UserDataType, payload),
                 ) != 0;
             }

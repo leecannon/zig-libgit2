@@ -590,15 +590,15 @@ pub const Repository = opaque {
 
         const cb = struct {
             pub fn cb(
-                c_ref_name: [*c]const u8,
-                c_remote_url: [*c]const u8,
-                c_oid: [*c]const c.git_oid,
+                c_ref_name: ?[*:0]const u8,
+                c_remote_url: ?[*:0]const u8,
+                c_oid: ?*const c.git_oid,
                 c_is_merge: c_uint,
                 payload: ?*anyopaque,
             ) callconv(.C) c_int {
                 return callback_fn(
-                    std.mem.sliceTo(c_ref_name, 0),
-                    std.mem.sliceTo(c_remote_url, 0),
+                    std.mem.sliceTo(c_ref_name.?, 0),
+                    std.mem.sliceTo(c_remote_url.?, 0),
                     @ptrCast(*const git.Oid, c_oid),
                     c_is_merge == 1,
                     @ptrCast(UserDataType, payload),
@@ -664,7 +664,7 @@ pub const Repository = opaque {
         const UserDataType = @TypeOf(user_data);
 
         const cb = struct {
-            pub fn cb(c_oid: [*c]const c.git_oid, payload: ?*anyopaque) callconv(.C) c_int {
+            pub fn cb(c_oid: ?*const c.git_oid, payload: ?*anyopaque) callconv(.C) c_int {
                 return callback_fn(@ptrCast(*const git.Oid, c_oid), @ptrCast(UserDataType, payload));
             }
         }.cb;
@@ -800,9 +800,9 @@ pub const Repository = opaque {
         const alignment = ptr_info.Pointer.alignment;
 
         const cb = struct {
-            pub fn cb(path: [*c]const u8, status: c_uint, payload: ?*anyopaque) callconv(.C) c_int {
+            pub fn cb(path: ?[*:0]const u8, status: c_uint, payload: ?*anyopaque) callconv(.C) c_int {
                 return callback_fn(
-                    std.mem.sliceTo(path, 0),
+                    std.mem.sliceTo(path.?, 0),
                     @bitCast(git.FileStatus, status),
                     @ptrCast(UserDataType, @alignCast(alignment, payload)),
                 );
@@ -891,9 +891,9 @@ pub const Repository = opaque {
         const alignment = ptr_info.Pointer.alignment;
 
         const cb = struct {
-            pub fn cb(path: [*c]const u8, status: c_uint, payload: ?*anyopaque) callconv(.C) c_int {
+            pub fn cb(path: ?[*:0]const u8, status: c_uint, payload: ?*anyopaque) callconv(.C) c_int {
                 return callback_fn(
-                    std.mem.sliceTo(path, 0),
+                    std.mem.sliceTo(path.?, 0),
                     @bitCast(git.FileStatus, status),
                     @ptrCast(UserDataType, @alignCast(alignment, payload)),
                 );
@@ -1427,7 +1427,8 @@ pub const Repository = opaque {
     pub fn attribute(self: *Repository, flags: AttributeFlags, path: [:0]const u8, name: [:0]const u8) !git.Attribute {
         log.debug("Repository.attribute called, flags: {}, path: {s}, name: {s}", .{ flags, path, name });
 
-        var result: [*c]const u8 = undefined;
+        var result: ?[*:0]const u8 = undefined;
+
         try internal.wrapCall("git_attr_get", .{
             &result,
             @ptrCast(*c.git_repository, self),
@@ -1466,12 +1467,12 @@ pub const Repository = opaque {
         log.debug("Repository.attributeMany called, flags: {}, path: {s}", .{ flags, path });
 
         try internal.wrapCall("git_attr_get_many", .{
-            @ptrCast([*c][*c]const u8, output_buffer.ptr),
+            @ptrCast([*]?[*:0]const u8, output_buffer.ptr),
             @ptrCast(*c.git_repository, self),
             flags.toCType(),
             path.ptr,
             names.len,
-            @ptrCast([*c][*c]const u8, names.ptr),
+            @ptrCast([*]?[*:0]const u8, names.ptr),
         });
 
         log.debug("fetched attributes", .{});
@@ -1502,13 +1503,13 @@ pub const Repository = opaque {
     ) !c_int {
         const cb = struct {
             pub fn cb(
-                name: [*c]const u8,
-                value: [*c]const u8,
+                name: ?[*:0]const u8,
+                value: ?[*:0]const u8,
                 payload: ?*anyopaque,
             ) callconv(.C) c_int {
                 _ = payload;
                 return callback_fn(
-                    std.mem.sliceTo(name, 0),
+                    std.mem.sliceTo(name.?, 0),
                     if (value) |ptr| std.mem.sliceTo(ptr, 0) else null,
                 );
             }
@@ -1558,12 +1559,12 @@ pub const Repository = opaque {
 
         const cb = struct {
             pub fn cb(
-                name: [*c]const u8,
-                value: [*c]const u8,
+                name: ?[*:0]const u8,
+                value: ?[*:0]const u8,
                 payload: ?*anyopaque,
             ) callconv(.C) c_int {
                 return callback_fn(
-                    std.mem.sliceTo(name, 0),
+                    std.mem.sliceTo(name.?, 0),
                     if (value) |ptr| std.mem.sliceTo(ptr, 0) else null,
                     @ptrCast(UserDataType, payload),
                 );
@@ -2565,7 +2566,7 @@ pub const Repository = opaque {
             message.ptr,
             @ptrCast(*const c.git_tree, tree),
             parents.len,
-            @ptrCast([*c]?*const c.git_commit, parents.ptr),
+            @ptrCast([*]?*const c.git_commit, parents.ptr),
         });
 
         // This check is to prevent formating the oid when we are not going to print anything
@@ -2608,7 +2609,7 @@ pub const Repository = opaque {
             message.ptr,
             @ptrCast(*const c.git_tree, tree),
             parents.len,
-            @ptrCast([*c]?*const c.git_commit, parents.ptr),
+            @ptrCast([*]?*const c.git_commit, parents.ptr),
         });
 
         log.debug("successfully created commit: {s}", .{ret.toSlice()});
@@ -2959,7 +2960,8 @@ pub const Repository = opaque {
 
         var c_options = options.makeCOptionObject();
 
-        var result: [*c]const u8 = undefined;
+        var result: ?[*:0]const u8 = undefined;
+
         try internal.wrapCall("git_attr_get_ext", .{
             &result,
             @ptrCast(*c.git_repository, self),
@@ -3000,12 +3002,12 @@ pub const Repository = opaque {
         var c_options = options.makeCOptionObject();
 
         try internal.wrapCall("git_attr_get_many_ext", .{
-            @ptrCast([*c][*c]const u8, output_buffer.ptr),
+            @ptrCast([*]?[*:0]const u8, output_buffer.ptr),
             @ptrCast(*c.git_repository, self),
             &c_options,
             path.ptr,
             names.len,
-            @ptrCast([*c][*c]const u8, names.ptr),
+            @ptrCast([*]?[*:0]const u8, names.ptr),
         });
 
         log.debug("fetched attributes", .{});
@@ -3036,13 +3038,13 @@ pub const Repository = opaque {
     ) !c_int {
         const cb = struct {
             pub fn cb(
-                name: [*c]const u8,
-                value: [*c]const u8,
+                name: ?[*:0]const u8,
+                value: ?[*:0]const u8,
                 payload: ?*anyopaque,
             ) callconv(.C) c_int {
                 _ = payload;
                 return callback_fn(
-                    std.mem.sliceTo(name, 0),
+                    std.mem.sliceTo(name.?, 0),
                     if (value) |ptr| std.mem.sliceTo(ptr, 0) else null,
                 );
             }
@@ -3094,12 +3096,12 @@ pub const Repository = opaque {
 
         const cb = struct {
             pub fn cb(
-                name: [*c]const u8,
-                value: [*c]const u8,
+                name: ?[*:0]const u8,
+                value: ?[*:0]const u8,
                 payload: ?*anyopaque,
             ) callconv(.C) c_int {
                 return callback_fn(
-                    std.mem.sliceTo(name, 0),
+                    std.mem.sliceTo(name.?, 0),
                     if (value) |ptr| std.mem.sliceTo(ptr, 0) else null,
                     @ptrCast(UserDataType, payload),
                 );
@@ -3394,7 +3396,7 @@ pub const Repository = opaque {
     /// Convert a tree entry to the git_object it points to.
     ///
     /// You must call `git.Object.deint` on the object when you are done with it.
-    pub fn treeEntrytoObject(self: *Repository, entry: *const git.Tree.Entry) !*git.Object {
+    pub fn treeEntrytoObject(self: *Repository, entry: *const git.Tree.TreeEntry) !*git.Object {
         log.debug("Repository.treeEntrytoObject called, entry: {*}", .{entry});
 
         var ret: *git.Object = undefined;

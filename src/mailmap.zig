@@ -83,8 +83,8 @@ pub const Mailmap = opaque {
     pub fn resolve(self: ?*const Mailmap, name: [:0]const u8, email: [:0]const u8) !ResolveResult {
         log.debug("Mailmap.resolve called, name: {s}, email: {s}", .{ name, email });
 
-        var real_name: [*c]const u8 = undefined;
-        var real_email: [*c]const u8 = undefined;
+        var real_name: ?[*:0]const u8 = undefined;
+        var real_email: ?[*:0]const u8 = undefined;
 
         try internal.wrapCall("git_mailmap_resolve", .{
             &real_name,
@@ -95,8 +95,8 @@ pub const Mailmap = opaque {
         });
 
         const ret = ResolveResult{
-            .real_name = std.mem.sliceTo(real_name, 0),
-            .real_email = std.mem.sliceTo(real_email, 0),
+            .real_name = std.mem.sliceTo(real_name.?, 0),
+            .real_email = std.mem.sliceTo(real_email.?, 0),
         };
 
         log.debug("successfully resolved name and email: {}", .{ret});
@@ -116,7 +116,7 @@ pub const Mailmap = opaque {
         var sig: *git.Signature = undefined;
 
         try internal.wrapCall("git_mailmap_resolve_signature", .{
-            @ptrCast(*[*c]c.git_signature, &sig),
+            @ptrCast(*?*c.git_signature, &sig),
             @ptrCast(*const c.git_mailmap, self),
             @ptrCast(*const c.git_signature, signature),
         });
