@@ -4392,6 +4392,64 @@ pub const Repository = opaque {
         return ret;
     }
 
+    /// Read the reflog for the given reference
+    ///
+    /// If there is no reflog file for the given reference yet, an empty reflog object will be returned.
+    ///
+    /// ## Parameters
+    /// * `name` - reference to look up
+    pub fn reflogRead(self: *Repository, name: [:0]const u8) !*git.Reflog {
+        log.debug("Repository.reflogRead called, name: {s}", .{name});
+
+        var ret: *git.Reflog = undefined;
+
+        try internal.wrapCall("git_reflog_read", .{
+            @ptrCast(*?*c.git_reflog, &ret),
+            @ptrCast(*c.git_repository, self),
+            name.ptr,
+        });
+
+        log.debug("successfully read reflog: {*}", .{ret});
+
+        return ret;
+    }
+
+    /// Rename a reflog
+    ///
+    /// The reflog to be renamed is expected to already exist
+    ///
+    /// The new name will be checked for validity. `Repository.referenceSymbolicCreate()` for rules about valid names.
+    ///
+    /// ## Parameters
+    /// * `old_name` - the old name of the reference
+    /// * `name` - the new name of the reference
+    pub fn reflogRename(self: *Repository, old_name: [:0]const u8, name: [:0]const u8) !void {
+        log.debug("Repository.reflogRename called, old_name: {s}, name: {s}", .{ old_name, name });
+
+        try internal.wrapCall("git_reflog_rename", .{
+            @ptrCast(*c.git_repository, self),
+            old_name.ptr,
+            name.ptr,
+        });
+
+        log.debug("successfully renamed reflog", .{});
+    }
+
+    /// Delete the reflog for the given reference
+    ///
+    /// ## Parameters
+    /// * `name` - the reflog to delete
+    pub fn reflogDelete(self: *Repository, name: [:0]const u8) !void {
+        log.debug("Repository.reflogDelete called, name: {s}", .{name});
+
+        try internal.wrapCall("git_reflog_delete", .{
+            @ptrCast(*c.git_repository, self),
+            name.ptr,
+        });
+
+        log.debug("successfully deleted reflog", .{});
+    }
+
     comptime {
         std.testing.refAllDecls(@This());
     }

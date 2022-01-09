@@ -20,7 +20,6 @@
 111 reset.h
 121 transaction.h
 135 odb_backend.h
-170 reflog.h
 260 stash.h
 282 patch.h
 299 revwalk.h
