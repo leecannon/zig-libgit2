@@ -80,13 +80,13 @@ pub const BlameHunk = extern struct {
     /// of the file.
     final_start_line_number: usize,
 
-    /// The author of `final_commit_id`. If `GIT_BLAME_USE_MAILMAP` has been
+    /// The author of `final_commit_id`. If `use_mailmap` has been
     /// specified, it will contain the canonical real name and email address.
     final_signature: *git.Signature,
 
     /// The OID of the commit where this hunk was found.
     /// This will usually be the same as `final_commit_id`, except when
-    /// `GIT_BLAME_TRACK_COPIES_ANY_COMMIT_COPIES` has been specified.
+    /// `any_commit_copies` has been specified.
     orig_commit_id: git.Oid,
 
     /// The path to the file where this hunk originated, as of the commit
@@ -98,7 +98,7 @@ pub const BlameHunk = extern struct {
     /// `orig_path` in the commit specified by `orig_commit_id`.
     orig_start_line_number: usize,
 
-    /// The author of `orig_commit_id`. If `GIT_BLAME_USE_MAILMAP` has been
+    /// The author of `orig_commit_id`. If `use_mailmap` has been
     /// specified, it will contain the canonical real name and email address.
     orig_signature: *git.Signature,
 

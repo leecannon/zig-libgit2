@@ -30,9 +30,9 @@ pub const Reflog = opaque {
     /// Add a new entry to the in-memory reflog.
     ///
     /// ## Parameters
-    /// * `id` - the OID the reference is now pointing to
-    /// * `signature` - the signature of the committer
-    /// * `msg` - the reflog message, optional
+    /// * `id` - The OID the reference is now pointing to
+    /// * `signature` - The signature of the committer
+    /// * `msg` - The reflog message, optional
     pub fn append(
         self: *Reflog,
         id: git.Oid,
@@ -41,7 +41,7 @@ pub const Reflog = opaque {
     ) !void {
         // This check is to prevent formating the oid when we are not going to print anything
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            var buf: [git.Oid.hex_buffer_size]u8 = undefined;
             const slice = try id.formatHex(&buf);
             log.debug("Reflog.append called, id: {s}, signature: {}, msg: {s}", .{
                 slice,
@@ -80,7 +80,7 @@ pub const Reflog = opaque {
     /// Requesting the reflog entry with an index of 0 (zero) will return the most recently created entry.
     ///
     /// ## Parameters
-    /// * `index` - the position of the entry to lookup. Should be less than `Reflog.entryCount()`
+    /// * `index` - The position of the entry to lookup. Should be less than `Reflog.entryCount()`
     pub fn getEntry(self: *const Reflog, index: usize) ?*const ReflogEntry {
         log.debug("Reflog.getEntry called, index: {}", .{index});
 
@@ -100,7 +100,7 @@ pub const Reflog = opaque {
     /// `n+1`.
     ///
     /// ## Parameters
-    /// * `index` - the position of the entry to lookup. Should be less than `Reflog.entryCount()`
+    /// * `index` - The position of the entry to lookup. Should be less than `Reflog.entryCount()`
     /// * `rewrite_previous_entry` - `true` to rewrite the history; `false` otherwise
     pub fn removeEntry(self: *Reflog, index: usize, rewrite_previous_entry: bool) !void {
         log.debug("Reflog.removeEntry called, index: {}, rewrite_previous_entry: {}", .{ index, rewrite_previous_entry });
@@ -126,7 +126,7 @@ pub const Reflog = opaque {
 
             // This check is to prevent formating the oid when we are not going to print anything
             if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-                var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+                var buf: [git.Oid.hex_buffer_size]u8 = undefined;
                 if (ret.formatHex(&buf)) |slice| {
                     log.debug("old id: {s}", .{slice});
                 } else |_| {}
@@ -145,7 +145,7 @@ pub const Reflog = opaque {
 
             // This check is to prevent formating the oid when we are not going to print anything
             if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-                var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+                var buf: [git.Oid.hex_buffer_size]u8 = undefined;
                 if (ret.formatHex(&buf)) |slice| {
                     log.debug("new id: {s}", .{slice});
                 } else |_| {}

@@ -51,14 +51,14 @@ pub const Indexer = opaque {
     /// Create a new indexer instance
     ///
     /// ## Parameters
-    /// * `path` - to the directory where the packfile should be stored
-    /// * `odb` - object database from which to read base objects when fixing thin packs. Pass `null` if no thin pack is expected
+    /// * `path` - To the directory where the packfile should be stored
+    /// * `odb` - Object database from which to read base objects when fixing thin packs. Pass `null` if no thin pack is expected
     ///           (an error will be returned if there are bases missing)
-    /// * `options` - options
-    /// * `callback_fn` - the callback function; a value less than zero to cancel the indexing or download
+    /// * `options` - Options
+    /// * `callback_fn` - The callback function; a value less than zero to cancel the indexing or download
     ///
     /// ## Callback Parameters
-    /// * `stats` - state of the transfer
+    /// * `stats` - State of the transfer
     pub fn init(
         path: [:0]const u8,
         odb: ?*git.Odb,
@@ -81,15 +81,15 @@ pub const Indexer = opaque {
     /// Create a new indexer instance
     ///
     /// ## Parameters
-    /// * `path` - to the directory where the packfile should be stored
-    /// * `odb` - object database from which to read base objects when fixing thin packs. Pass `null` if no thin pack is expected
+    /// * `path` - To the directory where the packfile should be stored
+    /// * `odb` - Object database from which to read base objects when fixing thin packs. Pass `null` if no thin pack is expected
     ///           (an error will be returned if there are bases missing)
-    /// * `options` - options
-    /// * `user_data` - pointer to user data to be passed to the callback
-    /// * `callback_fn` - the callback function; a value less than zero to cancel the indexing or download
+    /// * `options` - Options
+    /// * `user_data` - Pointer to user data to be passed to the callback
+    /// * `callback_fn` - The callback function; a value less than zero to cancel the indexing or download
     ///
     /// ## Callback Parameters
-    /// * `stats` - state of the transfer
+    /// * `stats` - State of the transfer
     /// * `user_data_ptr` - The user data
     pub fn initWithUserData(
         path: [:0]const u8,
@@ -139,8 +139,8 @@ pub const Indexer = opaque {
     /// Add data to the indexer
     ///
     /// ## Parameters
-    /// * `data` - the data to add
-    /// * `stats` - stat storage
+    /// * `data` - The data to add
+    /// * `stats` - Stat storage
     pub fn append(self: *Indexer, data: []const u8, stats: *Progress) !void {
         log.debug("Indexer.append called, data_len: {}, stats: {}", .{ data.len, stats });
 
@@ -159,8 +159,8 @@ pub const Indexer = opaque {
     /// Resolve any pending deltas and write out the index file
     ///
     /// ## Parameters
-    /// * `data` - the data to add
-    /// * `stats` - stat storage
+    /// * `data` - The data to add
+    /// * `stats` - Stat storage
     pub fn commit(self: *Indexer, stats: *Progress) !void {
         log.debug("Indexer.commit called, stats: {}", .{stats});
 

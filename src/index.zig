@@ -98,7 +98,7 @@ pub const Index = opaque {
 
         // This check is to prevent formating the oid when we are not going to print anything
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            var buf: [git.Oid.hex_buffer_size]u8 = undefined;
             const slice = try oid.formatHex(&buf);
             log.debug("index checksum acquired successfully, checksum: {s}", .{slice});
         }
@@ -176,7 +176,7 @@ pub const Index = opaque {
         return cap;
     }
 
-    /// If you pass `IndexCapabilities.FROM_OWNER` for the capabilities, then capabilities will be read from the config of the
+    /// If you pass `IndexCapabilities.from_owner` for the capabilities, then capabilities will be read from the config of the
     /// owner object, looking at `core.ignorecase`, `core.filemode`, `core.symlinks`.
     pub fn indexCapabilitiesSet(self: *Index, capabilities: IndexCapabilities) !void {
         log.debug("Index.getIndexCapabilities called, capabilities: {}", .{capabilities});
@@ -187,9 +187,9 @@ pub const Index = opaque {
     }
 
     pub const IndexCapabilities = packed struct {
-        IGNORE_CASE: bool = false,
-        NO_FILEMODE: bool = false,
-        NO_SYMLINKS: bool = false,
+        ignore_case: bool = false,
+        no_filemode: bool = false,
+        no_symlinks: bool = false,
 
         z_padding1: u13 = 0,
         z_padding2: u16 = 0,
@@ -368,8 +368,8 @@ pub const Index = opaque {
     /// the scan and return that value to the caller.
     ///
     /// ## Parameters
-    /// * `pathspec` - array of path patterns
-    /// * `callback_fn` - the callback function; return 0 to remove, < 0 to abort, > 0 to skip.
+    /// * `pathspec` - Array of path patterns
+    /// * `callback_fn` - The callback function; return 0 to remove, < 0 to abort, > 0 to skip.
     ///
     /// ## Callback Parameters
     /// * `path` - The reference name
@@ -407,9 +407,9 @@ pub const Index = opaque {
     /// the scan and return that value to the caller.
     ///
     /// ## Parameters
-    /// * `pathspec` - array of path patterns
-    /// * `user_data` - pointer to user data to be passed to the callback
-    /// * `callback_fn` - the callback function; return 0 to remove, < 0 to abort, > 0 to skip.
+    /// * `pathspec` - Array of path patterns
+    /// * `user_data` - Pointer to user data to be passed to the callback
+    /// * `callback_fn` - The callback function; return 0 to remove, < 0 to abort, > 0 to skip.
     ///
     /// ## Callback Parameters
     /// * `path` - The reference name
@@ -475,8 +475,8 @@ pub const Index = opaque {
     /// the scan and return that value to the caller.
     ///
     /// ## Parameters
-    /// * `pathspec` - array of path patterns
-    /// * `callback_fn` - the callback function; return 0 to update, < 0 to abort, > 0 to skip.
+    /// * `pathspec` - Array of path patterns
+    /// * `callback_fn` - The callback function; return 0 to update, < 0 to abort, > 0 to skip.
     ///
     /// ## Callback Parameters
     /// * `path` - The reference name
@@ -514,9 +514,9 @@ pub const Index = opaque {
     /// the scan and return that value to the caller.
     ///
     /// ## Parameters
-    /// * `pathspec` - array of path patterns
-    /// * `user_data` - pointer to user data to be passed to the callback
-    /// * `callback_fn` - the callback function; return 0 to update, < 0 to abort, > 0 to skip.
+    /// * `pathspec` - Array of path patterns
+    /// * `user_data` - Pointer to user data to be passed to the callback
+    /// * `callback_fn` - The callback function; return 0 to update, < 0 to abort, > 0 to skip.
     ///
     /// ## Callback Parameters
     /// * `path` - The reference name
@@ -579,20 +579,20 @@ pub const Index = opaque {
     ///
     /// The `pathspec` is a list of file names or shell glob patterns that will be matched against files in the repository's
     /// working directory. Each file that matches will be added to the index (either updating an existing entry or adding a new
-    /// entry).  You can disable glob expansion and force exact matching with the `AddFlags.DISABLE_PATHSPEC_MATCH` flag.
+    /// entry).  You can disable glob expansion and force exact matching with the `AddFlags.disable_pathspec_match` flag.
     /// Invoke `callback_fn` for each entry in the given FETCH_HEAD file.
     ///
     /// Files that are ignored will be skipped (unlike `Index.AddByPath`). If a file is already tracked in the index, then it
-    /// *will* be updated even if it is ignored. Pass the `AddFlags.FORCE` flag to skip the checking of ignore rules.
+    /// *will* be updated even if it is ignored. Pass the `AddFlags.force` flag to skip the checking of ignore rules.
     ///
     /// If you provide a callback function, it will be invoked on each matching item in the working directory immediately *before*
     /// it is added to/updated in the index.  Returning zero will add the item to the index, greater than zero will skip the item,
     /// and less than zero will abort the scan and return that value to the caller.
     ///
     /// ## Parameters
-    /// * `pathspec` - array of path patterns
-    /// * `flags` - flags controlling how the add is performed
-    /// * `callback_fn` - the callback function; return 0 to add, < 0 to abort, > 0 to skip.
+    /// * `pathspec` - Array of path patterns
+    /// * `flags` - Flags controlling how the add is performed
+    /// * `callback_fn` - The callback function; return 0 to add, < 0 to abort, > 0 to skip.
     ///
     /// ## Callback Parameters
     /// * `path` - The reference name
@@ -628,21 +628,21 @@ pub const Index = opaque {
     ///
     /// The `pathspec` is a list of file names or shell glob patterns that will be matched against files in the repository's
     /// working directory. Each file that matches will be added to the index (either updating an existing entry or adding a new
-    /// entry).  You can disable glob expansion and force exact matching with the `AddFlags.DISABLE_PATHSPEC_MATCH` flag.
+    /// entry).  You can disable glob expansion and force exact matching with the `AddFlags.disable_pathspec_match` flag.
     /// Invoke `callback_fn` for each entry in the given FETCH_HEAD file.
     ///
     /// Files that are ignored will be skipped (unlike `Index.AddByPath`). If a file is already tracked in the index, then it
-    /// *will* be updated even if it is ignored. Pass the `AddFlags.FORCE` flag to skip the checking of ignore rules.
+    /// *will* be updated even if it is ignored. Pass the `AddFlags.force` flag to skip the checking of ignore rules.
     ///
     /// If you provide a callback function, it will be invoked on each matching item in the working directory immediately *before*
     /// it is added to/updated in the index.  Returning zero will add the item to the index, greater than zero will skip the item,
     /// and less than zero will abort the scan and return that value to the caller.
     ///
     /// ## Parameters
-    /// * `pathspec` - array of path patterns
-    /// * `flags` - flags controlling how the add is performed
-    /// * `user_data` - pointer to user data to be passed to the callback
-    /// * `callback_fn` - the callback function; return 0 to add, < 0 to abort, > 0 to skip.
+    /// * `pathspec` - Array of path patterns
+    /// * `flags` - Flags controlling how the add is performed
+    /// * `user_data` - Pointer to user data to be passed to the callback
+    /// * `callback_fn` - The callback function; return 0 to add, < 0 to abort, > 0 to skip.
     ///
     /// ## Callback Parameters
     /// * `path` - The reference name
@@ -705,9 +705,9 @@ pub const Index = opaque {
     }
 
     pub const AddFlags = packed struct {
-        FORCE: bool = false,
-        DISABLE_PATHSPEC_MATCH: bool = false,
-        CHECK_PATHSPEC: bool = false,
+        force: bool = false,
+        disable_pathspec_match: bool = false,
+        check_pathspec: bool = false,
 
         z_padding: u29 = 0,
 
@@ -968,18 +968,18 @@ pub const Index = opaque {
     /// This matches the pathspec against the files in the repository index.
     ///
     /// NOTE: At the moment, the case sensitivity of this match is controlled by the current case-sensitivity of the index object
-    /// itself and the `MatchOptions.USE_CASE` and `MatchOptions.IGNORE_CASE` options will have no effect.
+    /// itself and the `MatchOptions.use_case` and `MatchOptions.ignore_case` options will have no effect.
     /// This behavior will be corrected in a future release.
     ///
     /// If `match_list` is not `null`, this returns a `git.PathspecMatchList`. That contains the list of all matched filenames
-    /// (unless you pass the `MatchOptions.FAILURES_ONLY` options) and may also contain the list of pathspecs with no match (if
-    /// you used the `MatchOptions.FIND_FAILURES` option).
+    /// (unless you pass the `MatchOptions.failures_only` options) and may also contain the list of pathspecs with no match (if
+    /// you used the `MatchOptions.find_failures` option).
     /// You must call `PathspecMatchList.deinit()` on this object.
     ///
     /// ## Parameters
-    /// * `pathspec` - pathspec to be matched
-    /// * `options` - options to control match
-    /// * `match_list` - output list of matches; pass `null` to just get return value
+    /// * `pathspec` - Pathspec to be matched
+    /// * `options` - Options to control match
+    /// * `match_list` - Output list of matches; pass `null` to just get return value
     pub fn pathspecMatch(
         self: *Index,
         pathspec: *git.Pathspec,

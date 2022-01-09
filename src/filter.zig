@@ -9,25 +9,25 @@ const git = @import("git.zig");
 /// directory, and cleaning - which is importing a file from the working directory to the Git object database. These values
 /// control which direction of change is being applied.
 pub const FilterMode = enum(c_uint) {
-    TO_WORKTREE = 0,
-    TO_ODB = 1,
+    to_worktree = 0,
+    to_odb = 1,
 
-    pub const SMUDGE = FilterMode.TO_WORKTREE;
-    pub const CLEAN = FilterMode.TO_ODB;
+    pub const smudge = FilterMode.to_worktree;
+    pub const clean = FilterMode.to_odb;
 };
 
 pub const FilterFlags = packed struct {
     /// Don't error for `safecrlf` violations, allow them to continue.
-    ALLOW_UNSAFE: bool = false,
+    allow_unsafe: bool = false,
 
     /// Don't load `/etc/gitattributes` (or the system equivalent)
-    NO_SYSTEM_ATTRIBUTES: bool = false,
+    no_system_attributes: bool = false,
 
     /// Load attributes from `.gitattributes` in the root of HEAD
-    ATTRIBUTES_FROM_HEAD: bool = false,
+    attributes_from_head: bool = false,
 
     /// Load attributes from `.gitattributes` in a given commit. This can only be specified in a `FilterOptions`
-    ATTRIBUTES_FROM_COMMIT: bool = false,
+    attributes_from_commit: bool = false,
 
     z_padding: u28 = 0,
 
@@ -59,7 +59,7 @@ pub const FilterFlags = packed struct {
 pub const FilterOptions = struct {
     flags: FilterFlags = .{},
 
-    /// The commit to load attributes from, when `FilterFlags.ATTRIBUTES_FROM_COMMIT` is specified.
+    /// The commit to load attributes from, when `FilterFlags.attributes_from_commit` is specified.
     commit_id: ?*git.Oid = null,
 
     pub fn makeCOptionObject(self: FilterOptions) c.git_filter_options {
@@ -114,8 +114,8 @@ pub const FilterList = opaque {
     /// Apply a filter list to the contents of a file on disk
     ///
     /// ## Parameters
-    /// * `repo` - the repository in which to perform the filtering
-    /// * `path` - the path of the file to filter, a relative path will be taken as relative to the workdir
+    /// * `repo` - The repository in which to perform the filtering
+    /// * `path` - The path of the file to filter, a relative path will be taken as relative to the workdir
     pub fn applyToFile(self: *FilterList, repo: *git.Repository, path: [:0]const u8) !git.Buf {
         log.debug("FilterList.applyToFile called, repo: {*}, path: {s}", .{ repo, path });
 
@@ -136,7 +136,7 @@ pub const FilterList = opaque {
     /// Apply a filter list to the contents of a blob
     ///
     /// ## Parameters
-    /// * `blob` - the blob to filter
+    /// * `blob` - The blob to filter
     pub fn applyToBlob(self: *FilterList, blob: *git.Blob) !git.Buf {
         log.debug("FilterList.applyToBlob called, blob: {*}", .{blob});
 
@@ -156,9 +156,9 @@ pub const FilterList = opaque {
     /// Apply a filter list to a file as a stream
     ///
     /// ## Parameters
-    /// * `repo` - the repository in which to perform the filtering
-    /// * `path` - the path of the file to filter, a relative path will be taken as relative to the workdir
-    /// * `target` - the stream into which the data will be written
+    /// * `repo` - The repository in which to perform the filtering
+    /// * `path` - The path of the file to filter, a relative path will be taken as relative to the workdir
+    /// * `target` - The stream into which the data will be written
     pub fn applyToFileToStream(
         self: *FilterList,
         repo: *git.Repository,
@@ -180,8 +180,8 @@ pub const FilterList = opaque {
     /// Apply a filter list to a blob as a stream
     ///
     /// ## Parameters
-    /// * `blob` - the blob to filter
-    /// * `target` - the stream into which the data will be written
+    /// * `blob` - The blob to filter
+    /// * `target` - The stream into which the data will be written
     pub fn applyToBlobToStream(self: *FilterList, blob: *git.Blob, target: *git.WriteStream) !void {
         log.debug("FilterList.applyToBlobToStream called, blob: {*}, target: {*}", .{ blob, target });
 
@@ -226,8 +226,8 @@ pub const FilterList = opaque {
     /// Apply a filter list to an arbitrary buffer as a stream
     ///
     /// ## Parameters
-    /// * `buffer` - the buffer to filter
-    /// * `target` - the stream into which the data will be written
+    /// * `buffer` - The buffer to filter
+    /// * `target` - The stream into which the data will be written
     pub fn applyToBufferToStream(self: *FilterList, buffer: [:0]const u8, target: *git.WriteStream) !void {
         log.debug("FilterList.applyToBufferToStream called, buffer: {s}, target: {*}", .{ buffer, target });
 

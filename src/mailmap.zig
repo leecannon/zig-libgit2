@@ -36,10 +36,10 @@ pub const Mailmap = opaque {
     /// Add a single entry to the given mailmap object. If the entry already exists, it will be replaced with the new entry.
     ///
     /// ## Parameters
-    /// * `real_name` - the real name to use, or NULL
-    /// * `real_email` - the real email to use, or NULL
-    /// * `replace_name` - the name to replace, or NULL
-    /// * `replace_email` - the email to replace
+    /// * `real_name` - The real name to use, or `null`
+    /// * `real_email` - The real email to use, or `null`
+    /// * `replace_name` - The name to replace, or `null
+    /// * `replace_email` - The email to replace
     pub fn addEntry(
         self: *Mailmap,
         real_name: ?[:0]const u8,
@@ -77,9 +77,9 @@ pub const Mailmap = opaque {
     /// The lifetime of the strings are tied to `self`, `name`, and `email` parameters.
     ///
     /// ## Parameters
-    /// * `self` - the mailmap to perform a lookup with (may be NULL)
-    /// * `name` - the name to look up
-    /// * `email` - the email to look up
+    /// * `self` - The mailmap to perform a lookup with (may be `null`)
+    /// * `name` - The name to look up
+    /// * `email` - The email to look up
     pub fn resolve(self: ?*const Mailmap, name: [:0]const u8, email: [:0]const u8) !ResolveResult {
         log.debug("Mailmap.resolve called, name: {s}, email: {s}", .{ name, email });
 
@@ -109,7 +109,7 @@ pub const Mailmap = opaque {
     /// Call `git.Signature.deinit` to free the data.
     ///
     /// ## Parameters
-    /// * `signature` - signature to resolve
+    /// * `signature` - Signature to resolve
     pub fn resolveSignature(self: *const Mailmap, signature: *const git.Signature) !*git.Signature {
         log.debug("Mailmap.resolveSignature called, signature: {*}", .{signature});
 

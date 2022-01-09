@@ -3,7 +3,7 @@ const c = @import("internal/c.zig");
 const internal = @import("internal/internal.zig");
 const log = std.log.scoped(.git);
 
-pub const PATH_LIST_SEPARATOR = c.GIT_PATH_LIST_SEPARATOR;
+pub const path_list_separator = c.GIT_PATH_LIST_SEPARATOR;
 
 pub usingnamespace @import("alloc.zig");
 pub usingnamespace @import("annotated_commit.zig");
@@ -74,15 +74,15 @@ pub fn availableLibGit2Features() LibGit2Features {
 
 pub const LibGit2Features = packed struct {
     /// If set, libgit2 was built thread-aware and can be safely used from multiple threads.
-    THREADS: bool = false,
+    threads: bool = false,
     /// If set, libgit2 was built with and linked against a TLS implementation.
     /// Custom TLS streams may still be added by the user to support HTTPS regardless of this.
-    HTTPS: bool = false,
+    https: bool = false,
     /// If set, libgit2 was built with and linked against libssh2. A custom transport may still be added by the user to support
     /// libssh2 regardless of this.
-    SSH: bool = false,
+    ssh: bool = false,
     /// If set, libgit2 was built with support for sub-second resolution in file modification times.
-    NSEC: bool = false,
+    nsec: bool = false,
 
     z_padding: u28 = 0,
 

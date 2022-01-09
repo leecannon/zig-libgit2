@@ -21,7 +21,7 @@ pub const Blob = opaque {
 
         // This check is to prevent formating the oid when we are not going to print anything
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            var buf: [git.Oid.hex_buffer_size]u8 = undefined;
             if (ret.formatHex(&buf)) |slice| {
                 log.debug("successfully fetched blob id: {s}", .{slice});
             } else |_| {
@@ -113,21 +113,21 @@ pub const Blob = opaque {
 
     pub const FilterOptions = struct {
         flags: BlobFilterFlags = .{},
-        /// The commit to load attributes from, when `FilterFlags.ATTRIBUTES_FROM_COMMIT` is specified.
+        /// The commit to load attributes from, when `FilterFlags.attributes_from_commit` is specified.
         commit_id: ?*git.Oid = null,
 
         pub const BlobFilterFlags = packed struct {
             /// When set, filters will not be applied to binary files.
-            CHECK_FOR_BINARY: bool = false,
+            check_for_binary: bool = false,
 
             /// When set, filters will not load configuration from the system-wide `gitattributes` in `/etc` (or system equivalent).
-            NO_SYSTEM_ATTRIBUTES: bool = false,
+            no_system_attributes: bool = false,
 
             /// When set, filters will be loaded from a `.gitattributes` file in the HEAD commit.
-            ATTRIBUTES_FROM_HEAD: bool = false,
+            attributes_from_head: bool = false,
 
             /// When set, filters will be loaded from a `.gitattributes` file in the specified commit.
-            ATTRIBUTES_FROM_COMMIT: bool = false,
+            attributes_from_commit: bool = false,
 
             z_padding: u28 = 0,
 

@@ -6,7 +6,7 @@ const git = @import("git.zig");
 /// Note that not all types may be supported, depending on the platform  and compilation options.
 pub const ProxyOptions = struct {
     /// The type of proxy to use, by URL, auto-detect.
-    proxy_type: ProxyType = .NONE,
+    proxy_type: ProxyType = .none,
 
     /// The URL of the proxy.
     url: ?[:0]const u8 = null,
@@ -56,13 +56,13 @@ pub const ProxyOptions = struct {
         ///
         /// If built against libcurl, it itself may attempt to connect
         /// to a proxy if the environment variables specify it.
-        NONE = 0,
+        none = 0,
 
         /// Try to auto-detect the proxy from the git configuration.
-        AUTO,
+        auto,
 
         /// Connect via the URL given in the options
-        SPECIFIED,
+        specified,
     };
 
     pub fn makeCOptionsObject(self: ProxyOptions) c.git_proxy_options {

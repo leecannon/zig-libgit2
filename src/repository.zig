@@ -25,18 +25,18 @@ pub const Repository = opaque {
     }
 
     pub const RepositoryState = enum(c_int) {
-        NONE,
-        MERGE,
-        REVERT,
-        REVERT_SEQUENCE,
-        CHERRYPICK,
-        CHERRYPICK_SEQUENCE,
-        BISECT,
-        REBASE,
-        REBASE_INTERACTIVE,
-        REBASE_MERGE,
-        APPLY_MAILBOX,
-        APPLY_MAILBOX_OR_REBASE,
+        none,
+        merge,
+        revert,
+        revert_sequence,
+        cherrypick,
+        cherrypick_sequence,
+        bisect,
+        rebase,
+        rebase_interactive,
+        rebase_merge,
+        apply_mailbox,
+        apply_mailbox_or_rebase,
     };
 
     /// Describe a commit
@@ -184,7 +184,7 @@ pub const Repository = opaque {
     pub fn headDetachedSet(self: *Repository, commit: git.Oid) !void {
         // This check is to prevent formating the oid when we are not going to print anything
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            var buf: [git.Oid.hex_buffer_size]u8 = undefined;
             const slice = try commit.formatHex(&buf);
             log.debug("Repository.headDetachedSet called, commit: {s}", .{slice});
         }
@@ -206,7 +206,7 @@ pub const Repository = opaque {
     pub fn setHeadDetachedFromAnnotated(self: *Repository, commitish: *git.AnnotatedCommit) !void {
         // This check is to prevent formating the oid when we are not going to print anything
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            var buf: [git.Oid.hex_buffer_size]u8 = undefined;
             const oid = try commitish.commitId();
             const slice = try oid.formatHex(&buf);
             log.debug("Repository.setHeadDetachedFromAnnotated called, commitish: {s}", .{slice});
@@ -331,20 +331,20 @@ pub const Repository = opaque {
     }
 
     pub const RepositoryItem = enum(c_uint) {
-        GITDIR,
-        WORKDIR,
-        COMMONDIR,
-        INDEX,
-        OBJECTS,
-        REFS,
-        PACKED_REFS,
-        REMOTES,
-        CONFIG,
-        INFO,
-        HOOKS,
-        LOGS,
-        MODULES,
-        WORKTREES,
+        gitdir,
+        workdir,
+        commondir,
+        index,
+        objects,
+        refs,
+        packed_refs,
+        remotes,
+        config,
+        info,
+        hooks,
+        logs,
+        modules,
+        worktrees,
     };
 
     pub fn pathGet(self: *const Repository) [:0]const u8 {
@@ -529,7 +529,7 @@ pub const Repository = opaque {
     /// Return a non-zero value from the callback to stop the loop. This non-zero value is returned by the function.
     ///
     /// ## Parameters
-    /// * `callback_fn` - the callback function
+    /// * `callback_fn` - The callback function
     ///
     /// ## Callback Parameters
     /// * `ref_name` - The reference name
@@ -566,15 +566,15 @@ pub const Repository = opaque {
     /// Return a non-zero value from the callback to stop the loop. This non-zero value is returned by the function.
     ///
     /// ## Parameters
-    /// * `user_data` - pointer to user data to be passed to the callback
-    /// * `callback_fn` - the callback function
+    /// * `user_data` - Pointer to user data to be passed to the callback
+    /// * `callback_fn` - The callback function
     ///
     /// ## Callback Parameters
     /// * `ref_name` - The reference name
     /// * `remote_url` - The remote URL
     /// * `oid` - The reference OID
     /// * `is_merge` - Was the reference the result of a merge
-    /// * `user_data_ptr` - pointer to user data
+    /// * `user_data_ptr` - Pointer to user data
     pub fn fetchHeadForeachWithUserData(
         self: *Repository,
         user_data: anytype,
@@ -624,7 +624,7 @@ pub const Repository = opaque {
     /// Return a non-zero value from the callback to stop the loop. This non-zero value is returned by the function.
     ///
     /// ## Parameters
-    /// * `callback_fn` - the callback function
+    /// * `callback_fn` - The callback function
     ///
     /// ## Callback Parameters
     /// * `oid` - The merge OID
@@ -647,12 +647,12 @@ pub const Repository = opaque {
     /// Return a non-zero value from the callback to stop the loop. This non-zero value is returned by the function.
     ///
     /// ## Parameters
-    /// * `user_data` - pointer to user data to be passed to the callback
-    /// * `callback_fn` - the callback function
+    /// * `user_data` - Pointer to user data to be passed to the callback
+    /// * `callback_fn` - The callback function
     ///
     /// ## Callback Parameters
     /// * `oid` - The merge OID
-    /// * `user_data_ptr` - pointer to user data
+    /// * `user_data_ptr` - Pointer to user data
     pub fn mergeHeadForeachWithUserData(
         self: *Repository,
         user_data: anytype,
@@ -693,7 +693,7 @@ pub const Repository = opaque {
     ///
     /// ## Parameters
     /// * `path` - Path to file on disk whose contents should be hashed. This can be a relative path.
-    /// * `object_type` - The object type to hash as (e.g. `ObjectType.BLOB`)
+    /// * `object_type` - The object type to hash as (e.g. `ObjectType.blob`)
     /// * `as_path` - The path to use to look up filtering rules. If this is `null`, then the `path` parameter will be used
     ///               instead. If this is passed as the empty string, then no filters will be applied when calculating the hash.
     pub fn hashFile(
@@ -718,7 +718,7 @@ pub const Repository = opaque {
 
         // This check is to prevent formating the oid when we are not going to print anything
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            var buf: [git.Oid.hex_buffer_size]u8 = undefined;
             const slice = try oid.formatHex(&buf);
             log.debug("file hash acquired successfully, hash: {s}", .{slice});
         }
@@ -754,7 +754,7 @@ pub const Repository = opaque {
     /// Return a non-zero value from the callback to stop the loop. This non-zero value is returned by the function.
     ///
     /// ## Parameters
-    /// * `callback_fn` - the callback function
+    /// * `callback_fn` - The callback function
     ///
     /// ## Callback Parameters
     /// * `path` - The file path
@@ -778,13 +778,13 @@ pub const Repository = opaque {
     /// Return a non-zero value from the callback to stop the loop. This non-zero value is returned by the function.
     ///
     /// ## Parameters
-    /// * `user_data` - pointer to user data to be passed to the callback
-    /// * `callback_fn` - the callback function
+    /// * `user_data` - Pointer to user data to be passed to the callback
+    /// * `callback_fn` - The callback function
     ///
     /// ## Callback Parameters
     /// * `path` - The file path
     /// * `status` - The status of the file
-    /// * `user_data_ptr` - pointer to user data
+    /// * `user_data_ptr` - Pointer to user data
     pub fn fileStatusForeachWithUserData(
         self: *Repository,
         user_data: anytype,
@@ -834,8 +834,8 @@ pub const Repository = opaque {
     /// Return a non-zero value from the callback to stop the loop. This non-zero value is returned by the function.
     ///
     /// ## Parameters
-    /// * `options` - callback options
-    /// * `callback_fn` - the callback function
+    /// * `options` - Callback options
+    /// * `callback_fn` - The callback function
     ///
     /// ## Callback Parameters
     /// * `path` - The file path
@@ -867,14 +867,14 @@ pub const Repository = opaque {
     /// Return a non-zero value from the callback to stop the loop. This non-zero value is returned by the function.
     ///
     /// ## Parameters
-    /// * `options` - callback options
-    /// * `user_data` - pointer to user data to be passed to the callback
-    /// * `callback_fn` - the callback function
+    /// * `options` - Callback options
+    /// * `user_data` - Pointer to user data to be passed to the callback
+    /// * `callback_fn` - The callback function
     ///
     /// ## Callback Parameters
     /// * `path` - The file path
     /// * `status` - The status of the file
-    /// * `user_data_ptr` - pointer to user data
+    /// * `user_data_ptr` - Pointer to user data
     pub fn fileStatusForeachExtendedWithUserData(
         self: *Repository,
         options: FileStatusOptions,
@@ -923,7 +923,7 @@ pub const Repository = opaque {
     /// all files can be considered.
     ///
     /// ## Parameters
-    /// * `options` - options regarding which files to get the status of
+    /// * `options` - Options regarding which files to get the status of
     pub fn statusList(self: *Repository, options: FileStatusOptions) !*git.StatusList {
         log.debug("Repository.statusList called, options: {}", .{options});
 
@@ -944,13 +944,13 @@ pub const Repository = opaque {
 
     pub const FileStatusOptions = struct {
         /// which files to scan
-        show: Show = .INDEX_AND_WORKDIR,
+        show: Show = .index_and_workdir,
 
         /// Flags to control status callbacks
         flags: Flags = .{},
 
         /// The `pathspec` is an array of path patterns to match (using fnmatch-style matching), or just an array of paths to 
-        /// match exactly if `Flags.DISABLE_PATHSPEC_MATCH` is specified in the flags.
+        /// match exactly if `Flags.disable_pathspec_match` is specified in the flags.
         pathspec: git.StrArray = .{},
 
         /// The `baseline` is the tree to be used for comparison to the working directory and index; defaults to HEAD.
@@ -959,92 +959,92 @@ pub const Repository = opaque {
         /// Select the files on which to report status.
         pub const Show = enum(c_uint) {
             /// The default. This roughly matches `git status --porcelain` regarding which files are included and in what order.
-            INDEX_AND_WORKDIR,
+            index_and_workdir,
             /// Only gives status based on HEAD to index comparison, not looking at working directory changes.
-            INDEX_ONLY,
+            index_only,
             /// Only gives status based on index to working directory comparison, not comparing the index to the HEAD.
-            WORKDIR_ONLY,
+            workdir_only,
         };
 
         /// Flags to control status callbacks
         ///
-        /// Calling `Repository.forEachFileStatus` is like calling the extended version with: `INCLUDE_IGNORED`, 
-        /// `INCLUDE_UNTRACKED`, and `RECURSE_UNTRACKED_DIRS`. Those options are provided as `Options.DEFAULTS`.
+        /// Calling `Repository.forEachFileStatus` is like calling the extended version with: `include_ignored`, 
+        /// `include_untracked`, and `recurse_untracked_dirs`. Those options are provided as `Options.Defaults`.
         pub const Flags = packed struct {
             /// Says that callbacks should be made on untracked files.
             /// These will only be made if the workdir files are included in the status
             /// "show" option.
-            INCLUDE_UNTRACKED: bool = true,
+            include_untracked: bool = true,
 
             /// Says that ignored files get callbacks.
             /// Again, these callbacks will only be made if the workdir files are
             /// included in the status "show" option.
-            INCLUDE_IGNORED: bool = true,
+            include_ignored: bool = true,
 
             /// Indicates that callback should be made even on unmodified files.
-            INCLUDE_UNMODIFIED: bool = false,
+            include_unmodified: bool = false,
 
             /// Indicates that submodules should be skipped.
             /// This only applies if there are no pending typechanges to the submodule
             /// (either from or to another type).
-            EXCLUDE_SUBMODULES: bool = false,
+            exclude_submodules: bool = false,
 
             /// Indicates that all files in untracked directories should be included.
             /// Normally if an entire directory is new, then just the top-level
             /// directory is included (with a trailing slash on the entry name).
             /// This flag says to include all of the individual files in the directory
             /// instead.
-            RECURSE_UNTRACKED_DIRS: bool = true,
+            recurse_untracked_dirs: bool = true,
 
             /// Indicates that the given path should be treated as a literal path,
             /// and not as a pathspec pattern.
-            DISABLE_PATHSPEC_MATCH: bool = false,
+            disable_pathspec_match: bool = false,
 
             /// Indicates that the contents of ignored directories should be included
             /// in the status. This is like doing `git ls-files -o -i --exclude-standard`
             /// with core git.
-            RECURSE_IGNORED_DIRS: bool = false,
+            recurse_ignored_dirs: bool = false,
 
             /// Indicates that rename detection should be processed between the head and
             /// the index and enables the GIT_STATUS_INDEX_RENAMED as a possible status
             /// flag.
-            RENAMES_HEAD_TO_INDEX: bool = false,
+            renames_head_to_index: bool = false,
 
             /// Indicates that rename detection should be run between the index and the
             /// working directory and enabled GIT_STATUS_WT_RENAMED as a possible status
             /// flag.
-            RENAMES_INDEX_TO_WORKDIR: bool = false,
+            renames_index_to_workdir: bool = false,
 
             /// Overrides the native case sensitivity for the file system and forces
             /// the output to be in case-sensitive order.
-            SORT_CASE_SENSITIVELY: bool = false,
+            sort_case_sensitively: bool = false,
 
             /// Overrides the native case sensitivity for the file system and forces
             /// the output to be in case-insensitive order.
-            SORT_CASE_INSENSITIVELY: bool = false,
+            sort_case_insensitively: bool = false,
 
             /// Iindicates that rename detection should include rewritten files.
-            RENAMES_FROM_REWRITES: bool = false,
+            renames_from_rewrites: bool = false,
 
             /// Bypasses the default status behavior of doing a "soft" index reload
             /// (i.e. reloading the index data if the file on disk has been modified
             /// outside libgit2).
-            NO_REFRESH: bool = false,
+            no_refresh: bool = false,
 
             /// Tells libgit2 to refresh the stat cache in the index for files that are
             /// unchanged but have out of date stat einformation in the index.
             /// It will result in less work being done on subsequent calls to get status.
-            /// This is mutually exclusive with the NO_REFRESH option.
-            UPDATE_INDEX: bool = false,
+            /// This is mutually exclusive with the no_refresh option.
+            update_index: bool = false,
 
             /// Normally files that cannot be opened or read are ignored as
             /// these are often transient files; this option will return
             /// unreadable files as `GIT_STATUS_WT_UNREADABLE`.
-            INCLUDE_UNREADABLE: bool = false,
+            include_unreadable: bool = false,
 
             /// Unreadable files will be detected and given the status
             /// untracked instead of unreadable.
-            INCLUDE_UNREADABLE_AS_UNTRACKED: bool = false,
+            include_unreadable_as_untracked: bool = false,
 
             z_padding: u16 = 0,
 
@@ -1113,7 +1113,7 @@ pub const Repository = opaque {
     ) !*git.AnnotatedCommit {
         // This check is to prevent formating the oid when we are not going to print anything
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            var buf: [git.Oid.hex_buffer_size]u8 = undefined;
             const slice = try id.formatHex(&buf);
             log.debug(
                 "Repository.annotatedCommitCreateFromFetchHead called, branch_name: {s}, remote_url: {s}, id: {s}",
@@ -1143,7 +1143,7 @@ pub const Repository = opaque {
     pub fn annotatedCommitCreateFromLookup(self: *Repository, id: git.Oid) !*git.AnnotatedCommit {
         // This check is to prevent formating the oid when we are not going to print anything
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            var buf: [git.Oid.hex_buffer_size]u8 = undefined;
             const slice = try id.formatHex(&buf);
             log.debug("Repository.annotatedCommitCreateFromLookup called, id: {s}", .{slice});
         }
@@ -1180,9 +1180,9 @@ pub const Repository = opaque {
     /// Apply a `Diff` to the given repository, making changes directly in the working directory, the index, or both.
     ///
     /// ## Parameters
-    /// * `diff` - the diff to apply
-    /// * `location` - the location to apply (workdir, index or both)
-    /// * `options` - the options for the apply (or null for defaults)
+    /// * `diff` - The diff to apply
+    /// * `location` - The location to apply (workdir, index or both)
+    /// * `options` - The options for the apply (or null for defaults)
     pub fn applyDiff(
         self: *Repository,
         diff: *git.Diff,
@@ -1206,10 +1206,10 @@ pub const Repository = opaque {
     /// Apply a `Diff` to the given repository, making changes directly in the working directory, the index, or both.
     ///
     /// ## Parameters
-    /// * `diff` - the diff to apply
-    /// * `location` - the location to apply (workdir, index or both)
-    /// * `user_data` - user data to be passed to callbacks
-    /// * `options` - the options for the apply (or null for defaults)
+    /// * `diff` - The diff to apply
+    /// * `location` - The location to apply (workdir, index or both)
+    /// * `user_data` - User data to be passed to callbacks
+    /// * `options` - The options for the apply (or null for defaults)
     pub fn applyDiffWithUserData(
         comptime T: type,
         self: *Repository,
@@ -1234,9 +1234,9 @@ pub const Repository = opaque {
     /// Apply a `Diff` to a `Tree`, and return the resulting image as an index.
     ///
     /// ## Parameters
-    /// * `diff` - the diff to apply`
-    /// * `preimage` - the tree to apply the diff to
-    /// * `options` - the options for the apply (or null for defaults)
+    /// * `diff` - The diff to apply`
+    /// * `preimage` - The tree to apply the diff to
+    /// * `options` - The options for the apply (or null for defaults)
     pub fn applyDiffToTree(
         self: *Repository,
         diff: *git.Diff,
@@ -1268,9 +1268,9 @@ pub const Repository = opaque {
     /// Apply a `Diff` to a `Tree`, and return the resulting image as an index.
     ///
     /// ## Parameters
-    /// * `diff` - the diff to apply`
-    /// * `preimage` - the tree to apply the diff to
-    /// * `options` - the options for the apply (or null for defaults)
+    /// * `diff` - The diff to apply`
+    /// * `preimage` - The tree to apply the diff to
+    /// * `options` - The options for the apply (or null for defaults)
     pub fn applyDiffToTreeWithUserData(
         comptime T: type,
         self: *Repository,
@@ -1374,7 +1374,7 @@ pub const Repository = opaque {
 
     pub const ApplyOptionsFlags = packed struct {
         /// Don't actually make changes, just test that the patch applies. This is the equivalent of `git apply --check`.
-        CHECK: bool = false,
+        check: bool = false,
 
         z_padding: u31 = 0,
 
@@ -1406,22 +1406,22 @@ pub const Repository = opaque {
     pub const ApplyLocation = enum(c_uint) {
         /// Apply the patch to the workdir, leaving the index untouched.
         /// This is the equivalent of `git apply` with no location argument.
-        WORKDIR = 0,
+        workdir = 0,
 
         /// Apply the patch to the index, leaving the working directory
         /// untouched.  This is the equivalent of `git apply --cached`.
-        INDEX = 1,
+        index = 1,
 
         /// Apply the patch to both the working directory and the index.
         /// This is the equivalent of `git apply --index`.
-        BOTH = 2,
+        both = 2,
     };
 
     /// Look up the value of one git attribute for path.
     ///
     /// ## Parameters
-    /// * `flags` - options for fetching attributes
-    /// * `path` - The path to check for attributes.  Relative paths are interpreted relative to the repo root. The file does not
+    /// * `flags` - Options for fetching attributes
+    /// * `path` - The path to check for attributes. Relative paths are interpreted relative to the repo root. The file does not
     /// have to exist, but if it does not, then it will be treated as a plain file (not a directory).
     /// * `name` - The name of the attribute to look up.
     pub fn attribute(self: *Repository, flags: AttributeFlags, path: [:0]const u8, name: [:0]const u8) !git.Attribute {
@@ -1450,11 +1450,11 @@ pub const Repository = opaque {
     /// than calling `attributeGet` multiple times.
     ///
     /// ## Parameters
-    /// * `output_buffer` - output buffer, *must* be atleast as long as `names`
-    /// * `flags` - options for fetching attributes
-    /// * `path` - The path to check for attributes.  Relative paths are interpreted relative to the repo root. The file does not
+    /// * `output_buffer` - Output buffer, *must* be atleast as long as `names`
+    /// * `flags` - Options for fetching attributes
+    /// * `path` - The path to check for attributes. Relative paths are interpreted relative to the repo root. The file does not
     /// have to exist, but if it does not, then it will be treated as a plain file (not a directory).
-    /// * `names` - The names of the attributes to look up.
+    /// * `names` - He names of the attributes to look up.
     pub fn attributeMany(
         self: *Repository,
         output_buffer: [][*:0]const u8,
@@ -1484,14 +1484,14 @@ pub const Repository = opaque {
     ///
     ///
     /// ## Parameters
-    /// * `flags` - options for fetching attributes
-    /// * `path` - The path to check for attributes.  Relative paths are interpreted relative to the repo root. The file does not
+    /// * `flags` - Options for fetching attributes
+    /// * `path` - The path to check for attributes. Relative paths are interpreted relative to the repo root. The file does not
     /// have to exist, but if it does not, then it will be treated as a plain file (not a directory).
-    /// * `callback_fn` - the callback function
+    /// * `callback_fn` - The callback function
     ///
     /// ## Callback Parameters
     /// * `name` - The attribute name
-    /// * `value` - The attribute value. May be `null` if the attribute is explicitly set to UNSPECIFIED using the '!' sign.
+    /// * `value` - The attribute value. May be `null` if the attribute is explicitly set to unspecified using the '!' sign.
     pub fn attributeForeach(
         self: *const Repository,
         flags: AttributeFlags,
@@ -1535,15 +1535,15 @@ pub const Repository = opaque {
     /// Return a non-zero value from the callback to stop the loop. This non-zero value is returned by the function.
     ///
     /// ## Parameters
-    /// * `flags` - options for fetching attributes
-    /// * `path` - The path to check for attributes.  Relative paths are interpreted relative to the repo root. The file does not
+    /// * `flags` - Options for fetching attributes
+    /// * `path` - The path to check for attributes. Relative paths are interpreted relative to the repo root. The file does not
     /// have to exist, but if it does not, then it will be treated as a plain file (not a directory).
-    /// * `callback_fn` - the callback function
+    /// * `callback_fn` - The callback function
     ///
     /// ## Callback Parameters
     /// * `name` - The attribute name
-    /// * `value` - The attribute value. May be `null` if the attribute is explicitly set to UNSPECIFIED using the '!' sign.
-    /// * `user_data_ptr` - pointer to user data
+    /// * `value` - The attribute value. May be `null` if the attribute is explicitly set to unspecified using the '!' sign.
+    /// * `user_data_ptr` - Pointer to user data
     pub fn attributeForeachWithUserData(
         self: *const Repository,
         flags: AttributeFlags,
@@ -1587,32 +1587,32 @@ pub const Repository = opaque {
     }
 
     pub const AttributeFlags = struct {
-        location: Location = .FILE_THEN_INDEX,
+        location: Location = .file_then_index,
 
         /// Controls extended attribute behavior
         extended: Extended = .{},
 
         pub const Location = enum(u32) {
-            FILE_THEN_INDEX = 0,
-            INDEX_THEN_FILE = 1,
-            INDEX_ONLY = 2,
+            file_then_index = 0,
+            index_then_file = 1,
+            index_only = 2,
         };
 
         pub const Extended = packed struct {
             z_padding1: u2 = 0,
 
             /// Normally, attribute checks include looking in the /etc (or system equivalent) directory for a `gitattributes`
-            /// file. Passing this flag will cause attribute checks to ignore that file. Setting the `NO_SYSTEM` flag will cause
+            /// file. Passing this flag will cause attribute checks to ignore that file. Setting the `no_system` flag will cause
             /// attribute checks to ignore that file.
-            NO_SYSTEM: bool = false,
+            no_system: bool = false,
 
-            /// Passing the `INCLUDE_HEAD` flag will use attributes from a `.gitattributes` file in the repository
+            /// Passing the `include_head` flag will use attributes from a `.gitattributes` file in the repository
             /// at the HEAD revision.
-            INCLUDE_HEAD: bool = false,
+            include_head: bool = false,
 
-            /// Passing the `INCLUDE_COMMIT` flag will use attributes from a `.gitattributes` file in a specific
+            /// Passing the `include_commit` flag will use attributes from a `.gitattributes` file in a specific
             /// commit.
-            INCLUDE_COMMIT: if (HAS_INCLUDE_COMMIT) bool else void = if (HAS_INCLUDE_COMMIT) false else {},
+            include_commit: if (HAS_INCLUDE_COMMIT) bool else void = if (HAS_INCLUDE_COMMIT) false else {},
 
             z_padding2: if (HAS_INCLUDE_COMMIT) u27 else u28 = 0,
 
@@ -1647,20 +1647,20 @@ pub const Repository = opaque {
             var result: u32 = 0;
 
             switch (self.location) {
-                .FILE_THEN_INDEX => {},
-                .INDEX_THEN_FILE => result |= c.GIT_ATTR_CHECK_INDEX_THEN_FILE,
-                .INDEX_ONLY => result |= c.GIT_ATTR_CHECK_INDEX_ONLY,
+                .file_then_index => {},
+                .index_then_file => result |= c.GIT_ATTR_CHECK_INDEX_THEN_FILE,
+                .index_only => result |= c.GIT_ATTR_CHECK_INDEX_ONLY,
             }
 
-            if (self.extended.NO_SYSTEM) {
+            if (self.extended.no_system) {
                 result |= c.GIT_ATTR_CHECK_NO_SYSTEM;
             }
 
-            if (self.extended.INCLUDE_HEAD) {
+            if (self.extended.include_head) {
                 result |= c.GIT_ATTR_CHECK_INCLUDE_HEAD;
             }
 
-            if (self.extended.INCLUDE_COMMIT) {
+            if (self.extended.include_commit) {
                 result |= c.GIT_ATTR_CHECK_INCLUDE_COMMIT;
             }
 
@@ -1713,13 +1713,13 @@ pub const Repository = opaque {
         /// The lower bound on the number of alphanumeric characters that must be detected as moving/copying within a file for it
         /// to associate those lines with the parent commit. The default value is 20.
         ///
-        /// This value only takes effect if any of the `BlameFlags.TRACK_COPIES_*` flags are specified.
+        /// This value only takes effect if any of the `BlameFlags.track_copies_*` flags are specified.
         min_match_characters: u16 = 0,
 
         /// The id of the newest commit to consider. The default is HEAD.
         newest_commit: git.Oid = git.Oid.zero(),
 
-        /// The id of the oldest commit to consider. The default is the first commit encountered with a NULL parent.
+        /// The id of the oldest commit to consider. The default is the first commit encountered with a `null` parent.
         oldest_commit: git.Oid = git.Oid.zero(),
 
         /// The first line in the file to blame. The default is 1 (line numbers start with 1).
@@ -1729,39 +1729,39 @@ pub const Repository = opaque {
         max_line: usize = 0,
 
         pub const BlameFlags = packed struct {
-            NORMAL: bool = false,
+            normal: bool = false,
 
             /// Track lines that have moved within a file (like `git blame -M`).
             ///
             /// This is not yet implemented and reserved for future use.
-            TRACK_COPIES_SAME_FILE: bool = false,
+            track_copies_same_file: bool = false,
 
             /// Track lines that have moved across files in the same commit (like `git blame -C`).
             ///
             /// This is not yet implemented and reserved for future use.
-            TRACK_COPIES_SAME_COMMIT_MOVES: bool = false,
+            track_copies_same_commit_moves: bool = false,
 
             /// Track lines that have been copied from another file that exists in the same commit (like `git blame -CC`). 
-            /// Implies SAME_FILE.
+            /// Implies same_file.
             ///
             /// This is not yet implemented and reserved for future use.
-            TRACK_COPIES_SAME_COMMIT_COPIES: bool = false,
+            track_copies_same_commit_copies: bool = false,
 
             /// Track lines that have been copied from another file that exists in *any* commit (like `git blame -CCC`). Implies
-            /// SAME_COMMIT_COPIES.
+            /// same_commit_copies.
             ///
             /// This is not yet implemented and reserved for future use.
-            TRACK_COPIES_ANY_COMMIT_COPIES: bool = false,
+            track_copies_any_commit_copies: bool = false,
 
             /// Restrict the search of commits to those reachable following only the first parents.
-            FIRST_PARENT: bool = false,
+            first_parent: bool = false,
 
             /// Use mailmap file to map author and committer names and email addresses to canonical real names and email
             /// addresses. The mailmap will be read from the working directory, or HEAD in a bare repository.
-            USE_MAILMAP: bool = false,
+            use_mailmap: bool = false,
 
             /// Ignore whitespace differences 
-            IGNORE_WHITESPACE: bool = false,
+            ignore_whitespace: bool = false,
 
             z_padding1: u8 = 0,
             z_padding2: u16 = 0,
@@ -1811,7 +1811,7 @@ pub const Repository = opaque {
     pub fn blobLookup(self: *Repository, id: *const git.Oid) !*git.Blob {
         // This check is to prevent formating the oid when we are not going to print anything
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            var buf: [git.Oid.hex_buffer_size]u8 = undefined;
             const slice = try id.formatHex(&buf);
             log.debug("Repository.blobLookup called, id: {s}", .{slice});
         }
@@ -1833,7 +1833,7 @@ pub const Repository = opaque {
     pub fn blobLookupPrefix(self: *Repository, id: *const git.Oid, len: usize) !*git.Blob {
         // This check is to prevent formating the oid when we are not going to print anything
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            var buf: [git.Oid.hex_buffer_size]u8 = undefined;
             const slice = try id.formatHex(&buf);
             log.debug("Repository.blobLookup called, id: {s}, len: {}", .{ slice, len });
         }
@@ -1934,9 +1934,9 @@ pub const Repository = opaque {
     }
 
     pub const BranchType = enum(c_uint) {
-        LOCAL = 1,
-        REMOTE = 2,
-        ALL = 3,
+        local = 1,
+        remote = 2,
+        all = 3,
     };
 
     pub const BranchIterator = opaque {
@@ -2011,7 +2011,7 @@ pub const Repository = opaque {
     ///
     /// This will return the name of the remote whose fetch refspec is matching the given branch. E.g. given a branch
     /// "refs/remotes/test/master", it will extract the "test" part. If refspecs from multiple remotes match, the function will
-    /// return `GitError.AMBIGUOUS`.
+    /// return `GitError.Ambiguous`.
     pub fn remoteGetName(self: *Repository, refname: [:0]const u8) !git.Buf {
         log.debug("Repository.remoteGetName called, refname: {s}", .{refname});
 
@@ -2131,7 +2131,7 @@ pub const Repository = opaque {
     pub const CheckoutOptions = struct {
         /// default will be a safe checkout
         checkout_strategy: Strategy = .{
-            .SAFE = true,
+            .safe = true,
         },
 
         /// don't apply filters like CRLF conversion
@@ -2227,77 +2227,77 @@ pub const Repository = opaque {
             /// If the uncommitted changes don't conflict with the checked out files,
             /// the checkout will still proceed, leaving the changes intact.
             ///
-            /// Mutually exclusive with FORCE.
-            /// FORCE takes precedence over SAFE.
-            SAFE: bool = false,
+            /// Mutually exclusive with force.
+            /// force takes precedence over safe.
+            safe: bool = false,
 
             /// Allow all updates to force working directory to look like index.
             ///
-            /// Mutually exclusive with SAFE.
-            /// FORCE takes precedence over SAFE.
-            FORCE: bool = false,
+            /// Mutually exclusive with safe.
+            /// force takes precedence over safe.
+            force: bool = false,
 
             /// Allow checkout to recreate missing files
-            RECREATE_MISSING: bool = false,
+            recreate_missing: bool = false,
 
             z_padding: bool = false,
 
             /// Allow checkout to make safe updates even if conflicts are found
-            ALLOW_CONFLICTS: bool = false,
+            allow_conflicts: bool = false,
 
             /// Remove untracked files not in index (that are not ignored)
-            REMOVE_UNTRACKED: bool = false,
+            remove_untracked: bool = false,
 
             /// Remove ignored files not in index
-            REMOVE_IGNORED: bool = false,
+            remove_ignored: bool = false,
 
             /// Only update existing files, don't create new ones
-            UPDATE_ONLY: bool = false,
+            update_only: bool = false,
 
             /// Normally checkout updates index entries as it goes; this stops that.
-            /// Implies `DONT_WRITE_INDEX`.
-            DONT_UPDATE_INDEX: bool = false,
+            /// Implies `dont_write_index`.
+            dont_update_index: bool = false,
 
             /// Don't refresh index/config/etc before doing checkout
-            NO_REFRESH: bool = false,
+            no_refresh: bool = false,
 
             /// Allow checkout to skip unmerged files
-            SKIP_UNMERGED: bool = false,
+            skip_unmerged: bool = false,
 
             /// For unmerged files, checkout stage 2 from index
-            USE_OURS: bool = false,
+            use_ours: bool = false,
 
             /// For unmerged files, checkout stage 3 from index
-            USE_THEIRS: bool = false,
+            use_theirs: bool = false,
 
             /// Treat pathspec as simple list of exact match file paths
-            DISABLE_PATHSPEC_MATCH: bool = false,
+            disable_pathspec_match: bool = false,
 
             z_padding2: u2 = 0,
 
             /// Recursively checkout submodules with same options (NOT IMPLEMENTED)
-            UPDATE_SUBMODULES: bool = false,
+            update_submodules: bool = false,
 
             /// Recursively checkout submodules if HEAD moved in super repo (NOT IMPLEMENTED)
-            UPDATE_SUBMODULES_IF_CHANGED: bool = false,
+            update_submodules_if_changed: bool = false,
 
             /// Ignore directories in use, they will be left empty
-            SKIP_LOCKED_DIRECTORIES: bool = false,
+            skip_locked_directories: bool = false,
 
             /// Don't overwrite ignored files that exist in the checkout target
-            DONT_OVERWRITE_IGNORED: bool = false,
+            dont_overwrite_ignored: bool = false,
 
             /// Write normal merge files for conflicts
-            CONFLICT_STYLE_MERGE: bool = false,
+            conflict_style_merge: bool = false,
 
             /// Include common ancestor data in diff3 format files for conflicts
-            CONFLICT_STYLE_DIFF3: bool = false,
+            conflict_style_diff3: bool = false,
 
             /// Don't overwrite existing files or folders
-            DONT_REMOVE_EXISTING: bool = false,
+            dont_remove_existing: bool = false,
 
             /// Normally checkout writes the index upon completion; this prevents that.
-            DONT_WRITE_INDEX: bool = false,
+            dont_write_index: bool = false,
 
             z_padding3: u8 = 0,
 
@@ -2328,26 +2328,26 @@ pub const Repository = opaque {
 
         pub const Notification = packed struct {
             /// Invokes checkout on conflicting paths.
-            CONFLICT: bool = false,
+            conflict: bool = false,
 
             /// Notifies about "dirty" files, i.e. those that do not need an update
             /// but no longer match the baseline.  Core git displays these files when
             /// checkout runs, but won't stop the checkout.
-            DIRTY: bool = false,
+            dirty: bool = false,
 
             /// Sends notification for any file changed.
-            UPDATED: bool = false,
+            updated: bool = false,
 
             /// Notifies about untracked files.
-            UNTRACKED: bool = false,
+            untracked: bool = false,
 
             /// Notifies about ignored files.
-            IGNORED: bool = false,
+            ignored: bool = false,
 
             z_padding: u11 = 0,
             z_padding2: u16 = 0,
 
-            pub const ALL = @bitCast(Notification, @as(c_uint, 0xFFFF));
+            pub const all = @bitCast(Notification, @as(c_uint, 0xFFFF));
 
             test {
                 try std.testing.expectEqual(@sizeOf(c_uint), @sizeOf(Notification));
@@ -2463,7 +2463,7 @@ pub const Repository = opaque {
     pub fn commitLookup(self: *Repository, oid: *const git.Oid) !*git.Commit {
         // This check is to prevent formating the oid when we are not going to print anything
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            var buf: [git.Oid.hex_buffer_size]u8 = undefined;
             const slice = try oid.formatHex(&buf);
             log.debug("Repository.commitLookup called, oid: {s}", .{slice});
         }
@@ -2485,7 +2485,7 @@ pub const Repository = opaque {
     pub fn commitLookupPrefix(self: *Repository, oid: *const git.Oid, size: usize) !*git.Commit {
         // This check is to prevent formating the oid when we are not going to print anything
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            var buf: [git.Oid.hex_buffer_size]u8 = undefined;
             const slice = try oid.formatHex(&buf);
             log.debug("Repository.commitLookupPrefix called, oid: {s}, size: {}", .{ slice, size });
         }
@@ -2507,7 +2507,7 @@ pub const Repository = opaque {
     pub fn commitExtractSignature(self: *Repository, commit: *git.Oid, field: ?[:0]const u8) !ExtractSignatureResult {
         // This check is to prevent formating the oid when we are not going to print anything
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            var buf: [git.Oid.hex_buffer_size]u8 = undefined;
             const slice = try commit.formatHex(&buf);
             log.debug("Repository.commitExtractSignature called, commit: {s}, field: {s}", .{ slice, field });
         }
@@ -2571,7 +2571,7 @@ pub const Repository = opaque {
 
         // This check is to prevent formating the oid when we are not going to print anything
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            var buf: [git.Oid.hex_buffer_size]u8 = undefined;
             const slice = try ret.formatHex(&buf);
             log.debug("successfully created commit: {s}", .{slice});
         }
@@ -2644,7 +2644,7 @@ pub const Repository = opaque {
 
         // This check is to prevent formating the oid when we are not going to print anything
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            var buf: [git.Oid.hex_buffer_size]u8 = undefined;
             const slice = try ret.formatHex(&buf);
             log.debug("successfully created commit: {s}", .{slice});
         }
@@ -2723,8 +2723,8 @@ pub const Repository = opaque {
     // branch and the other as its upstream, the `ahead` and `behind` values will be what git would report for the branches.
     ///
     /// ## Parameters
-    /// * `local` - the commit for local
-    /// * `upstream` - the commit for upstream
+    /// * `local` - The commit for local
+    /// * `upstream` - The commit for upstream
     pub fn graphAheadBehind(
         self: *Repository,
         local: *const git.Oid,
@@ -2732,8 +2732,8 @@ pub const Repository = opaque {
     ) !GraphAheadBehindResult {
         // This check is to prevent formating the oid when we are not going to print anything
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-            var buf1: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
-            var buf2: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            var buf1: [git.Oid.hex_buffer_size]u8 = undefined;
+            var buf2: [git.Oid.hex_buffer_size]u8 = undefined;
             const slice1 = try local.formatHex(&buf1);
             const slice2 = try upstream.formatHex(&buf2);
             log.debug("Repository.graphAheadBehind called, local: {s}, upstream: {s}", .{ slice1, slice2 });
@@ -2761,13 +2761,13 @@ pub const Repository = opaque {
     /// Note that a commit is not considered a descendant of itself, in contrast to `git merge-base --is-ancestor`.
     ///
     /// ## Parameters
-    /// * `commit` - a previously loaded commit
-    /// * `ancestor` - a potential ancestor commit
+    /// * `commit` - A previously loaded commit
+    /// * `ancestor` - A potential ancestor commit
     pub fn graphDecendantOf(self: *Repository, commit: *const git.Oid, ancestor: *const git.Oid) !bool {
         // This check is to prevent formating the oid when we are not going to print anything
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-            var buf1: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
-            var buf2: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            var buf1: [git.Oid.hex_buffer_size]u8 = undefined;
+            var buf2: [git.Oid.hex_buffer_size]u8 = undefined;
             const slice1 = try commit.formatHex(&buf1);
             const slice2 = try ancestor.formatHex(&buf2);
             log.debug("Repository.graphDecendantOf called, commit: {s}, ancestor: {s}", .{ slice1, slice2 });
@@ -2831,7 +2831,7 @@ pub const Repository = opaque {
     /// One way to think of this is if you were to do "git check-ignore --no-index" on the given file, would it be shown or not?
     ///
     /// ## Parameters
-    /// * `path` - the file to check ignores for, relative to the repo's workdir.
+    /// * `path` - The file to check ignores for, relative to the repo's workdir.
     pub fn ignorePathIsIgnored(self: *Repository, path: [:0]const u8) !bool {
         log.debug("Repository.ignorePathIsIgnored called, path: {s}", .{path});
 
@@ -2898,8 +2898,8 @@ pub const Repository = opaque {
     /// Determine if a commit is reachable from any of a list of commits by following parent edges.
     ///
     /// ## Parameters
-    /// * `commit` - a previously loaded commit
-    /// * `decendants` - oids of the commits
+    /// * `commit` - A previously loaded commit
+    /// * `decendants` - Oids of the commits
     pub fn graphReachableFromAny(
         self: *Repository,
         commit: *const git.Oid,
@@ -2907,7 +2907,7 @@ pub const Repository = opaque {
     ) !bool {
         // This check is to prevent formating the oid when we are not going to print anything
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            var buf: [git.Oid.hex_buffer_size]u8 = undefined;
             const slice = try commit.formatHex(&buf);
             log.debug("Repository.graphReachableFromAny called, commit: {s}, number of decendants: {}", .{ slice, decendants.len });
         }
@@ -2946,7 +2946,7 @@ pub const Repository = opaque {
     /// Look up the value of one git attribute for path with extended options.
     ///
     /// ## Parameters
-    /// * `options` - options for fetching attributes
+    /// * `options` - Options for fetching attributes
     /// * `path` - The path to check for attributes.  Relative paths are interpreted relative to the repo root. The file does not
     /// have to exist, but if it does not, then it will be treated as a plain file (not a directory).
     /// * `name` - The name of the attribute to look up.
@@ -2983,8 +2983,8 @@ pub const Repository = opaque {
     /// than calling `attributeGet` multiple times.
     ///
     /// ## Parameters
-    /// * `output_buffer` - output buffer, *must* be atleast as long as `names`
-    /// * `options` - options for fetching attributes
+    /// * `output_buffer` - Output buffer, *must* be atleast as long as `names`
+    /// * `options` - Options for fetching attributes
     /// * `path` - The path to check for attributes.  Relative paths are interpreted relative to the repo root. The file does not
     /// have to exist, but if it does not, then it will be treated as a plain file (not a directory).
     /// * `names` - The names of the attributes to look up.
@@ -3019,14 +3019,14 @@ pub const Repository = opaque {
     ///
     ///
     /// ## Parameters
-    /// * `options` - options for fetching attributes
+    /// * `options` - Options for fetching attributes
     /// * `path` - The path to check for attributes.  Relative paths are interpreted relative to the repo root. The file does not
     /// have to exist, but if it does not, then it will be treated as a plain file (not a directory).
-    /// * `callback_fn` - the callback function
+    /// * `callback_fn` - The callback function
     ///
     /// ## Callback Parameters
     /// * `name` - The attribute name
-    /// * `value` - The attribute value. May be `null` if the attribute is explicitly set to UNSPECIFIED using the '!' sign.
+    /// * `value` - The attribute value. May be `null` if the attribute is explicitly set to unspecified using the '!' sign.
     pub fn attributeForeachExtended(
         self: *const Repository,
         options: AttributeOptions,
@@ -3072,15 +3072,15 @@ pub const Repository = opaque {
     /// Return a non-zero value from the callback to stop the loop. This non-zero value is returned by the function.
     ///
     /// ## Parameters
-    /// * `options` - options for fetching attributes
+    /// * `options` - Options for fetching attributes
     /// * `path` - The path to check for attributes.  Relative paths are interpreted relative to the repo root. The file does not
     /// have to exist, but if it does not, then it will be treated as a plain file (not a directory).
-    /// * `callback_fn` - the callback function
+    /// * `callback_fn` - The callback function
     ///
     /// ## Callback Parameters
     /// * `name` - The attribute name
-    /// * `value` - The attribute value. May be `null` if the attribute is explicitly set to UNSPECIFIED using the '!' sign.
-    /// * `user_data_ptr` - pointer to user data
+    /// * `value` - The attribute value. May be `null` if the attribute is explicitly set to unspecified using the '!' sign.
+    /// * `user_data_ptr` - Pointer to user data
     pub fn attributeForeachWithUserDataExtended(
         self: *const Repository,
         options: AttributeOptions,
@@ -3157,7 +3157,7 @@ pub const Repository = opaque {
 
         // This check is to prevent formating the oid when we are not going to print anything
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            var buf: [git.Oid.hex_buffer_size]u8 = undefined;
             const slice = try ret.formatHex(&buf);
             log.debug("successfully read blob: {s}", .{slice});
         }
@@ -3208,7 +3208,7 @@ pub const Repository = opaque {
 
         // This check is to prevent formating the oid when we are not going to print anything
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            var buf: [git.Oid.hex_buffer_size]u8 = undefined;
             const slice = try ret.formatHex(&buf);
             log.debug("successfully read blob: {s}", .{slice});
         }
@@ -3230,7 +3230,7 @@ pub const Repository = opaque {
 
         // This check is to prevent formating the oid when we are not going to print anything
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            var buf: [git.Oid.hex_buffer_size]u8 = undefined;
             const slice = try ret.formatHex(&buf);
             log.debug("successfully read blob: {s}", .{slice});
         }
@@ -3344,11 +3344,11 @@ pub const Repository = opaque {
     /// Lookup a tree object from the repository.
     ///
     /// ## Parameters
-    /// * `id` - identity of the tree to locate.
+    /// * `id` - Identity of the tree to locate.
     pub fn treeLookup(self: *Repository, id: *const git.Oid) !*git.Tree {
         // This check is to prevent formating the oid when we are not going to print anything
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            var buf: [git.Oid.hex_buffer_size]u8 = undefined;
             const slice = try id.formatHex(&buf);
             log.debug("Repository.treeLookup called, id: {s}", .{slice});
         }
@@ -3369,12 +3369,12 @@ pub const Repository = opaque {
     /// Lookup a tree object from the repository, given a prefix of its identifier (short id).
     ///
     /// ## Parameters
-    /// * `id` - identity of the tree to locate.
-    /// * `len` - the length of the short identifier
+    /// * `id` - Identity of the tree to locate.
+    /// * `len` - The length of the short identifier
     pub fn treeLookupPrefix(self: *Repository, id: *const git.Oid, len: usize) !*git.Tree {
         // This check is to prevent formating the oid when we are not going to print anything
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            var buf: [git.Oid.hex_buffer_size]u8 = undefined;
             const slice = try id.formatHexCount(&buf, len);
             log.debug("Repository.treeLookupPrefix, id: {s}, len: {}", .{ slice, len });
         }
@@ -3447,9 +3447,9 @@ pub const Repository = opaque {
 
         pub const Action = enum(c_uint) {
             /// Update or insert an entry at the specified path
-            UPSERT = 0,
+            upsert = 0,
             /// Remove an entry from the specified path
-            REMOVE = 1,
+            remove = 1,
         };
 
         test {
@@ -3473,8 +3473,8 @@ pub const Repository = opaque {
     /// Deleting and adding the same entry is undefined behaviour, changing a tree to a blob or viceversa is not supported.
     ///
     /// ## Parameters
-    /// * `baseline` - the tree to base these changes on, must be the repository `baseline` is in
-    /// * `updates` - the updates to perform
+    /// * `baseline` - The tree to base these changes on, must be the repository `baseline` is in
+    /// * `updates` - The updates to perform
     pub fn createUpdatedTree(self: *Repository, baseline: *git.Tree, updates: []const TreeUpdateAction) !git.Oid {
         log.debug("Repository.createUpdatedTree called, baseline: {*}, number of updates: {}", .{ baseline, updates.len });
 
@@ -3490,7 +3490,7 @@ pub const Repository = opaque {
 
         // This check is to prevent formating the oid when we are not going to print anything
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            var buf: [git.Oid.hex_buffer_size]u8 = undefined;
             const slice = try ret.formatHex(&buf);
             log.debug("successfully created new tree: {s}", .{slice});
         }
@@ -3501,7 +3501,7 @@ pub const Repository = opaque {
     /// Creates a new iterator for notes
     ///
     /// ## Parameters
-    /// * `notes_ref` - canonical name of the reference to use; if `null` defaults to "refs/notes/commits"
+    /// * `notes_ref` - Canonical name of the reference to use; if `null` defaults to "refs/notes/commits"
     pub fn noteIterator(self: *Repository, notes_ref: ?[:0]const u8) !*git.NoteIterator {
         log.debug("Repository.noteIterator called, notes_ref: {s}", .{notes_ref});
 
@@ -3522,11 +3522,11 @@ pub const Repository = opaque {
     ///
     /// ## Parameters
     /// * `oid` - OID of the git object to read the note from
-    /// * `notes_ref` - canonical name of the reference to use; if `null` defaults to "refs/notes/commits"
+    /// * `notes_ref` - Canonical name of the reference to use; if `null` defaults to "refs/notes/commits"
     pub fn noteRead(self: *Repository, oid: *const git.Oid, notes_ref: ?[:0]const u8) !*git.Note {
         // This check is to prevent formating the oid when we are not going to print anything
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            var buf: [git.Oid.hex_buffer_size]u8 = undefined;
             const slice = try oid.formatHex(&buf);
             log.debug("Repository.noteRead called, oid: {s}, notes_ref: {s}", .{ slice, notes_ref });
         }
@@ -3551,11 +3551,11 @@ pub const Repository = opaque {
     ///
     /// ## Parameters
     /// * `oid` - OID of the git object to read the note from
-    /// * `notes_ref` - canonical name of the reference to use; if `null` defaults to "refs/notes/commits"
+    /// * `notes_ref` - Canonical name of the reference to use; if `null` defaults to "refs/notes/commits"
     pub fn noteReadFromNoteCommit(self: *Repository, oid: *const git.Oid, note_commit: *git.Commit) !*git.Note {
         // This check is to prevent formating the oid when we are not going to print anything
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            var buf: [git.Oid.hex_buffer_size]u8 = undefined;
             const slice = try oid.formatHex(&buf);
             log.debug("Repository.noteReadFromNoteCommit called, oid: {s}, note_commit: {*}", .{ slice, note_commit });
         }
@@ -3577,9 +3577,9 @@ pub const Repository = opaque {
     /// Add a note for an object
     ///
     /// ## Parameters
-    /// * `notes_ref` - canonical name of the reference to use; if `null` defaults to "refs/notes/commits"
-    /// * `author` - signature of the notes commit author
-    /// * `commiter` - signature of the notes commit committer
+    /// * `notes_ref` - Canonical name of the reference to use; if `null` defaults to "refs/notes/commits"
+    /// * `author` - Signature of the notes commit author
+    /// * `commiter` - Signature of the notes commit committer
     /// * `oid` - OID of the git object to decorate
     /// * `note` - Content of the note to add for object oid
     /// * `force` - Overwrite existing note
@@ -3594,7 +3594,7 @@ pub const Repository = opaque {
     ) !git.Oid {
         // This check is to prevent formating the oid when we are not going to print anything
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            var buf: [git.Oid.hex_buffer_size]u8 = undefined;
             const slice = try oid.formatHex(&buf);
             log.debug("Repository.noteCreate called, notes_ref: {s}, author: {s}, commiter: {s}, oid: {s}, note: {s}, force: {}", .{
                 notes_ref,
@@ -3636,9 +3636,9 @@ pub const Repository = opaque {
     /// This function will create a notes commit for a given object, the commit is a dangling commit, no reference is created.
     ///
     /// ## Parameters
-    /// * `notes_ref` - canonical name of the reference to use; if `null` defaults to "refs/notes/commits"
-    /// * `author` - signature of the notes commit author
-    /// * `commiter` - signature of the notes commit committer
+    /// * `notes_ref` - Canonical name of the reference to use; if `null` defaults to "refs/notes/commits"
+    /// * `author` - Signature of the notes commit author
+    /// * `commiter` - Signature of the notes commit committer
     /// * `oid` - OID of the git object to decorate
     /// * `note` - Content of the note to add for object oid
     /// * `allow_note_overwrite` - Overwrite existing note
@@ -3653,7 +3653,7 @@ pub const Repository = opaque {
     ) !NoteCommitResult {
         // This check is to prevent formating the oid when we are not going to print anything
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            var buf: [git.Oid.hex_buffer_size]u8 = undefined;
             const slice = try oid.formatHex(&buf);
             log.debug("Repository.noteCommitCreate called, parent: {*}, author: {s}, commiter: {s}, oid: {s}, note: {s}, allow_note_overwrite: {}", .{
                 parent,
@@ -3687,9 +3687,9 @@ pub const Repository = opaque {
     /// Remove the note for an object
     ///
     /// ## Parameters
-    /// * `notes_ref` - canonical name of the reference to use; if `null` defaults to "refs/notes/commits"
-    /// * `author` - signature of the notes commit author
-    /// * `commiter` - signature of the notes commit committer
+    /// * `notes_ref` - Canonical name of the reference to use; if `null` defaults to "refs/notes/commits"
+    /// * `author` - Signature of the notes commit author
+    /// * `commiter` - Signature of the notes commit committer
     /// * `oid` - OID of the git object to remove the note from
     pub fn noteRemove(
         self: *Repository,
@@ -3700,7 +3700,7 @@ pub const Repository = opaque {
     ) !void {
         // This check is to prevent formating the oid when we are not going to print anything
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            var buf: [git.Oid.hex_buffer_size]u8 = undefined;
             const slice = try oid.formatHex(&buf);
             log.debug("Repository.noteRemove called, notes_ref: {s}, author: {s}, commiter: {s}, oid: {s}", .{
                 notes_ref,
@@ -3726,9 +3726,9 @@ pub const Repository = opaque {
     /// Remove the note for an object
     ///
     /// ## Parameters
-    /// * `notes_ref` - canonical name of the reference to use; if `null` defaults to "refs/notes/commits"
-    /// * `author` - signature of the notes commit author
-    /// * `commiter` - signature of the notes commit committer
+    /// * `notes_ref` - Canonical name of the reference to use; if `null` defaults to "refs/notes/commits"
+    /// * `author` - Signature of the notes commit author
+    /// * `commiter` - Signature of the notes commit committer
     /// * `oid` - OID of the git object to remove the note from
     pub fn noteCommitRemove(
         self: *Repository,
@@ -3739,7 +3739,7 @@ pub const Repository = opaque {
     ) !git.Oid {
         // This check is to prevent formating the oid when we are not going to print anything
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            var buf: [git.Oid.hex_buffer_size]u8 = undefined;
             const slice = try oid.formatHex(&buf);
             log.debug("Repository.noteCommitRemove called, note_commit: {*}, author: {s}, commiter: {s}, oid: {s}", .{
                 note_commit,
@@ -3786,8 +3786,8 @@ pub const Repository = opaque {
     /// Return a non-zero value from the callback to stop the loop. This non-zero value is returned by the function.
     ///
     /// ## Parameters
-    /// * `notes_ref` - canonical name of the reference to use; if `null` defaults to "refs/notes/commits"
-    /// * `callback_fn` - the callback function
+    /// * `notes_ref` - Canonical name of the reference to use; if `null` defaults to "refs/notes/commits"
+    /// * `callback_fn` - The callback function
     ///
     /// ## Callback Parameters
     /// * `blob_id` - Oid of the blob containing the message
@@ -3819,14 +3819,14 @@ pub const Repository = opaque {
     /// Return a non-zero value from the callback to stop the loop. This non-zero value is returned by the function.
     ///
     /// ## Parameters
-    /// * `notes_ref` - canonical name of the reference to use; if `null` defaults to "refs/notes/commits"
-    /// * `user_data` - pointer to user data to be passed to the callback
-    /// * `callback_fn` - the callback function
+    /// * `notes_ref` - Canonical name of the reference to use; if `null` defaults to "refs/notes/commits"
+    /// * `user_data` - Pointer to user data to be passed to the callback
+    /// * `callback_fn` - The callback function
     ///
     /// ## Callback Parameters
     /// * `blob_id` - Oid of the blob containing the message
     /// * `annotated_object_id` - Oid of the git object being annotated
-    /// * `user_data_ptr` - pointer to user data
+    /// * `user_data_ptr` - Pointer to user data
     pub fn noteForeachWithUserData(
         self: *Repository,
         notes_ref: ?[:0]const u8,
@@ -3874,15 +3874,15 @@ pub const Repository = opaque {
     /// The generated reference is owned by the repository and should be closed with `git.Object.deinit`.
     ///
     /// The 'object_type' parameter must match the type of the object in the odb; the method will fail otherwise.
-    /// The special value 'git.ObjectType.ANY' may be passed to let the method guess the object's type.
+    /// The special value 'git.ObjectType.any' may be passed to let the method guess the object's type.
     ///
     /// ## Parameters
-    /// * `id` - the unique identifier for the object
-    /// * `object_type` - the type of the object
+    /// * `id` - The unique identifier for the object
+    /// * `object_type` - The type of the object
     pub fn objectLookup(self: *Repository, id: *const git.Oid, object_type: git.ObjectType) !*git.Object {
         // This check is to prevent formating the oid when we are not going to print anything
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            var buf: [git.Oid.hex_buffer_size]u8 = undefined;
             const slice = try id.formatHex(&buf);
             log.debug("Repository.objectLookup called, id: {s}, object_type: {}", .{
                 slice,
@@ -3908,22 +3908,22 @@ pub const Repository = opaque {
     ///
     /// The object obtained will be so that its identifier matches the first 'len' hexadecimal characters (packets of 4 bits) of
     /// the given 'id'.
-    /// 'len' must be at least `git.Oid.MIN_PREFIX_LEN`, and long enough to identify a unique object matching/ the prefix;
+    /// 'len' must be at least `git.Oid.min_prefix_len`, and long enough to identify a unique object matching/ the prefix;
     /// otherwise the method will fail.
     ///
     /// The generated reference is owned by the repository and should be closed with `git.Object.deinit`.
     ///
     /// The 'object_type' parameter must match the type of the object in the odb; the method will fail otherwise.
-    /// The special value 'git.ObjectType.ANY' may be passed to let the method guess the object's type.
+    /// The special value 'git.ObjectType.any' may be passed to let the method guess the object's type.
     ///
     /// ## Parameters
-    /// * `id` - a short identifier for the object
-    /// * `len` - the length of the short identifier
-    /// * `object_type` - the type of the object
+    /// * `id` - A short identifier for the object
+    /// * `len` - The length of the short identifier
+    /// * `object_type` - The type of the object
     pub fn objectLookupPrefix(self: *Repository, id: *const git.Oid, len: usize, object_type: git.ObjectType) !*git.Object {
         // This check is to prevent formating the oid when we are not going to print anything
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            var buf: [git.Oid.hex_buffer_size]u8 = undefined;
             const slice = try id.formatHexCount(&buf, len);
             log.debug("Repository.objectLookupPrefix called, id: {s}, object_type: {}", .{
                 slice,
@@ -3965,8 +3965,8 @@ pub const Repository = opaque {
     /// Add a remote with the default fetch refspec to the repository's configuration.
     ///
     /// ## Parameters
-    /// * `name` - the remote's name.
-    /// * `url` - the remote's url.
+    /// * `name` - The remote's name.
+    /// * `url` - The remote's url.
     pub fn remoteCreate(self: *Repository, name: [:0]const u8, url: [:0]const u8) !*git.Remote {
         log.debug("Repository.remoteCreate called, name: {s}, url: {s}", .{ name, url });
 
@@ -3987,9 +3987,9 @@ pub const Repository = opaque {
     /// Add a remote with the provided refspec (or default if `null`) to the repository's configuration.
     ///
     /// ## Parameters
-    /// * `name` - the remote's name.
-    /// * `url` - the remote's url.
-    /// * `fetch` - the remote fetch value.
+    /// * `name` - The remote's name.
+    /// * `url` - The remote's url.
+    /// * `fetch` - The remote fetch value.
     pub fn remoteCreateWithFetchspec(
         repository: *Repository,
         name: [:0]const u8,
@@ -4018,8 +4018,8 @@ pub const Repository = opaque {
     /// Create a remote with the given url in-memory. You can use this when you have a url instead of a remote's name.
     ///
     /// ## Parameters
-    /// * `name` - the remote's name.
-    /// * `url` - the remote's url.
+    /// * `name` - The remote's name.
+    /// * `url` - The remote's url.
     pub fn remoteCreateAnonymous(repository: *Repository, url: [:0]const u8) !*git.Remote {
         log.debug("Repository.remoteCreateAnonymous called, url: {s}", .{url});
 
@@ -4039,7 +4039,7 @@ pub const Repository = opaque {
     /// Get the information for a particular remote.
     ///
     /// ## Parameters
-    /// * `name` - the remote's name
+    /// * `name` - The remote's name
     pub fn remoteLookup(repository: *Repository, name: [:0]const u8) !*git.Remote {
         log.debug("Repository.remoteLookup called, name=\"{s}\"", .{name});
 
@@ -4062,8 +4062,8 @@ pub const Repository = opaque {
     /// otherwise return an error.
     ///
     /// ## Parameters
-    /// * `remote` - the remote's name.
-    /// * `url` - the url to set.
+    /// * `remote` - The remote's name.
+    /// * `url` - The url to set.
     pub fn remoteSetUrl(repository: *Repository, remote: [:0]const u8, url: [:0]const u8) !void {
         log.debug("Repository.remoteSetUrl called, remote: {s}, url: {s}", .{ remote, url });
 
@@ -4082,8 +4082,8 @@ pub const Repository = opaque {
     /// otherwise return an error.
     ///
     /// ## Parameters
-    /// * `remote` - the remote's name.
-    /// * `url` - the url to set.
+    /// * `remote` - The remote's name.
+    /// * `url` - The url to set.
     pub fn remoteSetPushurl(repository: *Repository, remote: [:0]const u8, url: [:0]const u8) !void {
         log.debug("Repository.remoteSetPushurl called, remote: {s}, url: {s}", .{ remote, url });
 
@@ -4101,8 +4101,8 @@ pub const Repository = opaque {
     /// Add the given refspec to the fetch list in the configuration. No loaded remote instances will be affected.
     ///
     /// ## Parameters
-    /// * `remote` - name of the remote to change.
-    /// * `refspec` - the new fetch refspec.
+    /// * `remote` - Name of the remote to change.
+    /// * `refspec` - The new fetch refspec.
     pub fn remoteAddFetch(repository: *Repository, remote: [:0]const u8, refspec: [:0]const u8) !void {
         log.debug("Repository.remoteAddFetch called, remote: {s}, refspec: {s}", .{ remote, refspec });
 
@@ -4120,8 +4120,8 @@ pub const Repository = opaque {
     /// Add the given refspec to the push list in the configuration. No loaded remote instances will be affected.
     ///
     /// ## Parameters
-    /// * `remote` - name of the remote to change.
-    /// * `refspec` - the new push refspec.
+    /// * `remote` - Name of the remote to change.
+    /// * `refspec` - The new push refspec.
     pub fn remoteAddPush(repository: *Repository, remote: [:0]const u8, refspec: [:0]const u8) !void {
         log.debug("Repository.remoteAddPush called, remote: {s}, refspecs: {s}", .{ remote, refspec });
 
@@ -4157,8 +4157,8 @@ pub const Repository = opaque {
     /// The change will be made in the configuration. No loaded remotes will be affected.
     ///
     /// ## Parameters
-    /// * `remote` - the name of the remote.
-    /// * `value` - the new value to take.
+    /// * `remote` - The name of the remote.
+    /// * `value` - The new value to take.
     pub fn remoteSetAutotag(self: *Repository, remote: [:0]const u8, value: git.Remote.AutoTagOption) !void {
         log.debug("Remote.setAutotag called, remote: {s}, value: {}", .{ remote, value });
 
@@ -4184,8 +4184,8 @@ pub const Repository = opaque {
     /// Always free the returned `git.StrArray`.
     ///
     /// ## Problems
-    /// * `name` - the current name of the remote
-    /// * `new_name` - the new name the remote should bear
+    /// * `name` - The current name of the remote
+    /// * `new_name` - The new name the remote should bear
     pub fn remoteRename(self: *Repository, name: [:0]const u8, new_name: [:0]const u8) !git.StrArray {
         log.debug("Repository.remoteRename called, name: {s}, new_name: {s}", .{ name, new_name });
 
@@ -4208,7 +4208,7 @@ pub const Repository = opaque {
     /// All remote-tracking branches and configuration settings for the remote will be removed.
     ///
     /// ## Parameters
-    /// * `name` - the remote to delete
+    /// * `name` - The remote to delete
     pub fn remoteDelete(self: *Repository, name: [:0]const u8) !void {
         log.debug("Repository.remoteDelete called, name: {s}", .{name});
 
@@ -4227,14 +4227,14 @@ pub const Repository = opaque {
     /// the file is tracked in the index).
     ///
     /// If `match_list` is not `null`, this returns a `git.PathspecMatchList`. That contains the list of all matched filenames
-    /// (unless you pass the `MatchOptions.FAILURES_ONLY` options) and may also contain the list of pathspecs with no match (if
-    /// you used the `MatchOptions.FIND_FAILURES` option).
+    /// (unless you pass the `MatchOptions.failures_only` options) and may also contain the list of pathspecs with no match (if
+    /// you used the `MatchOptions.find_failures` option).
     /// You must call `PathspecMatchList.deinit()` on this object.
     ///
     /// ## Parameters
-    /// * `pathspec` - pathspec to be matched
-    /// * `options` - options to control match
-    /// * `match_list` - output list of matches; pass `null` to just get return value
+    /// * `pathspec` - Pathspec to be matched
+    /// * `options` - Options to control match
+    /// * `match_list` - Output list of matches; pass `null` to just get return value
     pub fn pathspecMatchWorkdir(
         self: *Repository,
         pathspec: *git.Pathspec,
@@ -4263,7 +4263,7 @@ pub const Repository = opaque {
     /// The returned object should be released with `Object.deinit()` when no longer needed.
     ///
     /// ## Parameters
-    /// * `spec` - the textual specification for an object
+    /// * `spec` - The textual specification for an object
     pub fn revisionParseSingle(self: *Repository, spec: [:0]const u8) !*git.Object {
         log.debug("Repository.revisionParseSingle called, spec: {s}", .{spec});
 
@@ -4291,8 +4291,8 @@ pub const Repository = opaque {
     /// The returned object should be released with `Object.deinit()` when no longer needed.
     ///
     /// ## Parameters
-    /// * `reference` - pointer to output reference or `null`
-    /// * `spec` - the textual specification for an object
+    /// * `reference` - Pointer to output reference or `null`
+    /// * `spec` - The textual specification for an object
     pub fn revisionParseExtended(
         self: *Repository,
         reference: ?**git.Reference,
@@ -4324,11 +4324,11 @@ pub const Repository = opaque {
 
         pub const RevSpecFlags = packed struct {
             /// The spec targeted a single object.
-            SINGLE: bool = false,
+            single: bool = false,
             /// The spec targeted a range of commits.
-            RANGE: bool = false,
+            range: bool = false,
             /// The spec used the '...' operator, which invokes special semantics.
-            MERGE_BASE: bool = false,
+            merge_base: bool = false,
 
             z_padding: u29 = 0,
 
@@ -4375,7 +4375,7 @@ pub const Repository = opaque {
     /// The returned `RevSpec` contains two `git.Object`'s that should be freed by the user.
     ///
     /// ## Parameters
-    /// * `spec` - the rev-parse spec to parse
+    /// * `spec` - The rev-parse spec to parse
     pub fn revisionParse(self: *Repository, spec: [:0]const u8) !RevSpec {
         log.debug("Repository.revisionParse called, spec: {s}", .{spec});
 
@@ -4397,7 +4397,7 @@ pub const Repository = opaque {
     /// If there is no reflog file for the given reference yet, an empty reflog object will be returned.
     ///
     /// ## Parameters
-    /// * `name` - reference to look up
+    /// * `name` - Reference to look up
     pub fn reflogRead(self: *Repository, name: [:0]const u8) !*git.Reflog {
         log.debug("Repository.reflogRead called, name: {s}", .{name});
 
@@ -4421,8 +4421,8 @@ pub const Repository = opaque {
     /// The new name will be checked for validity. `Repository.referenceSymbolicCreate()` for rules about valid names.
     ///
     /// ## Parameters
-    /// * `old_name` - the old name of the reference
-    /// * `name` - the new name of the reference
+    /// * `old_name` - The old name of the reference
+    /// * `name` - The new name of the reference
     pub fn reflogRename(self: *Repository, old_name: [:0]const u8, name: [:0]const u8) !void {
         log.debug("Repository.reflogRename called, old_name: {s}, name: {s}", .{ old_name, name });
 
@@ -4438,7 +4438,7 @@ pub const Repository = opaque {
     /// Delete the reflog for the given reference
     ///
     /// ## Parameters
-    /// * `name` - the reflog to delete
+    /// * `name` - The reflog to delete
     pub fn reflogDelete(self: *Repository, name: [:0]const u8) !void {
         log.debug("Repository.reflogDelete called, name: {s}", .{name});
 
@@ -4457,29 +4457,29 @@ pub const Repository = opaque {
 
 /// Valid modes for index and tree entries.
 pub const FileMode = enum(u16) {
-    UNREADABLE = 0o000000,
-    TREE = 0o040000,
-    BLOB = 0o100644,
-    BLOB_EXECUTABLE = 0o100755,
-    LINK = 0o120000,
-    COMMIT = 0o160000,
+    unreadable = 0o000000,
+    tree = 0o040000,
+    blob = 0o100644,
+    blob_executable = 0o100755,
+    link = 0o120000,
+    commit = 0o160000,
 };
 
 pub const FileStatus = packed struct {
-    CURRENT: bool = false,
-    INDEX_NEW: bool = false,
-    INDEX_MODIFIED: bool = false,
-    INDEX_DELETED: bool = false,
-    INDEX_RENAMED: bool = false,
-    INDEX_TYPECHANGE: bool = false,
-    WT_NEW: bool = false,
-    WT_MODIFIED: bool = false,
-    WT_DELETED: bool = false,
-    WT_TYPECHANGE: bool = false,
-    WT_RENAMED: bool = false,
-    WT_UNREADABLE: bool = false,
-    IGNORED: bool = false,
-    CONFLICTED: bool = false,
+    current: bool = false,
+    index_new: bool = false,
+    index_modified: bool = false,
+    index_deleted: bool = false,
+    index_renamed: bool = false,
+    index_typechange: bool = false,
+    wt_new: bool = false,
+    wt_modified: bool = false,
+    wt_deleted: bool = false,
+    wt_typechange: bool = false,
+    wt_renamed: bool = false,
+    wt_unreadable: bool = false,
+    ignored: bool = false,
+    conflicted: bool = false,
 
     z_padding1: u2 = 0,
     z_padding2: u16 = 0,

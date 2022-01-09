@@ -131,7 +131,7 @@ pub const Credential = extern struct {
     /// Create a new passphrase-protected ssh key credential object.
     ///
     /// ## Parameters
-    /// * `username` - username to use to authenticate
+    /// * `username` - Username to use to authenticate
     /// * `publickey` - The path to the public key of the credential.
     /// * `privatekey` - The path to the private key of the credential.
     /// * `passphrase` - The passphrase of the credential.
@@ -177,9 +177,9 @@ pub const Credential = extern struct {
     /// Create a new ssh key credential object reading the keys from memory.
     ///
     /// ## Parameters
-    /// * `username` - username to use to authenticate
+    /// * `username` - Username to use to authenticate
     /// * `publickey` - The public key of the credential.
-    /// * `privatekey` - TThe private key of the credential.
+    /// * `privatekey` - The private key of the credential.
     /// * `passphrase` - The passphrase of the credential.
     pub fn initSshKeyMemory(
         username: [:0]const u8,
@@ -221,8 +221,8 @@ pub const Credential = extern struct {
     ///
     /// ## Parameters
     /// * `username` - Username to use to authenticate.
-    /// * `user_data` - pointer to user data to be passed to the callback
-    /// * `callback_fn` - the callback function
+    /// * `user_data` - Pointer to user data to be passed to the callback
+    /// * `callback_fn` - The callback function
     pub fn initSshKeyInteractive(
         username: [:0]const u8,
         user_data: anytype,
@@ -371,31 +371,31 @@ pub const Credential = extern struct {
 
     pub const CredentialType = packed struct {
         /// A vanilla user/password request
-        USERPASS_PLAINTEXT: bool = false,
+        userpass_plaintext: bool = false,
 
         /// An SSH key-based authentication request
-        SSH_KEY: bool = false,
+        ssh_key: bool = false,
 
         /// An SSH key-based authentication request, with a custom signature
-        SSH_CUSTOM: bool = false,
+        ssh_custom: bool = false,
 
         /// An NTLM/Negotiate-based authentication request.
-        DEFAULT: bool = false,
+        default: bool = false,
 
         /// An SSH interactive authentication request
-        SSH_INTERACTIVE: bool = false,
+        ssh_interactive: bool = false,
 
         /// Username-only authentication request
         ///
         /// Used as a pre-authentication step if the underlying transport (eg. SSH, with no username in its URL) does not know
         /// which username to use.
-        USERNAME: bool = false,
+        username: bool = false,
 
         /// An SSH key-based authentication request
         ///
         /// Allows credentials to be read from memory instead of files.
         /// Note that because of differences in crypto backend support, it might not be functional.
-        SSH_MEMORY: bool = false,
+        ssh_memory: bool = false,
 
         z_padding: u25 = 0,
 

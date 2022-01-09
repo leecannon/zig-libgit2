@@ -37,7 +37,7 @@ pub const Commit = opaque {
 
         // This check is to prevent formating the oid when we are not going to print anything
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            var buf: [git.Oid.hex_buffer_size]u8 = undefined;
             if (ret.formatHex(&buf)) |slice| {
                 log.debug("successfully fetched commit id: {s}", .{slice});
             } else |_| {
@@ -274,7 +274,7 @@ pub const Commit = opaque {
 
         // This check is to prevent formating the oid when we are not going to print anything
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            var buf: [git.Oid.hex_buffer_size]u8 = undefined;
             if (ret.formatHex(&buf)) |slice| {
                 log.debug("successfully fetched commit tree id: {s}", .{slice});
             } else |_| {
@@ -392,7 +392,7 @@ pub const Commit = opaque {
 
         // This check is to prevent formating the oid when we are not going to print anything
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            var buf: [git.Oid.hex_buffer_size]u8 = undefined;
             const slice = try ret.formatHex(&buf);
             log.debug("successfully amended commit: {s}", .{slice});
         }

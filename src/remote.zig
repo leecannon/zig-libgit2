@@ -20,8 +20,8 @@ pub const Remote = opaque {
     /// This function allows more fine-grained control over the remote creation.
     ///
     /// ## Parameters
-    /// * `url` - the remote's url.
-    /// * `options` - the remote creation options.
+    /// * `url` - The remote's url.
+    /// * `options` - The remote creation options.
     pub fn createWithOptions(url: [:0]const u8, options: CreateOptions) !*Remote {
         log.debug("Remote.createWithOptions called, url: {s}, options: {}", .{ url, options });
 
@@ -59,10 +59,10 @@ pub const Remote = opaque {
         /// Remote creation options flags.
         pub const CreateFlags = packed struct {
             /// Ignore the repository apply.insteadOf configuration.
-            SKIP_INSTEADOF: bool = false,
+            skip_insteadof: bool = false,
 
             /// Don't build a fetchspec from the name if none is set.
-            SKIP_DEFAULT_FETCHSPEC: bool = false,
+            skip_default_fetchspec: bool = false,
 
             z_padding: u30 = 0,
 
@@ -114,7 +114,7 @@ pub const Remote = opaque {
     /// (such as insteadof url substitutions).
     ///
     /// ## Parameters
-    /// * `url` - the remote's url.
+    /// * `url` - The remote's url.
     pub fn createDetached(url: [:0]const u8) !*Remote {
         log.debug("Remote.createDetached called, url: {s}", .{url});
 
@@ -254,7 +254,7 @@ pub const Remote = opaque {
     /// Get a refspec from the remote
     ///
     /// ## Parameters
-    /// * `n` - the refspec to get.
+    /// * `n` - The refspec to get.
     pub fn getRefspec(self: *const Remote, n: usize) ?*const git.Refspec {
         log.debug("Remote.getRefspec called", .{});
 
@@ -271,10 +271,10 @@ pub const Remote = opaque {
     /// Open a connection to a remote.
     ///
     /// ## Parameters
-    /// * `direction` - FETCH if you want to fetch or PUSH if you want to push.
-    /// * `callbacks` - the callbacks to use for this connection.
-    /// * `proxy_opts` - proxy settings.
-    /// * `custom_headers` - extra HTTP headers to use in this connection.
+    /// * `direction` - Fetch if you want to fetch or push if you want to push.
+    /// * `callbacks` - The callbacks to use for this connection.
+    /// * `proxy_opts` - Proxy settings.
+    /// * `custom_headers` - Extra HTTP headers to use in this connection.
     pub fn connect(
         self: *Remote,
         direction: git.Direction,
@@ -496,9 +496,9 @@ pub const Remote = opaque {
         /// 0 on success, otherwise an error
         ///
         /// ## Parameters
-        /// * `refname` - refname specifying to the remote ref
-        /// * `status` - status message sent from the remote
-        /// * `data` - data provided by the caller
+        /// * `refname` - Refname specifying to the remote ref
+        /// * `status` - Status message sent from the remote
+        /// * `data` - Data provided by the caller
         push_update_reference: ?fn (
             refname: [*:0]const u8,
             status: ?[*:0]const u8,
@@ -510,8 +510,8 @@ pub const Remote = opaque {
         /// Callback used to inform of upcoming updates.
         ///
         /// ## Parameters
-        /// * `updates` - an array containing the updates which will be sent as commands to the destination.
-        /// * `len` - number of elements in `updates`
+        /// * `updates` - An array containing the updates which will be sent as commands to the destination.
+        /// * `len` - Number of elements in `updates`
         /// * `payload` - Payload provided by the caller
         push_negotiation: ?fn (updates: [*]*const PushUpdate, len: usize, payload: ?*anyopaque) callconv(.C) c_int = null,
 
@@ -530,7 +530,7 @@ pub const Remote = opaque {
         /// ## Parameters
         /// * `url_resolved` - The buffer to write the resolved URL to
         /// * `url` - The URL to resolve
-        /// * `direction` - direction of the resolution
+        /// * `direction` - Direction of the resolution
         /// * `payload` - Payload provided by the caller
         resolve_url: ?fn (
             url_resolved: *git.Buf,
@@ -541,9 +541,9 @@ pub const Remote = opaque {
 
         /// Argument to the completion callback which tells it which operation finished.
         pub const RemoteCompletion = enum(c_uint) {
-            DOWNLOAD,
-            INDEXING,
-            ERROR,
+            download,
+            indexing,
+            @"error",
         };
 
         /// Represents an update which will be performed on the remote during push
@@ -583,16 +583,16 @@ pub const Remote = opaque {
     /// Automatic tag following option.
     pub const AutoTagOption = enum(c_uint) {
         /// Use the setting from the configuration.
-        UNSPECIFIED = 0,
+        unspecified = 0,
 
         /// Ask the server for tags pointing to objects we're already downloading.
-        AUTO,
+        auto,
 
         /// Don't ask for any tags beyond the refspecs.
-        NONE,
+        none,
 
         /// Ask for all the tags.
-        ALL,
+        all,
     };
 
     /// Fetch options structure.
@@ -601,14 +601,14 @@ pub const Remote = opaque {
         callbacks: RemoteCallbacks = .{},
 
         /// Whether to perform a prune after the fetch.
-        prune: FetchPrune = .UNSPECIFIED,
+        prune: FetchPrune = .unspecified,
 
         /// Whether to write the results to FETCH_HEAD. Defaults to on. Leave this default to behave like git.
         update_fetchhead: bool = true,
 
         /// Determines how to behave regarding tags on the remote, such as auto-dowloading tags for objects we're
         /// downloading or downloading all of them. The default is to auto-follow tags.
-        download_tags: AutoTagOption = .UNSPECIFIED,
+        download_tags: AutoTagOption = .unspecified,
 
         /// Proxy options to use, bu default no proxy is used.
         proxy_opts: git.ProxyOptions = .{},
@@ -619,13 +619,13 @@ pub const Remote = opaque {
         /// Acceptable prune settings from the configuration.
         pub const FetchPrune = enum(c_uint) {
             /// Use the setting from the configuration.
-            UNSPECIFIED = 0,
+            unspecified = 0,
 
             /// Force pruning on.
-            PRUNE,
+            prune,
 
             /// Force pruning off.
-            NO_PRUNE,
+            no_prune,
         };
 
         pub fn makeCOptionsObject(self: FetchOptions) c.git_fetch_options {
@@ -679,8 +679,8 @@ pub const Remote = opaque {
     /// The .idx file will be created and both it and the packfile with be renamed to their final name.
     ///
     /// ## Parameters
-    /// * `refspecs` - the refspecs to use for this negotiation and download. Use an empty array to use the base refspecs
-    /// * `options` - the options to use for this fetch
+    /// * `refspecs` - The refspecs to use for this negotiation and download. Use an empty array to use the base refspecs
+    /// * `options` - The options to use for this fetch
     pub fn download(self: *Remote, refspecs: git.StrArray, options: FetchOptions) !void {
         log.debug("Remote.download called, options: {}", .{options});
 
@@ -720,12 +720,12 @@ pub const Remote = opaque {
     /// Update the tips to the new state.
     ///
     /// ## Parameters
-    /// * `callbacks` - the callback structure to use
-    /// * `update_fetchhead` - whether to write to FETCH_HEAD. Pass true to behave like git.
-    /// * `download_tags` - what the behaviour for downloading tags is for this fetch. 
+    /// * `callbacks` - The callback structure to use
+    /// * `update_fetchhead` - Whether to write to FETCH_HEAD. Pass true to behave like git.
+    /// * `download_tags` - What the behaviour for downloading tags is for this fetch. 
     ///                     This is ignored for push. 
     ///                     This must be the same value passed to `Remote.download()`.
-    /// * `reflog_message` - the message to insert into the reflogs. 
+    /// * `reflog_message` - The message to insert into the reflogs. 
     ///                      If `null` and fetching, the default is "fetch <name>", where <name> is the name of the remote 
     ///                      (or its url, for in-memory remotes). 
     ///                      This parameter is ignored when pushing.
@@ -758,9 +758,9 @@ pub const Remote = opaque {
     /// Download new data and update tips.
     ///
     /// ## Parameters
-    /// * `refspecs` - the refspecs to use for this fetch. Pass an empty array to use the base refspecs.
-    /// * `options` - options to use for this fetch.
-    /// * `reflog_message` - the message to insert into the reflogs. If `null`, the default is "fetch".
+    /// * `refspecs` - The refspecs to use for this fetch. Pass an empty array to use the base refspecs.
+    /// * `options` - Options to use for this fetch.
+    /// * `reflog_message` - The message to insert into the reflogs. If `null`, the default is "fetch".
     pub fn fetch(
         self: *Remote,
         refspecs: git.StrArray,
@@ -801,7 +801,7 @@ pub const Remote = opaque {
     ///
     /// ## Parameters
     /// * `refspecs` - The refspecs to use for pushing. If an empty array is provided, the configured refspecs will be used.
-    /// * `options`  - The options to use for this push.
+    /// * `options` - The options to use for this push.
     pub fn push(self: *Remote, refspecs: git.StrArray, options: PushOptions) !void {
         log.debug("Remote.push called, options: {}", .{options});
 

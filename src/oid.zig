@@ -10,40 +10,40 @@ pub const Oid = extern struct {
     id: [20]u8,
 
     /// Minimum length (in number of hex characters, i.e. packets of 4 bits) of an oid prefix
-    pub const MIN_PREFIX_LEN = c.GIT_OID_MINPREFIXLEN;
+    pub const min_prefix_len = c.GIT_OID_MINPREFIXLEN;
 
     /// Size (in bytes) of a hex formatted oid
-    pub const HEX_BUFFER_SIZE = c.GIT_OID_HEXSZ;
+    pub const hex_buffer_size = c.GIT_OID_HEXSZ;
 
     pub fn formatHexAlloc(self: Oid, allocator: *std.mem.Allocator) ![]const u8 {
-        const buf = try allocator.alloc(u8, HEX_BUFFER_SIZE);
+        const buf = try allocator.alloc(u8, hex_buffer_size);
         errdefer allocator.free(buf);
         return try self.formatHex(buf);
     }
 
-    /// `buf` must be atleast `HEX_BUFFER_SIZE` long.
+    /// `buf` must be atleast `hex_buffer_size` long.
     pub fn formatHex(self: Oid, buf: []u8) ![]const u8 {
-        if (buf.len < HEX_BUFFER_SIZE) return error.BufferTooShort;
+        if (buf.len < hex_buffer_size) return error.BufferTooShort;
 
         try internal.wrapCall("git_oid_fmt", .{ buf.ptr, @ptrCast(*const c.git_oid, &self) });
 
-        return buf[0..HEX_BUFFER_SIZE];
+        return buf[0..hex_buffer_size];
     }
 
     pub fn formatHexAllocZ(self: Oid, allocator: *std.mem.Allocator) ![:0]const u8 {
-        const buf = try allocator.allocSentinel(u8, HEX_BUFFER_SIZE, 0);
+        const buf = try allocator.allocSentinel(u8, hex_buffer_size, 0);
         errdefer allocator.free(buf);
         return (try self.formatHex(buf))[0.. :0];
     }
 
-    /// `buf` must be atleast `HEX_BUFFER_SIZE + 1` long.
+    /// `buf` must be atleast `hex_buffer_size + 1` long.
     pub fn formatHexZ(self: Oid, buf: []u8) ![:0]const u8 {
-        if (buf.len < (HEX_BUFFER_SIZE + 1)) return error.BufferTooShort;
+        if (buf.len < (hex_buffer_size + 1)) return error.BufferTooShort;
 
         try internal.wrapCall("git_oid_fmt", .{ buf.ptr, @ptrCast(*const c.git_oid, &self) });
-        buf[HEX_BUFFER_SIZE] = 0;
+        buf[hex_buffer_size] = 0;
 
-        return buf[0..HEX_BUFFER_SIZE :0];
+        return buf[0..hex_buffer_size :0];
     }
 
     /// Allows partial output
@@ -80,34 +80,34 @@ pub const Oid = extern struct {
     }
 
     pub fn formatHexPathAlloc(self: Oid, allocator: *std.mem.Allocator) ![]const u8 {
-        const buf = try allocator.alloc(u8, HEX_BUFFER_SIZE + 1);
+        const buf = try allocator.alloc(u8, hex_buffer_size + 1);
         errdefer allocator.free(buf);
         return try self.formatHexPath(buf);
     }
 
-    /// `buf` must be atleast `HEX_BUFFER_SIZE + 1` long.
+    /// `buf` must be atleast `hex_buffer_size + 1` long.
     pub fn formatHexPath(self: Oid, buf: []u8) ![]const u8 {
-        if (buf.len < HEX_BUFFER_SIZE + 1) return error.BufferTooShort;
+        if (buf.len < hex_buffer_size + 1) return error.BufferTooShort;
 
         try internal.wrapCall("git_oid_pathfmt", .{ buf.ptr, @ptrCast(*const c.git_oid, &self) });
 
-        return buf[0..HEX_BUFFER_SIZE];
+        return buf[0..hex_buffer_size];
     }
 
     pub fn formatHexPathAllocZ(self: Oid, allocator: *std.mem.Allocator) ![:0]const u8 {
-        const buf = try allocator.allocSentinel(u8, HEX_BUFFER_SIZE + 1, 0);
+        const buf = try allocator.allocSentinel(u8, hex_buffer_size + 1, 0);
         errdefer allocator.free(buf);
         return (try self.formatHexPath(buf))[0.. :0];
     }
 
-    /// `buf` must be atleast `HEX_BUFFER_SIZE + 2` long.
+    /// `buf` must be atleast `hex_buffer_size + 2` long.
     pub fn formatHexPathZ(self: Oid, buf: []u8) ![:0]const u8 {
-        if (buf.len < (HEX_BUFFER_SIZE + 2)) return error.BufferTooShort;
+        if (buf.len < (hex_buffer_size + 2)) return error.BufferTooShort;
 
         try internal.wrapCall("git_oid_pathfmt", .{ buf.ptr, @ptrCast(*const c.git_oid, &self) });
-        buf[HEX_BUFFER_SIZE] = 0;
+        buf[hex_buffer_size] = 0;
 
-        return buf[0..HEX_BUFFER_SIZE :0];
+        return buf[0..hex_buffer_size :0];
     }
 
     pub fn tryParse(str: [:0]const u8) ?Oid {
@@ -195,7 +195,7 @@ pub const OidShortener = opaque {
     pub fn add(self: *OidShortener, str: []const u8) !c_uint {
         log.debug("OidShortener.add called, str: {s}", .{str});
 
-        if (str.len < Oid.HEX_BUFFER_SIZE) return error.BufferTooShort;
+        if (str.len < Oid.hex_buffer_size) return error.BufferTooShort;
         const ret = try internal.wrapCallWithReturn("git_oid_shorten_add", .{
             @ptrCast(*c.git_oid_shorten, self),
             str.ptr,

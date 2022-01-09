@@ -33,7 +33,7 @@ pub const Object = opaque {
 
         // This check is to prevent formating the oid when we are not going to print anything
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            var buf: [git.Oid.hex_buffer_size]u8 = undefined;
             if (ret.formatHex(&buf)) |slice| {
                 log.debug("object id: {s}", .{slice});
             } else |_| {}
@@ -113,9 +113,9 @@ pub const Object = opaque {
     /// Lookup an object that represents a tree entry.
     ///
     /// ## Parameters
-    /// * `treeish` - root object that can be peeled to a tree
-    /// * `path` - relative path from the root object to the desired object
-    /// * `object_type` - type of object desired
+    /// * `treeish` - Root object that can be peeled to a tree
+    /// * `path` - Relative path from the root object to the desired object
+    /// * `object_type` - Type of object desired
     pub fn lookupByPath(treeish: *const Object, path: [:0]const u8, object_type: ObjectType) !*Object {
         log.debug("Object.lookupByPath called, path: {s}, object_type: {}", .{ path, object_type });
 
@@ -138,7 +138,7 @@ pub const Object = opaque {
     /// If the query cannot be satisfied due to the object model, `error.InvalidSpec` will be returned (e.g. trying to peel a blob
     /// to a tree).
     ///
-    /// If you pass `ObjectType.ANY` as the target type, then the object will be peeled until the type changes.
+    /// If you pass `ObjectType.any` as the target type, then the object will be peeled until the type changes.
     /// A tag will be peeled until the referenced object is no longer a tag, and a commit will be peeled to a tree.
     /// Any other object type will return `error.InvalidSpec`.
     ///
@@ -189,21 +189,21 @@ pub const Object = opaque {
 /// Basic type (loose or packed) of any Git object.
 pub const ObjectType = enum(c_int) {
     /// Object can be any of the following
-    ANY = -2,
+    any = -2,
     /// Object is invalid.
-    INVALID = -1,
+    invalid = -1,
     /// A commit object.
-    COMMIT = 1,
+    commit = 1,
     /// A tree (directory listing) object.
-    TREE = 2,
+    tree = 2,
     /// A file revision object.
-    BLOB = 3,
+    blob = 3,
     /// An annotated tag object.
-    TAG = 4,
+    tag = 4,
     /// A delta, base is given by an offset.
-    OFS_DELTA = 6,
+    ofs_delta = 6,
     /// A delta, base is given by object id.
-    REF_DELTA = 7,
+    ref_delta = 7,
 
     /// Convert an object type to its string representation.
     pub fn toString(self: ObjectType) [:0]const u8 {
@@ -215,7 +215,7 @@ pub const ObjectType = enum(c_int) {
 
     /// Convert a string object type representation to it's `ObjectType`.
     ///
-    /// If the given string is not a valid object type `.INVALID` is returned.
+    /// If the given string is not a valid object type `.invalid` is returned.
     pub fn fromString(str: [:0]const u8) ObjectType {
         return @intToEnum(ObjectType, c.git_object_string2type(str.ptr));
     }

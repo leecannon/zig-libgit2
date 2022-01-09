@@ -24,7 +24,7 @@ pub const Tree = opaque {
         );
 
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            var buf: [git.Oid.hex_buffer_size]u8 = undefined;
             if (ret.formatHex(&buf)) |slice| {
                 log.debug("tree id: {s}", .{slice});
             } else |_| {}
@@ -110,7 +110,7 @@ pub const Tree = opaque {
     /// Warning: this must examine every entry in the tree, so it is not fast.
     pub fn entryById(self: *const Tree, id: *const git.Oid) ?*const TreeEntry {
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            var buf: [git.Oid.hex_buffer_size]u8 = undefined;
             if (id.formatHex(&buf)) |slice| {
                 log.debug("Tree.entryById called, id: {s}", .{slice});
             } else |_| {}
@@ -157,14 +157,14 @@ pub const Tree = opaque {
     /// A negative value stops the walk.
     ///
     /// ## Parameters
-    /// * `mode` - Traversal mode (pre or post-order)
-    /// * `user_data` - pointer to user data to be passed to the callback
-    /// * `callback_fn` - the callback function
+    /// * `modeTraversal mode (pre or post-order)
+    /// * `user_data` - Pointer to user data to be passed to the callback
+    /// * `callback_fn` - The callback function
     ///
     /// ## Callback Parameters
     /// * `root` - The current (relative) root
     /// * `entry` - The entry
-    /// * `user_data_ptr` - pointer to user data
+    /// * `user_data_ptr` - Pointer to user data
     pub fn walk(
         self: *const Tree,
         mode: WalkMode,
@@ -197,13 +197,13 @@ pub const Tree = opaque {
     ///
     /// ## Parameters
     /// * `mode` - Traversal mode (pre or post-order)
-    /// * `user_data` - pointer to user data to be passed to the callback
-    /// * `callback_fn` - the callback function
+    /// * `user_data` - Pointer to user data to be passed to the callback
+    /// * `callback_fn` - The callback function
     ///
     /// ## Callback Parameters
     /// * `root` - The current (relative) root
     /// * `entry` - The entry
-    /// * `user_data_ptr` - pointer to user data
+    /// * `user_data_ptr` - Pointer to user data
     pub fn walkWithUserData(
         self: *const Tree,
         mode: WalkMode,
@@ -272,7 +272,7 @@ pub const Tree = opaque {
             );
 
             if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-                var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+                var buf: [git.Oid.hex_buffer_size]u8 = undefined;
                 if (ret.formatHex(&buf)) |slice| {
                     log.debug("entry id: {s}", .{slice});
                 } else |_| {}
@@ -423,7 +423,7 @@ pub const TreeBuilder = opaque {
     /// is of the correct type. If you do not want this behavior, set `Handle.optionSetStrictObjectCreation` to false.
     pub fn insert(self: *TreeBuilder, filename: [:0]const u8, id: *const git.Oid, filemode: git.FileMode) !*const Tree.TreeEntry {
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            var buf: [git.Oid.hex_buffer_size]u8 = undefined;
             if (id.formatHex(&buf)) |slice| {
                 log.debug("TreeBuilder.insert called, filename: {s}, id: {s}, filemode: {}", .{ filename, slice, filemode });
             } else |_| {}
@@ -462,7 +462,7 @@ pub const TreeBuilder = opaque {
     /// if the callback returns `true`, the entry will be filtered (removed from the builder).
     ///
     /// ## Parameters
-    /// * `callback_fn` - the callback function
+    /// * `callback_fn` - The callback function
     ///
     /// ## Callback Parameters
     /// * `entry` - The entry
@@ -489,12 +489,12 @@ pub const TreeBuilder = opaque {
     /// if the callback returns `true`, the entry will be filtered (removed from the builder).
     ///
     /// ## Parameters
-    /// * `user_data` - pointer to user data to be passed to the callback
-    /// * `callback_fn` - the callback function
+    /// * `user_data` - Pointer to user data to be passed to the callback
+    /// * `callback_fn` - The callback function
     ///
     /// ## Callback Parameters
     /// * `entry` - The entry
-    /// * `user_data_ptr` - pointer to user data
+    /// * `user_data_ptr` - Pointer to user data
     pub fn filterWithUserData(
         self: *TreeBuilder,
         user_data: anytype,
@@ -549,14 +549,14 @@ pub const TreeBuilder = opaque {
     /// This matches the pathspec against the files in the given tree.
     ///
     /// If `match_list` is not `null`, this returns a `git.PathspecMatchList`. That contains the list of all matched filenames
-    /// (unless you pass the `MatchOptions.FAILURES_ONLY` options) and may also contain the list of pathspecs with no match (if
-    /// you used the `MatchOptions.FIND_FAILURES` option).
+    /// (unless you pass the `MatchOptions.failures_only` options) and may also contain the list of pathspecs with no match (if
+    /// you used the `MatchOptions.find_failures` option).
     /// You must call `PathspecMatchList.deinit()` on this object.
     ///
     /// ## Parameters
-    /// * `pathspec` - pathspec to be matched
-    /// * `options` - options to control match
-    /// * `match_list` - output list of matches; pass `null` to just get return value
+    /// * `pathspec` - Pathspec to be matched
+    /// * `options` - Options to control match
+    /// * `match_list` - Output list of matches; pass `null` to just get return value
     pub fn pathspecMatch(
         self: *Tree,
         pathspec: *git.Pathspec,

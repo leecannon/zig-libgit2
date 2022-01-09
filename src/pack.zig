@@ -58,7 +58,7 @@ pub const PackBuilder = opaque {
     pub fn insert(self: *PackBuilder, id: *const git.Oid, name: [:0]const u8) !void {
         // This check is to prevent formating the oid when we are not going to print anything
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            var buf: [git.Oid.hex_buffer_size]u8 = undefined;
             const slice = try id.formatHex(&buf);
             log.debug("PackBuilder.insert called, id: {s}, name: {s}", .{
                 slice,
@@ -81,7 +81,7 @@ pub const PackBuilder = opaque {
     pub fn insertRecursive(self: *PackBuilder, id: *const git.Oid, name: [:0]const u8) !void {
         // This check is to prevent formating the oid when we are not going to print anything
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            var buf: [git.Oid.hex_buffer_size]u8 = undefined;
             const slice = try id.formatHex(&buf);
             log.debug("PackBuilder.insertRecursive called, id: {s}, name: {s}", .{
                 slice,
@@ -104,7 +104,7 @@ pub const PackBuilder = opaque {
     pub fn insertTree(self: *PackBuilder, id: *const git.Oid) !void {
         // This check is to prevent formating the oid when we are not going to print anything
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            var buf: [git.Oid.hex_buffer_size]u8 = undefined;
             const slice = try id.formatHex(&buf);
             log.debug("PackBuilder.insertTree called, id: {s}", .{
                 slice,
@@ -125,7 +125,7 @@ pub const PackBuilder = opaque {
     pub fn insertCommit(self: *PackBuilder, id: *const git.Oid) !void {
         // This check is to prevent formating the oid when we are not going to print anything
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            var buf: [git.Oid.hex_buffer_size]u8 = undefined;
             const slice = try id.formatHex(&buf);
             log.debug("PackBuilder.insertCommit called, id: {s}", .{
                 slice,
@@ -176,7 +176,7 @@ pub const PackBuilder = opaque {
     ///
     /// ## Parameters
     /// * `path` - Path to the directory where the packfile and index should be stored, or `null` for default location
-    /// * `mode` - permissions to use creating a packfile or 0 for defaults
+    /// * `mode` - Permissions to use creating a packfile or 0 for defaults
     pub fn writeToFile(self: *PackBuilder, path: ?[:0]const u8, mode: c_uint) !void {
         log.debug("PackBuilder.writeToFile called, path: {s}, mode: {o}", .{ path, mode });
 
@@ -197,11 +197,11 @@ pub const PackBuilder = opaque {
     ///
     /// ## Parameters
     /// * `path` - Path to the directory where the packfile and index should be stored, or `null` for default location
-    /// * `mode` - permissions to use creating a packfile or 0 for defaults
-    /// * `callback_fn` - function to call with progress information from the indexer
+    /// * `mode` - Permissions to use creating a packfile or 0 for defaults
+    /// * `callback_fn` - Function to call with progress information from the indexer
     ///
     /// ## Callback Parameters
-    /// * `stats` - state of the transfer
+    /// * `stats` - State of the transfer
     pub fn writeToFileCallback(
         self: *PackBuilder,
         path: ?[:0]const u8,
@@ -225,12 +225,12 @@ pub const PackBuilder = opaque {
     ///
     /// ## Parameters
     /// * `path` - Path to the directory where the packfile and index should be stored, or `null` for default location
-    /// * `mode` - permissions to use creating a packfile or 0 for defaults
-    /// * `user_data` - pointer to user data to be passed to the callback
-    /// * `callback_fn` - function to call with progress information from the indexer
+    /// * `mode` - Permissions to use creating a packfile or 0 for defaults
+    /// * `user_data` - Pointer to user data to be passed to the callback
+    /// * `callback_fn` - Function to call with progress information from the indexer
     ///
     /// ## Callback Parameters
-    /// * `stats` - state of the transfer
+    /// * `stats` - State of the transfer
     /// * `user_data_ptr` - The user data
     pub fn writeToFileCallbackWithUserData(
         self: *PackBuilder,
@@ -282,7 +282,7 @@ pub const PackBuilder = opaque {
 
         // This check is to prevent formating the oid when we are not going to print anything
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            var buf: [git.Oid.hex_buffer_size]u8 = undefined;
             if (ret.formatHex(&buf)) |slice| {
                 log.debug("packfile hash: {s}", .{slice});
             } else |_| {}
@@ -296,10 +296,10 @@ pub const PackBuilder = opaque {
     /// Return non-zero from the callback to terminate the iteration
     ///
     /// ## Parameters
-    /// * `callback_fn` - the callback to call with each packed object's buffer
+    /// * `callback_fn` - The callback to call with each packed object's buffer
     ///
     /// ## Callback Parameters
-    /// * `object_data` - slice of the objects data
+    /// * `object_data` - Slice of the objects data
     pub fn foreach(
         self: *PackBuilder,
         comptime callback_fn: fn (object_data: []u8) c_int,
@@ -322,11 +322,11 @@ pub const PackBuilder = opaque {
     /// Return non-zero from the callback to terminate the iteration
     ///
     /// ## Parameters
-    /// * `user_data` - pointer to user data to be passed to the callback
-    /// * `callback_fn` - the callback to call with each packed object's buffer
+    /// * `user_data` - Pointer to user data to be passed to the callback
+    /// * `callback_fn` - The callback to call with each packed object's buffer
     ///
     /// ## Callback Parameters
-    /// * `object_data` - slice of the objects data
+    /// * `object_data` - Slice of the objects data
     /// * `user_data_ptr` - The user data
     pub fn foreachWithUserData(
         self: *PackBuilder,
@@ -363,8 +363,8 @@ pub const PackBuilder = opaque {
     /// Set the callbacks for a packbuilder
     ///
     /// ## Parameters
-    /// * `callback_fn` -  Function to call with progress information during pack building. 
-    ///                    Be aware that this is called inline with pack building operations, so performance may be affected.
+    /// * `callback_fn` - Function to call with progress information during pack building. 
+    ///                   Be aware that this is called inline with pack building operations, so performance may be affected.
     pub fn setCallbacks(
         self: *PackBuilder,
         comptime callback_fn: fn (
@@ -391,9 +391,9 @@ pub const PackBuilder = opaque {
     /// Set the callbacks for a packbuilder
     ///
     /// ## Parameters
-    /// * `user_data` - pointer to user data to be passed to the callback
-    /// * `callback_fn` -  Function to call with progress information during pack building. 
-    ///                    Be aware that this is called inline with pack building operations, so performance may be affected.
+    /// * `user_data` - Pointer to user data to be passed to the callback
+    /// * `callback_fn` - Function to call with progress information during pack building. 
+    ///                   Be aware that this is called inline with pack building operations, so performance may be affected.
     pub fn setCallbacksWithUserData(
         self: *PackBuilder,
         user_data: anytype,
@@ -441,8 +441,8 @@ pub const PackBuilder = opaque {
 
 /// Stages that are reported by the packbuilder progress callback.
 pub const PackbuilderStage = enum(c_uint) {
-    ADDING_OBJECTS = 0,
-    DELTAFICATION = 1,
+    adding_objects = 0,
+    deltafication = 1,
 };
 
 comptime {

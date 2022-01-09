@@ -28,7 +28,7 @@ pub const Handle = struct {
     /// back it.
     ///
     /// ## Parameters
-    /// * `path` - the path to the index
+    /// * `path` - The path to the index
     pub fn indexOpen(self: Handle, path: [:0]const u8) !*git.Index {
         _ = self;
 
@@ -68,7 +68,7 @@ pub const Handle = struct {
     /// Create a new repository in the given directory.
     ///
     /// ## Parameters
-    /// * `path` - the path to the repository
+    /// * `path` - The path to the repository
     /// * `is_bare` - If true, a Git repository without a working directory is created at the pointed path. 
     ///               If false, provided path will be considered as the working directory into which the .git directory will be 
     ///               created.
@@ -93,7 +93,7 @@ pub const Handle = struct {
     /// Create a new repository in the given directory with extended options.
     ///
     /// ## Parameters
-    /// * `path` - the path to the repository
+    /// * `path` - The path to the repository
     /// * `options` - The options to use during the creation of the repository
     pub fn repositoryInitExtended(self: Handle, path: [:0]const u8, options: RepositoryInitOptions) !*git.Repository {
         _ = self;
@@ -240,7 +240,7 @@ pub const Handle = struct {
     /// Open a repository.
     ///
     /// ## Parameters
-    /// * `path` - the path to the repository
+    /// * `path` - The path to the repository
     pub fn repositoryOpen(self: Handle, path: [:0]const u8) !*git.Repository {
         _ = self;
 
@@ -263,9 +263,9 @@ pub const Handle = struct {
     /// *NOTE*: `path` can only be null if the `open_from_env` option is used.
     ///
     /// ## Parameters
-    /// * `path` - the path to the repository
-    /// * `flags` - options controlling how the repository is opened
-    /// * `ceiling_dirs` - A `PATH_LIST_SEPARATOR` delimited list of path prefixes at which the search for a containing
+    /// * `path` - The path to the repository
+    /// * `flags` - Options controlling how the repository is opened
+    /// * `ceiling_dirs` - A `path_list_separator` delimited list of path prefixes at which the search for a containing
     ///                    repository should terminate.
     pub fn repositoryOpenExtended(
         self: Handle,
@@ -347,7 +347,7 @@ pub const Handle = struct {
     /// Open a bare repository.
     ///
     /// ## Parameters
-    /// * `path` - the path to the repository
+    /// * `path` - The path to the repository
     pub fn repositoryOpenBare(self: Handle, path: [:0]const u8) !*git.Repository {
         _ = self;
 
@@ -373,7 +373,7 @@ pub const Handle = struct {
     /// ## Parameters
     /// * `start_path` - The path where the lookup starts.
     /// * `across_fs` - If true, then the lookup will not stop when a filesystem device change is encountered.
-    /// * `ceiling_dirs` - A `PATH_LIST_SEPARATOR` separated list of absolute symbolic link free paths. The lookup will stop 
+    /// * `ceiling_dirs` - A `path_list_separator` separated list of absolute symbolic link free paths. The lookup will stop 
     ///                    when any of this paths is reached.
     pub fn repositoryDiscover(self: Handle, start_path: [:0]const u8, across_fs: bool, ceiling_dirs: ?[:0]const u8) !git.Buf {
         _ = self;
@@ -411,7 +411,7 @@ pub const Handle = struct {
         bare: bool = false,
 
         /// Whether to use a fetch or a copy of the object database.
-        local: LocalType = .LOCAL_AUTO,
+        local: LocalType = .local_auto,
 
         /// Branch of the remote repository to checkout. `null` means the default.
         checkout_branch: ?[:0]const u8 = null,
@@ -422,10 +422,10 @@ pub const Handle = struct {
         /// Return 0, or a negative value to indicate error
         ///
         /// ## Parameters
-        /// * `out` - the resulting repository
-        /// * `path` - path in which to create the repository
-        /// * `bare` - whether the repository is bare. This is the value from the clone options
-        /// * `payload` - payload specified by the options
+        /// * `out` - The resulting repository
+        /// * `path` - Path in which to create the repository
+        /// * `bare` - Whether the repository is bare. This is the value from the clone options
+        /// * `payload` - Payload specified by the options
         repository_cb: ?fn (
             out: **git.Repository,
             path: [*:0]const u8,
@@ -443,11 +443,11 @@ pub const Handle = struct {
         /// Return 0, or an error code
         ///
         /// ## Parameters
-        /// * `out` - the resulting remote
-        /// * `repo` - the repository in which to create the remote
-        /// * `name` - the remote's name
-        /// * `url` - the remote's url
-        /// * `payload` - an opaque payload
+        /// * `out` - The resulting remote
+        /// * `repo` - The repository in which to create the remote
+        /// * `name` - The remote's name
+        /// * `url` - The remote's url
+        /// * `payload` - An opaque payload
         remote_cb: ?fn (
             out: **git.Remote,
             repo: *git.Repository,
@@ -463,13 +463,13 @@ pub const Handle = struct {
         pub const LocalType = enum(c_uint) {
             /// Auto-detect (default), libgit2 will bypass the git-aware transport for local paths, but use a normal fetch for
             /// `file://` urls.
-            LOCAL_AUTO,
+            local_auto,
             /// Bypass the git-aware transport even for a `file://` url.
-            LOCAL,
+            local,
             /// Do no bypass the git-aware transport
-            NO_LOCAL,
+            no_local,
             /// Bypass the git-aware transport, but do not try to use hardlinks.
-            LOCAL_NO_LINKS,
+            local_no_links,
         };
 
         fn makeCOptionsObject(self: CloneOptions) c.git_clone_options {
@@ -606,7 +606,7 @@ pub const Handle = struct {
         return buf;
     }
 
-    /// `path` should be a list of directories delimited by PATH_LIST_SEPARATOR.
+    /// `path` should be a list of directories delimited by path_list_separator.
     /// Pass `null` to reset to the default (generally based on environment variables). Use magic path `$PATH` to include the old
     /// value of the path (if you want to prepend or append, for instance).
     pub fn optionSetSearchPath(self: Handle, level: git.Config.Level, path: ?[:0]const u8) !void {
@@ -920,8 +920,8 @@ pub const Handle = struct {
     /// Optionally, it can remove lines which start with the comment character.
     ///
     /// ## Parameters
-    /// * `message` - the message to be prettified.
-    /// * `strip_comment_char` - if non-`null` lines starting with this character are considered to be comments and removed
+    /// * `message` - The message to be prettified.
+    /// * `strip_comment_char` - If non-`null` lines starting with this character are considered to be comments and removed
     pub fn messagePrettify(self: Handle, message: [:0]const u8, strip_comment_char: ?u8) !git.Buf {
         _ = self;
 
@@ -975,31 +975,31 @@ pub const Handle = struct {
     /// When tracing is set to a particular level, callers will be provided tracing at the given level and all lower levels.
     pub const TraceLevel = enum(c_uint) {
         /// No tracing will be performed.
-        NONE = 0,
+        none = 0,
         /// Severe errors that may impact the program's execution
-        FATAL = 1,
+        fatal = 1,
         /// Errors that do not impact the program's execution
-        ERROR = 2,
+        err = 2,
         /// Warnings that suggest abnormal data
-        WARN = 3,
+        warn = 3,
         /// Informational messages about program execution
-        INFO = 4,
+        info = 4,
         /// Detailed data that allows for debugging
-        DEBUG = 5,
+        debug = 5,
         /// Exceptionally detailed debugging data
-        TRACE = 6,
+        trace = 6,
     };
 
     /// Sets the system tracing configuration to the specified level with the specified callback.
     /// When system events occur at a level equal to, or lower than, the given level they will be reported to the given callback.
     ///
     /// ## Parameters
-    /// * `level` - level to set tracing to
-    /// * `callback_fn` - the callback function to call with trace data
+    /// * `level` - Level to set tracing to
+    /// * `callback_fn` - The callback function to call with trace data
     ///
     /// ## Callback Parameters
-    /// * `level` - the trace level
-    /// * `message` - the message
+    /// * `level` - The trace level
+    /// * `message` - The message
     pub fn traceSet(
         self: Handle,
         level: TraceLevel,

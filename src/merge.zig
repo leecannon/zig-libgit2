@@ -36,25 +36,25 @@ pub const FileFavor = enum(c_uint) {
     /// When a region of a file is changed in both branches, a conflict will be recorded in the index so that `git_checkout` can
     /// produce a merge file with conflict markers in the working directory.
     /// This is the default.
-    NORMAL = 0,
+    normal = 0,
 
     /// When a region of a file is changed in both branches, the file created in the index will contain the "ours" side of any
     /// conflicting region. The index will not record a conflict.
-    OURS = 1,
+    ours = 1,
 
     /// When a region of a file is changed in both branches, the file created in the index will contain the "theirs" side of any
     /// conflicting region. The index will not record a conflict.
-    THEIRS = 2,
+    theirs = 2,
 
     /// When a region of a file is changed in both branches, the file created in the index will contain each unique line from each
     /// side, which has the result of combining both files. The index will not record a conflict.
-    UNION = 3,
+    @"union" = 3,
 };
 
 pub const MergeOptions = struct {
     flags: MergeFlags = .{},
 
-    /// Similarity to consider a file renamed (default 50). If `Flags.IND_RENAMES` is enabled, added files will be compared with
+    /// Similarity to consider a file renamed (default 50). If `Flags.find_renames` is enabled, added files will be compared with
     /// deleted files to determine their similarity. Files that are more similar than the rename threshold (percentage-wise) will
     /// be treated as a rename.
     rename_threshold: c_uint = 0,
@@ -76,25 +76,25 @@ pub const MergeOptions = struct {
     default_driver: ?[:0]const u8 = null,
 
     /// Flags for handling conflicting content, to be used with the standard (`text`) merge driver.
-    file_favor: FileFavor = .NORMAL,
+    file_favor: FileFavor = .normal,
 
     file_flags: FileFlags = .{},
 
     pub const MergeFlags = packed struct {
         /// Detect renames that occur between the common ancestor and the "ours" side or the common ancestor and the "theirs"
         /// side. This will enable the ability to merge between a modified and renamed file.
-        FIND_RENAMES: bool = false,
+        find_renames: bool = false,
 
         /// If a conflict occurs, exit immediately instead of attempting to continue resolving conflicts. The merge operation will
-        /// fail with `GitError.MERGECONFLICT` and no index will be returned.
-        FAIL_ON_CONFLICT: bool = false,
+        /// fail with `GitError.MergeConflict` and no index will be returned.
+        fail_on_conflict: bool = false,
 
         /// Do not write the REUC extension on the generated index
-        SKIP_REUC: bool = false,
+        skip_reuc: bool = false,
 
         /// If the commits being merged have multiple merge bases, do not build a recursive merge base (by merging the multiple
         /// merge bases), instead simply use the first base.  This flag provides a similar merge base to `git-merge-resolve`.
-        NO_RECURSIVE: bool = false,
+        no_recursive: bool = false,
 
         z_padding: u12 = 0,
         z_padding2: u16 = 0,
@@ -126,28 +126,28 @@ pub const MergeOptions = struct {
 
     pub const FileFlags = packed struct {
         /// Create standard conflicted merge files
-        STYLE_MERGE: bool = false,
+        style_merge: bool = false,
 
         /// Create diff3-style files
-        STYLE_DIFF3: bool = false,
+        style_diff3: bool = false,
 
         /// Condense non-alphanumeric regions for simplified diff file
-        SIMPLIFY_ALNUM: bool = false,
+        simplify_alnum: bool = false,
 
         /// Ignore all whitespace
-        IGNORE_WHITESPACE: bool = false,
+        ignore_whitespace: bool = false,
 
         /// Ignore changes in amount of whitespace
-        IGNORE_WHITESPACE_CHANGE: bool = false,
+        ignore_whitespace_change: bool = false,
 
         /// Ignore whitespace at end of line
-        IGNORE_WHITESPACE_EOL: bool = false,
+        ignore_whitespace_eol: bool = false,
 
         /// Use the "patience diff" algorithm
-        DIFF_PATIENCE: bool = false,
+        diff_patience: bool = false,
 
         /// Take extra time to find minimal diff
-        DIFF_MINIMAL: bool = false,
+        diff_minimal: bool = false,
 
         z_padding: u8 = 0,
         z_padding2: u16 = 0,

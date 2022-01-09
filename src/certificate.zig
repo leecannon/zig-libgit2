@@ -11,14 +11,14 @@ pub const Certificate = extern struct {
 
     pub const CertificateType = enum(c_uint) {
         ///  No information about the certificate is available. This may happen when using curl.
-        NONE = 0,
+        none = 0,
         ///  The `data` argument to the callback will be a pointer to the DER-encoded data.
-        X509,
+        x509,
         ///  The `data` argument to the callback will be a pointer to a `HostkeyCertificate` structure.
-        HOSTKEY_LIBSSH2,
+        hostkey_libssh2,
         ///  The `data` argument to the callback will be a pointer to a `git.StrArray` with `name:content` strings containing
         ///  information about the certificate. This is used when using  curl.
-        STRARRAY,
+        strarray,
     };
 
     /// Hostkey information taken from libssh2
@@ -28,34 +28,34 @@ pub const Certificate = extern struct {
 
         available: HostkeyAvailableFields,
 
-        /// Hostkey hash. If `available` has `MD5` set, this will have the MD5 hash of the hostkey.
+        /// Hostkey hash. If `available` has `md5` set, this will have the MD5 hash of the hostkey.
         hash_md5: [16]u8,
 
-        /// Hostkey hash. If `available` has `SHA1` set, this will have the SHA1 hash of the hostkey.
+        /// Hostkey hash. If `available` has `sha1` set, this will have the SHA1 hash of the hostkey.
         hash_sha1: [20]u8,
 
-        /// Hostkey hash. If `available` has `SHA256` set, this will have the SHA256 hash of the hostkey.
+        /// Hostkey hash. If `available` has `sha256` set, this will have the SHA256 hash of the hostkey.
         hash_sha256: [32]u8,
 
-        /// Raw hostkey type. If `available` has `RAW` set, this will have the type of the raw hostkey.
+        /// Raw hostkey type. If `available` has `raw` set, this will have the type of the raw hostkey.
         raw_type: RawType,
 
-        /// Pointer to the raw hostkey. If `available` has `RAW` set, this will be the raw contents of the hostkey.
+        /// Pointer to the raw hostkey. If `available` has `raw` set, this will be the raw contents of the hostkey.
         hostkey: [*]const u8,
 
-        /// Length of the raw hostkey. If `available` has `RAW` set, this will have the length of the raw contents of the hostkey.
+        /// Length of the raw hostkey. If `available` has `raw` set, this will have the length of the raw contents of the hostkey.
         hostkey_len: usize,
 
         /// A bitmask containing the available fields.
         pub const HostkeyAvailableFields = packed struct {
             /// MD5 is available
-            MD5: bool,
+            md5: bool,
             /// SHA-1 is available
-            SHA1: bool,
+            sha1: bool,
             /// SHA-256 is available
-            SHA256: bool,
+            sha256: bool,
             /// Raw hostkey is available
-            RAW: bool,
+            raw: bool,
 
             z_padding: u28 = 0,
 
@@ -86,19 +86,19 @@ pub const Certificate = extern struct {
 
         pub const RawType = enum(c_uint) {
             /// The raw key is of an unknown type.
-            UNKNOWN = 0,
+            unknown = 0,
             /// The raw key is an RSA key.
-            RSA = 1,
+            rsa = 1,
             /// The raw key is a DSS key.
-            DSS = 2,
+            dss = 2,
             /// The raw key is a ECDSA 256 key.
-            KEY_ECDSA_256 = 3,
+            key_ecdsa_256 = 3,
             /// The raw key is a ECDSA 384 key.
-            KEY_ECDSA_384 = 4,
+            key_ecdsa_384 = 4,
             /// The raw key is a ECDSA 521 key.
-            KEY_ECDSA_521 = 5,
+            key_ecdsa_521 = 5,
             /// The raw key is a ED25519 key.
-            KEY_ED25519 = 6,
+            key_ed25519 = 6,
         };
 
         test {
@@ -112,7 +112,7 @@ pub const Certificate = extern struct {
     };
 
     /// X.509 certificate information
-    pub const X509Certificate = extern struct {
+    pub const x509Certificate = extern struct {
         parent: Certificate,
 
         /// Pointer to the X.509 certificate data
@@ -122,8 +122,8 @@ pub const Certificate = extern struct {
         length: usize,
 
         test {
-            try std.testing.expectEqual(@sizeOf(c.git_cert_x509), @sizeOf(X509Certificate));
-            try std.testing.expectEqual(@bitSizeOf(c.git_cert_x509), @bitSizeOf(X509Certificate));
+            try std.testing.expectEqual(@sizeOf(c.git_cert_x509), @sizeOf(x509Certificate));
+            try std.testing.expectEqual(@bitSizeOf(c.git_cert_x509), @bitSizeOf(x509Certificate));
         }
 
         comptime {

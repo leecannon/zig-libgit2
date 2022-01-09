@@ -24,7 +24,7 @@ pub const WriteStream = extern struct {
 
         // This check is to prevent formating the oid when we are not going to print anything
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            var buf: [git.Oid.hex_buffer_size]u8 = undefined;
             const slice = try ret.formatHex(&buf);
             log.debug("successfully fetched blob id: {s}", .{slice});
         }

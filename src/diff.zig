@@ -27,14 +27,14 @@ pub const Diff = opaque {
     /// This matches the pathspec against the files in the given diff list.
     ///
     /// If `match_list` is not `null`, this returns a `git.PathspecMatchList`. That contains the list of all matched filenames
-    /// (unless you pass the `MatchOptions.FAILURES_ONLY` options) and may also contain the list of pathspecs with no match (if
-    /// you used the `MatchOptions.FIND_FAILURES` option).
+    /// (unless you pass the `MatchOptions.failures_only` options) and may also contain the list of pathspecs with no match (if
+    /// you used the `MatchOptions.find_failures` option).
     /// You must call `PathspecMatchList.deinit()` on this object.
     ///
     /// ## Parameters
-    /// * `pathspec` - pathspec to be matched
-    /// * `options` - options to control match
-    /// * `match_list` - output list of matches; pass `null` to just get return value
+    /// * `pathspec` - Pathspec to be matched
+    /// * `options` - Options to control match
+    /// * `match_list` - Output list of matches; pass `null` to just get return value
     pub fn pathspecMatch(
         self: *Diff,
         pathspec: *git.Pathspec,
@@ -66,7 +66,7 @@ pub const Diff = opaque {
 /// context and other properties of how hunks are generated. Each hunk also comes with a header that described where it starts and
 /// ends in both the old and new versions in the delta.
 pub const DiffHunk = extern struct {
-    pub const HEADER_SIZE: usize = c.GIT_DIFF_HUNK_HEADER_SIZE;
+    pub const header_size: usize = c.GIT_DIFF_HUNK_HEADER_SIZE;
 
     /// Starting line number in old_file
     old_start: c_int,
@@ -78,13 +78,10 @@ pub const DiffHunk = extern struct {
     new_lines: c_int,
     /// Number of bytes in header text
     header_len: usize,
-    /// Header text, NUL-byte terminated
     /// Use `header`
-    z_header: [HEADER_SIZE]u8,
+    z_header: [header_size]u8,
 
     pub fn header(self: DiffHunk) [:0]const u8 {
-        // for some reason this gives `expected type '[:0]const u8', found '[]const u8'`
-        // return std.mem.sliceTo(&self.z_header, 0);
         return std.mem.sliceTo(@ptrCast([*:0]const u8, &self.z_header), 0);
     }
 
@@ -107,7 +104,7 @@ pub const DiffHunk = extern struct {
 /// changed.
 ///
 /// The `old_file` represents the "from" side of the diff and the `new_file` represents to "to" side of the diff.  What those
-/// means depend on the function that was used to generate the diff. You can also use the `GIT_DIFF_REVERSE` flag to flip it
+/// means depend on the function that was used to generate the diff. You can also use the `reverse` flag to flip it
 /// around.
 ///
 /// Although the two sides of the delta are named `old_file` and `new_file`, they actually may correspond to entries that
@@ -115,22 +112,22 @@ pub const DiffHunk = extern struct {
 /// ignored/untracked directories).
 ///
 /// Under some circumstances, in the name of efficiency, not all fields will be filled in, but we generally try to fill in as much
-/// as possible. One example is that the `flags` field may not have either the `BINARY` or the `NOT_BINARY` flag set to avoid
+/// as possible. One example is that the `flags` field may not have either the `binary` or the `not_binary` flag set to avoid
 /// examining file contents if you do not pass in hunk and/or line callbacks to the diff foreach iteration function.  It will just
 /// use the git attributes for those files.
 ///
 /// The similarity score is zero unless you call `git_diff_find_similar()` which does a similarity analysis of files in the diff.
 /// Use that function to do rename and copy detection, and to split heavily modified files in add/delete pairs. After that call,
-/// deltas with a status of GIT_DELTA_RENAMED or GIT_DELTA_COPIED will have a similarity score between 0 and 100 indicating how
+/// deltas with a status of `renamed` or `copied` will have a similarity score between 0 and 100 indicating how
 /// similar the old and new sides are.
 ///
 /// If you ask `git_diff_find_similar` to find heavily modified files to break, but to not *actually* break the records, then
-/// GIT_DELTA_MODIFIED records may have a non-zero similarity score if the self-similarity is below the split threshold. To
+/// modified records may have a non-zero similarity score if the self-similarity is below the split threshold. To
 /// display this value like core Git, invert the score (a la `printf("M%03d", 100 - delta->similarity)`).
 pub const DiffDelta = extern struct {
     status: DeltaType,
     flags: DiffFlags,
-    /// for RENAMED and COPIED, value 0-100
+    /// for renamed and copied, value 0-100
     similarity: u16,
     number_of_files: u16,
     old_file: DiffFile,
@@ -138,33 +135,33 @@ pub const DiffDelta = extern struct {
 
     /// What type of change is described by a git_diff_delta?
     ///
-    /// `GIT_DELTA_RENAMED` and `GIT_DELTA_COPIED` will only show up if you run `git_diff_find_similar()` on the diff object.
+    /// `renamed` and `copied` will only show up if you run `git_diff_find_similar()` on the diff object.
     ///
-    /// `GIT_DELTA_TYPECHANGE` only shows up given `GIT_DIFF_INCLUDE_TYPECHANGE` in the option flags (otherwise type changes will
-    /// be split into ADDED / DELETED pairs).
+    /// `typechange` only shows up given `GIT_DIFF_INCLUDE_typechange` in the option flags (otherwise type changes will
+    /// be split into added / deleted pairs).
     pub const DeltaType = enum(c_uint) {
         /// no changes
-        UNMODIFIED,
+        unmodified,
         /// entry does not exist in old version
-        ADDED,
+        added,
         /// entry does not exist in new version
-        DELETED,
+        deleted,
         /// entry content changed between old and new
-        MODIFIED,
+        modified,
         /// entry was renamed between old and new
-        RENAMED,
+        renamed,
         /// entry was copied from another old entry
-        COPIED,
+        copied,
         /// entry is ignored item in workdir
-        IGNORED,
+        ignored,
         /// entry is untracked item in workdir
-        UNTRACKED,
+        untracked,
         /// type of entry changed between old and new 
-        TYPECHANGE,
+        typechange,
         /// entry is unreadable
-        UNREADABLE,
+        unreadable,
         /// entry in the index is conflicted
-        CONFLICTED,
+        conflicted,
     };
 
     test {
@@ -184,13 +181,13 @@ pub const DiffDelta = extern struct {
 /// for internal or future use.
 pub const DiffFlags = packed struct {
     /// file(s) treated as binary data
-    BINARY: bool = false,
+    binary: bool = false,
     /// file(s) treated as text data
-    NOT_BINARY: bool = false,
+    not_binary: bool = false,
     /// `id` value is known correct
-    VALID_ID: bool = false,
+    valid_id: bool = false,
     /// file exists at this side of the delta
-    EXISTS: bool = false,
+    exists: bool = false,
 
     z_padding1: u12 = 0,
     z_padding2: u16 = 0,
@@ -226,7 +223,7 @@ pub const DiffFlags = packed struct {
 /// (although that only if you are tracking type changes or ignored/untracked directories).
 pub const DiffFile = extern struct {
     /// The `git_oid` of the item.  If the entry represents an absent side of a diff (e.g. the `old_file` of a
-    /// `GIT_DELTA_ADDED` delta), then the oid will be zeroes.
+    /// `GIT_DELTA_added` delta), then the oid will be zeroes.
     id: git.Oid,
     /// Path to the entry relative to the working directory of the repository.
     path: [*:0]const u8,
@@ -235,7 +232,7 @@ pub const DiffFile = extern struct {
     flags: DiffFlags,
     /// Roughly, the stat() `st_mode` value for the item.
     mode: git.FileMode,
-    /// Represents the known length of the `id` field, when converted to a hex string.  It is generally `GIT_OID_HEXSZ`,
+    /// Represents the known length of the `id` field, when converted to a hex string.  It is generally `git.Oid.hex_buffer_size`,
     /// unless this delta was created from reading a patch file, in which case it may be abbreviated to something reasonable,
     /// like 7 characters.
     id_abbrev: u16,

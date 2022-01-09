@@ -177,7 +177,7 @@ test "item paths" {
     var test_handle = try TestHandle.init("item_paths");
     defer test_handle.deinit();
 
-    var buf = try test_handle.repo.itemPath(.CONFIG);
+    var buf = try test_handle.repo.itemPath(.config);
     defer buf.deinit();
 
     const expected = try std.fmt.allocPrintZ(std.testing.allocator, "{s}/.git/config", .{test_handle.repo_path[1..]});
@@ -286,7 +286,7 @@ test "fresh repo state is none" {
     var test_handle = try TestHandle.init("fresh_repo_state_none");
     defer test_handle.deinit();
 
-    try std.testing.expectEqual(git.Repository.RepositoryState.NONE, test_handle.repo.state());
+    try std.testing.expectEqual(git.Repository.RepositoryState.none, test_handle.repo.state());
 }
 
 test "fresh repo has no namespace" {
@@ -407,9 +407,9 @@ test "new index capabilities" {
     const cap = index.indexCapabilities();
 
     try std.testing.expect(!cap.isGetCapabilitiesFromOwner());
-    try std.testing.expect(!cap.IGNORE_CASE);
-    try std.testing.expect(!cap.NO_FILEMODE);
-    try std.testing.expect(!cap.NO_SYMLINKS);
+    try std.testing.expect(!cap.ignore_case);
+    try std.testing.expect(!cap.no_filemode);
+    try std.testing.expect(!cap.no_symlinks);
 }
 
 test "set maximum mmap window size" {

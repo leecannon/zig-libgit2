@@ -25,7 +25,7 @@ pub const AnnotatedCommit = opaque {
 
         // This check is to prevent formating the oid when we are not going to print anything
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-            var buf: [git.Oid.HEX_BUFFER_SIZE]u8 = undefined;
+            var buf: [git.Oid.hex_buffer_size]u8 = undefined;
             const slice = try oid.formatHex(&buf);
             log.debug("annotated commit id acquired: {s}", .{slice});
         }

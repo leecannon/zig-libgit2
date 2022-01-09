@@ -16,7 +16,7 @@ pub fn main() !void {
     defer git_buf.deinit();
     std.log.info("found repo @ {s}", .{git_buf.toSlice()});
 
-    const t = try handle.optionGetSearchPath(.SYSTEM);
+    const t = try handle.optionGetSearchPath(.system);
     std.log.info("search path: {s}", .{t.toSlice()});
 }
 

@@ -7,8 +7,8 @@ const git = @import("git.zig");
 /// We need this because we need to know whether we should call git-upload-pack or git-receive-pack on the remote
 /// end when get_refs gets called.
 pub const Direction = enum(c_uint) {
-    FETCH = 0,
-    PUSH = 1,
+    fetch = 0,
+    push = 1,
 };
 
 comptime {

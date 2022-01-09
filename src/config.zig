@@ -577,10 +577,10 @@ pub const Config = opaque {
         map_value: c_int,
 
         pub const MapType = enum(c_int) {
-            FALSE = 0,
-            TRUE = 1,
-            INT32 = 2,
-            STRING = 3,
+            @"false" = 0,
+            @"true" = 1,
+            int32 = 2,
+            string = 3,
         };
 
         pub fn lookupMapValue(maps: []const ConfigMap, value: [:0]const u8) !c_int {
@@ -613,20 +613,20 @@ pub const Config = opaque {
     /// Priority level of a config file.
     pub const Level = enum(c_int) {
         /// System-wide on Windows, for compatibility with portable git
-        PROGRAMDATA = 1,
+        programdata = 1,
         /// System-wide configuration file; /etc/gitconfig on Linux systems
-        SYSTEM = 2,
+        system = 2,
         /// XDG compatible configuration file; typically ~/.config/git/config
-        XDG = 3,
+        xdg = 3,
         /// User-specific configuration file (also called Global configuration file); typically ~/.gitconfig
-        GLOBAL = 4,
+        global = 4,
         /// Repository specific configuration file; $WORK_DIR/.git/config on non-bare repos
-        LOCAL = 5,
+        local = 5,
         /// Application specific configuration file; freely defined by applications
-        APP = 6,
+        app = 6,
         /// Represents the highest level available config file (i.e. the most specific config file available that actually is 
         /// loaded)
-        HIGHEST = -1,
+        highest = -1,
     };
 
     pub const ConfigEntry = extern struct {
