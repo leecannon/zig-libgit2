@@ -73,5 +73,5 @@ There is currently no plan to port all the headers within "include/git2/sys", if
 - [ ] sys/index.h
 - [ ] sys/merge.h
 - [ ] sys/odb_backend.h
-- [ ] sys/path.h
+- [X] sys/path.h
 - [ ] sys/repository.h

@@ -7,7 +7,6 @@ const git = @import("git.zig");
 
 /// This type bundles all functionality that does not act on an instance of an object
 pub const Handle = struct {
-
     /// De-initialize the libraries global state.
     /// *NOTE*: should be called as many times as `init` was called.
     pub fn deinit(self: Handle) void {
@@ -1027,6 +1026,53 @@ pub const Handle = struct {
         });
 
         log.debug("successfully enabled tracing", .{});
+    }
+
+    /// The kinds of git-specific files we know about.
+    pub const GitFile = enum(c_uint) {
+        /// Check for the .gitignore file
+        gitignore = 0,
+        /// Check for the .gitmodules file
+        gitmodules,
+        /// Check for the .gitattributes file
+        gitattributes,
+    };
+
+    /// The kinds of checks to perform according to which filesystem we are trying to protect.
+    pub const FileSystem = enum(c_uint) {
+        /// Do both NTFS- and HFS-specific checks
+        generic = 0,
+        /// Do NTFS-specific checks only
+        ntfs,
+        /// Do HFS-specific checks only
+        hfs,
+    };
+
+    /// Check whether a path component corresponds to a .git$SUFFIX file.
+    ///
+    /// As some filesystems do special things to filenames when writing files to disk, you cannot always do a plain string
+    /// comparison to verify whether a file name matches an expected path or not. This function can do the comparison for you,
+    /// depending on the filesystem you're on.
+    ///
+    /// ## Parameters
+    /// * `path` - The path to check
+    /// * `gitfile` - Which file to check against
+    /// * `fs` - Which filesystem-specific checks to use
+    pub fn pathIsGitfile(self: Handle, path: []const u8, gitfile: GitFile, fs: FileSystem) !bool {
+        _ = self;
+
+        log.debug("Handle.pathIsGitfile called, path: {s}, gitfile: {}, fs: {}", .{ path, gitfile, fs });
+
+        const ret = (try internal.wrapCallWithReturn("git_path_is_gitfile", .{
+            path.ptr,
+            path.len,
+            @enumToInt(gitfile),
+            @enumToInt(fs),
+        })) != 0;
+
+        log.debug("is git file: {}", .{ret});
+
+        return ret;
     }
 
     comptime {
