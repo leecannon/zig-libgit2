@@ -11,14 +11,6 @@
 - [ ] Add functionality to build.zig to include package as either static or dynamic
 - [ ] Package with zigmod/gyro
 
-15 sys/cred.h
-21 sys/reflog.h
-38 sys/openssl.h
-45 sys/commit_graph.h
-49 sys/refs.h
-64 sys/path.h
-80 sys/commit.h
-87 sys/mempack.h
 90 sys/credential.h
 91 revert.h
 94 sys/diff.h
@@ -28,10 +20,7 @@
 106 sys/hashsig.h
 111 reset.h
 121 transaction.h
-130 sys/config.h
 135 odb_backend.h
-138 sys/stream.h
-168 sys/odb_backend.h
 180 sys/repository.h
 182 sys/index.h
 182 sys/merge.h
@@ -39,10 +28,8 @@
 282 patch.h
 299 revwalk.h
 332 sys/filter.h
-361 sys/refdb_backend.h
 367 rebase.h
 382 tag.h
-440 sys/transport.h
 559 odb.h
 606 merge.h
 663 submodule.h
