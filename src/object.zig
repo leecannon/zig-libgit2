@@ -113,17 +113,17 @@ pub const Object = opaque {
     /// Lookup an object that represents a tree entry.
     ///
     /// ## Parameters
-    /// * `treeish` - Root object that can be peeled to a tree
+    /// * `self` - Root object that can be peeled to a tree
     /// * `path` - Relative path from the root object to the desired object
     /// * `object_type` - Type of object desired
-    pub fn lookupByPath(treeish: *const Object, path: [:0]const u8, object_type: ObjectType) !*Object {
+    pub fn lookupByPath(self: *const Object, path: [:0]const u8, object_type: ObjectType) !*Object {
         log.debug("Object.lookupByPath called, path: {s}, object_type: {}", .{ path, object_type });
 
         var ret: *Object = undefined;
 
         try internal.wrapCall("git_object_lookup_bypath", .{
             @ptrCast(*?*c.git_object, &ret),
-            @ptrCast(*const c.git_object, treeish),
+            @ptrCast(*const c.git_object, self),
             path.ptr,
             @enumToInt(object_type),
         });

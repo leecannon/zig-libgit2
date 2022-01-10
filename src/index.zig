@@ -198,9 +198,7 @@ pub const Index = opaque {
             return @bitCast(c_int, self) == -1;
         }
 
-        pub fn getCapabilitiesFromOwner() IndexCapabilities {
-            return @bitCast(IndexCapabilities, @as(c_int, -1));
-        }
+        pub const get_capabilities_from_owner: IndexCapabilities = @bitCast(IndexCapabilities, @as(c_int, -1));
 
         pub fn format(
             value: IndexCapabilities,
@@ -790,7 +788,7 @@ pub const Index = opaque {
     /// Get the index entries that represent a conflict of a single file.
     ///
     /// *IMPORTANT*: These entries should *not* be freed.
-    pub fn conflictGet(index: *Index, path: [:0]const u8) !Conflicts {
+    pub fn conflictGet(self: *Index, path: [:0]const u8) !Conflicts {
         log.debug("Index.conflictGet called, path: {s}", .{path});
 
         var ancestor_out: *const IndexEntry = undefined;
@@ -801,7 +799,7 @@ pub const Index = opaque {
             @ptrCast(*?*const c.git_index_entry, &ancestor_out),
             @ptrCast(*?*const c.git_index_entry, &our_out),
             @ptrCast(*?*const c.git_index_entry, &their_out),
-            @ptrCast(*c.git_index, index),
+            @ptrCast(*c.git_index, self),
             path.ptr,
         });
 

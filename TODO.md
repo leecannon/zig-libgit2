@@ -2,12 +2,10 @@
 
 - [ ] Implement entire API from commit `3f02b5b95e90d6be25aedf3f861e173182e815d7`
 - [ ] Replace any `const slice = try id.formatHex(&buf);` type Oid formating with no try version
-- [ ] Any `extern struct` passed as `*const` should be passed by value 
 - [ ] Update with all API changes up to latest master
 - [ ] Build against each version from latest to oldest and mark added APIs using `@hasDecl`
 - [ ] Option to disable logging
 - [ ] Add documentation to *every* function and type
-- [ ] Check all functions that dont take a "self" pointer to a libgit2 type and decide if they should be moved to `Handle`
 - [ ] Add functionality to build.zig to include package as either static or dynamic
 - [ ] Package with zigmod/gyro
 

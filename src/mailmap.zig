@@ -6,24 +6,6 @@ const log = std.log.scoped(.git);
 const git = @import("git.zig");
 
 pub const Mailmap = opaque {
-    /// Allocate a new mailmap object.
-    ///
-    /// This object is empty, so you'll have to add a mailmap file before you can do anything with it. 
-    /// The mailmap must be freed with 'deinit'.
-    pub fn init() !*Mailmap {
-        log.debug("Mailmap.init called", .{});
-
-        var mailmap: *Mailmap = undefined;
-
-        try internal.wrapCall("git_mailmap_new", .{
-            @ptrCast(*?*c.git_mailmap, &mailmap),
-        });
-
-        log.debug("successfully initalized mailmap {*}", .{mailmap});
-
-        return mailmap;
-    }
-
     /// Free the mailmap and its associated memory.
     pub fn deinit(self: *Mailmap) void {
         log.debug("Mailmap.deinit called", .{});

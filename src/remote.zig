@@ -15,31 +15,6 @@ pub const Remote = opaque {
         log.debug("remote closed successfully", .{});
     }
 
-    /// Create a remote, with options.
-    ///
-    /// This function allows more fine-grained control over the remote creation.
-    ///
-    /// ## Parameters
-    /// * `url` - The remote's url.
-    /// * `options` - The remote creation options.
-    pub fn createWithOptions(url: [:0]const u8, options: CreateOptions) !*Remote {
-        log.debug("Remote.createWithOptions called, url: {s}, options: {}", .{ url, options });
-
-        var remote: *Remote = undefined;
-
-        const c_opts = options.makeCOptionsObject();
-
-        try internal.wrapCall("git_remote_create_with_opts", .{
-            @ptrCast(*?*c.git_remote, &remote),
-            url.ptr,
-            &c_opts,
-        });
-
-        log.debug("successfully created remote: {*}", .{remote});
-
-        return remote;
-    }
-
     /// Remote creation options structure.
     pub const CreateOptions = struct {
         /// The repository that should own the remote.
@@ -105,30 +80,6 @@ pub const Remote = opaque {
             std.testing.refAllDecls(@This());
         }
     };
-
-    /// Create a remote without a connected local repo.
-    ///
-    /// Create a remote with the given url in-memory. You can use this when you have a URL instead of a remote's name.
-    ///
-    /// Contrasted with `Repository.remoteCreateAnonymous`, a detached remote will not consider any repo configuration values
-    /// (such as insteadof url substitutions).
-    ///
-    /// ## Parameters
-    /// * `url` - The remote's url.
-    pub fn createDetached(url: [:0]const u8) !*Remote {
-        log.debug("Remote.createDetached called, url: {s}", .{url});
-
-        var remote: *Remote = undefined;
-
-        try internal.wrapCall("git_remote_create_detached", .{
-            @ptrCast(*?*c.git_remote, &remote),
-            url.ptr,
-        });
-
-        log.debug("successfully created remote: {*}", .{remote});
-
-        return remote;
-    }
 
     /// Create a copy of an existing remote. All internal strings are also duplicated. Callbacks are not duplicated.
     pub fn duplicate(self: *Remote) !*Remote {

@@ -15,6 +15,8 @@ pub const Oid = extern struct {
     /// Size (in bytes) of a hex formatted oid
     pub const hex_buffer_size = c.GIT_OID_HEXSZ;
 
+    pub const zero: Oid = .{ .id = [_]u8{0} ** 20 };
+
     pub fn formatHexAlloc(self: Oid, allocator: *std.mem.Allocator) ![]const u8 {
         const buf = try allocator.alloc(u8, hex_buffer_size);
         errdefer allocator.free(buf);
@@ -110,29 +112,6 @@ pub const Oid = extern struct {
         return buf[0..hex_buffer_size :0];
     }
 
-    pub fn tryParse(str: [:0]const u8) ?Oid {
-        return tryParsePtr(str.ptr);
-    }
-
-    pub fn tryParsePtr(str: [*:0]const u8) ?Oid {
-        var result: Oid = undefined;
-        internal.wrapCall("git_oid_fromstrp", .{ @ptrCast(*c.git_oid, &result), str }) catch {
-            return null;
-        };
-        return result;
-    }
-
-    /// Parse `length` characters of a hex formatted object id into a `Oid`
-    ///
-    /// If `length` is odd, the last byte's high nibble will be read in and the low nibble set to zero.
-    pub fn parseCount(buf: []const u8, length: usize) !Oid {
-        if (buf.len < length) return error.BufferTooShort;
-
-        var result: Oid = undefined;
-        try internal.wrapCall("git_oid_fromstrn", .{ @ptrCast(*c.git_oid, &result), buf.ptr, length });
-        return result;
-    }
-
     /// <0 if a < b; 0 if a == b; >0 if a > b
     pub fn compare(a: Oid, b: Oid) c_int {
         return c.git_oid_cmp(@ptrCast(*const c.git_oid, &a), @ptrCast(*const c.git_oid, &b));
@@ -160,10 +139,6 @@ pub const Oid = extern struct {
         return true;
     }
 
-    pub fn zero() Oid {
-        return .{ .id = [_]u8{0} ** 20 };
-    }
-
     test {
         try std.testing.expectEqual(@sizeOf(c.git_oid), @sizeOf(Oid));
         try std.testing.expectEqual(@bitSizeOf(c.git_oid), @bitSizeOf(Oid));
@@ -179,19 +154,6 @@ pub const Oid = extern struct {
 ///
 /// E.g. look at the result of `git log --abbrev-commit`.
 pub const OidShortener = opaque {
-    /// `min_length` is the minimal length for all identifiers, which will be used even if shorter OIDs would still be unique.
-    pub fn init(min_length: usize) !*OidShortener {
-        log.debug("OidShortener.init called, min_length: {}", .{min_length});
-
-        if (c.git_oid_shorten_new(min_length)) |ret| {
-            log.debug("Oid shortener created successfully", .{});
-
-            return @ptrCast(*OidShortener, ret);
-        }
-
-        return error.OutOfMemory;
-    }
-
     pub fn add(self: *OidShortener, str: []const u8) !c_uint {
         log.debug("OidShortener.add called, str: {s}", .{str});
 

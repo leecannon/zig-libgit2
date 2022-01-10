@@ -102,16 +102,6 @@ pub fn errorToCInt(err: GitError) c_int {
     };
 }
 
-/// Get detailed information regarding the last error that occured on *this* thread.
-pub fn getDetailedLastError() ?*const DetailedError {
-    return @ptrCast(?*const DetailedError, c.git_error_last());
-}
-
-/// Clear the last error that occured on *this* thread.
-pub fn clearLastError() void {
-    c.git_error_clear();
-}
-
 pub const DetailedError = extern struct {
     raw_message: [*:0]const u8,
     class: ErrorClass,

@@ -7,27 +7,6 @@ const git = @import("git.zig");
 
 /// A refspec specifies the mapping between remote and local reference names when fetch or pushing.
 pub const Refspec = opaque {
-    /// Parse a given refspec string.
-    ///
-    /// ## Parameters
-    /// * `input` - The refspec string
-    /// * `is_fetch` - Is this a refspec for a fetch
-    pub fn parse(input: [:0]const u8, is_fetch: bool) !*Refspec {
-        log.debug("Refspec.parse called, input: {s}, is_fetch: {}", .{ input, is_fetch });
-
-        var ret: *Refspec = undefined;
-
-        try internal.wrapCall("git_refspec_parse", .{
-            @ptrCast(*?*c.git_refspec, &ret),
-            input.ptr,
-            @boolToInt(is_fetch),
-        });
-
-        log.debug("successfully parsed refspec: {*}", .{ret});
-
-        return ret;
-    }
-
     /// Free a refspec object which has been created by Refspec.parse.
     pub fn deinit(self: *Refspec) void {
         log.debug("Refspec.deinit called", .{});
@@ -89,10 +68,10 @@ pub const Refspec = opaque {
     }
 
     /// Get the force update setting.
-    pub fn isForceUpdate(refspec: *const Refspec) bool {
+    pub fn isForceUpdate(self: *const Refspec) bool {
         log.debug("Refspec.isForceUpdate called", .{});
 
-        const ret = c.git_refspec_force(@ptrCast(*const c.git_refspec, refspec)) != 0;
+        const ret = c.git_refspec_force(@ptrCast(*const c.git_refspec, self)) != 0;
 
         log.debug("is force update: {}", .{ret});
 
@@ -100,14 +79,14 @@ pub const Refspec = opaque {
     }
 
     /// Get the refspec's direction.
-    pub fn direction(refspec: *const Refspec) git.Direction {
+    pub fn direction(self: *const Refspec) git.Direction {
         log.debug("Refspec.direction called", .{});
 
         const ret = @intToEnum(
             git.Direction,
             c.git_refspec_direction(@ptrCast(
                 *const c.git_refspec,
-                refspec,
+                self,
             )),
         );
 
@@ -117,11 +96,11 @@ pub const Refspec = opaque {
     }
 
     /// Check if a refspec's source descriptor matches a reference
-    pub fn srcMatches(refspec: *const Refspec, refname: [:0]const u8) bool {
+    pub fn srcMatches(self: *const Refspec, refname: [:0]const u8) bool {
         log.debug("Refspec.srcMatches called, refname: {s}", .{refname});
 
         const ret = c.git_refspec_src_matches(
-            @ptrCast(*const c.git_refspec, refspec),
+            @ptrCast(*const c.git_refspec, self),
             refname.ptr,
         ) != 0;
 
@@ -131,11 +110,11 @@ pub const Refspec = opaque {
     }
 
     /// Check if a refspec's destination descriptor matches a reference
-    pub fn destMatches(refspec: *const Refspec, refname: [:0]const u8) bool {
+    pub fn destMatches(self: *const Refspec, refname: [:0]const u8) bool {
         log.debug("Refspec.destMatches called, refname: {s}", .{refname});
 
         const ret = c.git_refspec_dst_matches(
-            @ptrCast(*const c.git_refspec, refspec),
+            @ptrCast(*const c.git_refspec, self),
             refname.ptr,
         ) != 0;
 
@@ -148,14 +127,14 @@ pub const Refspec = opaque {
     ///
     /// # Parameters
     /// * `name` - The name of the reference to transform.
-    pub fn transform(refspec: *const Refspec, name: [:0]const u8) !git.Buf {
+    pub fn transform(self: *const Refspec, name: [:0]const u8) !git.Buf {
         log.debug("Refspec.transform called, name: {s}", .{name});
 
         var ret: git.Buf = .{};
 
         try internal.wrapCall("git_refspec_transform", .{
             @ptrCast(*c.git_buf, &ret),
-            @ptrCast(*const c.git_refspec, refspec),
+            @ptrCast(*const c.git_refspec, self),
             name.ptr,
         });
 
@@ -168,14 +147,14 @@ pub const Refspec = opaque {
     ///
     /// # Parameters
     /// * `name` - The name of the reference to transform.
-    pub fn rtransform(refspec: *const Refspec, name: [:0]const u8) !git.Buf {
+    pub fn rtransform(self: *const Refspec, name: [:0]const u8) !git.Buf {
         log.debug("Refspec.rtransform called, name: {s}", .{name});
 
         var ret: git.Buf = .{};
 
         try internal.wrapCall("git_refspec_rtransform", .{
             @ptrCast(*c.git_buf, &ret),
-            @ptrCast(*const c.git_refspec, refspec),
+            @ptrCast(*const c.git_refspec, self),
             name.ptr,
         });
 

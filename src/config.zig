@@ -14,20 +14,6 @@ pub const Config = opaque {
         log.debug("config freed successfully", .{});
     }
 
-    pub fn new() !*Config {
-        log.debug("Config.new called", .{});
-
-        var config: *Config = undefined;
-
-        try internal.wrapCall("git_config_new", .{
-            @ptrCast(*?*c.git_config, &config),
-        });
-
-        log.debug("created new config", .{});
-
-        return config;
-    }
-
     pub fn getEntry(self: *const Config, name: [:0]const u8) !*ConfigEntry {
         log.debug("Config.getEntry called, name: {s}", .{name});
 
@@ -306,21 +292,6 @@ pub const Config = opaque {
         log.debug("", .{});
     }
 
-    pub fn openOnDisk(path: [:0]const u8) !*Config {
-        log.debug("Config.openOnDisk called, path: {s}", .{path});
-
-        var config: *Config = undefined;
-
-        try internal.wrapCall("git_config_open_ondisk", .{
-            @ptrCast(*?*c.git_config, &config),
-            path.ptr,
-        });
-
-        log.debug("opened config from file", .{});
-
-        return config;
-    }
-
     pub fn openLevel(self: *const Config, level: Level) !*Config {
         log.debug("Config.openLevel called, level: {}", .{level});
 
@@ -365,68 +336,6 @@ pub const Config = opaque {
         log.debug("created snapshot of config", .{});
 
         return config;
-    }
-
-    pub fn openDefault() !*Config {
-        log.debug("Config.openDefault called", .{});
-
-        var config: *Config = undefined;
-
-        try internal.wrapCall("git_config_open_default", .{
-            @ptrCast(*?*c.git_config, &config),
-        });
-
-        log.debug("opened default config", .{});
-
-        return config;
-    }
-
-    pub fn findGlobal() ?git.Buf {
-        log.debug("Config.findGlobal called", .{});
-
-        var buf: git.Buf = .{};
-
-        if (c.git_config_find_global(@ptrCast(*c.git_buf, &buf)) == 0) return null;
-
-        log.debug("global config path: {s}", .{buf.toSlice()});
-
-        return buf;
-    }
-
-    pub fn findXdg() ?git.Buf {
-        log.debug("Config.findXdg called", .{});
-
-        var buf: git.Buf = .{};
-
-        if (c.git_config_find_xdg(@ptrCast(*c.git_buf, &buf)) == 0) return null;
-
-        log.debug("xdg config path: {s}", .{buf.toSlice()});
-
-        return buf;
-    }
-
-    pub fn findSystem() ?git.Buf {
-        log.debug("Config.findSystem called", .{});
-
-        var buf: git.Buf = .{};
-
-        if (c.git_config_find_system(@ptrCast(*c.git_buf, &buf)) == 0) return null;
-
-        log.debug("system config path: {s}", .{buf.toSlice()});
-
-        return buf;
-    }
-
-    pub fn findProgramdata() ?git.Buf {
-        log.debug("Config.findProgramdata called", .{});
-
-        var buf: git.Buf = .{};
-
-        if (c.git_config_find_programdata(@ptrCast(*c.git_buf, &buf)) == 0) return null;
-
-        log.debug("programdata config path: {s}", .{buf.toSlice()});
-
-        return buf;
     }
 
     pub fn lock(self: *Config) !*git.Transaction {

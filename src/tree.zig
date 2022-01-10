@@ -126,14 +126,14 @@ pub const Tree = opaque {
     ///
     /// Unlike the other lookup functions, the returned tree entry is owned by the user and must be freed explicitly with 
     /// `TreeEntry.deinit`.
-    pub fn entryByPath(root: *const Tree, path: [:0]const u8) !*TreeEntry {
+    pub fn entryByPath(self: *const Tree, path: [:0]const u8) !*TreeEntry {
         log.debug("Tree.entryByPath called, path: {s}", .{path});
 
         var ret: *TreeEntry = undefined;
 
         try internal.wrapCall("git_tree_entry_bypath", .{
             @ptrCast(*?*c.git_tree_entry, &ret),
-            @ptrCast(*const c.git_tree, root),
+            @ptrCast(*const c.git_tree, self),
             path.ptr,
         });
 

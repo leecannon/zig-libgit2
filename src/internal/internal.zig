@@ -3,6 +3,9 @@ const c = @import("c.zig");
 const git = @import("../git.zig");
 const log = std.log.scoped(.git);
 
+pub const has_credential = @hasDecl(c, "git_credential");
+pub const RawCredentialType = if (has_credential) c.git_credential else c.git_cred;
+
 pub inline fn wrapCall(comptime name: []const u8, args: anytype) git.GitError!void {
     if (@typeInfo(@TypeOf(@field(c, name))).Fn.return_type.? == void) {
         @call(.{}, @field(c, name), args);
@@ -67,7 +70,7 @@ fn unwrapError(name: []const u8, value: c.git_error_code) git.GitError {
     // We dont want to output log messages in tests, as the error might be expected
     // also dont incur the cost of calling `getDetailedLastError` if we are not going to use it
     if (!@import("builtin").is_test and @enumToInt(std.log.Level.warn) <= @enumToInt(std.log.level)) {
-        if (git.getDetailedLastError()) |detailed| {
+        if (git.Handle.getDetailedLastError(undefined)) |detailed| {
             log.warn("{s} failed with error {s}/{s} - {s}", .{
                 name,
                 @errorName(err),

@@ -6,25 +6,6 @@ const log = std.log.scoped(.git);
 const git = @import("git.zig");
 
 pub const Pathspec = opaque {
-    /// Compile a pathspec
-    ///
-    /// ## Parameters
-    /// * `pathspec` - A `git.StrArray` of the paths to match
-    pub fn new(pathspec: git.StrArray) !*Pathspec {
-        log.debug("Pathspec.new called", .{});
-
-        var ret: *Pathspec = undefined;
-
-        try internal.wrapCall("git_pathspec_new", .{
-            @ptrCast(*?*c.git_pathspec, &ret),
-            @ptrCast(*const c.git_strarray, &pathspec),
-        });
-
-        log.debug("successfully created pathspec: {*}", .{ret});
-
-        return ret;
-    }
-
     /// Free a pathspec
     pub fn deinit(self: *Pathspec) void {
         log.debug("Pathspec.deinit called", .{});

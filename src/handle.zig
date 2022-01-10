@@ -881,7 +881,9 @@ pub const Handle = struct {
         log.debug("successfully set HTTP expect continue mode", .{});
     }
 
-    pub fn branchNameIsValid(name: [:0]const u8) !bool {
+    pub fn branchNameIsValid(self: Handle, name: [:0]const u8) !bool {
+        _ = self;
+
         log.debug("Handle.branchNameIsValid, name: {s}", .{name});
 
         var valid: c_int = undefined;
@@ -1073,6 +1075,705 @@ pub const Handle = struct {
         log.debug("is git file: {}", .{ret});
 
         return ret;
+    }
+
+    pub fn configNew(self: Handle) !*git.Config {
+        _ = self;
+
+        log.debug("Handle.configNew called", .{});
+
+        var config: *git.Config = undefined;
+
+        try internal.wrapCall("git_config_new", .{
+            @ptrCast(*?*c.git_config, &config),
+        });
+
+        log.debug("created new config", .{});
+
+        return config;
+    }
+
+    pub fn configOpenOnDisk(self: Handle, path: [:0]const u8) !*git.Config {
+        _ = self;
+
+        log.debug("Handle.configOpenOnDisk called, path: {s}", .{path});
+
+        var config: *git.Config = undefined;
+
+        try internal.wrapCall("git_config_open_ondisk", .{
+            @ptrCast(*?*c.git_config, &config),
+            path.ptr,
+        });
+
+        log.debug("opened config from file", .{});
+
+        return config;
+    }
+
+    pub fn configOpenDefault(self: Handle) !*git.Config {
+        _ = self;
+
+        log.debug("Handle.configOpenDefault called", .{});
+
+        var config: *git.Config = undefined;
+
+        try internal.wrapCall("git_config_open_default", .{
+            @ptrCast(*?*c.git_config, &config),
+        });
+
+        log.debug("opened default config", .{});
+
+        return config;
+    }
+
+    pub fn configFindGlobal(self: Handle) ?git.Buf {
+        _ = self;
+
+        log.debug("Handle.configFindGlobal called", .{});
+
+        var buf: git.Buf = .{};
+
+        if (c.git_config_find_global(@ptrCast(*c.git_buf, &buf)) == 0) return null;
+
+        log.debug("global config path: {s}", .{buf.toSlice()});
+
+        return buf;
+    }
+
+    pub fn configFindXdg(self: Handle) ?git.Buf {
+        _ = self;
+
+        log.debug("Handle.configFindXdg called", .{});
+
+        var buf: git.Buf = .{};
+
+        if (c.git_config_find_xdg(@ptrCast(*c.git_buf, &buf)) == 0) return null;
+
+        log.debug("xdg config path: {s}", .{buf.toSlice()});
+
+        return buf;
+    }
+
+    pub fn configFindSystem(self: Handle) ?git.Buf {
+        _ = self;
+
+        log.debug("Handle.configFindSystem called", .{});
+
+        var buf: git.Buf = .{};
+
+        if (c.git_config_find_system(@ptrCast(*c.git_buf, &buf)) == 0) return null;
+
+        log.debug("system config path: {s}", .{buf.toSlice()});
+
+        return buf;
+    }
+
+    pub fn configFindProgramdata(self: Handle) ?git.Buf {
+        _ = self;
+
+        log.debug("Handle.configFindProgramdata called", .{});
+
+        var buf: git.Buf = .{};
+
+        if (c.git_config_find_programdata(@ptrCast(*c.git_buf, &buf)) == 0) return null;
+
+        log.debug("programdata config path: {s}", .{buf.toSlice()});
+
+        return buf;
+    }
+
+    pub fn credentialInitUserPassPlaintext(self: Handle, username: [:0]const u8, password: [:0]const u8) !*git.Credential {
+        _ = self;
+
+        log.debug("Handle.credentialInitUserPassPlaintext called, username: {s}, password: {s}", .{ username, password });
+
+        var cred: *git.Credential = undefined;
+
+        if (internal.has_credential) {
+            try internal.wrapCall("git_credential_userpass_plaintext_new", .{
+                @ptrCast(*?*internal.RawCredentialType, &cred),
+                username.ptr,
+                password.ptr,
+            });
+        } else {
+            try internal.wrapCall("git_cred_userpass_plaintext_new", .{
+                @ptrCast(*?*internal.RawCredentialType, &cred),
+                username.ptr,
+                password.ptr,
+            });
+        }
+
+        log.debug("created new credential {*}", .{cred});
+
+        return cred;
+    }
+
+    /// Create a "default" credential usable for Negotiate mechanisms like NTLM or Kerberos authentication.
+    pub fn credentialInitDefault(self: Handle) !*git.Credential {
+        _ = self;
+
+        log.debug("Handle.credentialInitDefault", .{});
+
+        var cred: *git.Credential = undefined;
+
+        if (internal.has_credential) {
+            try internal.wrapCall("git_credential_default_new", .{
+                @ptrCast(*?*internal.RawCredentialType, &cred),
+            });
+        } else {
+            try internal.wrapCall("git_cred_default_new", .{
+                @ptrCast(*?*internal.RawCredentialType, &cred),
+            });
+        }
+
+        log.debug("created new credential {*}", .{cred});
+
+        return cred;
+    }
+
+    /// Create a credential to specify a username.
+    ///
+    /// This is used with ssh authentication to query for the username if none is specified in the url.
+    pub fn credentialInitUsername(self: Handle, username: [:0]const u8) !*git.Credential {
+        _ = self;
+
+        log.debug("Handle.credentialInitUsername called, username: {s}", .{username});
+
+        var cred: *git.Credential = undefined;
+
+        if (internal.has_credential) {
+            try internal.wrapCall("git_credential_username_new", .{
+                @ptrCast(*?*internal.RawCredentialType, &cred),
+                username.ptr,
+            });
+        } else {
+            try internal.wrapCall("git_cred_username_new", .{
+                @ptrCast(*?*internal.RawCredentialType, &cred),
+                username.ptr,
+            });
+        }
+
+        log.debug("created new credential {*}", .{cred});
+
+        return cred;
+    }
+
+    /// Create a new passphrase-protected ssh key credential object.
+    ///
+    /// ## Parameters
+    /// * `username` - Username to use to authenticate
+    /// * `publickey` - The path to the public key of the credential.
+    /// * `privatekey` - The path to the private key of the credential.
+    /// * `passphrase` - The passphrase of the credential.
+    pub fn credentialInitSshKey(
+        self: Handle,
+        username: [:0]const u8,
+        publickey: ?[:0]const u8,
+        privatekey: [:0]const u8,
+        passphrase: ?[:0]const u8,
+    ) !*git.Credential {
+        _ = self;
+
+        log.debug(
+            "Handle.credentialInitSshKey called, username: {s}, publickey: {s}, privatekey: {s}, passphrase: {s}",
+            .{ username, publickey, privatekey, passphrase },
+        );
+
+        var cred: *git.Credential = undefined;
+
+        const publickey_c = if (publickey) |str| str.ptr else null;
+        const passphrase_c = if (passphrase) |str| str.ptr else null;
+
+        if (internal.has_credential) {
+            try internal.wrapCall("git_credential_ssh_key_new", .{
+                @ptrCast(*?*internal.RawCredentialType, &cred),
+                username.ptr,
+                publickey_c,
+                privatekey.ptr,
+                passphrase_c,
+            });
+        } else {
+            try internal.wrapCall("git_cred_ssh_key_new", .{
+                @ptrCast(*?*internal.RawCredentialType, &cred),
+                username.ptr,
+                publickey_c,
+                privatekey.ptr,
+                passphrase_c,
+            });
+        }
+
+        log.debug("created new credential {*}", .{cred});
+
+        return cred;
+    }
+
+    /// Create a new ssh key credential object reading the keys from memory.
+    ///
+    /// ## Parameters
+    /// * `username` - Username to use to authenticate
+    /// * `publickey` - The public key of the credential.
+    /// * `privatekey` - The private key of the credential.
+    /// * `passphrase` - The passphrase of the credential.
+    pub fn credentialInitSshKeyMemory(
+        self: Handle,
+        username: [:0]const u8,
+        publickey: ?[:0]const u8,
+        privatekey: [:0]const u8,
+        passphrase: ?[:0]const u8,
+    ) !*git.Credential {
+        _ = self;
+
+        log.debug("Handle.credentialInitSshKeyMemory called", .{});
+
+        var cred: *git.Credential = undefined;
+
+        const publickey_c = if (publickey) |str| str.ptr else null;
+        const passphrase_c = if (passphrase) |str| str.ptr else null;
+
+        if (internal.has_credential) {
+            try internal.wrapCall("git_credential_ssh_key_memory_new", .{
+                @ptrCast(*?*internal.RawCredentialType, &cred),
+                username.ptr,
+                publickey_c,
+                privatekey.ptr,
+                passphrase_c,
+            });
+        } else {
+            try internal.wrapCall("git_cred_ssh_key_memory_new", .{
+                @ptrCast(*?*internal.RawCredentialType, &cred),
+                username.ptr,
+                publickey_c,
+                privatekey.ptr,
+                passphrase_c,
+            });
+        }
+
+        log.debug("created new credential {*}", .{cred});
+
+        return cred;
+    }
+
+    /// Create a new ssh keyboard-interactive based credential object.
+    ///
+    /// ## Parameters
+    /// * `username` - Username to use to authenticate.
+    /// * `user_data` - Pointer to user data to be passed to the callback
+    /// * `callback_fn` - The callback function
+    pub fn credentialInitSshKeyInteractive(
+        self: Handle,
+        username: [:0]const u8,
+        user_data: anytype,
+        comptime callback_fn: fn (
+            name: []const u8,
+            instruction: []const u8,
+            prompts: []*const c.LIBSSH2_USERAUTH_KBDINT_PROMPT,
+            responses: []*c.LIBSSH2_USERAUTH_KBDINT_RESPONSE,
+            abstract: ?*?*anyopaque,
+        ) void,
+    ) !*git.Credential {
+        _ = self;
+
+        // TODO: This callback needs to be massively cleaned up
+
+        const cb = struct {
+            pub fn cb(
+                name: [*]const u8,
+                name_len: c_int,
+                instruction: [*]const u8,
+                instruction_len: c_int,
+                num_prompts: c_int,
+                prompts: ?*const c.LIBSSH2_USERAUTH_KBDINT_PROMPT,
+                responses: ?*c.LIBSSH2_USERAUTH_KBDINT_RESPONSE,
+                abstract: ?*?*anyopaque,
+            ) callconv(.C) void {
+                callback_fn(
+                    name[0..name_len],
+                    instruction[0..instruction_len],
+                    prompts[0..num_prompts],
+                    responses[0..num_prompts],
+                    abstract,
+                );
+            }
+        }.cb;
+
+        log.debug("Handle.credentialInitSshKeyInteractive called, username: {s}", .{username});
+
+        var cred: *git.Credential = undefined;
+
+        if (internal.has_credential) {
+            try internal.wrapCall("git_credential_ssh_interactive_new", .{
+                @ptrCast(*?*internal.RawCredentialType, &cred),
+                username.ptr,
+                cb,
+                user_data,
+            });
+        } else {
+            try internal.wrapCall("git_cred_ssh_interactive_new", .{
+                @ptrCast(*?*internal.RawCredentialType, &cred),
+                username.ptr,
+                cb,
+                user_data,
+            });
+        }
+
+        log.debug("created new credential {*}", .{cred});
+
+        return cred;
+    }
+
+    pub fn credentialInitSshKeyFromAgent(self: Handle, username: [:0]const u8) !*git.Credential {
+        _ = self;
+
+        log.debug("Handle.credentialInitSshKeyFromAgent called, username: {s}", .{username});
+
+        var cred: *git.Credential = undefined;
+
+        if (internal.has_credential) {
+            try internal.wrapCall("git_credential_ssh_key_from_agent", .{
+                @ptrCast(*?*internal.RawCredentialType, &cred),
+                username.ptr,
+            });
+        } else {
+            try internal.wrapCall("git_cred_ssh_key_from_agent", .{
+                @ptrCast(*?*internal.RawCredentialType, &cred),
+                username.ptr,
+            });
+        }
+
+        log.debug("created new credential {*}", .{cred});
+
+        return cred;
+    }
+
+    pub fn credentialInitSshKeyCustom(
+        self: Handle,
+        username: [:0]const u8,
+        publickey: []const u8,
+        user_data: anytype,
+        comptime callback_fn: fn (
+            session: *c.LIBSSH2_SESSION,
+            out_signature: *[]const u8,
+            data: []const u8,
+            abstract: ?*?*anyopaque,
+        ) c_int,
+    ) !*git.Credential {
+        _ = self;
+
+        const cb = struct {
+            pub fn cb(
+                session: ?*c.LIBSSH2_SESSION,
+                sig: *[*:0]u8,
+                sig_len: *usize,
+                data: [*]const u8,
+                data_len: usize,
+                abstract: ?*?*anyopaque,
+            ) callconv(.C) c_int {
+                var out_sig: []const u8 = undefined;
+
+                const result = callback_fn(
+                    session,
+                    &out_sig,
+                    data[0..data_len],
+                    abstract,
+                );
+
+                sig.* = out_sig.ptr;
+                sig_len.* = out_sig.len;
+
+                return result;
+            }
+        }.cb;
+
+        log.debug("Handle.credentialInitSshKeyCustom called, username: {s}", .{username});
+
+        var cred: *git.Credential = undefined;
+
+        if (internal.has_credential) {
+            try internal.wrapCall("git_credential_ssh_custom_new", .{
+                @ptrCast(*?*internal.RawCredentialType, &cred),
+                username.ptr,
+                publickey.ptr,
+                publickey.len,
+                cb,
+                user_data,
+            });
+        } else {
+            try internal.wrapCall("git_cred_ssh_custom_new", .{
+                @ptrCast(*?*internal.RawCredentialType, &cred),
+                username.ptr,
+                publickey.ptr,
+                publickey.len,
+                cb,
+                user_data,
+            });
+        }
+
+        log.debug("created new credential {*}", .{cred});
+
+        return cred;
+    }
+
+    /// Get detailed information regarding the last error that occured on *this* thread.
+    pub fn getDetailedLastError(self: Handle) ?*const git.DetailedError {
+        _ = self;
+        return @ptrCast(?*const git.DetailedError, c.git_error_last());
+    }
+
+    /// Clear the last error that occured on *this* thread.
+    pub fn clearLastError(self: Handle) void {
+        _ = self;
+        c.git_error_clear();
+    }
+
+    /// Create a new indexer instance
+    ///
+    /// ## Parameters
+    /// * `path` - To the directory where the packfile should be stored
+    /// * `odb` - Object database from which to read base objects when fixing thin packs. Pass `null` if no thin pack is expected
+    ///           (an error will be returned if there are bases missing)
+    /// * `options` - Options
+    /// * `callback_fn` - The callback function; a value less than zero to cancel the indexing or download
+    ///
+    /// ## Callback Parameters
+    /// * `stats` - State of the transfer
+    pub fn indexerInit(
+        self: Handle,
+        path: [:0]const u8,
+        odb: ?*git.Odb,
+        options: git.Indexer.Options,
+        comptime callback_fn: fn (stats: *const git.Indexer.Progress) c_int,
+    ) !*git.Indexer {
+        const cb = struct {
+            pub fn cb(
+                stats: *const git.Indexer.Progress,
+                _: *u8,
+            ) c_int {
+                return callback_fn(stats);
+            }
+        }.cb;
+
+        var dummy_data: u8 = undefined;
+        return self.indexerInitWithUserData(path, odb, options, &dummy_data, cb);
+    }
+
+    /// Create a new indexer instance
+    ///
+    /// ## Parameters
+    /// * `path` - To the directory where the packfile should be stored
+    /// * `odb` - Object database from which to read base objects when fixing thin packs. Pass `null` if no thin pack is expected
+    ///           (an error will be returned if there are bases missing)
+    /// * `options` - Options
+    /// * `user_data` - Pointer to user data to be passed to the callback
+    /// * `callback_fn` - The callback function; a value less than zero to cancel the indexing or download
+    ///
+    /// ## Callback Parameters
+    /// * `stats` - State of the transfer
+    /// * `user_data_ptr` - The user data
+    pub fn indexerInitWithUserData(
+        self: Handle,
+        path: [:0]const u8,
+        odb: ?*git.Odb,
+        options: git.Indexer.Options,
+        user_data: anytype,
+        comptime callback_fn: fn (
+            stats: *const git.Indexer.Progress,
+            user_data_ptr: @TypeOf(user_data),
+        ) c_int,
+    ) !*git.Indexer {
+        _ = self;
+
+        const UserDataType = @TypeOf(user_data);
+
+        const cb = struct {
+            pub fn cb(
+                stats: *const c.git_indexer_progress,
+                payload: ?*anyopaque,
+            ) callconv(.C) c_int {
+                return callback_fn(@ptrCast(*const git.Indexer.Progress, stats), @ptrCast(UserDataType, payload));
+            }
+        }.cb;
+
+        log.debug("Handle.indexerInitWithUserData called, path: {s}, odb: {*}, options: {}", .{ path, odb, options });
+
+        var c_opts = c.git_indexer_options{
+            .version = c.GIT_INDEXER_OPTIONS_VERSION,
+            .progress_cb = cb,
+            .progress_cb_payload = user_data,
+            .verify = @boolToInt(options.verify),
+        };
+
+        var ret: *git.Indexer = undefined;
+
+        try internal.wrapCall("git_indexer_new", .{
+            @ptrCast(*c.git_indexer, &ret),
+            path.ptr,
+            options.mode,
+            @ptrCast(?*c.git_oid, odb),
+            &c_opts,
+        });
+
+        log.debug("successfully initalized Indexer", .{});
+
+        return ret;
+    }
+
+    /// Allocate a new mailmap object.
+    ///
+    /// This object is empty, so you'll have to add a mailmap file before you can do anything with it. 
+    /// The mailmap must be freed with 'deinit'.
+    pub fn mailmapInit(self: Handle) !*git.Mailmap {
+        _ = self;
+
+        log.debug("Handle.mailmapInit called", .{});
+
+        var mailmap: *git.Mailmap = undefined;
+
+        try internal.wrapCall("git_mailmap_new", .{
+            @ptrCast(*?*c.git_mailmap, &mailmap),
+        });
+
+        log.debug("successfully initalized mailmap {*}", .{mailmap});
+
+        return mailmap;
+    }
+
+    /// Compile a pathspec
+    ///
+    /// ## Parameters
+    /// * `pathspec` - A `git.StrArray` of the paths to match
+    pub fn pathspecInit(self: Handle, pathspec: git.StrArray) !*git.Pathspec {
+        _ = self;
+
+        log.debug("Handle.pathspecInit called", .{});
+
+        var ret: *git.Pathspec = undefined;
+
+        try internal.wrapCall("git_pathspec_new", .{
+            @ptrCast(*?*c.git_pathspec, &ret),
+            @ptrCast(*const c.git_strarray, &pathspec),
+        });
+
+        log.debug("successfully created pathspec: {*}", .{ret});
+
+        return ret;
+    }
+
+    /// Parse a given refspec string.
+    ///
+    /// ## Parameters
+    /// * `input` - The refspec string
+    /// * `is_fetch` - Is this a refspec for a fetch
+    pub fn refspecParse(self: Handle, input: [:0]const u8, is_fetch: bool) !*git.Refspec {
+        _ = self;
+
+        log.debug("Handle.refspecParse called, input: {s}, is_fetch: {}", .{ input, is_fetch });
+
+        var ret: *git.Refspec = undefined;
+
+        try internal.wrapCall("git_refspec_parse", .{
+            @ptrCast(*?*c.git_refspec, &ret),
+            input.ptr,
+            @boolToInt(is_fetch),
+        });
+
+        log.debug("successfully parsed refspec: {*}", .{ret});
+
+        return ret;
+    }
+
+    /// Create a remote, with options.
+    ///
+    /// This function allows more fine-grained control over the remote creation.
+    ///
+    /// ## Parameters
+    /// * `url` - The remote's url.
+    /// * `options` - The remote creation options.
+    pub fn remoteCreateWithOptions(self: Handle, url: [:0]const u8, options: git.Remote.CreateOptions) !*git.Remote {
+        _ = self;
+
+        log.debug("Handle.remoteCreateWithOptions called, url: {s}, options: {}", .{ url, options });
+
+        var remote: *git.Remote = undefined;
+
+        const c_opts = options.makeCOptionsObject();
+
+        try internal.wrapCall("git_remote_create_with_opts", .{
+            @ptrCast(*?*c.git_remote, &remote),
+            url.ptr,
+            &c_opts,
+        });
+
+        log.debug("successfully created remote: {*}", .{remote});
+
+        return remote;
+    }
+
+    /// Create a remote without a connected local repo.
+    ///
+    /// Create a remote with the given url in-memory. You can use this when you have a URL instead of a remote's name.
+    ///
+    /// Contrasted with `Repository.remoteCreateAnonymous`, a detached remote will not consider any repo configuration values
+    /// (such as insteadof url substitutions).
+    ///
+    /// ## Parameters
+    /// * `url` - The remote's url.
+    pub fn remoreCreateDetached(self: Handle, url: [:0]const u8) !*git.Remote {
+        _ = self;
+
+        log.debug("Handle.remoreCreateDetached called, url: {s}", .{url});
+
+        var remote: *git.Remote = undefined;
+
+        try internal.wrapCall("git_remote_create_detached", .{
+            @ptrCast(*?*c.git_remote, &remote),
+            url.ptr,
+        });
+
+        log.debug("successfully created remote: {*}", .{remote});
+
+        return remote;
+    }
+
+    /// `min_length` is the minimal length for all identifiers, which will be used even if shorter OIDs would still be unique.
+    pub fn oidShortenerInit(self: Handle, min_length: usize) !*git.OidShortener {
+        _ = self;
+
+        log.debug("Handle.oidShortenerInit called, min_length: {}", .{min_length});
+
+        if (c.git_oid_shorten_new(min_length)) |ret| {
+            log.debug("Oid shortener created successfully", .{});
+
+            return @ptrCast(*git.OidShortener, ret);
+        }
+
+        return error.OutOfMemory;
+    }
+
+    pub fn oidTryParse(self: Handle, str: [:0]const u8) ?git.Oid {
+        return self.oidTryParsePtr(str.ptr);
+    }
+
+    pub fn oidTryParsePtr(self: Handle, str: [*:0]const u8) ?git.Oid {
+        _ = self;
+
+        var result: git.Oid = undefined;
+        internal.wrapCall("git_oid_fromstrp", .{ @ptrCast(*c.git_oid, &result), str }) catch {
+            return null;
+        };
+        return result;
+    }
+
+    /// Parse `length` characters of a hex formatted object id into a `Oid`
+    ///
+    /// If `length` is odd, the last byte's high nibble will be read in and the low nibble set to zero.
+    pub fn oidParseCount(self: Handle, buf: []const u8, length: usize) !git.Oid {
+        _ = self;
+
+        if (buf.len < length) return error.BufferTooShort;
+
+        var result: git.Oid = undefined;
+        try internal.wrapCall("git_oid_fromstrn", .{ @ptrCast(*c.git_oid, &result), buf.ptr, length });
+        return result;
     }
 
     comptime {

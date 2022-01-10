@@ -1717,10 +1717,10 @@ pub const Repository = opaque {
         min_match_characters: u16 = 0,
 
         /// The id of the newest commit to consider. The default is HEAD.
-        newest_commit: git.Oid = git.Oid.zero(),
+        newest_commit: git.Oid = git.Oid.zero,
 
         /// The id of the oldest commit to consider. The default is the first commit encountered with a `null` parent.
-        oldest_commit: git.Oid = git.Oid.zero(),
+        oldest_commit: git.Oid = git.Oid.zero,
 
         /// The first line in the file to blame. The default is 1 (line numbers start with 1).
         min_line: usize = 0,
