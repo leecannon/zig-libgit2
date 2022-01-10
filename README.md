@@ -4,8 +4,6 @@ Zig bindings to [libgit2](https://github.com/libgit2/libgit2)
 
 This is an in-progress zig binding to libgit2, unfortunately libgit2 doesn't full document all possible errors so every errorable function returns the full errorset.
 
-There is currently no plan to port the headers within "include/git2/sys", if anyone requires that functionailty raise an issue.
-
 ## Files fully wrapped (others maybe partially complete)
 
 - [X] annotated_commit.h
@@ -46,7 +44,7 @@ There is currently no plan to port the headers within "include/git2/sys", if any
 - [X] pathspec.h
 - [ ] proxy.h
 - [ ] rebase.h
-- [ ] refdb.h
+- [X] refdb.h
 - [X] reflog.h
 - [ ] refs.h
 - [X] refspec.h
@@ -66,3 +64,24 @@ There is currently no plan to port the headers within "include/git2/sys", if any
 - [ ] transaction.h
 - [X] tree.h
 - [X] worktree.h
+- [ ] sys/alloc.h
+- [ ] sys/commit_graph.h
+- [ ] sys/commit.h
+- [ ] sys/config.h
+- [ ] sys/credential.h
+- [ ] sys/cred.h
+- [ ] sys/diff.h
+- [ ] sys/filter.h
+- [ ] sys/hashsig.h
+- [ ] sys/index.h
+- [ ] sys/mempack.h
+- [ ] sys/merge.h
+- [ ] sys/odb_backend.h
+- [ ] sys/openssl.h
+- [ ] sys/path.h
+- [ ] sys/refdb_backend.h
+- [ ] sys/reflog.h
+- [ ] sys/refs.h
+- [ ] sys/repository.h
+- [ ] sys/stream.h
+- [ ] sys/transport.h

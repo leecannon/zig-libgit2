@@ -453,10 +453,10 @@ pub const Repository = opaque {
         return odb;
     }
 
-    pub fn refDb(self: *Repository) !*git.RefDb {
+    pub fn refDb(self: *Repository) !*git.Refdb {
         log.debug("Repository.refDb called", .{});
 
-        var ref_db: *git.RefDb = undefined;
+        var ref_db: *git.Refdb = undefined;
 
         try internal.wrapCall("git_repository_refdb", .{
             @ptrCast(*?*c.git_refdb, &ref_db),
@@ -4448,6 +4448,42 @@ pub const Repository = opaque {
         });
 
         log.debug("successfully deleted reflog", .{});
+    }
+
+    /// Create a new reference database with no backends.
+    ///
+    /// Before the Ref DB can be used for read/writing, a custom database backend must be manually set using `Refdb.setBackend()`
+    pub fn refdbNew(self: *Repository) !*git.Refdb {
+        log.debug("Repository.refdbNew called", .{});
+
+        var ret: *git.Refdb = undefined;
+
+        try internal.wrapCall("git_refdb_new", .{
+            @ptrCast(*?*c.git_refdb, &ret),
+            @ptrCast(*c.git_repository, self),
+        });
+
+        log.debug("successfully created refdb: {*}", .{ret});
+
+        return ret;
+    }
+
+    /// Create a new reference database and automatically add the default backends:
+    ///
+    /// * git_refdb_dir: read and write loose and packed refs from disk, assuming the repository dir as the folder
+    pub fn refdbOpen(self: *Repository) !*git.Refdb {
+        log.debug("Repository.refdbOpen called", .{});
+
+        var ret: *git.Refdb = undefined;
+
+        try internal.wrapCall("git_refdb_open", .{
+            @ptrCast(*?*c.git_refdb, &ret),
+            @ptrCast(*c.git_repository, self),
+        });
+
+        log.debug("successfully opened refdb: {*}", .{ret});
+
+        return ret;
     }
 
     comptime {
