@@ -16,8 +16,10 @@ pub const GitAllocator = extern struct {
     mallocarray: fn (nelem: usize, elsize: usize, file: [*:0]const u8, line: c_int) callconv(.C) *anyopaque,
     free: fn (ptr: *anyopaque) callconv(.C) void,
 
-    // `git_allocator` is not exported by `#include <git2.h>` so we dont have access to it inorder to validate the size
-    // of this struct.
+    test {
+        try std.testing.expectEqual(@sizeOf(c.git_allocator), @sizeOf(GitAllocator));
+        try std.testing.expectEqual(@bitSizeOf(c.git_allocator), @bitSizeOf(GitAllocator));
+    }
 
     comptime {
         std.testing.refAllDecls(@This());
