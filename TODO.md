@@ -9,7 +9,6 @@
 - [ ] Add functionality to build.zig to include package as either static or dynamic
 - [ ] Package with zigmod/gyro
 
-94 sys/diff.h
 98 proxy.h
 101 sys/alloc.h
 103 signature.h

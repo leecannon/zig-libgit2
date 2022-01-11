@@ -33,6 +33,31 @@ pub const StatusList = opaque {
         );
     }
 
+    /// Get performance data for diffs from a StatusList
+    pub fn getPerfData(self: *const StatusList) !git.Diff.DiffPerfData {
+        log.debug("StatusList.getPerfData called", .{});
+
+        var c_ret = c.git_diff_perfdata{
+            .version = c.GIT_DIFF_PERFDATA_VERSION,
+            .stat_calls = 0,
+            .oid_calculations = 0,
+        };
+
+        try internal.wrapCall("git_status_list_get_perfdata", .{
+            &c_ret,
+            @ptrCast(*const c.git_status_list, self),
+        });
+
+        const ret: git.Diff.DiffPerfData = .{
+            .stat_calls = c_ret.stat_calls,
+            .oid_calculations = c_ret.oid_calculations,
+        };
+
+        log.debug("perf data: {}", .{ret});
+
+        return ret;
+    }
+
     /// A status entry, providing the differences between the file as it exists in HEAD and the index, and providing the 
     /// differences between the index and the working directory.
     pub const StatusEntry = extern struct {

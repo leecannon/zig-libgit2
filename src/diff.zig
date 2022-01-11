@@ -55,6 +55,44 @@ pub const Diff = opaque {
         return ret;
     }
 
+    /// Get performance data for a diff object.
+    pub fn getPerfData(self: *const Diff) !DiffPerfData {
+        log.debug("Diff.getPerfData called", .{});
+
+        var c_ret = c.git_diff_perfdata{
+            .version = c.GIT_DIFF_PERFDATA_VERSION,
+            .stat_calls = 0,
+            .oid_calculations = 0,
+        };
+
+        try internal.wrapCall("git_diff_get_perfdata", .{
+            &c_ret,
+            @ptrCast(*const c.git_diff, self),
+        });
+
+        const ret: DiffPerfData = .{
+            .stat_calls = c_ret.stat_calls,
+            .oid_calculations = c_ret.oid_calculations,
+        };
+
+        log.debug("perf data: {}", .{ret});
+
+        return ret;
+    }
+
+    /// Performance data from diffing
+    pub const DiffPerfData = struct {
+        /// Number of stat() calls performed
+        stat_calls: usize,
+
+        /// Number of ID calculations
+        oid_calculations: usize,
+
+        comptime {
+            std.testing.refAllDecls(@This());
+        }
+    };
+
     comptime {
         std.testing.refAllDecls(@This());
     }
