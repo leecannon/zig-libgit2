@@ -44,7 +44,7 @@ There is currently no plan to port all the headers within "include/git2/sys", if
 - [X] pack.h
 - [ ] patch.h
 - [X] pathspec.h
-- [ ] proxy.h
+- [X] proxy.h
 - [ ] rebase.h
 - [X] refdb.h
 - [X] reflog.h
