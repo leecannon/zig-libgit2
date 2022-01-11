@@ -66,7 +66,7 @@ There is currently no plan to port all the headers within "include/git2/sys", if
 - [ ] transaction.h
 - [X] tree.h
 - [X] worktree.h
-- [ ] sys/credential.h
+- [X] sys/credential.h
 - [ ] sys/diff.h
 - [ ] sys/filter.h
 - [ ] sys/hashsig.h

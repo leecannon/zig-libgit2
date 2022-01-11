@@ -7,7 +7,7 @@ const git = @import("git.zig");
 
 pub const Credential = extern struct {
     credtype: CredentialType,
-    free: ?fn (*Credential) callconv(.C) void,
+    free: fn (*Credential) callconv(.C) void,
 
     pub fn deinit(self: *Credential) void {
         log.debug("Credential.deinit called", .{});
@@ -103,6 +103,134 @@ pub const Credential = extern struct {
         test {
             try std.testing.expectEqual(@sizeOf(c_uint), @sizeOf(CredentialType));
             try std.testing.expectEqual(@bitSizeOf(c_uint), @bitSizeOf(CredentialType));
+        }
+
+        comptime {
+            std.testing.refAllDecls(@This());
+        }
+    };
+
+    /// A plaintext username and password
+    pub const CredentialUserpassPlaintext = extern struct {
+        /// The parent credential
+        parent: Credential,
+        /// The username to authenticate as
+        username: [*:0]const u8,
+        /// The password to use
+        password: [*:0]const u8,
+
+        test {
+            try std.testing.expectEqual(@sizeOf(c.git_credential_userpass_plaintext), @sizeOf(CredentialUserpassPlaintext));
+            try std.testing.expectEqual(@bitSizeOf(c.git_credential_userpass_plaintext), @bitSizeOf(CredentialUserpassPlaintext));
+        }
+
+        comptime {
+            std.testing.refAllDecls(@This());
+        }
+    };
+
+    /// Username-only credential information
+    pub const CredentialUsername = extern struct {
+        /// The parent credential
+        parent: Credential,
+        /// Use `username()`
+        z_username: [1]u8,
+
+        /// The username to authenticate as
+        pub fn username(self: CredentialUsername) [:0]const u8 {
+            return std.mem.sliceTo(@ptrCast([*:0]const u8, &self.z_username), 0);
+        }
+
+        test {
+            try std.testing.expectEqual(@sizeOf(c.git_credential_username), @sizeOf(CredentialUsername));
+            try std.testing.expectEqual(@bitSizeOf(c.git_credential_username), @bitSizeOf(CredentialUsername));
+        }
+
+        comptime {
+            std.testing.refAllDecls(@This());
+        }
+    };
+
+    /// A ssh key from disk
+    pub const CredentialSshKey = extern struct {
+        /// The parent credential
+        parent: Credential,
+        /// The username to authenticate as
+        username: [*:0]const u8,
+        /// The path to a public key
+        publickey: [*:0]const u8,
+        /// The path to a private key
+        privatekey: [*:0]const u8,
+        /// Passphrase to decrypt the private key
+        passphrase: ?[*:0]const u8,
+
+        test {
+            try std.testing.expectEqual(@sizeOf(c.git_credential_ssh_key), @sizeOf(CredentialSshKey));
+            try std.testing.expectEqual(@bitSizeOf(c.git_credential_ssh_key), @bitSizeOf(CredentialSshKey));
+        }
+
+        comptime {
+            std.testing.refAllDecls(@This());
+        }
+    };
+
+    /// A plaintext username and password
+    pub const CredentialSshInteractive = extern struct {
+        /// The parent credential
+        parent: Credential,
+        /// The username to authenticate as
+        username: [*:0]const u8,
+
+        /// Callback used for authentication.
+        prompt_callback: fn (
+            name: [*]const u8,
+            name_len: c_int,
+            instruction: [*]const u8,
+            instruction_len: c_int,
+            num_prompts: c_int,
+            prompts: ?*const c.LIBSSH2_USERAUTH_KBDINT_PROMPT,
+            responses: ?*c.LIBSSH2_USERAUTH_KBDINT_RESPONSE,
+            abstract: ?*?*anyopaque,
+        ) callconv(.C) void,
+
+        /// Payload passed to prompt_callback
+        payload: ?*anyopaque,
+
+        test {
+            try std.testing.expectEqual(@sizeOf(c.git_credential_ssh_interactive), @sizeOf(CredentialSshInteractive));
+            try std.testing.expectEqual(@bitSizeOf(c.git_credential_ssh_interactive), @bitSizeOf(CredentialSshInteractive));
+        }
+
+        comptime {
+            std.testing.refAllDecls(@This());
+        }
+    };
+
+    /// A ssh key from disk
+    pub const CredentialSshCustom = extern struct {
+        /// The parent credential
+        parent: Credential,
+        /// The username to authenticate as
+        username: [*:0]const u8,
+        /// The public key data
+        publickey: [*:0]const u8,
+        /// Length of the public key
+        publickey_len: usize,
+
+        sign_callback: fn (
+            session: ?*c.LIBSSH2_SESSION,
+            sig: *[*:0]u8,
+            sig_len: *usize,
+            data: [*]const u8,
+            data_len: usize,
+            abstract: ?*?*anyopaque,
+        ) callconv(.C) c_int,
+
+        payload: ?*anyopaque,
+
+        test {
+            try std.testing.expectEqual(@sizeOf(c.git_credential_ssh_custom), @sizeOf(CredentialSshCustom));
+            try std.testing.expectEqual(@bitSizeOf(c.git_credential_ssh_custom), @bitSizeOf(CredentialSshCustom));
         }
 
         comptime {
