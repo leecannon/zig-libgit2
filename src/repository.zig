@@ -4486,6 +4486,90 @@ pub const Repository = opaque {
         return ret;
     }
 
+    /// Reverts the given commit against the given "our" commit, producing an index that reflects the result of the revert.
+    ///
+    /// ## Parameters
+    /// * `revert_commit` - The commit to revert
+    /// * `our_commit` - The commit to revert against (eg, HEAD)
+    /// * `mainline` - The parent of the revert commit, if it is a merge
+    /// * `merge_options` - The merge options
+    pub fn revertCommit(
+        self: *Repository,
+        revert_commit: *git.Commit,
+        our_commit: *git.Commit,
+        mainline: bool,
+        merge_options: git.MergeOptions,
+    ) !*git.Index {
+        log.debug("Repository.revertCommit called, revert_commit: {*}, our_commit: {*}, mainline: {}, merge_options: {}", .{
+            revert_commit,
+            our_commit,
+            mainline,
+            merge_options,
+        });
+
+        const c_options = merge_options.makeCOptionObject();
+
+        var ret: *git.Index = undefined;
+
+        try internal.wrapCall("git_revert_commit", .{
+            @ptrCast(*?*c.git_index, &ret),
+            @ptrCast(*c.git_repository, self),
+            @ptrCast(*c.git_commit, revert_commit),
+            @ptrCast(*c.git_commit, our_commit),
+            @boolToInt(mainline),
+            &c_options,
+        });
+
+        log.debug("successfully reverted commit", .{});
+
+        return ret;
+    }
+
+    /// Options for revert
+    pub const RevertOptions = struct {
+        /// For merge commits, the "mainline" is treated as the parent.
+        mainline: bool = false,
+        /// Options for the merging
+        merge_options: git.MergeOptions = .{},
+        /// Options for the checkout
+        checkout_options: CheckoutOptions = .{},
+
+        pub fn makeCOptionObject(self: RevertOptions) c.git_revert_options {
+            return .{
+                .version = c.GIT_REVERT_OPTIONS_VERSION,
+                .mainline = @boolToInt(self.mainline),
+                .merge_opts = self.merge_options.makeCOptionObject(),
+                .checkout_opts = self.checkout_options.makeCOptionObject(),
+            };
+        }
+
+        comptime {
+            std.testing.refAllDecls(@This());
+        }
+    };
+
+    /// Reverts the given commit, producing changes in the index and working directory.
+    ///
+    /// ## Parameters
+    /// * `commit` - The commit to revert
+    /// * `options` - The revert options
+    pub fn revert(self: *Repository, commit: *git.Commit, options: RevertOptions) !void {
+        log.debug("Repository.revert called, commit: {*}, options: {}", .{
+            commit,
+            options,
+        });
+
+        const c_options = options.makeCOptionObject();
+
+        try internal.wrapCall("git_revert", .{
+            @ptrCast(*c.git_repository, self),
+            @ptrCast(*c.git_commit, commit),
+            &c_options,
+        });
+
+        log.debug("successfully reverted commit", .{});
+    }
+
     comptime {
         std.testing.refAllDecls(@This());
     }
