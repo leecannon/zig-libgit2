@@ -9,7 +9,6 @@
 - [ ] Add functionality to build.zig to include package as either static or dynamic
 - [ ] Package with zigmod/gyro
 
-103 signature.h
 106 sys/hashsig.h
 111 reset.h
 121 transaction.h

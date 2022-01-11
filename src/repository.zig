@@ -4570,6 +4570,30 @@ pub const Repository = opaque {
         log.debug("successfully reverted commit", .{});
     }
 
+    /// Create a new action signature with default user and now timestamp.
+    ///
+    /// This looks up the user.name and user.email from the configuration and uses the current time as the timestamp, and creates
+    /// a new signature based on that information.
+    /// It will return `GitError.NotFound` if either the user.name or user.email are not set.
+    ///
+    /// ## Parameters
+    /// * `name` - Name of the person
+    /// * `email` - Email of the person
+    pub fn signatureInitDefault(self: *git.Repository) !*git.Signature {
+        log.debug("Repository.signatureInitDefault called", .{});
+
+        var ret: *git.Signature = undefined;
+
+        try internal.wrapCall("git_signature_default", .{
+            @ptrCast(*?*c.git_signature, &ret),
+            @ptrCast(*c.git_repository, self),
+        });
+
+        log.debug("successfully initalized signature {*}", .{ret});
+
+        return ret;
+    }
+
     comptime {
         std.testing.refAllDecls(@This());
     }

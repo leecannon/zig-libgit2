@@ -1776,6 +1776,75 @@ pub const Handle = struct {
         return result;
     }
 
+    /// Create a new action signature.
+    ///
+    /// Note: angle brackets ('<' and '>') characters are not allowed to be used in either the `name` or the `email` parameter.
+    ///
+    /// ## Parameters
+    /// * `name` - Name of the person
+    /// * `email` - Email of the person
+    /// * `time` - Time (in seconds from epoch) when the action happened
+    /// * `offset` - Timezone offset (in minutes) for the time
+    pub fn signatureInit(
+        self: Handle,
+        name: [:0]const u8,
+        email: [:0]const u8,
+        time: git.Time.SystemTime,
+        offset: c_int,
+    ) !*git.Signature {
+        _ = self;
+
+        log.debug("Handle.signatureInit called, name: {s}, email: {s}, time: {}, offset: {}", .{
+            name,
+            email,
+            time,
+            offset,
+        });
+
+        var ret: *git.Signature = undefined;
+
+        try internal.wrapCall("git_signature_new", .{
+            @ptrCast(*?*c.git_signature, &ret),
+            name.ptr,
+            email.ptr,
+            time,
+            offset,
+        });
+
+        log.debug("successfully initalized signature {*}", .{ret});
+
+        return ret;
+    }
+
+    /// Create a new action signature with a timestamp of 'now'.
+    ///
+    /// Note: angle brackets ('<' and '>') characters are not allowed to be used in either the `name` or the `email` parameter.
+    ///
+    /// ## Parameters
+    /// * `name` - Name of the person
+    /// * `email` - Email of the person
+    pub fn signatureInitNow(
+        self: Handle,
+        name: [:0]const u8,
+        email: [:0]const u8,
+    ) !*git.Signature {
+        _ = self;
+
+        log.debug("Handle.signatureInitNow called, name: {s}, email: {s}", .{ name, email });
+
+        var ret: *git.Signature = undefined;
+
+        try internal.wrapCall("git_signature_now", .{
+            @ptrCast(*?*c.git_signature, &ret),
+            name.ptr,
+            email.ptr,
+        });
+
+        log.debug("successfully initalized signature {*}", .{ret});
+
+        return ret;
+    }
+
     comptime {
         std.testing.refAllDecls(@This());
     }

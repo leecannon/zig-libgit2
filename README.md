@@ -56,7 +56,7 @@ There is currently no plan to port all the headers within "include/git2/sys", if
 - [X] revert.h
 - [X] revparse.h
 - [ ] revwalk.h
-- [ ] signature.h
+- [X] signature.h
 - [ ] stash.h
 - [X] status.h
 - [X] strarray.h
