@@ -20,6 +20,7 @@ pub usingnamespace @import("diff.zig");
 pub usingnamespace @import("errors.zig");
 pub usingnamespace @import("filter.zig");
 pub usingnamespace @import("handle.zig");
+pub usingnamespace @import("hashsig.zig");
 pub usingnamespace @import("index.zig");
 pub usingnamespace @import("indexer.zig");
 pub usingnamespace @import("mailmap.zig");

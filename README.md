@@ -70,7 +70,7 @@ There is currently no plan to port all the headers within "include/git2/sys", if
 - [X] sys/credential.h
 - [X] sys/diff.h
 - [ ] sys/filter.h
-- [ ] sys/hashsig.h
+- [X] sys/hashsig.h
 - [ ] sys/index.h
 - [ ] sys/merge.h
 - [ ] sys/odb_backend.h

@@ -1811,7 +1811,7 @@ pub const Handle = struct {
             offset,
         });
 
-        log.debug("successfully initalized signature {*}", .{ret});
+        log.debug("successfully initalized signature: {*}", .{ret});
 
         return ret;
     }
@@ -1840,7 +1840,60 @@ pub const Handle = struct {
             email.ptr,
         });
 
-        log.debug("successfully initalized signature {*}", .{ret});
+        log.debug("successfully initalized signature: {*}", .{ret});
+
+        return ret;
+    }
+
+    /// Compute a similarity signature for a text buffer
+    ///
+    /// If you have passed the option `ignore_whitespace`, then the whitespace will be removed from the buffer while it is being
+    /// processed, modifying the buffer in place. Sorry about that!
+    ///
+    /// ## Parameters
+    /// * `buf` - The input buffer.
+    /// * `options` - The signature computation options
+    pub fn hashsigInit(self: Handle, buf: []u8, options: git.Hashsig.HashsigOptions) !*git.Hashsig {
+        _ = self;
+
+        log.debug("Handle.hashsigInit called, options: {}", .{options});
+
+        var ret: *git.Hashsig = undefined;
+
+        try internal.wrapCall("git_hashsig_create", .{
+            @ptrCast(*?*c.git_hashsig, &ret),
+            buf.ptr,
+            buf.len,
+            options.makeCOptionObject(),
+        });
+
+        log.debug("successfully initalized hashsig: {*}", .{ret});
+
+        return ret;
+    }
+
+    /// Compute a similarity signature for a text file
+    ///
+    /// This walks through the file, only loading a maximum of 4K of file data at a time. Otherwise, it acts just like
+    /// `Handle.hashsigInit`.
+    ///
+    /// ## Parameters
+    /// * `buf` - The input buffer.
+    /// * `options` - The signature computation options
+    pub fn hashsigInitFromFile(self: Handle, path: [:0]const u8, options: git.Hashsig.HashsigOptions) !*git.Hashsig {
+        _ = self;
+
+        log.debug("Handle.hashsigInitFromFile called, file: {s}, options: {}", .{ path, options });
+
+        var ret: *git.Hashsig = undefined;
+
+        try internal.wrapCall("git_hashsig_create_fromfile", .{
+            @ptrCast(*?*c.git_hashsig, &ret),
+            path.ptr,
+            options.makeCOptionObject(),
+        });
+
+        log.debug("successfully initalized hashsig: {*}", .{ret});
 
         return ret;
     }

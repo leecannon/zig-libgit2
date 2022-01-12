@@ -5,11 +5,11 @@
 - [ ] Update with all API changes up to latest master
 - [ ] Build against each version from latest to oldest and mark added APIs using `@hasDecl`
 - [ ] Option to disable logging
+- [ ] Move `makeCOptionObject` to `internal` so they are not part of the public API
 - [ ] Add documentation to *every* function and type
 - [ ] Add functionality to build.zig to include package as either static or dynamic
 - [ ] Package with zigmod/gyro
 
-106 sys/hashsig.h
 111 reset.h
 121 transaction.h
 135 odb_backend.h
