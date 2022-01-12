@@ -6,10 +6,10 @@
 - [ ] Build against each version from latest to oldest and mark added APIs using `@hasDecl`
 - [ ] Option to disable logging
 - [ ] Add documentation to *every* function and type
+- [ ] Use fully qualified names everywhere
 - [ ] Add functionality to build.zig to include package as either static or dynamic
 - [ ] Package with zigmod/gyro
 
-111 reset.h
 121 transaction.h
 135 odb_backend.h
 180 sys/repository.h

@@ -52,7 +52,7 @@ There is currently no plan to port all the headers within "include/git2/sys", if
 - [X] refspec.h
 - [X] remote.h
 - [X] repository.h
-- [ ] reset.h
+- [X] reset.h
 - [X] revert.h
 - [X] revparse.h
 - [ ] revwalk.h
