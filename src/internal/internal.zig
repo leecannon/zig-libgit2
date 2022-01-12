@@ -3,6 +3,8 @@ const c = @import("c.zig");
 const git = @import("../git.zig");
 const log = std.log.scoped(.git);
 
+pub const make_c_option = @import("make_c_option.zig");
+
 pub const has_credential = @hasDecl(c, "git_credential");
 pub const RawCredentialType = if (has_credential) c.git_credential else c.git_cred;
 

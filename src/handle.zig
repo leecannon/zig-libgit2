@@ -101,7 +101,7 @@ pub const Handle = struct {
 
         var repo: *git.Repository = undefined;
 
-        var c_options = options.makeCOptionObject();
+        var c_options = internal.make_c_option.repositoryInitOptions(options);
 
         try internal.wrapCall("git_repository_init_ext", .{
             @ptrCast(*?*c.git_repository, &repo),
@@ -217,19 +217,6 @@ pub const Handle = struct {
                 };
             }
         };
-
-        pub fn makeCOptionObject(self: RepositoryInitOptions) c.git_repository_init_options {
-            return .{
-                .version = c.GIT_REPOSITORY_INIT_OPTIONS_VERSION,
-                .flags = self.flags.toInt(),
-                .mode = self.mode.toInt(),
-                .workdir_path = if (self.workdir_path) |slice| slice.ptr else null,
-                .description = if (self.description) |slice| slice.ptr else null,
-                .template_path = if (self.template_path) |slice| slice.ptr else null,
-                .initial_head = if (self.initial_head) |slice| slice.ptr else null,
-                .origin_url = if (self.origin_url) |slice| slice.ptr else null,
-            };
-        }
 
         comptime {
             std.testing.refAllDecls(@This());
@@ -470,21 +457,6 @@ pub const Handle = struct {
             /// Bypass the git-aware transport, but do not try to use hardlinks.
             local_no_links,
         };
-
-        fn makeCOptionsObject(self: CloneOptions) c.git_clone_options {
-            return c.git_clone_options{
-                .version = c.GIT_CHECKOUT_OPTIONS_VERSION,
-                .checkout_opts = self.checkout_options.makeCOptionObject(),
-                .fetch_opts = self.fetch_options.makeCOptionsObject(),
-                .bare = @boolToInt(self.bare),
-                .local = @enumToInt(self.local),
-                .checkout_branch = if (self.checkout_branch) |b| b.ptr else null,
-                .repository_cb = @ptrCast(c.git_repository_create_cb, self.repository_cb),
-                .repository_cb_payload = self.repository_cb_payload,
-                .remote_cb = @ptrCast(c.git_remote_create_cb, self.remote_cb),
-                .remote_cb_payload = self.remote_cb_payload,
-            };
-        }
     };
 
     /// Clone a remote repository.
@@ -503,7 +475,7 @@ pub const Handle = struct {
 
         var repo: *git.Repository = undefined;
 
-        const c_options = options.makeCOptionsObject();
+        const c_options = internal.make_c_option.cloneOptions(options);
 
         try internal.wrapCall("git_clone", .{
             @ptrCast(*?*c.git_repository, &repo),
@@ -1695,7 +1667,7 @@ pub const Handle = struct {
 
         var remote: *git.Remote = undefined;
 
-        const c_opts = options.makeCOptionsObject();
+        const c_opts = internal.make_c_option.createOptions(options);
 
         try internal.wrapCall("git_remote_create_with_opts", .{
             @ptrCast(*?*c.git_remote, &remote),
@@ -1864,7 +1836,7 @@ pub const Handle = struct {
             @ptrCast(*?*c.git_hashsig, &ret),
             buf.ptr,
             buf.len,
-            options.makeCOptionObject(),
+            internal.make_c_option.hashsigOptions(options),
         });
 
         log.debug("successfully initalized hashsig: {*}", .{ret});
@@ -1890,7 +1862,7 @@ pub const Handle = struct {
         try internal.wrapCall("git_hashsig_create_fromfile", .{
             @ptrCast(*?*c.git_hashsig, &ret),
             path.ptr,
-            options.makeCOptionObject(),
+            internal.make_c_option.hashsigOptions(options),
         });
 
         log.debug("successfully initalized hashsig: {*}", .{ret});

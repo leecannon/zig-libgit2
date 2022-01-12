@@ -148,13 +148,6 @@ pub const Worktree = opaque {
 
         z_padding: u29 = 0,
 
-        pub fn makeCOptionsObject(self: PruneOptions) c.git_worktree_prune_options {
-            return .{
-                .version = c.GIT_WORKTREE_PRUNE_OPTIONS_VERSION,
-                .flags = @bitCast(u32, self),
-            };
-        }
-
         pub fn format(
             value: PruneOptions,
             comptime fmt: []const u8,
@@ -196,7 +189,7 @@ pub const Worktree = opaque {
     pub fn isPruneable(self: *Worktree, options: PruneOptions) !bool {
         log.debug("Worktree.isPruneable called, options: {}", .{options});
 
-        var c_options = options.makeCOptionsObject();
+        var c_options = internal.make_c_option.pruneOptions(options);
 
         const ret = (try internal.wrapCallWithReturn("git_worktree_is_prunable", .{
             @ptrCast(*c.git_worktree, self),
@@ -215,7 +208,7 @@ pub const Worktree = opaque {
     pub fn prune(self: *Worktree, options: PruneOptions) !void {
         log.debug("Worktree.prune called, options: {}", .{options});
 
-        var c_options = options.makeCOptionsObject();
+        var c_options = internal.make_c_option.pruneOptions(options);
 
         try internal.wrapCall("git_worktree_prune", .{
             @ptrCast(*c.git_worktree, self),

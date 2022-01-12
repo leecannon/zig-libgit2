@@ -98,7 +98,7 @@ pub const Object = opaque {
 
         var result: *git.DescribeResult = undefined;
 
-        var c_options = options.makeCOptionObject();
+        var c_options = internal.make_c_option.describeOptions(options);
         try internal.wrapCall("git_describe_commit", .{
             @ptrCast(*?*c.git_describe_result, &result),
             @ptrCast(*c.git_object, self),

@@ -65,17 +65,6 @@ pub const ProxyOptions = struct {
         specified,
     };
 
-    pub fn makeCOptionsObject(self: ProxyOptions) c.git_proxy_options {
-        return .{
-            .version = c.GIT_PROXY_OPTIONS_VERSION,
-            .@"type" = @enumToInt(self.proxy_type),
-            .url = if (self.url) |s| s.ptr else null,
-            .credentials = @ptrCast(c.git_credential_acquire_cb, self.credentials),
-            .payload = self.payload,
-            .certificate_check = @ptrCast(c.git_transport_certificate_check_cb, self.certificate_check),
-        };
-    }
-
     comptime {
         std.testing.refAllDecls(@This());
     }

@@ -61,14 +61,6 @@ pub const FilterOptions = struct {
 
     /// The commit to load attributes from, when `FilterFlags.attributes_from_commit` is specified.
     commit_id: ?*git.Oid = null,
-
-    pub fn makeCOptionObject(self: FilterOptions) c.git_filter_options {
-        return .{
-            .version = c.GIT_FILTER_OPTIONS_VERSION,
-            .flags = @bitCast(u32, self.flags),
-            .commit_id = @ptrCast(?*c.git_oid, self.commit_id),
-        };
-    }
 };
 
 /// A filter that can transform file data

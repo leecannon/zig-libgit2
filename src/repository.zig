@@ -47,7 +47,7 @@ pub const Repository = opaque {
 
         var result: *git.DescribeResult = undefined;
 
-        var c_options = options.makeCOptionObject();
+        var c_options = internal.make_c_option.describeOptions(options);
 
         try internal.wrapCall("git_describe_workdir", .{
             @ptrCast(*?*c.git_describe_result, &result),
@@ -902,7 +902,7 @@ pub const Repository = opaque {
 
         log.debug("Repository.fileStatusForeachExtendedWithUserData called, options: {}", .{options});
 
-        const c_options = options.makeCOptionObject();
+        const c_options = internal.make_c_option.fileStatusOptions(options);
 
         const ret = try internal.wrapCallWithReturn("git_status_foreach_ext", .{
             @ptrCast(*c.git_repository, self),
@@ -929,7 +929,7 @@ pub const Repository = opaque {
 
         var status_list: *git.StatusList = undefined;
 
-        const c_options = options.makeCOptionObject();
+        const c_options = internal.make_c_option.fileStatusOptions(options);
 
         try internal.wrapCall("git_status_list_new", .{
             @ptrCast(*?*c.git_status_list, &status_list),
@@ -1073,16 +1073,6 @@ pub const Repository = opaque {
             }
         };
 
-        pub fn makeCOptionObject(self: FileStatusOptions) c.git_status_options {
-            return .{
-                .version = c.GIT_STATUS_OPTIONS_VERSION,
-                .show = @enumToInt(self.show),
-                .flags = @bitCast(c_int, self.flags),
-                .pathspec = @bitCast(c.git_strarray, self.pathspec),
-                .baseline = @ptrCast(?*c.git_tree, self.baseline),
-            };
-        }
-
         comptime {
             std.testing.refAllDecls(@This());
         }
@@ -1191,7 +1181,7 @@ pub const Repository = opaque {
     ) !void {
         log.debug("Repository.applyDiff called, diff: {*}, location: {}, options: {}", .{ diff, location, options });
 
-        const c_options = options.makeCOptionObject();
+        const c_options = internal.make_c_option.applyOptions(options);
 
         try internal.wrapCall("git_apply", .{
             @ptrCast(*c.git_repository, self),
@@ -1219,7 +1209,7 @@ pub const Repository = opaque {
     ) !void {
         log.debug("Repository.applyDiffWithUserData(" ++ @typeName(T) ++ ") called, diff: {*}, location: {}, options: {}", .{ diff, location, options });
 
-        const c_options = options.makeCOptionObject();
+        const c_options = internal.make_c_option.applyOptionsWithUserData(T, options);
 
         try internal.wrapCall("git_apply", .{
             @ptrCast(*c.git_repository, self),
@@ -1250,7 +1240,7 @@ pub const Repository = opaque {
 
         var ret: *git.Index = undefined;
 
-        const c_options = options.makeCOptionObject();
+        const c_options = internal.make_c_option.applyOptions(options);
 
         try internal.wrapCall("git_apply_to_tree", .{
             @ptrCast(*?*c.git_index, &ret),
@@ -1285,7 +1275,7 @@ pub const Repository = opaque {
 
         var ret: *git.Index = undefined;
 
-        const c_options = options.makeCOptionObject();
+        const c_options = internal.make_c_option.applyOptionsWithUserData(T, options);
 
         try internal.wrapCall("git_apply_to_tree", .{
             @ptrCast(*?*c.git_index, &ret),
@@ -1319,16 +1309,6 @@ pub const Repository = opaque {
 
         flags: ApplyOptionsFlags = .{},
 
-        pub fn makeCOptionObject(self: ApplyOptions) c.git_apply_options {
-            return .{
-                .version = c.GIT_APPLY_OPTIONS_VERSION,
-                .delta_cb = @ptrCast(c.git_apply_delta_cb, self.delta_cb),
-                .hunk_cb = @ptrCast(c.git_apply_hunk_cb, self.hunk_cb),
-                .payload = null,
-                .flags = @bitCast(c_uint, self.flags),
-            };
-        }
-
         comptime {
             std.testing.refAllDecls(@This());
         }
@@ -1355,16 +1335,6 @@ pub const Repository = opaque {
             payload: T,
 
             flags: ApplyOptionsFlags = .{},
-
-            pub fn makeCOptionObject(self: @This()) c.git_apply_options {
-                return .{
-                    .version = c.GIT_APPLY_OPTIONS_VERSION,
-                    .delta_cb = @ptrCast(c.git_apply_delta_cb, self.delta_cb),
-                    .hunk_cb = @ptrCast(c.git_apply_hunk_cb, self.hunk_cb),
-                    .payload = self.payload,
-                    .flags = @bitCast(c_uint, self.flags),
-                };
-            }
 
             comptime {
                 std.testing.refAllDecls(@This());
@@ -1432,7 +1402,7 @@ pub const Repository = opaque {
         try internal.wrapCall("git_attr_get", .{
             &result,
             @ptrCast(*c.git_repository, self),
-            flags.toCType(),
+            internal.make_c_option.attributeFlags(flags),
             path.ptr,
             name.ptr,
         });
@@ -1469,7 +1439,7 @@ pub const Repository = opaque {
         try internal.wrapCall("git_attr_get_many", .{
             @ptrCast([*]?[*:0]const u8, output_buffer.ptr),
             @ptrCast(*c.git_repository, self),
-            flags.toCType(),
+            internal.make_c_option.attributeFlags(flags),
             path.ptr,
             names.len,
             @ptrCast([*]?[*:0]const u8, names.ptr),
@@ -1519,7 +1489,7 @@ pub const Repository = opaque {
 
         const ret = try internal.wrapCallWithReturn("git_attr_foreach", .{
             @ptrCast(*const c.git_repository, self),
-            flags.toCType(),
+            internal.make_c_option.attributeFlags(flags),
             path.ptr,
             cb,
             null,
@@ -1575,7 +1545,7 @@ pub const Repository = opaque {
 
         const ret = try internal.wrapCallWithReturn("git_attr_foreach", .{
             @ptrCast(*const c.git_repository, self),
-            flags.toCType(),
+            internal.make_c_option.attributeFlags(flags),
             path.ptr,
             cb,
             user_data,
@@ -1643,30 +1613,6 @@ pub const Repository = opaque {
             }
         };
 
-        fn toCType(self: AttributeFlags) u32 {
-            var result: u32 = 0;
-
-            switch (self.location) {
-                .file_then_index => {},
-                .index_then_file => result |= c.GIT_ATTR_CHECK_INDEX_THEN_FILE,
-                .index_only => result |= c.GIT_ATTR_CHECK_INDEX_ONLY,
-            }
-
-            if (self.extended.no_system) {
-                result |= c.GIT_ATTR_CHECK_NO_SYSTEM;
-            }
-
-            if (self.extended.include_head) {
-                result |= c.GIT_ATTR_CHECK_INCLUDE_HEAD;
-            }
-
-            if (self.extended.include_commit) {
-                result |= c.GIT_ATTR_CHECK_INCLUDE_COMMIT;
-            }
-
-            return result;
-        }
-
         comptime {
             std.testing.refAllDecls(@This());
         }
@@ -1693,7 +1639,7 @@ pub const Repository = opaque {
 
         var blame: *git.Blame = undefined;
 
-        var c_options = options.makeCOptionObject();
+        var c_options = internal.make_c_option.blameOptions(options);
 
         try internal.wrapCall("git_blame_file", .{
             @ptrCast(*?*c.git_blame, &blame),
@@ -1790,18 +1736,6 @@ pub const Repository = opaque {
                 std.testing.refAllDecls(@This());
             }
         };
-
-        pub fn makeCOptionObject(self: BlameOptions) c.git_blame_options {
-            return .{
-                .version = c.GIT_BLAME_OPTIONS_VERSION,
-                .flags = @bitCast(u32, self.flags),
-                .min_match_characters = self.min_match_characters,
-                .newest_commit = @bitCast(c.git_oid, self.newest_commit),
-                .oldest_commit = @bitCast(c.git_oid, self.oldest_commit),
-                .min_line = self.min_line,
-                .max_line = self.max_line,
-            };
-        }
 
         comptime {
             std.testing.refAllDecls(@This());
@@ -2078,7 +2012,7 @@ pub const Repository = opaque {
     pub fn checkoutHead(self: *Repository, options: CheckoutOptions) !c_uint {
         log.debug("Repository.checkoutHead called, options: {}", .{options});
 
-        const c_options = options.makeCOptionObject();
+        const c_options = internal.make_c_option.checkoutOptions(options);
 
         const ret = try internal.wrapCallWithReturn("git_checkout_head", .{
             @ptrCast(*c.git_repository, self),
@@ -2096,7 +2030,7 @@ pub const Repository = opaque {
     pub fn checkoutIndex(self: *Repository, index: *git.Index, options: CheckoutOptions) !c_uint {
         log.debug("Repository.checkoutHead called, options: {}", .{options});
 
-        const c_options = options.makeCOptionObject();
+        const c_options = internal.make_c_option.checkoutOptions(options);
 
         const ret = try internal.wrapCallWithReturn("git_checkout_index", .{
             @ptrCast(*c.git_repository, self),
@@ -2115,7 +2049,7 @@ pub const Repository = opaque {
     pub fn checkoutTree(self: *Repository, treeish: *const git.Object, options: CheckoutOptions) !c_uint {
         log.debug("Repository.checkoutHead called, options: {}", .{options});
 
-        const c_option = options.makeCOptionObject();
+        const c_option = internal.make_c_option.checkoutOptions(options);
 
         const ret = try internal.wrapCallWithReturn("git_checkout_tree", .{
             @ptrCast(*c.git_repository, self),
@@ -2359,31 +2293,6 @@ pub const Repository = opaque {
             }
         };
 
-        pub fn makeCOptionObject(self: CheckoutOptions) c.git_checkout_options {
-            return .{
-                .version = c.GIT_CHECKOUT_OPTIONS_VERSION,
-                .checkout_strategy = @bitCast(c_uint, self.checkout_strategy),
-                .disable_filters = @boolToInt(self.disable_filters),
-                .dir_mode = self.dir_mode,
-                .file_mode = self.file_mode,
-                .file_open_flags = self.file_open_flags,
-                .notify_flags = @bitCast(c_uint, self.notify_flags),
-                .notify_cb = @ptrCast(c.git_checkout_notify_cb, self.notify_cb),
-                .notify_payload = self.notify_payload,
-                .progress_cb = @ptrCast(c.git_checkout_progress_cb, self.progress_cb),
-                .progress_payload = self.progress_payload,
-                .paths = @bitCast(c.git_strarray, self.paths),
-                .baseline = @ptrCast(?*c.git_tree, self.baseline),
-                .baseline_index = @ptrCast(?*c.git_index, self.baseline_index),
-                .target_directory = if (self.target_directory) |ptr| ptr.ptr else null,
-                .ancestor_label = if (self.ancestor_label) |ptr| ptr.ptr else null,
-                .our_label = if (self.our_label) |ptr| ptr.ptr else null,
-                .their_label = if (self.their_label) |ptr| ptr.ptr else null,
-                .perfdata_cb = @ptrCast(c.git_checkout_perfdata_cb, self.perfdata_cb),
-                .perfdata_payload = self.perfdata_payload,
-            };
-        }
-
         comptime {
             std.testing.refAllDecls(@This());
         }
@@ -2403,7 +2312,7 @@ pub const Repository = opaque {
 
         var index: *git.Index = undefined;
 
-        const c_options = options.makeCOptionObject();
+        const c_options = internal.make_c_option.mergeOptions(options);
 
         try internal.wrapCall("git_cherrypick_commit", .{
             @ptrCast(*?*c.git_index, &index),
@@ -2429,7 +2338,7 @@ pub const Repository = opaque {
             .{ commit, options },
         );
 
-        const c_options = options.makeCOptionObject();
+        const c_options = internal.make_c_option.cherrypickOptions(options);
 
         try internal.wrapCall("git_cherrypick", .{
             @ptrCast(*c.git_repository, self),
@@ -2444,15 +2353,6 @@ pub const Repository = opaque {
         mainline: bool = false,
         merge_options: git.MergeOptions = .{},
         checkout_options: CheckoutOptions = .{},
-
-        pub fn makeCOptionObject(self: CherrypickOptions) c.git_cherrypick_options {
-            return .{
-                .version = c.GIT_CHERRYPICK_OPTIONS_VERSION,
-                .mainline = @boolToInt(self.mainline),
-                .merge_opts = self.merge_options.makeCOptionObject(),
-                .checkout_opts = self.checkout_options.makeCOptionObject(),
-            };
-        }
 
         comptime {
             std.testing.refAllDecls(@This());
@@ -2873,7 +2773,7 @@ pub const Repository = opaque {
 
         var opt: ?*git.FilterList = undefined;
 
-        var c_options = options.makeCOptionObject();
+        var c_options = internal.make_c_option.filterOptions(options);
 
         try internal.wrapCall("git_filter_list_load_ext", .{
             @ptrCast(*?*c.git_filter_list, &opt),
@@ -2958,7 +2858,7 @@ pub const Repository = opaque {
     ) !git.Attribute {
         log.debug("Repository.attributeExtended called, options: {}, path: {s}, name: {s}", .{ options, path, name });
 
-        var c_options = options.makeCOptionObject();
+        var c_options = internal.make_c_option.attributeOptions(options);
 
         var result: ?[*:0]const u8 = undefined;
 
@@ -2999,7 +2899,7 @@ pub const Repository = opaque {
 
         log.debug("Repository.attributeManyExtended called, options: {}, path: {s}", .{ options, path });
 
-        var c_options = options.makeCOptionObject();
+        var c_options = internal.make_c_option.attributeOptions(options);
 
         try internal.wrapCall("git_attr_get_many_ext", .{
             @ptrCast([*]?[*:0]const u8, output_buffer.ptr),
@@ -3052,7 +2952,7 @@ pub const Repository = opaque {
 
         log.debug("Repository.attributeForeach called, options: {}, path: {s}", .{ options, path });
 
-        const c_options = options.makeCOptionObject();
+        const c_options = internal.make_c_option.attributeOptions(options);
 
         const ret = try internal.wrapCallWithReturn("git_attr_foreach_ext", .{
             @ptrCast(*const c.git_repository, self),
@@ -3110,7 +3010,7 @@ pub const Repository = opaque {
 
         log.debug("Repository.attributeForeachWithUserData called, options: {}, path: {s}", .{ options, path });
 
-        const c_options = options.makeCOptionObject();
+        const c_options = internal.make_c_option.attributeOptions(options);
 
         const ret = try internal.wrapCallWithReturn("git_attr_foreach_ext", .{
             @ptrCast(*const c.git_repository, self),
@@ -3128,14 +3028,6 @@ pub const Repository = opaque {
     pub const AttributeOptions = struct {
         flags: AttributeFlags,
         commit_id: *git.Oid,
-
-        pub fn makeCOptionObject(self: AttributeOptions) c.git_attr_options {
-            return .{
-                .version = c.GIT_ATTR_OPTIONS_VERSION,
-                .flags = self.flags.toCType(),
-                .commit_id = @ptrCast(*c.git_oid, self.commit_id),
-            };
-        }
 
         comptime {
             std.testing.refAllDecls(@This());
@@ -3299,14 +3191,6 @@ pub const Repository = opaque {
         /// reference to use for the new worktree HEAD
         ref: ?*git.Reference = null,
 
-        pub fn makeCOptionObject(self: WorktreeAddOptions) c.git_worktree_add_options {
-            return .{
-                .version = c.GIT_WORKTREE_ADD_OPTIONS_VERSION,
-                .lock = @boolToInt(self.lock),
-                .ref = @ptrCast(?*c.git_reference, self.ref),
-            };
-        }
-
         comptime {
             std.testing.refAllDecls(@This());
         }
@@ -3326,7 +3210,7 @@ pub const Repository = opaque {
 
         var ret: *git.Worktree = undefined;
 
-        const c_options = options.makeCOptionObject();
+        const c_options = internal.make_c_option.worktreeAddOptions(options);
 
         try internal.wrapCall("git_worktree_add", .{
             @ptrCast(*?*c.git_worktree, &ret),
@@ -4507,7 +4391,7 @@ pub const Repository = opaque {
             merge_options,
         });
 
-        const c_options = merge_options.makeCOptionObject();
+        const c_options = internal.make_c_option.mergeOptions(merge_options);
 
         var ret: *git.Index = undefined;
 
@@ -4534,15 +4418,6 @@ pub const Repository = opaque {
         /// Options for the checkout
         checkout_options: CheckoutOptions = .{},
 
-        pub fn makeCOptionObject(self: RevertOptions) c.git_revert_options {
-            return .{
-                .version = c.GIT_REVERT_OPTIONS_VERSION,
-                .mainline = @boolToInt(self.mainline),
-                .merge_opts = self.merge_options.makeCOptionObject(),
-                .checkout_opts = self.checkout_options.makeCOptionObject(),
-            };
-        }
-
         comptime {
             std.testing.refAllDecls(@This());
         }
@@ -4559,7 +4434,7 @@ pub const Repository = opaque {
             options,
         });
 
-        const c_options = options.makeCOptionObject();
+        const c_options = internal.make_c_option.revertOptions(options);
 
         try internal.wrapCall("git_revert", .{
             @ptrCast(*c.git_repository, self),

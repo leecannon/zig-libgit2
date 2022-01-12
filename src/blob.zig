@@ -92,12 +92,12 @@ pub const Blob = opaque {
         return new_blob;
     }
 
-    pub fn filter(self: *Blob, as_path: [:0]const u8, options: FilterOptions) !git.Buf {
+    pub fn filter(self: *Blob, as_path: [:0]const u8, options: BlobFilterOptions) !git.Buf {
         log.debug("Blob.filter called, as_path: {s}, options: {}", .{ as_path, options });
 
         var buf: git.Buf = .{};
 
-        var c_options = options.makeCOptionObject();
+        var c_options = internal.make_c_option.blobFilterOptions(options);
 
         try internal.wrapCall("git_blob_filter", .{
             @ptrCast(*c.git_buf, &buf),
@@ -111,7 +111,7 @@ pub const Blob = opaque {
         return buf;
     }
 
-    pub const FilterOptions = struct {
+    pub const BlobFilterOptions = struct {
         flags: BlobFilterFlags = .{},
         /// The commit to load attributes from, when `FilterFlags.attributes_from_commit` is specified.
         commit_id: ?*git.Oid = null,
@@ -155,14 +155,6 @@ pub const Blob = opaque {
                 std.testing.refAllDecls(@This());
             }
         };
-
-        pub fn makeCOptionObject(self: FilterOptions) c.git_blob_filter_options {
-            return .{
-                .version = c.GIT_BLOB_FILTER_OPTIONS_VERSION,
-                .flags = @bitCast(u32, self.flags),
-                .commit_id = @ptrCast(?*c.git_oid, self.commit_id),
-            };
-        }
 
         comptime {
             std.testing.refAllDecls(@This());

@@ -47,22 +47,6 @@ pub const Hashsig = opaque {
             smart_whitespace,
         };
 
-        pub fn makeCOptionObject(self: HashsigOptions) c.git_hashsig_option_t {
-            var ret: c.git_hashsig_option_t = 0;
-
-            if (self.allow_small_files) {
-                ret |= c.GIT_HASHSIG_ALLOW_SMALL_FILES;
-            }
-
-            switch (self.whitespace_mode) {
-                .normal => ret |= c.GIT_HASHSIG_NORMAL,
-                .ignore_whitespace => ret |= c.GIT_HASHSIG_IGNORE_WHITESPACE,
-                .smart_whitespace => ret |= c.GIT_HASHSIG_SMART_WHITESPACE,
-            }
-
-            return ret;
-        }
-
         comptime {
             std.testing.refAllDecls(@This());
         }

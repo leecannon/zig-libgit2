@@ -66,16 +66,6 @@ pub const Remote = opaque {
             }
         };
 
-        pub fn makeCOptionsObject(self: CreateOptions) c.git_remote_create_options {
-            return .{
-                .version = c.GIT_STATUS_OPTIONS_VERSION,
-                .repository = @ptrCast(?*c.git_repository, self.repository),
-                .name = if (self.name) |ptr| ptr.ptr else null,
-                .fetchspec = if (self.fetchspec) |ptr| ptr.ptr else null,
-                .flags = @bitCast(c_uint, self.flags),
-            };
-        }
-
         comptime {
             std.testing.refAllDecls(@This());
         }
@@ -235,7 +225,7 @@ pub const Remote = opaque {
     ) !void {
         log.debug("Remote.connect called, direction: {}, proxy_opts: {}", .{ direction, proxy_opts });
 
-        const c_proxy_opts = proxy_opts.makeCOptionsObject();
+        const c_proxy_opts = internal.make_c_option.proxyOptions(proxy_opts);
 
         try internal.wrapCall("git_remote_connect", .{
             @ptrCast(*c.git_remote, self),
@@ -579,18 +569,6 @@ pub const Remote = opaque {
             no_prune,
         };
 
-        pub fn makeCOptionsObject(self: FetchOptions) c.git_fetch_options {
-            return .{
-                .version = c.GIT_FETCH_OPTIONS_VERSION,
-                .callbacks = @bitCast(c.git_remote_callbacks, self.callbacks),
-                .prune = @enumToInt(self.prune),
-                .update_fetchhead = @boolToInt(self.update_fetchhead),
-                .download_tags = @enumToInt(self.download_tags),
-                .proxy_opts = self.proxy_opts.makeCOptionsObject(),
-                .custom_headers = @bitCast(c.git_strarray, self.custom_headers),
-            };
-        }
-
         comptime {
             std.testing.refAllDecls(@This());
         }
@@ -610,16 +588,6 @@ pub const Remote = opaque {
 
         ///Extra headers for this push operation
         custom_headers: git.StrArray = .{},
-
-        pub fn makeCOptionsObject(self: PushOptions) c.git_push_options {
-            return .{
-                .version = c.GIT_PUSH_OPTIONS_VERSION,
-                .pb_parallelism = self.pb_parallelism,
-                .callbacks = @bitCast(c.git_remote_callbacks, self.callbacks),
-                .proxy_opts = self.proxy_opts.makeCOptionsObject(),
-                .custom_headers = @bitCast(c.git_strarray, self.custom_headers),
-            };
-        }
     };
 
     /// Download and index the packfile
@@ -635,7 +603,7 @@ pub const Remote = opaque {
     pub fn download(self: *Remote, refspecs: git.StrArray, options: FetchOptions) !void {
         log.debug("Remote.download called, options: {}", .{options});
 
-        const c_options = options.makeCOptionsObject();
+        const c_options = internal.make_c_option.fetchOptions(options);
 
         try internal.wrapCall("git_remote_download", .{
             @ptrCast(*c.git_remote, self),
@@ -657,7 +625,7 @@ pub const Remote = opaque {
     pub fn upload(self: *Remote, refspecs: git.StrArray, options: PushOptions) !void {
         log.debug("Remote.upload called, options: {}", .{options});
 
-        const c_options = options.makeCOptionsObject();
+        const c_options = internal.make_c_option.pushOptions(options);
 
         try internal.wrapCall("git_remote_upload", .{
             @ptrCast(*c.git_remote, self),
@@ -721,7 +689,7 @@ pub const Remote = opaque {
         log.debug("Remote.fetch called, options: {}, reflog_message: {s}", .{ options, reflog_message });
 
         const c_reflog_message = if (reflog_message) |s| s.ptr else null;
-        const c_options = options.makeCOptionsObject();
+        const c_options = internal.make_c_option.fetchOptions(options);
 
         try internal.wrapCall("git_remote_fetch", .{
             @ptrCast(*c.git_remote, self),
@@ -756,7 +724,7 @@ pub const Remote = opaque {
     pub fn push(self: *Remote, refspecs: git.StrArray, options: PushOptions) !void {
         log.debug("Remote.push called, options: {}", .{options});
 
-        const c_options = options.makeCOptionsObject();
+        const c_options = internal.make_c_option.pushOptions(options);
 
         try internal.wrapCall("git_remote_push", .{
             @ptrCast(*c.git_remote, self),

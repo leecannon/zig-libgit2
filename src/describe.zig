@@ -28,17 +28,6 @@ pub const DescribeOptions = struct {
         all,
     };
 
-    pub fn makeCOptionObject(self: DescribeOptions) c.git_describe_options {
-        return .{
-            .version = c.GIT_DESCRIBE_OPTIONS_VERSION,
-            .max_candidates_tags = self.max_candidate_tags,
-            .describe_strategy = @enumToInt(self.describe_strategy),
-            .pattern = if (self.pattern) |slice| slice.ptr else null,
-            .only_follow_first_parent = @boolToInt(self.only_follow_first_parent),
-            .show_commit_oid_as_fallback = @boolToInt(self.show_commit_oid_as_fallback),
-        };
-    }
-
     comptime {
         std.testing.refAllDecls(@This());
     }
@@ -54,15 +43,6 @@ pub const DescribeFormatOptions = struct {
     /// If the workdir is dirty and this is set, this string will be appended to the description string.
     dirty_suffix: ?[:0]const u8 = null,
 
-    pub fn makeCOptionObject(self: DescribeFormatOptions) c.git_describe_format_options {
-        return .{
-            .version = c.GIT_DESCRIBE_FORMAT_OPTIONS_VERSION,
-            .abbreviated_size = self.abbreviated_size,
-            .always_use_long_format = @boolToInt(self.always_use_long_format),
-            .dirty_suffix = if (self.dirty_suffix) |slice| slice.ptr else null,
-        };
-    }
-
     comptime {
         std.testing.refAllDecls(@This());
     }
@@ -72,7 +52,7 @@ pub const DescribeResult = opaque {
     pub fn format(self: *const DescribeResult, options: DescribeFormatOptions) !git.Buf {
         var buf: git.Buf = .{};
 
-        const c_options = options.makeCOptionObject();
+        const c_options = internal.make_c_option.describeFormatOptions(options);
 
         try internal.wrapCall("git_describe_format", .{
             @ptrCast(*c.git_buf, &buf),
