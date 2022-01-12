@@ -15,62 +15,6 @@ pub const Remote = opaque {
         log.debug("remote closed successfully", .{});
     }
 
-    /// Remote creation options structure.
-    pub const CreateOptions = struct {
-        /// The repository that should own the remote.
-        /// Setting this to `null` results in a detached remote.
-        repository: ?*git.Repository = null,
-
-        /// The remote's name.
-        /// Setting this to `null` results in an in-memory/anonymous remote.
-        name: ?[:0]const u8 = null,
-
-        /// The fetchspec the remote should use.
-        fetchspec: ?[:0]const u8 = null,
-
-        /// Additional flags for the remote
-        flags: CreateFlags = .{},
-
-        /// Remote creation options flags.
-        pub const CreateFlags = packed struct {
-            /// Ignore the repository apply.insteadOf configuration.
-            skip_insteadof: bool = false,
-
-            /// Don't build a fetchspec from the name if none is set.
-            skip_default_fetchspec: bool = false,
-
-            z_padding: u30 = 0,
-
-            pub fn format(
-                value: CreateFlags,
-                comptime fmt: []const u8,
-                options: std.fmt.FormatOptions,
-                writer: anytype,
-            ) !void {
-                _ = fmt;
-                return internal.formatWithoutFields(
-                    value,
-                    options,
-                    writer,
-                    &.{"z_padding"},
-                );
-            }
-
-            test {
-                try std.testing.expectEqual(@sizeOf(c_uint), @sizeOf(CreateFlags));
-                try std.testing.expectEqual(@bitSizeOf(c_uint), @bitSizeOf(CreateFlags));
-            }
-
-            comptime {
-                std.testing.refAllDecls(@This());
-            }
-        };
-
-        comptime {
-            std.testing.refAllDecls(@This());
-        }
-    };
-
     /// Create a copy of an existing remote. All internal strings are also duplicated. Callbacks are not duplicated.
     pub fn duplicate(self: *Remote) !*Remote {
         log.debug("Remote.duplicate called", .{});
@@ -219,7 +163,7 @@ pub const Remote = opaque {
     pub fn connect(
         self: *Remote,
         direction: git.Direction,
-        callbacks: RemoteCallbacks,
+        callbacks: git.RemoteCallbacks,
         proxy_opts: git.ProxyOptions,
         custom_headers: git.StrArray,
     ) !void {
@@ -348,248 +292,6 @@ pub const Remote = opaque {
         log.debug("successfully disconnected remote", .{});
     }
 
-    /// Set the callbacks to be called by the remote when informing the user about the progress of the network operations.
-    pub const RemoteCallbacks = extern struct {
-        version: c_uint = c.GIT_CHECKOUT_OPTIONS_VERSION,
-
-        /// Textual progress from the remote. Text send over the progress side-band will be passed to this function (this is
-        /// the 'counting objects' output).
-        ///
-        /// Return a negative value to cancel the network operation.
-        ///
-        /// ## Parameters
-        /// * `str` - The message from the transport
-        /// * `len` - The length of the message
-        /// * `payload` - Payload provided by the caller
-        sideband_progress: ?fn (str: [*:0]const u8, len: c_uint, payload: ?*anyopaque) callconv(.C) c_int = null,
-
-        /// Completion is called when different parts of the download process are done (currently unused).
-        completion: ?fn (completion_type: RemoteCompletion, payload: ?*anyopaque) callconv(.C) c_int = null,
-
-        /// This will be called if the remote host requires authentication in order to connect to it.
-        ///
-        /// Return 0 for success, < 0 to indicate an error, > 0 to indicate no credential was acquired
-        /// Returning `errorToCInt(GitError.Passthrough)` will make libgit2 behave as though this field isn't set.
-        ///
-        /// ## Parameters
-        /// * `out` - The newly created credential object.
-        /// * `url` - The resource for which we are demanding a credential.
-        /// * `username_from_url` - The username that was embedded in a "user\@host" remote url, or `null` if not included.
-        /// * `allowed_types` - A bitmask stating which credential types are OK to return.
-        /// * `payload` - The payload provided when specifying this callback.
-        credentials: ?fn (
-            out: **git.Credential,
-            url: [*:0]const u8,
-            username_from_url: [*:0]const u8,
-            allowed_types: git.Credential.CredentialType,
-            payload: ?*anyopaque,
-        ) callconv(.C) c_int = null,
-
-        /// If cert verification fails, this will be called to let the user make the final decision of whether to allow the
-        /// connection to proceed. Returns 0 to allow the connection or a negative value to indicate an error.
-        ///
-        /// Return 0 to proceed with the connection, < 0 to fail the connection or > 0 to indicate that the callback refused
-        /// to act and that the existing validity determination should be honored
-        ///
-        /// ## Parameters
-        /// * `cert` - The host certificate
-        /// * `valid` - Whether the libgit2 checks (OpenSSL or WinHTTP) think this certificate is valid.
-        /// * `host` - Hostname of the host libgit2 connected to
-        /// * `payload` - Payload provided by the caller
-        certificate_check: ?fn (
-            cert: *git.Certificate,
-            valid: bool,
-            host: [*:0]const u8,
-            payload: ?*anyopaque,
-        ) callconv(.C) c_int = null,
-
-        /// During the download of new data, this will be regularly called with the current count of progress done by the
-        /// indexer.
-        ///
-        /// Return a value less than 0 to cancel the indexing or download.
-        ///
-        /// ## Parameters
-        /// * `stats` - Structure containing information about the state of the transfer
-        /// * `payload` - Payload provided by the caller
-        transfer_progress: ?fn (stats: *const git.Indexer.Progress, payload: ?*anyopaque) callconv(.C) c_int = null,
-
-        /// Each time a reference is updated locally, this function will be called with information about it.
-        update_tips: ?fn (
-            refname: [*:0]const u8,
-            a: *const git.Oid,
-            b: *const git.Oid,
-            payload: ?*anyopaque,
-        ) callconv(.C) c_int = null,
-
-        /// Function to call with progress information during pack building. Be aware that this is called inline with pack
-        /// building operations, so perfomance may be affected.
-        pack_progress: ?fn (stage: git.PackbuilderStage, current: u32, total: u32, payload: ?*anyopaque) callconv(.C) c_int = null,
-
-        /// Function to call with progress information during the upload portion nof a push. Be aware that this is called
-        /// inline with pack building operations, so performance may be affected.
-        push_transfer_progress: ?fn (current: c_uint, total: c_uint, size: usize, payload: ?*anyopaque) callconv(.C) c_int = null,
-
-        /// Callback used to inform of the update status from the remote.
-        ///
-        /// Called for each updated reference on push. If `status` is not `null`, the update was rejected by the remote server
-        /// and `status` contains the reason given.
-        ///
-        /// 0 on success, otherwise an error
-        ///
-        /// ## Parameters
-        /// * `refname` - Refname specifying to the remote ref
-        /// * `status` - Status message sent from the remote
-        /// * `data` - Data provided by the caller
-        push_update_reference: ?fn (
-            refname: [*:0]const u8,
-            status: ?[*:0]const u8,
-            data: ?*anyopaque,
-        ) callconv(.C) c_int = null,
-
-        /// Called once between the negotiation step and the upload. It provides information about what updates will be
-        /// performed.
-        /// Callback used to inform of upcoming updates.
-        ///
-        /// ## Parameters
-        /// * `updates` - An array containing the updates which will be sent as commands to the destination.
-        /// * `len` - Number of elements in `updates`
-        /// * `payload` - Payload provided by the caller
-        push_negotiation: ?fn (updates: [*]*const PushUpdate, len: usize, payload: ?*anyopaque) callconv(.C) c_int = null,
-
-        /// Create the transport to use for this operation. Leave `null` to auto-detect.
-        transport: ?fn (out: **git.Transport, owner: *Remote, param: ?*anyopaque) callconv(.C) c_int = null,
-
-        // This will be passed to each of the callbacks in this sruct as the last parameter.
-        payload: ?*anyopaque = null,
-
-        /// Resolve URL before connecting to remote. The returned URL will be used to connect to the remote instead. 
-        /// This callback is deprecated; users should use git_remote_ready_cb and configure the instance URL instead.
-        ///
-        /// Return 0 on success, `errorToCInt(GitError.Passthrough)` or an error
-        /// If you return `errorToCInt(GitError.Passthrough)`, you don't need to write anything to url_resolved.
-        ///
-        /// ## Parameters
-        /// * `url_resolved` - The buffer to write the resolved URL to
-        /// * `url` - The URL to resolve
-        /// * `direction` - Direction of the resolution
-        /// * `payload` - Payload provided by the caller
-        resolve_url: ?fn (
-            url_resolved: *git.Buf,
-            url: [*:0]const u8,
-            direction: git.Direction,
-            payload: ?*anyopaque,
-        ) callconv(.C) c_int = null,
-
-        /// Argument to the completion callback which tells it which operation finished.
-        pub const RemoteCompletion = enum(c_uint) {
-            download,
-            indexing,
-            @"error",
-        };
-
-        /// Represents an update which will be performed on the remote during push
-        pub const PushUpdate = extern struct {
-            /// The source name of the reference
-            src_refname: [*:0]const u8,
-
-            /// The name of the reference to update on the server
-            dst_refname: [*:0]const u8,
-
-            /// The current target of the reference
-            src: git.Oid,
-
-            /// The new target for the reference
-            dst: git.Oid,
-
-            test {
-                try std.testing.expectEqual(@sizeOf(c.git_push_update), @sizeOf(PushUpdate));
-                try std.testing.expectEqual(@bitSizeOf(c.git_push_update), @bitSizeOf(PushUpdate));
-            }
-
-            comptime {
-                std.testing.refAllDecls(@This());
-            }
-        };
-
-        test {
-            try std.testing.expectEqual(@sizeOf(c.git_remote_callbacks), @sizeOf(RemoteCallbacks));
-            try std.testing.expectEqual(@bitSizeOf(c.git_remote_callbacks), @bitSizeOf(RemoteCallbacks));
-        }
-
-        comptime {
-            std.testing.refAllDecls(@This());
-        }
-    };
-
-    /// Automatic tag following option.
-    pub const AutoTagOption = enum(c_uint) {
-        /// Use the setting from the configuration.
-        unspecified = 0,
-
-        /// Ask the server for tags pointing to objects we're already downloading.
-        auto,
-
-        /// Don't ask for any tags beyond the refspecs.
-        none,
-
-        /// Ask for all the tags.
-        all,
-    };
-
-    /// Fetch options structure.
-    pub const FetchOptions = struct {
-        /// Callbacks to use for this fetch operation.
-        callbacks: RemoteCallbacks = .{},
-
-        /// Whether to perform a prune after the fetch.
-        prune: FetchPrune = .unspecified,
-
-        /// Whether to write the results to FETCH_HEAD. Defaults to on. Leave this default to behave like git.
-        update_fetchhead: bool = true,
-
-        /// Determines how to behave regarding tags on the remote, such as auto-dowloading tags for objects we're
-        /// downloading or downloading all of them. The default is to auto-follow tags.
-        download_tags: AutoTagOption = .unspecified,
-
-        /// Proxy options to use, bu default no proxy is used.
-        proxy_opts: git.ProxyOptions = .{},
-
-        /// Extra headers for this fetch operation.
-        custom_headers: git.StrArray = .{},
-
-        /// Acceptable prune settings from the configuration.
-        pub const FetchPrune = enum(c_uint) {
-            /// Use the setting from the configuration.
-            unspecified = 0,
-
-            /// Force pruning on.
-            prune,
-
-            /// Force pruning off.
-            no_prune,
-        };
-
-        comptime {
-            std.testing.refAllDecls(@This());
-        }
-    };
-
-    pub const PushOptions = struct {
-        /// If the transport being used to push to the remote requires the creation of a pack file, this controls the
-        /// number of worker threads used by the packbuilder when creating that pack file to be sent to the remote. 
-        /// If set to 0, the packbuilder will auto-detect the number of threads to create. The default value is 1.
-        pb_parallelism: c_uint = 1,
-
-        ///Callbacks to use for this push operation
-        callbacks: RemoteCallbacks = .{},
-
-        ///Proxy options to use, by default no proxy is used.
-        proxy_opts: git.ProxyOptions = .{},
-
-        ///Extra headers for this push operation
-        custom_headers: git.StrArray = .{},
-    };
-
     /// Download and index the packfile
     ///
     /// Connect to the remote if it hasn't been done yet, negotiate with the remote git which objects are missing,
@@ -652,7 +354,7 @@ pub const Remote = opaque {
         self: *Remote,
         callbacks: RemoteCallbacks,
         update_fetchead: bool,
-        download_tags: AutoTagOption,
+        download_tags: RemoteAutoTagOption,
         reflog_message: ?[:0]const u8,
     ) !void {
         log.debug("Remote.updateTips called, update_fetchhead: {}, download_tags: {}, reflog_message: {s}", .{
@@ -736,11 +438,11 @@ pub const Remote = opaque {
     }
 
     /// Get the statistics structure that is filled in by the fetch operation.
-    pub fn getStats(self: *Remote) *const git.Indexer.Progress {
+    pub fn getStats(self: *Remote) *const git.IndexerProgress {
         log.debug("Remote.getStats called", .{});
 
         const ret = @ptrCast(
-            *const git.Indexer.Progress,
+            *const git.IndexerProgress,
             c.git_remote_stats(@ptrCast(*c.git_remote, self)),
         );
 
@@ -750,11 +452,11 @@ pub const Remote = opaque {
     }
 
     /// Retrieve the tag auto-follow setting.
-    pub fn getAutotag(self: *const Remote) AutoTagOption {
+    pub fn getAutotag(self: *const Remote) RemoteAutoTagOption {
         log.debug("Remote.getAutotag called", .{});
 
         const ret = @intToEnum(
-            AutoTagOption,
+            RemoteAutoTagOption,
             c.git_remote_autotag(@ptrCast(*const c.git_remote, self)),
         );
 
@@ -794,6 +496,304 @@ pub const Remote = opaque {
         log.debug("successfully found default branch: {s}", .{buf.toSlice()});
 
         return buf;
+    }
+
+    comptime {
+        std.testing.refAllDecls(@This());
+    }
+};
+
+/// Automatic tag following option.
+pub const RemoteAutoTagOption = enum(c_uint) {
+    /// Use the setting from the configuration.
+    unspecified = 0,
+
+    /// Ask the server for tags pointing to objects we're already downloading.
+    auto,
+
+    /// Don't ask for any tags beyond the refspecs.
+    none,
+
+    /// Ask for all the tags.
+    all,
+};
+
+/// Remote creation options structure.
+pub const RemoteCreateOptions = struct {
+    /// The repository that should own the remote.
+    /// Setting this to `null` results in a detached remote.
+    repository: ?*git.Repository = null,
+
+    /// The remote's name.
+    /// Setting this to `null` results in an in-memory/anonymous remote.
+    name: ?[:0]const u8 = null,
+
+    /// The fetchspec the remote should use.
+    fetchspec: ?[:0]const u8 = null,
+
+    /// Additional flags for the remote
+    flags: RemoteCreateFlags = .{},
+
+    /// Remote creation options flags.
+    pub const RemoteCreateFlags = packed struct {
+        /// Ignore the repository apply.insteadOf configuration.
+        skip_insteadof: bool = false,
+
+        /// Don't build a fetchspec from the name if none is set.
+        skip_default_fetchspec: bool = false,
+
+        z_padding: u30 = 0,
+
+        pub fn format(
+            value: RemoteCreateFlags,
+            comptime fmt: []const u8,
+            options: std.fmt.FormatOptions,
+            writer: anytype,
+        ) !void {
+            _ = fmt;
+            return internal.formatWithoutFields(
+                value,
+                options,
+                writer,
+                &.{"z_padding"},
+            );
+        }
+
+        test {
+            try std.testing.expectEqual(@sizeOf(c_uint), @sizeOf(RemoteCreateFlags));
+            try std.testing.expectEqual(@bitSizeOf(c_uint), @bitSizeOf(RemoteCreateFlags));
+        }
+
+        comptime {
+            std.testing.refAllDecls(@This());
+        }
+    };
+
+    comptime {
+        std.testing.refAllDecls(@This());
+    }
+};
+
+/// Fetch options structure.
+pub const FetchOptions = struct {
+    /// Callbacks to use for this fetch operation.
+    callbacks: RemoteCallbacks = .{},
+
+    /// Whether to perform a prune after the fetch.
+    prune: FetchPrune = .unspecified,
+
+    /// Whether to write the results to FETCH_HEAD. Defaults to on. Leave this default to behave like git.
+    update_fetchhead: bool = true,
+
+    /// Determines how to behave regarding tags on the remote, such as auto-dowloading tags for objects we're
+    /// downloading or downloading all of them. The default is to auto-follow tags.
+    download_tags: RemoteAutoTagOption = .unspecified,
+
+    /// Proxy options to use, bu default no proxy is used.
+    proxy_opts: git.ProxyOptions = .{},
+
+    /// Extra headers for this fetch operation.
+    custom_headers: git.StrArray = .{},
+
+    /// Acceptable prune settings from the configuration.
+    pub const FetchPrune = enum(c_uint) {
+        /// Use the setting from the configuration.
+        unspecified = 0,
+
+        /// Force pruning on.
+        prune,
+
+        /// Force pruning off.
+        no_prune,
+    };
+
+    comptime {
+        std.testing.refAllDecls(@This());
+    }
+};
+
+pub const PushOptions = struct {
+    /// If the transport being used to push to the remote requires the creation of a pack file, this controls the
+    /// number of worker threads used by the packbuilder when creating that pack file to be sent to the remote. 
+    /// If set to 0, the packbuilder will auto-detect the number of threads to create. The default value is 1.
+    pb_parallelism: c_uint = 1,
+
+    ///Callbacks to use for this push operation
+    callbacks: RemoteCallbacks = .{},
+
+    ///Proxy options to use, by default no proxy is used.
+    proxy_opts: git.ProxyOptions = .{},
+
+    ///Extra headers for this push operation
+    custom_headers: git.StrArray = .{},
+};
+
+/// Set the callbacks to be called by the remote when informing the user about the progress of the network operations.
+pub const RemoteCallbacks = extern struct {
+    version: c_uint = c.GIT_CHECKOUT_OPTIONS_VERSION,
+
+    /// Textual progress from the remote. Text send over the progress side-band will be passed to this function (this is
+    /// the 'counting objects' output).
+    ///
+    /// Return a negative value to cancel the network operation.
+    ///
+    /// ## Parameters
+    /// * `str` - The message from the transport
+    /// * `len` - The length of the message
+    /// * `payload` - Payload provided by the caller
+    sideband_progress: ?fn (str: [*:0]const u8, len: c_uint, payload: ?*anyopaque) callconv(.C) c_int = null,
+
+    /// Completion is called when different parts of the download process are done (currently unused).
+    completion: ?fn (completion_type: RemoteCompletion, payload: ?*anyopaque) callconv(.C) c_int = null,
+
+    /// This will be called if the remote host requires authentication in order to connect to it.
+    ///
+    /// Return 0 for success, < 0 to indicate an error, > 0 to indicate no credential was acquired
+    /// Returning `errorToCInt(GitError.Passthrough)` will make libgit2 behave as though this field isn't set.
+    ///
+    /// ## Parameters
+    /// * `out` - The newly created credential object.
+    /// * `url` - The resource for which we are demanding a credential.
+    /// * `username_from_url` - The username that was embedded in a "user\@host" remote url, or `null` if not included.
+    /// * `allowed_types` - A bitmask stating which credential types are OK to return.
+    /// * `payload` - The payload provided when specifying this callback.
+    credentials: ?fn (
+        out: **git.Credential,
+        url: [*:0]const u8,
+        username_from_url: [*:0]const u8,
+        allowed_types: git.CredentialType,
+        payload: ?*anyopaque,
+    ) callconv(.C) c_int = null,
+
+    /// If cert verification fails, this will be called to let the user make the final decision of whether to allow the
+    /// connection to proceed. Returns 0 to allow the connection or a negative value to indicate an error.
+    ///
+    /// Return 0 to proceed with the connection, < 0 to fail the connection or > 0 to indicate that the callback refused
+    /// to act and that the existing validity determination should be honored
+    ///
+    /// ## Parameters
+    /// * `cert` - The host certificate
+    /// * `valid` - Whether the libgit2 checks (OpenSSL or WinHTTP) think this certificate is valid.
+    /// * `host` - Hostname of the host libgit2 connected to
+    /// * `payload` - Payload provided by the caller
+    certificate_check: ?fn (
+        cert: *git.Certificate,
+        valid: bool,
+        host: [*:0]const u8,
+        payload: ?*anyopaque,
+    ) callconv(.C) c_int = null,
+
+    /// During the download of new data, this will be regularly called with the current count of progress done by the
+    /// indexer.
+    ///
+    /// Return a value less than 0 to cancel the indexing or download.
+    ///
+    /// ## Parameters
+    /// * `stats` - Structure containing information about the state of the transfer
+    /// * `payload` - Payload provided by the caller
+    transfer_progress: ?fn (stats: *const git.IndexerProgress, payload: ?*anyopaque) callconv(.C) c_int = null,
+
+    /// Each time a reference is updated locally, this function will be called with information about it.
+    update_tips: ?fn (
+        refname: [*:0]const u8,
+        a: *const git.Oid,
+        b: *const git.Oid,
+        payload: ?*anyopaque,
+    ) callconv(.C) c_int = null,
+
+    /// Function to call with progress information during pack building. Be aware that this is called inline with pack
+    /// building operations, so perfomance may be affected.
+    pack_progress: ?fn (stage: git.PackbuilderStage, current: u32, total: u32, payload: ?*anyopaque) callconv(.C) c_int = null,
+
+    /// Function to call with progress information during the upload portion nof a push. Be aware that this is called
+    /// inline with pack building operations, so performance may be affected.
+    push_transfer_progress: ?fn (current: c_uint, total: c_uint, size: usize, payload: ?*anyopaque) callconv(.C) c_int = null,
+
+    /// Callback used to inform of the update status from the remote.
+    ///
+    /// Called for each updated reference on push. If `status` is not `null`, the update was rejected by the remote server
+    /// and `status` contains the reason given.
+    ///
+    /// 0 on success, otherwise an error
+    ///
+    /// ## Parameters
+    /// * `refname` - Refname specifying to the remote ref
+    /// * `status` - Status message sent from the remote
+    /// * `data` - Data provided by the caller
+    push_update_reference: ?fn (
+        refname: [*:0]const u8,
+        status: ?[*:0]const u8,
+        data: ?*anyopaque,
+    ) callconv(.C) c_int = null,
+
+    /// Called once between the negotiation step and the upload. It provides information about what updates will be
+    /// performed.
+    /// Callback used to inform of upcoming updates.
+    ///
+    /// ## Parameters
+    /// * `updates` - An array containing the updates which will be sent as commands to the destination.
+    /// * `len` - Number of elements in `updates`
+    /// * `payload` - Payload provided by the caller
+    push_negotiation: ?fn (updates: [*]*const PushUpdate, len: usize, payload: ?*anyopaque) callconv(.C) c_int = null,
+
+    /// Create the transport to use for this operation. Leave `null` to auto-detect.
+    transport: ?fn (out: **git.Transport, owner: *Remote, param: ?*anyopaque) callconv(.C) c_int = null,
+
+    // This will be passed to each of the callbacks in this sruct as the last parameter.
+    payload: ?*anyopaque = null,
+
+    /// Resolve URL before connecting to remote. The returned URL will be used to connect to the remote instead. 
+    /// This callback is deprecated; users should use git_remote_ready_cb and configure the instance URL instead.
+    ///
+    /// Return 0 on success, `errorToCInt(GitError.Passthrough)` or an error
+    /// If you return `errorToCInt(GitError.Passthrough)`, you don't need to write anything to url_resolved.
+    ///
+    /// ## Parameters
+    /// * `url_resolved` - The buffer to write the resolved URL to
+    /// * `url` - The URL to resolve
+    /// * `direction` - Direction of the resolution
+    /// * `payload` - Payload provided by the caller
+    resolve_url: ?fn (
+        url_resolved: *git.Buf,
+        url: [*:0]const u8,
+        direction: git.Direction,
+        payload: ?*anyopaque,
+    ) callconv(.C) c_int = null,
+
+    /// Argument to the completion callback which tells it which operation finished.
+    pub const RemoteCompletion = enum(c_uint) {
+        download,
+        indexing,
+        @"error",
+    };
+
+    /// Represents an update which will be performed on the remote during push
+    pub const PushUpdate = extern struct {
+        /// The source name of the reference
+        src_refname: [*:0]const u8,
+
+        /// The name of the reference to update on the server
+        dst_refname: [*:0]const u8,
+
+        /// The current target of the reference
+        src: git.Oid,
+
+        /// The new target for the reference
+        dst: git.Oid,
+
+        test {
+            try std.testing.expectEqual(@sizeOf(c.git_push_update), @sizeOf(PushUpdate));
+            try std.testing.expectEqual(@bitSizeOf(c.git_push_update), @bitSizeOf(PushUpdate));
+        }
+
+        comptime {
+            std.testing.refAllDecls(@This());
+        }
+    };
+
+    test {
+        try std.testing.expectEqual(@sizeOf(c.git_remote_callbacks), @sizeOf(RemoteCallbacks));
+        try std.testing.expectEqual(@bitSizeOf(c.git_remote_callbacks), @bitSizeOf(RemoteCallbacks));
     }
 
     comptime {

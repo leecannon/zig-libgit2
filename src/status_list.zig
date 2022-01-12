@@ -34,7 +34,7 @@ pub const StatusList = opaque {
     }
 
     /// Get performance data for diffs from a StatusList
-    pub fn getPerfData(self: *const StatusList) !git.Diff.DiffPerfData {
+    pub fn getPerfData(self: *const StatusList) !git.DiffPerfData {
         log.debug("StatusList.getPerfData called", .{});
 
         var c_ret = c.git_diff_perfdata{
@@ -48,7 +48,7 @@ pub const StatusList = opaque {
             @ptrCast(*const c.git_status_list, self),
         });
 
-        const ret: git.Diff.DiffPerfData = .{
+        const ret: git.DiffPerfData = .{
             .stat_calls = c_ret.stat_calls,
             .oid_calculations = c_ret.oid_calculations,
         };

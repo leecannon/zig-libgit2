@@ -94,7 +94,7 @@ pub const Handle = struct {
     /// ## Parameters
     /// * `path` - The path to the repository
     /// * `options` - The options to use during the creation of the repository
-    pub fn repositoryInitExtended(self: Handle, path: [:0]const u8, options: RepositoryInitOptions) !*git.Repository {
+    pub fn repositoryInitExtended(self: Handle, path: [:0]const u8, options: git.RepositoryInitOptions) !*git.Repository {
         _ = self;
 
         log.debug("Handle.repositoryInitExtended called, path: {s}, options: {}", .{ path, options });
@@ -113,115 +113,6 @@ pub const Handle = struct {
 
         return repo;
     }
-
-    pub const RepositoryInitOptions = struct {
-        flags: RepositoryInitExtendedFlags = .{},
-        mode: InitMode = .shared_umask,
-
-        /// The path to the working dir or `null` for default (i.e. repo_path parent on non-bare repos). 
-        /// *NOTE*: if this is a relative path, it must be relative to the repository path. 
-        /// If this is not the "natural" working directory, a .git gitlink file will be created linking to the repository path.
-        workdir_path: ?[:0]const u8 = null,
-
-        /// A "description" file to be used in the repository, instead of using the template content.
-        description: ?[:0]const u8 = null,
-
-        /// When `RepositoryInitExtendedFlags.external_template` is set, this must contain the path to use for the template
-        /// directory. If this is `null`, the config or default directory options will be used instead.
-        template_path: ?[:0]const u8 = null,
-
-        /// The name of the head to point HEAD at. If `null`, then this will be treated as "master" and the HEAD ref will be set
-        /// to "refs/heads/master".
-        /// If this begins with "refs/" it will be used verbatim; otherwise "refs/heads/" will be prefixed.
-        initial_head: ?[:0]const u8 = null,
-
-        /// If this is non-`null`, then after the rest of the repository initialization is completed, an "origin" remote will be 
-        /// added pointing to this URL.
-        origin_url: ?[:0]const u8 = null,
-
-        pub const RepositoryInitExtendedFlags = packed struct {
-            /// Create a bare repository with no working directory.
-            bare: bool = false,
-
-            /// Return an `GitError.EXISTS` error if the path appears to already be an git repository.
-            no_reinit: bool = false,
-
-            /// Normally a "/.git/" will be appended to the repo path for non-bare repos (if it is not already there), but passing 
-            /// this flag prevents that behavior.
-            no_dotgit_dir: bool = false,
-
-            /// Make the repo_path (and workdir_path) as needed. Init is always willing to create the ".git" directory even
-            /// without this flag. This flag tells init to create the trailing component of the repo and workdir paths as needed.
-            mkdir: bool = false,
-
-            /// Recursively make all components of the repo and workdir paths as necessary.
-            mkpath: bool = false,
-
-            /// libgit2 normally uses internal templates to initialize a new repo. 
-            /// This flag enables external templates, looking at the "template_path" from the options if set, or the
-            /// `init.templatedir` global config if not, or falling back on "/usr/share/git-core/templates" if it exists.
-            external_template: bool = false,
-
-            /// If an alternate workdir is specified, use relative paths for the gitdir and core.worktree.
-            relative_gitlink: bool = false,
-
-            z_padding: std.meta.Int(.unsigned, @bitSizeOf(c_uint) - 7) = 0,
-
-            pub fn toInt(self: RepositoryInitExtendedFlags) c_uint {
-                return @bitCast(c_uint, self);
-            }
-
-            pub fn format(
-                value: RepositoryInitExtendedFlags,
-                comptime fmt: []const u8,
-                options: std.fmt.FormatOptions,
-                writer: anytype,
-            ) !void {
-                _ = fmt;
-                return internal.formatWithoutFields(
-                    value,
-                    options,
-                    writer,
-                    &.{"z_padding"},
-                );
-            }
-
-            test {
-                try std.testing.expectEqual(@sizeOf(c_uint), @sizeOf(RepositoryInitExtendedFlags));
-                try std.testing.expectEqual(@bitSizeOf(c_uint), @bitSizeOf(RepositoryInitExtendedFlags));
-            }
-
-            comptime {
-                std.testing.refAllDecls(@This());
-            }
-        };
-
-        pub const InitMode = union(enum) {
-            /// Use permissions configured by umask - the default.
-            shared_umask: void,
-
-            /// Use "--shared=group" behavior, chmod'ing the new repo to be group writable and "g+sx" for sticky group assignment.
-            shared_group: void,
-
-            /// Use "--shared=all" behavior, adding world readability.
-            shared_all: void,
-
-            custom: c_uint,
-
-            pub fn toInt(self: InitMode) c_uint {
-                return switch (self) {
-                    .shared_umask => 0,
-                    .shared_group => 0o2775,
-                    .shared_all => 0o2777,
-                    .custom => |custom| custom,
-                };
-            }
-        };
-
-        comptime {
-            std.testing.refAllDecls(@This());
-        }
-    };
 
     /// Open a repository.
     ///
@@ -256,7 +147,7 @@ pub const Handle = struct {
     pub fn repositoryOpenExtended(
         self: Handle,
         path: ?[:0]const u8,
-        flags: RepositoryOpenOptions,
+        flags: git.RepositoryOpenOptions,
         ceiling_dirs: ?[:0]const u8,
     ) !*git.Repository {
         _ = self;
@@ -279,56 +170,6 @@ pub const Handle = struct {
 
         return repo;
     }
-
-    pub const RepositoryOpenOptions = packed struct {
-        /// Only open the repository if it can be immediately found in the path. Do not walk up the directory tree to look for it.
-        no_search: bool = false,
-
-        /// Unless this flag is set, open will not search across filesystem boundaries.
-        cross_fs: bool = false,
-
-        /// Open repository as a bare repo regardless of core.bare config.
-        bare: bool = false,
-
-        /// Do not check for a repository by appending /.git to the path; only open the repository if path itself points to the
-        /// git directory.     
-        no_dotgit: bool = false,
-
-        /// Find and open a git repository, respecting the environment variables used by the git command-line tools. If set, 
-        /// `Handle.repositoryOpenExtended` will ignore the other flags and the `ceiling_dirs` argument, and will allow a `null`
-        /// `path` to use `GIT_DIR` or search from the current directory.
-        open_from_env: bool = false,
-
-        z_padding: std.meta.Int(.unsigned, @bitSizeOf(c_uint) - 5) = 0,
-
-        pub fn toInt(self: RepositoryOpenOptions) c_uint {
-            return @bitCast(c_uint, self);
-        }
-
-        pub fn format(
-            value: RepositoryOpenOptions,
-            comptime fmt: []const u8,
-            options: std.fmt.FormatOptions,
-            writer: anytype,
-        ) !void {
-            _ = fmt;
-            return internal.formatWithoutFields(
-                value,
-                options,
-                writer,
-                &.{"z_padding"},
-            );
-        }
-
-        test {
-            try std.testing.expectEqual(@sizeOf(c_uint), @sizeOf(RepositoryOpenOptions));
-            try std.testing.expectEqual(@bitSizeOf(c_uint), @bitSizeOf(RepositoryOpenOptions));
-        }
-
-        comptime {
-            std.testing.refAllDecls(@This());
-        }
-    };
 
     /// Open a bare repository.
     ///
@@ -384,80 +225,6 @@ pub const Handle = struct {
 
         return buf;
     }
-
-    pub const CloneOptions = struct {
-        /// Options to pass to the checkout step.
-        checkout_options: git.Repository.CheckoutOptions = .{},
-
-        // options which control the fetch, including callbacks. Callbacks are for reporting fetch progress, and for
-        // acquiring credentials in the event they are needed.
-        fetch_options: git.Remote.FetchOptions = .{},
-
-        /// Set false (default) to create a standard repo or true for a bare repo.
-        bare: bool = false,
-
-        /// Whether to use a fetch or a copy of the object database.
-        local: LocalType = .local_auto,
-
-        /// Branch of the remote repository to checkout. `null` means the default.
-        checkout_branch: ?[:0]const u8 = null,
-
-        /// A callback used to create the new repository into which to clone. If `null` the `bare` field will be used to
-        /// determine whether to create a bare repository.
-        ///
-        /// Return 0, or a negative value to indicate error
-        ///
-        /// ## Parameters
-        /// * `out` - The resulting repository
-        /// * `path` - Path in which to create the repository
-        /// * `bare` - Whether the repository is bare. This is the value from the clone options
-        /// * `payload` - Payload specified by the options
-        repository_cb: ?fn (
-            out: **git.Repository,
-            path: [*:0]const u8,
-            bare: bool,
-            payload: *anyopaque,
-        ) callconv(.C) void = null,
-
-        /// An opaque payload to pass to the `repository_cb` creation callback.
-        /// This parameter is ignored unless repository_cb is non-`null`.
-        repository_cb_payload: ?*anyopaque = null,
-
-        /// A callback used to create the git remote, prior to its being used to perform the clone option. 
-        /// This parameter may be `null`, indicating that `Handle.clone` should provide default behavior.
-        ///
-        /// Return 0, or an error code
-        ///
-        /// ## Parameters
-        /// * `out` - The resulting remote
-        /// * `repo` - The repository in which to create the remote
-        /// * `name` - The remote's name
-        /// * `url` - The remote's url
-        /// * `payload` - An opaque payload
-        remote_cb: ?fn (
-            out: **git.Remote,
-            repo: *git.Repository,
-            name: [*:0]const u8,
-            url: [*:0]const u8,
-            payload: ?*anyopaque,
-        ) callconv(.C) void = null,
-
-        remote_cb_payload: ?*anyopaque = null,
-
-        /// Options for bypassing the git-aware transport on clone. Bypassing it means that instead of a fetch,
-        /// libgit2 will copy the object database directory instead of figuring out what it needs, which is faster.
-        pub const LocalType = enum(c_uint) {
-            /// Auto-detect (default), libgit2 will bypass the git-aware transport for local paths, but use a normal fetch for
-            /// `file://` urls.
-            local_auto,
-            /// Bypass the git-aware transport even for a `file://` url.
-            local,
-            /// Do no bypass the git-aware transport
-            no_local,
-            /// Bypass the git-aware transport, but do not try to use hardlinks.
-            local_no_links,
-        };
-    };
 
     /// Clone a remote repository.
     ///
@@ -560,7 +327,7 @@ pub const Handle = struct {
         log.debug("successfully set maximum mapped files", .{});
     }
 
-    pub fn optionGetSearchPath(self: Handle, level: git.Config.Level) !git.Buf {
+    pub fn optionGetSearchPath(self: Handle, level: git.ConfigLevel) !git.Buf {
         _ = self;
 
         log.debug("Handle.optionGetSearchPath called, level: {s}", .{@tagName(level)});
@@ -580,7 +347,7 @@ pub const Handle = struct {
     /// `path` should be a list of directories delimited by path_list_separator.
     /// Pass `null` to reset to the default (generally based on environment variables). Use magic path `$PATH` to include the old
     /// value of the path (if you want to prepend or append, for instance).
-    pub fn optionSetSearchPath(self: Handle, level: git.Config.Level, path: ?[:0]const u8) !void {
+    pub fn optionSetSearchPath(self: Handle, level: git.ConfigLevel, path: ?[:0]const u8) !void {
         _ = self;
 
         log.debug("Handle.optionSetSearchPath called, path: {s}", .{path});
@@ -1512,12 +1279,12 @@ pub const Handle = struct {
         self: Handle,
         path: [:0]const u8,
         odb: ?*git.Odb,
-        options: git.Indexer.Options,
-        comptime callback_fn: fn (stats: *const git.Indexer.Progress) c_int,
+        options: git.IndexerOptions,
+        comptime callback_fn: fn (stats: *const git.IndexerProgress) c_int,
     ) !*git.Indexer {
         const cb = struct {
             pub fn cb(
-                stats: *const git.Indexer.Progress,
+                stats: *const git.IndexerProgress,
                 _: *u8,
             ) c_int {
                 return callback_fn(stats);
@@ -1545,10 +1312,10 @@ pub const Handle = struct {
         self: Handle,
         path: [:0]const u8,
         odb: ?*git.Odb,
-        options: git.Indexer.Options,
+        options: git.IndexerOptions,
         user_data: anytype,
         comptime callback_fn: fn (
-            stats: *const git.Indexer.Progress,
+            stats: *const git.IndexerProgress,
             user_data_ptr: @TypeOf(user_data),
         ) c_int,
     ) !*git.Indexer {
@@ -1561,7 +1328,7 @@ pub const Handle = struct {
                 stats: *const c.git_indexer_progress,
                 payload: ?*anyopaque,
             ) callconv(.C) c_int {
-                return callback_fn(@ptrCast(*const git.Indexer.Progress, stats), @ptrCast(UserDataType, payload));
+                return callback_fn(@ptrCast(*const git.IndexerProgress, stats), @ptrCast(UserDataType, payload));
             }
         }.cb;
 
@@ -1660,7 +1427,7 @@ pub const Handle = struct {
     /// ## Parameters
     /// * `url` - The remote's url.
     /// * `options` - The remote creation options.
-    pub fn remoteCreateWithOptions(self: Handle, url: [:0]const u8, options: git.Remote.CreateOptions) !*git.Remote {
+    pub fn remoteCreateWithOptions(self: Handle, url: [:0]const u8, options: git.RemoteCreateOptions) !*git.Remote {
         _ = self;
 
         log.debug("Handle.remoteCreateWithOptions called, url: {s}, options: {}", .{ url, options });
@@ -1825,7 +1592,7 @@ pub const Handle = struct {
     /// ## Parameters
     /// * `buf` - The input buffer.
     /// * `options` - The signature computation options
-    pub fn hashsigInit(self: Handle, buf: []u8, options: git.Hashsig.HashsigOptions) !*git.Hashsig {
+    pub fn hashsigInit(self: Handle, buf: []u8, options: git.HashsigOptions) !*git.Hashsig {
         _ = self;
 
         log.debug("Handle.hashsigInit called, options: {}", .{options});
@@ -1852,7 +1619,7 @@ pub const Handle = struct {
     /// ## Parameters
     /// * `buf` - The input buffer.
     /// * `options` - The signature computation options
-    pub fn hashsigInitFromFile(self: Handle, path: [:0]const u8, options: git.Hashsig.HashsigOptions) !*git.Hashsig {
+    pub fn hashsigInitFromFile(self: Handle, path: [:0]const u8, options: git.HashsigOptions) !*git.Hashsig {
         _ = self;
 
         log.debug("Handle.hashsigInitFromFile called, file: {s}, options: {}", .{ path, options });
@@ -1873,6 +1640,80 @@ pub const Handle = struct {
     comptime {
         std.testing.refAllDecls(@This());
     }
+};
+
+pub const CloneOptions = struct {
+    /// Options to pass to the checkout step.
+    checkout_options: git.CheckoutOptions = .{},
+
+    // Options which control the fetch, including callbacks. Callbacks are for reporting fetch progress, and for
+    // acquiring credentials in the event they are needed.
+    fetch_options: git.FetchOptions = .{},
+
+    /// Set false (default) to create a standard repo or true for a bare repo.
+    bare: bool = false,
+
+    /// Whether to use a fetch or a copy of the object database.
+    local: LocalType = .local_auto,
+
+    /// Branch of the remote repository to checkout. `null` means the default.
+    checkout_branch: ?[:0]const u8 = null,
+
+    /// A callback used to create the new repository into which to clone. If `null` the `bare` field will be used to
+    /// determine whether to create a bare repository.
+    ///
+    /// Return 0, or a negative value to indicate error
+    ///
+    /// ## Parameters
+    /// * `out` - The resulting repository
+    /// * `path` - Path in which to create the repository
+    /// * `bare` - Whether the repository is bare. This is the value from the clone options
+    /// * `payload` - Payload specified by the options
+    repository_cb: ?fn (
+        out: **git.Repository,
+        path: [*:0]const u8,
+        bare: bool,
+        payload: *anyopaque,
+    ) callconv(.C) void = null,
+
+    /// An opaque payload to pass to the `repository_cb` creation callback.
+    /// This parameter is ignored unless repository_cb is non-`null`.
+    repository_cb_payload: ?*anyopaque = null,
+
+    /// A callback used to create the git remote, prior to its being used to perform the clone option. 
+    /// This parameter may be `null`, indicating that `Handle.clone` should provide default behavior.
+    ///
+    /// Return 0, or an error code
+    ///
+    /// ## Parameters
+    /// * `out` - The resulting remote
+    /// * `repo` - The repository in which to create the remote
+    /// * `name` - The remote's name
+    /// * `url` - The remote's url
+    /// * `payload` - An opaque payload
+    remote_cb: ?fn (
+        out: **git.Remote,
+        repo: *git.Repository,
+        name: [*:0]const u8,
+        url: [*:0]const u8,
+        payload: ?*anyopaque,
+    ) callconv(.C) void = null,
+
+    remote_cb_payload: ?*anyopaque = null,
+
+    /// Options for bypassing the git-aware transport on clone. Bypassing it means that instead of a fetch,
+    /// libgit2 will copy the object database directory instead of figuring out what it needs, which is faster.
+    pub const LocalType = enum(c_uint) {
+        /// Auto-detect (default), libgit2 will bypass the git-aware transport for local paths, but use a normal fetch for
+        /// `file://` urls.
+        local_auto,
+        /// Bypass the git-aware transport even for a `file://` url.
+        local,
+        /// Do no bypass the git-aware transport
+        no_local,
+        /// Bypass the git-aware transport, but do not try to use hardlinks.
+        local_no_links,
+    };
 };
 
 comptime {

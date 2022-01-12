@@ -31,25 +31,25 @@ pub const Hashsig = opaque {
         return @truncate(u7, @intCast(c_uint, ret));
     }
 
-    /// Options for hashsig computation
-    pub const HashsigOptions = struct {
-        whitespace_mode: WhitespaceMode = .normal,
+    comptime {
+        std.testing.refAllDecls(@This());
+    }
+};
 
-        /// Allow hashing of small files
-        allow_small_files: bool = false,
+/// Options for hashsig computation
+pub const HashsigOptions = struct {
+    whitespace_mode: WhitespaceMode = .normal,
 
-        pub const WhitespaceMode = enum {
-            /// Use all data
-            normal,
-            /// Ignore whitespace
-            ignore_whitespace,
-            /// Ignore \r and all space after \n
-            smart_whitespace,
-        };
+    /// Allow hashing of small files
+    allow_small_files: bool = false,
 
-        comptime {
-            std.testing.refAllDecls(@This());
-        }
+    pub const WhitespaceMode = enum {
+        /// Use all data
+        normal,
+        /// Ignore whitespace
+        ignore_whitespace,
+        /// Ignore \r and all space after \n
+        smart_whitespace,
     };
 
     comptime {

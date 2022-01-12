@@ -26,7 +26,7 @@ pub const ProxyOptions = struct {
         out: **git.Credential,
         url: [*:0]const u8,
         username_from_url: [*:0]const u8,
-        allowed_types: git.Credential.CredentialType,
+        allowed_types: git.CredentialType,
         payload: ?*anyopaque,
     ) callconv(.C) c_int = null,
 

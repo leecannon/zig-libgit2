@@ -240,121 +240,121 @@ pub const Tree = opaque {
         });
     }
 
-    pub const TreeEntry = opaque {
-        pub fn deinit(self: *TreeEntry) void {
-            log.debug("TreeEntry.deinit called", .{});
+    comptime {
+        std.testing.refAllDecls(@This());
+    }
+};
 
-            c.git_tree_entry_free(@ptrCast(*c.git_tree_entry, self));
+pub const TreeEntry = opaque {
+    pub fn deinit(self: *TreeEntry) void {
+        log.debug("TreeEntry.deinit called", .{});
 
-            log.debug("tree entry freed successfully", .{});
+        c.git_tree_entry_free(@ptrCast(*c.git_tree_entry, self));
+
+        log.debug("tree entry freed successfully", .{});
+    }
+
+    /// Get the filename of a tree entry
+    pub fn filename(self: *const TreeEntry) [:0]const u8 {
+        log.debug("TreeEntry.filename called", .{});
+
+        const ret = c.git_tree_entry_name(@ptrCast(*const c.git_tree_entry, self));
+
+        const slice = std.mem.sliceTo(ret, 0);
+
+        log.debug("entry filename: {s}", .{slice});
+
+        return slice;
+    }
+
+    /// Get the id of the object pointed by the entry
+    pub fn getId(self: *const TreeEntry) *const git.Oid {
+        log.debug("TreeEntry.getId called", .{});
+
+        const ret = @ptrCast(
+            *const git.Oid,
+            c.git_tree_entry_id(@ptrCast(*const c.git_tree_entry, self)),
+        );
+
+        if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
+            var buf: [git.Oid.hex_buffer_size]u8 = undefined;
+            if (ret.formatHex(&buf)) |slice| {
+                log.debug("entry id: {s}", .{slice});
+            } else |_| {}
         }
 
-        /// Get the filename of a tree entry
-        pub fn filename(self: *const TreeEntry) [:0]const u8 {
-            log.debug("TreeEntry.filename called", .{});
+        return ret;
+    }
 
-            const ret = c.git_tree_entry_name(@ptrCast(*const c.git_tree_entry, self));
+    /// Get the type of the object pointed by the entry
+    pub fn getType(self: *const TreeEntry) git.ObjectType {
+        log.debug("TreeEntry.getType called", .{});
 
-            const slice = std.mem.sliceTo(ret, 0);
+        const ret = @intToEnum(git.ObjectType, c.git_tree_entry_type(@ptrCast(*const c.git_tree_entry, self)));
 
-            log.debug("entry filename: {s}", .{slice});
+        log.debug("entry type: {}", .{ret});
 
-            return slice;
-        }
+        return ret;
+    }
 
-        /// Get the id of the object pointed by the entry
-        pub fn getId(self: *const TreeEntry) *const git.Oid {
-            log.debug("TreeEntry.getId called", .{});
+    /// Get the UNIX file attributes of a tree entry
+    pub fn filemode(self: *const TreeEntry) git.FileMode {
+        log.debug("TreeEntry.filemode called", .{});
 
-            const ret = @ptrCast(
-                *const git.Oid,
-                c.git_tree_entry_id(@ptrCast(*const c.git_tree_entry, self)),
-            );
+        const ret = @intToEnum(git.FileMode, c.git_tree_entry_filemode(@ptrCast(*const c.git_tree_entry, self)));
 
-            if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-                var buf: [git.Oid.hex_buffer_size]u8 = undefined;
-                if (ret.formatHex(&buf)) |slice| {
-                    log.debug("entry id: {s}", .{slice});
-                } else |_| {}
-            }
+        log.debug("entry file mode: {}", .{ret});
 
-            return ret;
-        }
+        return ret;
+    }
 
-        /// Get the type of the object pointed by the entry
-        pub fn getType(self: *const TreeEntry) git.ObjectType {
-            log.debug("TreeEntry.getType called", .{});
+    /// Get the raw UNIX file attributes of a tree entry
+    ///
+    /// This function does not perform any normalization and is only useful if you need to be able to recreate the
+    /// original tree object.
+    pub fn filemodeRaw(self: *const TreeEntry) c_uint {
+        log.debug("TreeEntry.filemodeRaw called", .{});
 
-            const ret = @intToEnum(git.ObjectType, c.git_tree_entry_type(@ptrCast(*const c.git_tree_entry, self)));
+        const ret = c.git_tree_entry_filemode_raw(@ptrCast(*const c.git_tree_entry, self));
 
-            log.debug("entry type: {}", .{ret});
+        log.debug("entry raw file mode: {}", .{ret});
 
-            return ret;
-        }
+        return ret;
+    }
 
-        /// Get the UNIX file attributes of a tree entry
-        pub fn filemode(self: *const TreeEntry) git.FileMode {
-            log.debug("TreeEntry.filemode called", .{});
+    /// Compare two tree entries
+    ///
+    /// Returns <0 if `self` is before `other`, 0 if `self` == `other`, >0 if `self` is after `other`
+    pub fn compare(self: *const TreeEntry, other: *const TreeEntry) c_int {
+        log.debug("TreeEntry.compare called", .{});
 
-            const ret = @intToEnum(git.FileMode, c.git_tree_entry_filemode(@ptrCast(*const c.git_tree_entry, self)));
+        const ret = c.git_tree_entry_cmp(
+            @ptrCast(*const c.git_tree_entry, self),
+            @ptrCast(*const c.git_tree_entry, other),
+        );
 
-            log.debug("entry file mode: {}", .{ret});
+        log.debug("compare result: {}", .{ret});
 
-            return ret;
-        }
+        return ret;
+    }
 
-        /// Get the raw UNIX file attributes of a tree entry
-        ///
-        /// This function does not perform any normalization and is only useful if you need to be able to recreate the
-        /// original tree object.
-        pub fn filemodeRaw(self: *const TreeEntry) c_uint {
-            log.debug("TreeEntry.filemodeRaw called", .{});
+    /// Duplicate a tree entry
+    ///
+    /// The returned tree entry is owned by the user and must be freed explicitly with `TreeEntry.deinit`.
+    pub fn duplicate(self: *TreeEntry) !*TreeEntry {
+        log.debug("Tree.duplicate called", .{});
 
-            const ret = c.git_tree_entry_filemode_raw(@ptrCast(*const c.git_tree_entry, self));
+        var ret: *TreeEntry = undefined;
 
-            log.debug("entry raw file mode: {}", .{ret});
+        try internal.wrapCall("git_tree_entry_dup", .{
+            @ptrCast(*?*c.git_tree_entry, &ret),
+            @ptrCast(*c.git_tree_entry, self),
+        });
 
-            return ret;
-        }
+        log.debug("successfully duplicated tree entry", .{});
 
-        /// Compare two tree entries
-        ///
-        /// Returns <0 if `self` is before `other`, 0 if `self` == `other`, >0 if `self` is after `other`
-        pub fn compare(self: *const TreeEntry, other: *const TreeEntry) c_int {
-            log.debug("TreeEntry.compare called", .{});
-
-            const ret = c.git_tree_entry_cmp(
-                @ptrCast(*const c.git_tree_entry, self),
-                @ptrCast(*const c.git_tree_entry, other),
-            );
-
-            log.debug("compare result: {}", .{ret});
-
-            return ret;
-        }
-
-        /// Duplicate a tree entry
-        ///
-        /// The returned tree entry is owned by the user and must be freed explicitly with `TreeEntry.deinit`.
-        pub fn duplicate(self: *TreeEntry) !*TreeEntry {
-            log.debug("Tree.duplicate called", .{});
-
-            var ret: *TreeEntry = undefined;
-
-            try internal.wrapCall("git_tree_entry_dup", .{
-                @ptrCast(*?*c.git_tree_entry, &ret),
-                @ptrCast(*c.git_tree_entry, self),
-            });
-
-            log.debug("successfully duplicated tree entry", .{});
-
-            return ret;
-        }
-
-        comptime {
-            std.testing.refAllDecls(@This());
-        }
-    };
+        return ret;
+    }
 
     comptime {
         std.testing.refAllDecls(@This());
@@ -399,11 +399,11 @@ pub const TreeBuilder = opaque {
     /// Get an entry from the builder from its filename
     ///
     /// The returned entry is owned by the builder and should not be freed manually.
-    pub fn get(self: *TreeBuilder, filename: [:0]const u8) ?*const Tree.TreeEntry {
+    pub fn get(self: *TreeBuilder, filename: [:0]const u8) ?*const TreeEntry {
         log.debug("TreeBuilder.get called, filename: {s}", .{filename});
 
         return @ptrCast(
-            ?*const Tree.TreeEntry,
+            ?*const TreeEntry,
             c.git_treebuilder_get(
                 @ptrCast(*c.git_treebuilder, self),
                 filename.ptr,
@@ -421,7 +421,7 @@ pub const TreeBuilder = opaque {
     ///
     /// By default the entry that you are inserting will be checked for validity; that it exists in the object database and
     /// is of the correct type. If you do not want this behavior, set `Handle.optionSetStrictObjectCreation` to false.
-    pub fn insert(self: *TreeBuilder, filename: [:0]const u8, id: *const git.Oid, filemode: git.FileMode) !*const Tree.TreeEntry {
+    pub fn insert(self: *TreeBuilder, filename: [:0]const u8, id: *const git.Oid, filemode: git.FileMode) !*const TreeEntry {
         if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
             var buf: [git.Oid.hex_buffer_size]u8 = undefined;
             if (id.formatHex(&buf)) |slice| {
@@ -429,7 +429,7 @@ pub const TreeBuilder = opaque {
             } else |_| {}
         }
 
-        var ret: *const Tree.TreeEntry = undefined;
+        var ret: *const TreeEntry = undefined;
 
         try internal.wrapCall("git_treebuilder_insert", .{
             @ptrCast(*?*const c.git_tree_entry, &ret),
@@ -468,11 +468,11 @@ pub const TreeBuilder = opaque {
     /// * `entry` - The entry
     pub fn filter(
         self: *TreeBuilder,
-        comptime callback_fn: fn (entry: *const Tree.TreeEntry) bool,
+        comptime callback_fn: fn (entry: *const TreeEntry) bool,
     ) !void {
         const cb = struct {
             pub fn cb(
-                entry: *const Tree.TreeEntry,
+                entry: *const TreeEntry,
                 _: *u8,
             ) bool {
                 return callback_fn(entry);
@@ -499,7 +499,7 @@ pub const TreeBuilder = opaque {
         self: *TreeBuilder,
         user_data: anytype,
         comptime callback_fn: fn (
-            entry: *const Tree.TreeEntry,
+            entry: *const TreeEntry,
             user_data_ptr: @TypeOf(user_data),
         ) bool,
     ) !void {
@@ -511,7 +511,7 @@ pub const TreeBuilder = opaque {
                 payload: ?*anyopaque,
             ) callconv(.C) c_int {
                 return callback_fn(
-                    @ptrCast(*const Tree.TreeEntry, entry),
+                    @ptrCast(*const TreeEntry, entry),
                     @ptrCast(UserDataType, payload),
                 ) != 0;
             }
@@ -560,7 +560,7 @@ pub const TreeBuilder = opaque {
     pub fn pathspecMatch(
         self: *Tree,
         pathspec: *git.Pathspec,
-        options: git.Pathspec.MatchOptions,
+        options: git.PathspecMatchOptions,
         match_list: ?**git.PathspecMatchList,
     ) !bool {
         log.debug("Tree.pathspecMatch called, options: {}, pathspec: {*}", .{ options, pathspec });

@@ -38,7 +38,7 @@ pub const Diff = opaque {
     pub fn pathspecMatch(
         self: *Diff,
         pathspec: *git.Pathspec,
-        options: git.Pathspec.MatchOptions,
+        options: git.PathspecMatchOptions,
         match_list: ?**git.PathspecMatchList,
     ) !bool {
         log.debug("Diff.pathspecMatch called, options: {}, pathspec: {*}", .{ options, pathspec });
@@ -80,18 +80,18 @@ pub const Diff = opaque {
         return ret;
     }
 
-    /// Performance data from diffing
-    pub const DiffPerfData = struct {
-        /// Number of stat() calls performed
-        stat_calls: usize,
+    comptime {
+        std.testing.refAllDecls(@This());
+    }
+};
 
-        /// Number of ID calculations
-        oid_calculations: usize,
+/// Performance data from diffing
+pub const DiffPerfData = struct {
+    /// Number of stat() calls performed
+    stat_calls: usize,
 
-        comptime {
-            std.testing.refAllDecls(@This());
-        }
-    };
+    /// Number of ID calculations
+    oid_calculations: usize,
 
     comptime {
         std.testing.refAllDecls(@This());
@@ -212,6 +212,133 @@ pub const DiffDelta = extern struct {
     }
 };
 
+pub const ApplyOptions = struct {
+    /// callback that will be made per delta (file)
+    ///
+    /// When the callback:
+    ///   - returns < 0, the apply process will be aborted.
+    ///   - returns > 0, the delta will not be applied, but the apply process continues
+    ///   - returns 0, the delta is applied, and the apply process continues.
+    delta_cb: ?fn (delta: *const git.DiffDelta) callconv(.C) c_int = null,
+
+    /// callback that will be made per hunk
+    ///
+    /// When the callback:
+    ///   - returns < 0, the apply process will be aborted.
+    ///   - returns > 0, the hunk will not be applied, but the apply process continues
+    ///   - returns 0, the hunk is applied, and the apply process continues.
+    hunk_cb: ?fn (hunk: *const git.DiffHunk) callconv(.C) c_int = null,
+
+    flags: ApplyOptionsFlags = .{},
+
+    comptime {
+        std.testing.refAllDecls(@This());
+    }
+};
+
+pub fn ApplyOptionsWithUserData(comptime T: type) type {
+    return struct {
+        /// callback that will be made per delta (file)
+        ///
+        /// When the callback:
+        ///   - returns < 0, the apply process will be aborted.
+        ///   - returns > 0, the delta will not be applied, but the apply process continues
+        ///   - returns 0, the delta is applied, and the apply process continues.
+        delta_cb: ?fn (delta: *const git.DiffDelta, user_data: T) callconv(.C) c_int = null,
+
+        /// callback that will be made per hunk
+        ///
+        /// When the callback:
+        ///   - returns < 0, the apply process will be aborted.
+        ///   - returns > 0, the hunk will not be applied, but the apply process continues
+        ///   - returns 0, the hunk is applied, and the apply process continues.
+        hunk_cb: ?fn (hunk: *const git.DiffHunk, user_data: T) callconv(.C) c_int = null,
+
+        payload: T,
+
+        flags: git.ApplyOptionsFlags = .{},
+
+        comptime {
+            std.testing.refAllDecls(@This());
+        }
+    };
+}
+
+pub const ApplyOptionsFlags = packed struct {
+    /// Don't actually make changes, just test that the patch applies. This is the equivalent of `git apply --check`.
+    check: bool = false,
+
+    z_padding: u31 = 0,
+
+    pub fn format(
+        value: git.ApplyOptionsFlags,
+        comptime fmt: []const u8,
+        options: std.fmt.FormatOptions,
+        writer: anytype,
+    ) !void {
+        _ = fmt;
+        return internal.formatWithoutFields(
+            value,
+            options,
+            writer,
+            &.{"z_padding"},
+        );
+    }
+
+    test {
+        try std.testing.expectEqual(@sizeOf(c_uint), @sizeOf(ApplyOptionsFlags));
+        try std.testing.expectEqual(@bitSizeOf(c_uint), @bitSizeOf(ApplyOptionsFlags));
+    }
+
+    comptime {
+        std.testing.refAllDecls(@This());
+    }
+};
+
+pub const ApplyLocation = enum(c_uint) {
+    /// Apply the patch to the workdir, leaving the index untouched.
+    /// This is the equivalent of `git apply` with no location argument.
+    workdir = 0,
+
+    /// Apply the patch to the index, leaving the working directory
+    /// untouched.  This is the equivalent of `git apply --cached`.
+    index = 1,
+
+    /// Apply the patch to both the working directory and the index.
+    /// This is the equivalent of `git apply --index`.
+    both = 2,
+};
+
+/// Description of one side of a delta.
+///
+/// Although this is called a "file", it could represent a file, a symbolic link, a submodule commit id, or even a tree
+/// (although that only if you are tracking type changes or ignored/untracked directories).
+pub const DiffFile = extern struct {
+    /// The `git_oid` of the item.  If the entry represents an absent side of a diff (e.g. the `old_file` of a
+    /// `GIT_DELTA_added` delta), then the oid will be zeroes.
+    id: git.Oid,
+    /// Path to the entry relative to the working directory of the repository.
+    path: [*:0]const u8,
+    /// The size of the entry in bytes.
+    size: u64,
+    flags: DiffFlags,
+    /// Roughly, the stat() `st_mode` value for the item.
+    mode: git.FileMode,
+    /// Represents the known length of the `id` field, when converted to a hex string.  It is generally `git.Oid.hex_buffer_size`,
+    /// unless this delta was created from reading a patch file, in which case it may be abbreviated to something reasonable,
+    /// like 7 characters.
+    id_abbrev: u16,
+
+    test {
+        try std.testing.expectEqual(@sizeOf(c.git_diff_file), @sizeOf(DiffFile));
+        try std.testing.expectEqual(@bitSizeOf(c.git_diff_file), @bitSizeOf(DiffFile));
+    }
+
+    comptime {
+        std.testing.refAllDecls(@This());
+    }
+};
+
 /// Flags for the delta object and the file objects on each side.
 ///
 /// These flags are used for both the `flags` value of the `git_diff_delta` and the flags for the `git_diff_file` objects
@@ -248,36 +375,6 @@ pub const DiffFlags = packed struct {
     test {
         try std.testing.expectEqual(@sizeOf(c_uint), @sizeOf(DiffFlags));
         try std.testing.expectEqual(@bitSizeOf(c_uint), @bitSizeOf(DiffFlags));
-    }
-
-    comptime {
-        std.testing.refAllDecls(@This());
-    }
-};
-
-/// Description of one side of a delta.
-///
-/// Although this is called a "file", it could represent a file, a symbolic link, a submodule commit id, or even a tree
-/// (although that only if you are tracking type changes or ignored/untracked directories).
-pub const DiffFile = extern struct {
-    /// The `git_oid` of the item.  If the entry represents an absent side of a diff (e.g. the `old_file` of a
-    /// `GIT_DELTA_added` delta), then the oid will be zeroes.
-    id: git.Oid,
-    /// Path to the entry relative to the working directory of the repository.
-    path: [*:0]const u8,
-    /// The size of the entry in bytes.
-    size: u64,
-    flags: DiffFlags,
-    /// Roughly, the stat() `st_mode` value for the item.
-    mode: git.FileMode,
-    /// Represents the known length of the `id` field, when converted to a hex string.  It is generally `git.Oid.hex_buffer_size`,
-    /// unless this delta was created from reading a patch file, in which case it may be abbreviated to something reasonable,
-    /// like 7 characters.
-    id_abbrev: u16,
-
-    test {
-        try std.testing.expectEqual(@sizeOf(c.git_diff_file), @sizeOf(DiffFile));
-        try std.testing.expectEqual(@bitSizeOf(c.git_diff_file), @bitSizeOf(DiffFile));
     }
 
     comptime {

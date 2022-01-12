@@ -138,45 +138,6 @@ pub const Worktree = opaque {
         return repo;
     }
 
-    pub const PruneOptions = packed struct {
-        /// Prune working tree even if working tree is valid
-        valid: bool = false,
-        /// Prune working tree even if it is locked
-        locked: bool = false,
-        /// Prune checked out working tree
-        working_tree: bool = false,
-
-        z_padding: u29 = 0,
-
-        pub fn format(
-            value: PruneOptions,
-            comptime fmt: []const u8,
-            options: std.fmt.FormatOptions,
-            writer: anytype,
-        ) !void {
-            _ = fmt;
-            return internal.formatWithoutFields(
-                value,
-                options,
-                writer,
-                &.{"z_padding"},
-            );
-        }
-
-        test {
-            try std.testing.expectEqual(@sizeOf(c.git_worktree_prune_t), @sizeOf(PruneOptions));
-            try std.testing.expectEqual(@bitSizeOf(c.git_worktree_prune_t), @bitSizeOf(PruneOptions));
-        }
-
-        comptime {
-            std.testing.refAllDecls(@This());
-        }
-
-        comptime {
-            std.testing.refAllDecls(@This());
-        }
-    };
-
     /// Is the worktree prunable with the given options?
     ///
     /// A worktree is not prunable in the following scenarios:
@@ -216,6 +177,57 @@ pub const Worktree = opaque {
         });
 
         log.debug("successfully pruned worktree", .{});
+    }
+
+    comptime {
+        std.testing.refAllDecls(@This());
+    }
+};
+
+pub const WorktreeAddOptions = struct {
+    /// lock newly created worktree
+    lock: bool = false,
+
+    /// reference to use for the new worktree HEAD
+    ref: ?*git.Reference = null,
+
+    comptime {
+        std.testing.refAllDecls(@This());
+    }
+};
+
+pub const PruneOptions = packed struct {
+    /// Prune working tree even if working tree is valid
+    valid: bool = false,
+    /// Prune working tree even if it is locked
+    locked: bool = false,
+    /// Prune checked out working tree
+    working_tree: bool = false,
+
+    z_padding: u29 = 0,
+
+    pub fn format(
+        value: PruneOptions,
+        comptime fmt: []const u8,
+        options: std.fmt.FormatOptions,
+        writer: anytype,
+    ) !void {
+        _ = fmt;
+        return internal.formatWithoutFields(
+            value,
+            options,
+            writer,
+            &.{"z_padding"},
+        );
+    }
+
+    test {
+        try std.testing.expectEqual(@sizeOf(c.git_worktree_prune_t), @sizeOf(PruneOptions));
+        try std.testing.expectEqual(@bitSizeOf(c.git_worktree_prune_t), @bitSizeOf(PruneOptions));
+    }
+
+    comptime {
+        std.testing.refAllDecls(@This());
     }
 
     comptime {

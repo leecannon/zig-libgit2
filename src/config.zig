@@ -278,7 +278,7 @@ pub const Config = opaque {
         log.debug("successfully deleted multivar", .{});
     }
 
-    pub fn addFileOnDisk(self: *Config, path: [:0]const u8, level: Level, repo: *const git.Repository, force: bool) !void {
+    pub fn addFileOnDisk(self: *Config, path: [:0]const u8, level: ConfigLevel, repo: *const git.Repository, force: bool) !void {
         log.debug("Config.addFileOnDisk called, path: {s}, level: {}, repo: {*}, force: {}", .{ path, level, repo, force });
 
         try internal.wrapCall("git_config_add_file_ondisk", .{
@@ -292,7 +292,7 @@ pub const Config = opaque {
         log.debug("", .{});
     }
 
-    pub fn openLevel(self: *const Config, level: Level) !*Config {
+    pub fn openLevel(self: *const Config, level: ConfigLevel) !*Config {
         log.debug("Config.openLevel called, level: {}", .{level});
 
         var config: *Config = undefined;
@@ -519,25 +519,6 @@ pub const Config = opaque {
         }
     };
 
-    /// Priority level of a config file.
-    pub const Level = enum(c_int) {
-        /// System-wide on Windows, for compatibility with portable git
-        programdata = 1,
-        /// System-wide configuration file; /etc/gitconfig on Linux systems
-        system = 2,
-        /// XDG compatible configuration file; typically ~/.config/git/config
-        xdg = 3,
-        /// User-specific configuration file (also called Global configuration file); typically ~/.gitconfig
-        global = 4,
-        /// Repository specific configuration file; $WORK_DIR/.git/config on non-bare repos
-        local = 5,
-        /// Application specific configuration file; freely defined by applications
-        app = 6,
-        /// Represents the highest level available config file (i.e. the most specific config file available that actually is 
-        /// loaded)
-        highest = -1,
-    };
-
     pub const ConfigEntry = extern struct {
         /// Name of the entry (normalised)
         name: [*:0]const u8,
@@ -546,7 +527,7 @@ pub const Config = opaque {
         /// Depth of includes where this variable was found
         include_depth: u32,
         /// Which config file this was found in
-        level: Level,
+        level: ConfigLevel,
         /// Free function for this entry 
         free_fn: ?fn (?*ConfigEntry) callconv(.C) void,
         /// Opaque value for the free function. Do not read or write
@@ -613,6 +594,25 @@ pub const ConfigBackend = opaque {
     comptime {
         std.testing.refAllDecls(@This());
     }
+};
+
+/// Priority level of a config file.
+pub const ConfigLevel = enum(c_int) {
+    /// System-wide on Windows, for compatibility with portable git
+    programdata = 1,
+    /// System-wide configuration file; /etc/gitconfig on Linux systems
+    system = 2,
+    /// XDG compatible configuration file; typically ~/.config/git/config
+    xdg = 3,
+    /// User-specific configuration file (also called Global configuration file); typically ~/.gitconfig
+    global = 4,
+    /// Repository specific configuration file; $WORK_DIR/.git/config on non-bare repos
+    local = 5,
+    /// Application specific configuration file; freely defined by applications
+    app = 6,
+    /// Represents the highest level available config file (i.e. the most specific config file available that actually is 
+    /// loaded)
+    highest = -1,
 };
 
 comptime {

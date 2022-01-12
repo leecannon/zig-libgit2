@@ -61,6 +61,10 @@ pub const FilterOptions = struct {
 
     /// The commit to load attributes from, when `FilterFlags.attributes_from_commit` is specified.
     commit_id: ?*git.Oid = null,
+
+    comptime {
+        std.testing.refAllDecls(@This());
+    }
 };
 
 /// A filter that can transform file data

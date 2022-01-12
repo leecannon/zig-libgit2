@@ -120,6 +120,95 @@ pub const BlameHunk = extern struct {
     }
 };
 
+pub const BlameOptions = struct {
+    flags: BlameFlags = .{},
+
+    /// The lower bound on the number of alphanumeric characters that must be detected as moving/copying within a file for it
+    /// to associate those lines with the parent commit. The default value is 20.
+    ///
+    /// This value only takes effect if any of the `BlameFlags.track_copies_*` flags are specified.
+    min_match_characters: u16 = 0,
+
+    /// The id of the newest commit to consider. The default is HEAD.
+    newest_commit: git.Oid = git.Oid.zero,
+
+    /// The id of the oldest commit to consider. The default is the first commit encountered with a `null` parent.
+    oldest_commit: git.Oid = git.Oid.zero,
+
+    /// The first line in the file to blame. The default is 1 (line numbers start with 1).
+    min_line: usize = 0,
+
+    /// The last line in the file to blame. The default is the last line of the file.
+    max_line: usize = 0,
+
+    pub const BlameFlags = packed struct {
+        normal: bool = false,
+
+        /// Track lines that have moved within a file (like `git blame -M`).
+        ///
+        /// This is not yet implemented and reserved for future use.
+        track_copies_same_file: bool = false,
+
+        /// Track lines that have moved across files in the same commit (like `git blame -C`).
+        ///
+        /// This is not yet implemented and reserved for future use.
+        track_copies_same_commit_moves: bool = false,
+
+        /// Track lines that have been copied from another file that exists in the same commit (like `git blame -CC`). 
+        /// Implies same_file.
+        ///
+        /// This is not yet implemented and reserved for future use.
+        track_copies_same_commit_copies: bool = false,
+
+        /// Track lines that have been copied from another file that exists in *any* commit (like `git blame -CCC`). Implies
+        /// same_commit_copies.
+        ///
+        /// This is not yet implemented and reserved for future use.
+        track_copies_any_commit_copies: bool = false,
+
+        /// Restrict the search of commits to those reachable following only the first parents.
+        first_parent: bool = false,
+
+        /// Use mailmap file to map author and committer names and email addresses to canonical real names and email
+        /// addresses. The mailmap will be read from the working directory, or HEAD in a bare repository.
+        use_mailmap: bool = false,
+
+        /// Ignore whitespace differences 
+        ignore_whitespace: bool = false,
+
+        z_padding1: u8 = 0,
+        z_padding2: u16 = 0,
+
+        pub fn format(
+            value: BlameFlags,
+            comptime fmt: []const u8,
+            options: std.fmt.FormatOptions,
+            writer: anytype,
+        ) !void {
+            _ = fmt;
+            return internal.formatWithoutFields(
+                value,
+                options,
+                writer,
+                &.{ "z_padding1", "z_padding2" },
+            );
+        }
+
+        test {
+            try std.testing.expectEqual(@sizeOf(c.git_blame_flag_t), @sizeOf(BlameFlags));
+            try std.testing.expectEqual(@bitSizeOf(c.git_blame_flag_t), @bitSizeOf(BlameFlags));
+        }
+
+        comptime {
+            std.testing.refAllDecls(@This());
+        }
+    };
+
+    comptime {
+        std.testing.refAllDecls(@This());
+    }
+};
+
 comptime {
     std.testing.refAllDecls(@This());
 }

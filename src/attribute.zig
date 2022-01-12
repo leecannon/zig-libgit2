@@ -72,6 +72,77 @@ pub const Attribute = struct {
     }
 };
 
+pub const AttributeOptions = struct {
+    flags: git.AttributeFlags,
+    commit_id: *git.Oid,
+
+    comptime {
+        std.testing.refAllDecls(@This());
+    }
+};
+
+pub const AttributeFlags = struct {
+    location: Location = .file_then_index,
+
+    /// Controls extended attribute behavior
+    extended: Extended = .{},
+
+    pub const Location = enum(u32) {
+        file_then_index = 0,
+        index_then_file = 1,
+        index_only = 2,
+    };
+
+    pub const Extended = packed struct {
+        z_padding1: u2 = 0,
+
+        /// Normally, attribute checks include looking in the /etc (or system equivalent) directory for a `gitattributes`
+        /// file. Passing this flag will cause attribute checks to ignore that file. Setting the `no_system` flag will cause
+        /// attribute checks to ignore that file.
+        no_system: bool = false,
+
+        /// Passing the `include_head` flag will use attributes from a `.gitattributes` file in the repository
+        /// at the HEAD revision.
+        include_head: bool = false,
+
+        /// Passing the `include_commit` flag will use attributes from a `.gitattributes` file in a specific
+        /// commit.
+        include_commit: if (HAS_INCLUDE_COMMIT) bool else void = if (HAS_INCLUDE_COMMIT) false else {},
+
+        z_padding2: if (HAS_INCLUDE_COMMIT) u27 else u28 = 0,
+
+        const HAS_INCLUDE_COMMIT = @hasDecl(c, "GIT_ATTR_CHECK_INCLUDE_COMMIT");
+
+        pub fn format(
+            value: Extended,
+            comptime fmt: []const u8,
+            options: std.fmt.FormatOptions,
+            writer: anytype,
+        ) !void {
+            _ = fmt;
+            return internal.formatWithoutFields(
+                value,
+                options,
+                writer,
+                &.{ "z_padding1", "z_padding2" },
+            );
+        }
+
+        test {
+            try std.testing.expectEqual(@sizeOf(u32), @sizeOf(Extended));
+            try std.testing.expectEqual(@bitSizeOf(u32), @bitSizeOf(Extended));
+        }
+
+        comptime {
+            std.testing.refAllDecls(@This());
+        }
+    };
+
+    comptime {
+        std.testing.refAllDecls(@This());
+    }
+};
+
 comptime {
     std.testing.refAllDecls(@This());
 }

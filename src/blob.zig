@@ -111,50 +111,50 @@ pub const Blob = opaque {
         return buf;
     }
 
-    pub const BlobFilterOptions = struct {
-        flags: BlobFilterFlags = .{},
-        /// The commit to load attributes from, when `FilterFlags.attributes_from_commit` is specified.
-        commit_id: ?*git.Oid = null,
+    comptime {
+        std.testing.refAllDecls(@This());
+    }
+};
 
-        pub const BlobFilterFlags = packed struct {
-            /// When set, filters will not be applied to binary files.
-            check_for_binary: bool = false,
+pub const BlobFilterOptions = struct {
+    flags: BlobFilterFlags = .{},
+    /// The commit to load attributes from, when `FilterFlags.attributes_from_commit` is specified.
+    commit_id: ?*git.Oid = null,
 
-            /// When set, filters will not load configuration from the system-wide `gitattributes` in `/etc` (or system equivalent).
-            no_system_attributes: bool = false,
+    pub const BlobFilterFlags = packed struct {
+        /// When set, filters will not be applied to binary files.
+        check_for_binary: bool = false,
 
-            /// When set, filters will be loaded from a `.gitattributes` file in the HEAD commit.
-            attributes_from_head: bool = false,
+        /// When set, filters will not load configuration from the system-wide `gitattributes` in `/etc` (or system equivalent).
+        no_system_attributes: bool = false,
 
-            /// When set, filters will be loaded from a `.gitattributes` file in the specified commit.
-            attributes_from_commit: bool = false,
+        /// When set, filters will be loaded from a `.gitattributes` file in the HEAD commit.
+        attributes_from_head: bool = false,
 
-            z_padding: u28 = 0,
+        /// When set, filters will be loaded from a `.gitattributes` file in the specified commit.
+        attributes_from_commit: bool = false,
 
-            pub fn format(
-                value: BlobFilterFlags,
-                comptime fmt: []const u8,
-                options: std.fmt.FormatOptions,
-                writer: anytype,
-            ) !void {
-                _ = fmt;
-                return internal.formatWithoutFields(
-                    value,
-                    options,
-                    writer,
-                    &.{"z_padding"},
-                );
-            }
+        z_padding: u28 = 0,
 
-            test {
-                try std.testing.expectEqual(@sizeOf(c.git_blob_filter_flag_t), @sizeOf(BlobFilterFlags));
-                try std.testing.expectEqual(@bitSizeOf(c.git_blob_filter_flag_t), @bitSizeOf(BlobFilterFlags));
-            }
+        pub fn format(
+            value: BlobFilterFlags,
+            comptime fmt: []const u8,
+            options: std.fmt.FormatOptions,
+            writer: anytype,
+        ) !void {
+            _ = fmt;
+            return internal.formatWithoutFields(
+                value,
+                options,
+                writer,
+                &.{"z_padding"},
+            );
+        }
 
-            comptime {
-                std.testing.refAllDecls(@This());
-            }
-        };
+        test {
+            try std.testing.expectEqual(@sizeOf(c.git_blob_filter_flag_t), @sizeOf(BlobFilterFlags));
+            try std.testing.expectEqual(@bitSizeOf(c.git_blob_filter_flag_t), @bitSizeOf(BlobFilterFlags));
+        }
 
         comptime {
             std.testing.refAllDecls(@This());

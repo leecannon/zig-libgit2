@@ -23,7 +23,7 @@ pub const Pathspec = opaque {
     /// ## Parameters
     /// * `options` - Options to control match
     /// * `path` - The pathname to attempt to match
-    pub fn matchesPath(self: *const Pathspec, options: MatchOptions, path: [:0]const u8) !bool {
+    pub fn matchesPath(self: *const Pathspec, options: PathspecMatchOptions, path: [:0]const u8) !bool {
         log.debug("Pathspec.matchesPath called, options: {}, path: {s}", .{ options, path });
 
         const ret = (try internal.wrapCallWithReturn("git_pathspec_matches_path", .{
@@ -37,55 +37,55 @@ pub const Pathspec = opaque {
         return ret;
     }
 
-    /// Options controlling how pathspec match should be executed
-    pub const MatchOptions = packed struct {
-        /// `ignore_case` forces match to ignore case; otherwise match will use native case sensitivity of platform filesystem
-        ignore_case: bool = false,
+    comptime {
+        std.testing.refAllDecls(@This());
+    }
+};
 
-        /// `use_case` forces case sensitive match; otherwise match will use native case sensitivity of platform filesystem
-        use_case: bool = false,
+/// Options controlling how pathspec match should be executed
+pub const PathspecMatchOptions = packed struct {
+    /// `ignore_case` forces match to ignore case; otherwise match will use native case sensitivity of platform filesystem
+    ignore_case: bool = false,
 
-        /// `no_glob` disables glob patterns and just uses simple string comparison for matching
-        no_glob: bool = false,
+    /// `use_case` forces case sensitive match; otherwise match will use native case sensitivity of platform filesystem
+    use_case: bool = false,
 
-        /// `no_match_error` means the match functions return error `GitError.NotFound` if no matches are found; otherwise no
-        /// matches is still success (return 0) but `PathspecMatchList.entryCount` will indicate 0 matches.
-        no_match_error: bool = false,
+    /// `no_glob` disables glob patterns and just uses simple string comparison for matching
+    no_glob: bool = false,
 
-        /// `find_failures` means that the `PathspecMatchList` should track which patterns matched which files so that at the end of
-        /// the match we can identify patterns that did not match any files.
-        find_failures: bool = false,
+    /// `no_match_error` means the match functions return error `GitError.NotFound` if no matches are found; otherwise no
+    /// matches is still success (return 0) but `PathspecMatchList.entryCount` will indicate 0 matches.
+    no_match_error: bool = false,
 
-        /// failures_only means that the `PathspecMatchList` does not need to keep the actual matching filenames.
-        /// Use this to just test if there were any matches at all or in combination with `find_failures` to validate a pathspec.
-        failures_only: bool = false,
+    /// `find_failures` means that the `PathspecMatchList` should track which patterns matched which files so that at the end of
+    /// the match we can identify patterns that did not match any files.
+    find_failures: bool = false,
 
-        z_padding: u26 = 0,
+    /// failures_only means that the `PathspecMatchList` does not need to keep the actual matching filenames.
+    /// Use this to just test if there were any matches at all or in combination with `find_failures` to validate a pathspec.
+    failures_only: bool = false,
 
-        pub fn format(
-            value: MatchOptions,
-            comptime fmt: []const u8,
-            options: std.fmt.FormatOptions,
-            writer: anytype,
-        ) !void {
-            _ = fmt;
-            return internal.formatWithoutFields(
-                value,
-                options,
-                writer,
-                &.{"z_padding"},
-            );
-        }
+    z_padding: u26 = 0,
 
-        test {
-            try std.testing.expectEqual(@sizeOf(c.git_pathspec_flag_t), @sizeOf(MatchOptions));
-            try std.testing.expectEqual(@bitSizeOf(c.git_pathspec_flag_t), @bitSizeOf(MatchOptions));
-        }
+    pub fn format(
+        value: PathspecMatchOptions,
+        comptime fmt: []const u8,
+        options: std.fmt.FormatOptions,
+        writer: anytype,
+    ) !void {
+        _ = fmt;
+        return internal.formatWithoutFields(
+            value,
+            options,
+            writer,
+            &.{"z_padding"},
+        );
+    }
 
-        comptime {
-            std.testing.refAllDecls(@This());
-        }
-    };
+    test {
+        try std.testing.expectEqual(@sizeOf(c.git_pathspec_flag_t), @sizeOf(PathspecMatchOptions));
+        try std.testing.expectEqual(@bitSizeOf(c.git_pathspec_flag_t), @bitSizeOf(PathspecMatchOptions));
+    }
 
     comptime {
         std.testing.refAllDecls(@This());
@@ -161,7 +161,7 @@ pub const PathspecMatchList = opaque {
 
     /// Get the number of pathspec items that did not match.
     ///
-    /// This will be zero unless you passed `MatchOptions.find_failures` when generating the `PathspecMatchList`.
+    /// This will be zero unless you passed `PathspecMatchOptions.find_failures` when generating the `PathspecMatchList`.
     pub fn failedEntryCount(self: *const PathspecMatchList) usize {
         log.debug("PathspecMatchList.failedEntryCount called", .{});
 

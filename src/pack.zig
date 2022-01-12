@@ -206,11 +206,11 @@ pub const PackBuilder = opaque {
         self: *PackBuilder,
         path: ?[:0]const u8,
         mode: c_uint,
-        comptime callback_fn: fn (stats: *const git.Indexer.Progress) c_int,
+        comptime callback_fn: fn (stats: *const git.IndexerProgress) c_int,
     ) !void {
         const cb = struct {
             pub fn cb(
-                stats: *const git.Indexer.Progress,
+                stats: *const git.IndexerProgress,
                 _: *u8,
             ) c_int {
                 return callback_fn(stats);
@@ -238,7 +238,7 @@ pub const PackBuilder = opaque {
         mode: c_uint,
         user_data: anytype,
         comptime callback_fn: fn (
-            stats: *const git.Indexer.Progress,
+            stats: *const git.IndexerProgress,
             user_data_ptr: @TypeOf(user_data),
         ) c_int,
     ) !void {
@@ -249,7 +249,7 @@ pub const PackBuilder = opaque {
                 stats: *const c.git_indexer_progress,
                 payload: ?*anyopaque,
             ) callconv(.C) c_int {
-                return callback_fn(@ptrCast(*const git.Indexer.Progress, stats), @ptrCast(UserDataType, payload));
+                return callback_fn(@ptrCast(*const git.IndexerProgress, stats), @ptrCast(UserDataType, payload));
             }
         }.cb;
 

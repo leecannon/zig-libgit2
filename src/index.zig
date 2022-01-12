@@ -577,11 +577,11 @@ pub const Index = opaque {
     ///
     /// The `pathspec` is a list of file names or shell glob patterns that will be matched against files in the repository's
     /// working directory. Each file that matches will be added to the index (either updating an existing entry or adding a new
-    /// entry).  You can disable glob expansion and force exact matching with the `AddFlags.disable_pathspec_match` flag.
+    /// entry).  You can disable glob expansion and force exact matching with the `IndexAddFlags.disable_pathspec_match` flag.
     /// Invoke `callback_fn` for each entry in the given FETCH_HEAD file.
     ///
     /// Files that are ignored will be skipped (unlike `Index.AddByPath`). If a file is already tracked in the index, then it
-    /// *will* be updated even if it is ignored. Pass the `AddFlags.force` flag to skip the checking of ignore rules.
+    /// *will* be updated even if it is ignored. Pass the `IndexAddFlags.force` flag to skip the checking of ignore rules.
     ///
     /// If you provide a callback function, it will be invoked on each matching item in the working directory immediately *before*
     /// it is added to/updated in the index.  Returning zero will add the item to the index, greater than zero will skip the item,
@@ -598,7 +598,7 @@ pub const Index = opaque {
     pub fn addAll(
         self: *Index,
         pathspec: *const git.StrArray,
-        flags: AddFlags,
+        flags: IndexAddFlags,
         comptime callback_fn: ?fn (
             path: [:0]const u8,
             matched_pathspec: [:0]const u8,
@@ -626,11 +626,11 @@ pub const Index = opaque {
     ///
     /// The `pathspec` is a list of file names or shell glob patterns that will be matched against files in the repository's
     /// working directory. Each file that matches will be added to the index (either updating an existing entry or adding a new
-    /// entry).  You can disable glob expansion and force exact matching with the `AddFlags.disable_pathspec_match` flag.
+    /// entry).  You can disable glob expansion and force exact matching with the `IndexAddFlags.disable_pathspec_match` flag.
     /// Invoke `callback_fn` for each entry in the given FETCH_HEAD file.
     ///
     /// Files that are ignored will be skipped (unlike `Index.AddByPath`). If a file is already tracked in the index, then it
-    /// *will* be updated even if it is ignored. Pass the `AddFlags.force` flag to skip the checking of ignore rules.
+    /// *will* be updated even if it is ignored. Pass the `IndexAddFlags.force` flag to skip the checking of ignore rules.
     ///
     /// If you provide a callback function, it will be invoked on each matching item in the working directory immediately *before*
     /// it is added to/updated in the index.  Returning zero will add the item to the index, greater than zero will skip the item,
@@ -649,7 +649,7 @@ pub const Index = opaque {
     pub fn addAllWithUserData(
         self: *Index,
         pathspec: *const git.StrArray,
-        flags: AddFlags,
+        flags: IndexAddFlags,
         user_data: anytype,
         comptime callback_fn: ?fn (
             path: [:0]const u8,
@@ -701,38 +701,6 @@ pub const Index = opaque {
             return 0;
         }
     }
-
-    pub const AddFlags = packed struct {
-        force: bool = false,
-        disable_pathspec_match: bool = false,
-        check_pathspec: bool = false,
-
-        z_padding: u29 = 0,
-
-        pub fn format(
-            value: AddFlags,
-            comptime fmt: []const u8,
-            options: std.fmt.FormatOptions,
-            writer: anytype,
-        ) !void {
-            _ = fmt;
-            return internal.formatWithoutFields(
-                value,
-                options,
-                writer,
-                &.{"z_padding"},
-            );
-        }
-
-        test {
-            try std.testing.expectEqual(@sizeOf(c_uint), @sizeOf(AddFlags));
-            try std.testing.expectEqual(@bitSizeOf(c_uint), @bitSizeOf(AddFlags));
-        }
-
-        comptime {
-            std.testing.refAllDecls(@This());
-        }
-    };
 
     pub fn find(self: *Index, path: [:0]const u8) !usize {
         log.debug("Index.find called, path: {s}", .{path});
@@ -981,7 +949,7 @@ pub const Index = opaque {
     pub fn pathspecMatch(
         self: *Index,
         pathspec: *git.Pathspec,
-        options: git.Pathspec.MatchOptions,
+        options: git.PathspecMatchOptions,
         match_list: ?**git.PathspecMatchList,
     ) !bool {
         log.debug("Index.pathspecMatch called, options: {}, pathspec: {*}", .{ options, pathspec });
@@ -996,6 +964,38 @@ pub const Index = opaque {
         log.debug("match: {}", .{ret});
 
         return ret;
+    }
+
+    comptime {
+        std.testing.refAllDecls(@This());
+    }
+};
+
+pub const IndexAddFlags = packed struct {
+    force: bool = false,
+    disable_pathspec_match: bool = false,
+    check_pathspec: bool = false,
+
+    z_padding: u29 = 0,
+
+    pub fn format(
+        value: IndexAddFlags,
+        comptime fmt: []const u8,
+        options: std.fmt.FormatOptions,
+        writer: anytype,
+    ) !void {
+        _ = fmt;
+        return internal.formatWithoutFields(
+            value,
+            options,
+            writer,
+            &.{"z_padding"},
+        );
+    }
+
+    test {
+        try std.testing.expectEqual(@sizeOf(c_uint), @sizeOf(IndexAddFlags));
+        try std.testing.expectEqual(@bitSizeOf(c_uint), @bitSizeOf(IndexAddFlags));
     }
 
     comptime {

@@ -3,7 +3,7 @@ const c = @import("c.zig");
 
 const git = @import("../git.zig");
 
-pub fn blobFilterOptions(self: git.Blob.BlobFilterOptions) c.git_blob_filter_options {
+pub fn blobFilterOptions(self: git.BlobFilterOptions) c.git_blob_filter_options {
     return .{
         .version = c.GIT_BLOB_FILTER_OPTIONS_VERSION,
         .flags = @bitCast(u32, self.flags),
@@ -39,7 +39,7 @@ pub fn filterOptions(self: git.FilterOptions) c.git_filter_options {
     };
 }
 
-pub fn repositoryInitOptions(self: git.Handle.RepositoryInitOptions) c.git_repository_init_options {
+pub fn repositoryInitOptions(self: git.RepositoryInitOptions) c.git_repository_init_options {
     return .{
         .version = c.GIT_REPOSITORY_INIT_OPTIONS_VERSION,
         .flags = self.flags.toInt(),
@@ -52,7 +52,7 @@ pub fn repositoryInitOptions(self: git.Handle.RepositoryInitOptions) c.git_repos
     };
 }
 
-pub fn hashsigOptions(self: git.Hashsig.HashsigOptions) c.git_hashsig_option_t {
+pub fn hashsigOptions(self: git.HashsigOptions) c.git_hashsig_option_t {
     var ret: c.git_hashsig_option_t = 0;
 
     if (self.allow_small_files) {
@@ -82,7 +82,7 @@ pub fn mergeOptions(self: git.MergeOptions) c.git_merge_options {
     };
 }
 
-pub fn fileStatusOptions(self: git.Repository.FileStatusOptions) c.git_status_options {
+pub fn fileStatusOptions(self: git.FileStatusOptions) c.git_status_options {
     return .{
         .version = c.GIT_STATUS_OPTIONS_VERSION,
         .show = @enumToInt(self.show),
@@ -92,7 +92,7 @@ pub fn fileStatusOptions(self: git.Repository.FileStatusOptions) c.git_status_op
     };
 }
 
-pub fn applyOptions(self: git.Repository.ApplyOptions) c.git_apply_options {
+pub fn applyOptions(self: git.ApplyOptions) c.git_apply_options {
     return .{
         .version = c.GIT_APPLY_OPTIONS_VERSION,
         .delta_cb = @ptrCast(c.git_apply_delta_cb, self.delta_cb),
@@ -102,7 +102,7 @@ pub fn applyOptions(self: git.Repository.ApplyOptions) c.git_apply_options {
     };
 }
 
-pub fn applyOptionsWithUserData(comptime T: type, self: git.Repository.ApplyOptionsWithUserData(T)) c.git_apply_options {
+pub fn applyOptionsWithUserData(comptime T: type, self: git.ApplyOptionsWithUserData(T)) c.git_apply_options {
     return .{
         .version = c.GIT_APPLY_OPTIONS_VERSION,
         .delta_cb = @ptrCast(c.git_apply_delta_cb, self.delta_cb),
@@ -112,7 +112,7 @@ pub fn applyOptionsWithUserData(comptime T: type, self: git.Repository.ApplyOpti
     };
 }
 
-pub fn blameOptions(self: git.Repository.BlameOptions) c.git_blame_options {
+pub fn blameOptions(self: git.BlameOptions) c.git_blame_options {
     return .{
         .version = c.GIT_BLAME_OPTIONS_VERSION,
         .flags = @bitCast(u32, self.flags),
@@ -124,7 +124,7 @@ pub fn blameOptions(self: git.Repository.BlameOptions) c.git_blame_options {
     };
 }
 
-pub fn checkoutOptions(self: git.Repository.CheckoutOptions) c.git_checkout_options {
+pub fn checkoutOptions(self: git.CheckoutOptions) c.git_checkout_options {
     return .{
         .version = c.GIT_CHECKOUT_OPTIONS_VERSION,
         .checkout_strategy = @bitCast(c_uint, self.checkout_strategy),
@@ -149,7 +149,7 @@ pub fn checkoutOptions(self: git.Repository.CheckoutOptions) c.git_checkout_opti
     };
 }
 
-pub fn cherrypickOptions(self: git.Repository.CherrypickOptions) c.git_cherrypick_options {
+pub fn cherrypickOptions(self: git.CherrypickOptions) c.git_cherrypick_options {
     return .{
         .version = c.GIT_CHERRYPICK_OPTIONS_VERSION,
         .mainline = @boolToInt(self.mainline),
@@ -158,7 +158,7 @@ pub fn cherrypickOptions(self: git.Repository.CherrypickOptions) c.git_cherrypic
     };
 }
 
-pub fn attributeOptions(self: git.Repository.AttributeOptions) c.git_attr_options {
+pub fn attributeOptions(self: git.AttributeOptions) c.git_attr_options {
     return .{
         .version = c.GIT_ATTR_OPTIONS_VERSION,
         .flags = attributeFlags(self.flags),
@@ -166,7 +166,7 @@ pub fn attributeOptions(self: git.Repository.AttributeOptions) c.git_attr_option
     };
 }
 
-pub fn attributeFlags(self: git.Repository.AttributeFlags) c_uint {
+pub fn attributeFlags(self: git.AttributeFlags) c_uint {
     var result: c_uint = 0;
 
     switch (self.location) {
@@ -190,7 +190,7 @@ pub fn attributeFlags(self: git.Repository.AttributeFlags) c_uint {
     return result;
 }
 
-pub fn worktreeAddOptions(self: git.Repository.WorktreeAddOptions) c.git_worktree_add_options {
+pub fn worktreeAddOptions(self: git.WorktreeAddOptions) c.git_worktree_add_options {
     return .{
         .version = c.GIT_WORKTREE_ADD_OPTIONS_VERSION,
         .lock = @boolToInt(self.lock),
@@ -198,7 +198,7 @@ pub fn worktreeAddOptions(self: git.Repository.WorktreeAddOptions) c.git_worktre
     };
 }
 
-pub fn revertOptions(self: git.Repository.RevertOptions) c.git_revert_options {
+pub fn revertOptions(self: git.RevertOptions) c.git_revert_options {
     return .{
         .version = c.GIT_REVERT_OPTIONS_VERSION,
         .mainline = @boolToInt(self.mainline),
@@ -207,7 +207,7 @@ pub fn revertOptions(self: git.Repository.RevertOptions) c.git_revert_options {
     };
 }
 
-pub fn fetchOptions(self: git.Remote.FetchOptions) c.git_fetch_options {
+pub fn fetchOptions(self: git.FetchOptions) c.git_fetch_options {
     return .{
         .version = c.GIT_FETCH_OPTIONS_VERSION,
         .callbacks = @bitCast(c.git_remote_callbacks, self.callbacks),
@@ -219,7 +219,7 @@ pub fn fetchOptions(self: git.Remote.FetchOptions) c.git_fetch_options {
     };
 }
 
-pub fn cloneOptions(self: git.Handle.CloneOptions) c.git_clone_options {
+pub fn cloneOptions(self: git.CloneOptions) c.git_clone_options {
     return .{
         .version = c.GIT_CHECKOUT_OPTIONS_VERSION,
         .checkout_opts = checkoutOptions(self.checkout_options),
@@ -245,7 +245,7 @@ pub fn proxyOptions(self: git.ProxyOptions) c.git_proxy_options {
     };
 }
 
-pub fn createOptions(self: git.Remote.CreateOptions) c.git_remote_create_options {
+pub fn createOptions(self: git.RemoteCreateOptions) c.git_remote_create_options {
     return .{
         .version = c.GIT_STATUS_OPTIONS_VERSION,
         .repository = @ptrCast(?*c.git_repository, self.repository),
@@ -255,7 +255,7 @@ pub fn createOptions(self: git.Remote.CreateOptions) c.git_remote_create_options
     };
 }
 
-pub fn pushOptions(self: git.Remote.PushOptions) c.git_push_options {
+pub fn pushOptions(self: git.PushOptions) c.git_push_options {
     return .{
         .version = c.GIT_PUSH_OPTIONS_VERSION,
         .pb_parallelism = self.pb_parallelism,
@@ -265,7 +265,7 @@ pub fn pushOptions(self: git.Remote.PushOptions) c.git_push_options {
     };
 }
 
-pub fn pruneOptions(self: git.Worktree.PruneOptions) c.git_worktree_prune_options {
+pub fn pruneOptions(self: git.PruneOptions) c.git_worktree_prune_options {
     return .{
         .version = c.GIT_WORKTREE_PRUNE_OPTIONS_VERSION,
         .flags = @bitCast(u32, self),

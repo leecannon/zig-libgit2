@@ -78,7 +78,7 @@ pub const MergeOptions = struct {
     /// Flags for handling conflicting content, to be used with the standard (`text`) merge driver.
     file_favor: FileFavor = .normal,
 
-    file_flags: FileFlags = .{},
+    file_flags: FileMergeFlags = .{},
 
     pub const MergeFlags = packed struct {
         /// Detect renames that occur between the common ancestor and the "ours" side or the common ancestor and the "theirs"
@@ -124,7 +124,8 @@ pub const MergeOptions = struct {
         }
     };
 
-    pub const FileFlags = packed struct {
+    /// File merging flags
+    pub const FileMergeFlags = packed struct {
         /// Create standard conflicted merge files
         style_merge: bool = false,
 
@@ -153,7 +154,7 @@ pub const MergeOptions = struct {
         z_padding2: u16 = 0,
 
         pub fn format(
-            value: FileFlags,
+            value: FileMergeFlags,
             comptime fmt: []const u8,
             options: std.fmt.FormatOptions,
             writer: anytype,
@@ -168,8 +169,8 @@ pub const MergeOptions = struct {
         }
 
         test {
-            try std.testing.expectEqual(@sizeOf(c.git_merge_file_flag_t), @sizeOf(FileFlags));
-            try std.testing.expectEqual(@bitSizeOf(c.git_merge_file_flag_t), @bitSizeOf(FileFlags));
+            try std.testing.expectEqual(@sizeOf(c.git_merge_file_flag_t), @sizeOf(FileMergeFlags));
+            try std.testing.expectEqual(@bitSizeOf(c.git_merge_file_flag_t), @bitSizeOf(FileMergeFlags));
         }
 
         comptime {

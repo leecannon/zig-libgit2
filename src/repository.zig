@@ -942,142 +942,6 @@ pub const Repository = opaque {
         return status_list;
     }
 
-    pub const FileStatusOptions = struct {
-        /// which files to scan
-        show: Show = .index_and_workdir,
-
-        /// Flags to control status callbacks
-        flags: Flags = .{},
-
-        /// The `pathspec` is an array of path patterns to match (using fnmatch-style matching), or just an array of paths to 
-        /// match exactly if `Flags.disable_pathspec_match` is specified in the flags.
-        pathspec: git.StrArray = .{},
-
-        /// The `baseline` is the tree to be used for comparison to the working directory and index; defaults to HEAD.
-        baseline: ?*git.Tree = null,
-
-        /// Select the files on which to report status.
-        pub const Show = enum(c_uint) {
-            /// The default. This roughly matches `git status --porcelain` regarding which files are included and in what order.
-            index_and_workdir,
-            /// Only gives status based on HEAD to index comparison, not looking at working directory changes.
-            index_only,
-            /// Only gives status based on index to working directory comparison, not comparing the index to the HEAD.
-            workdir_only,
-        };
-
-        /// Flags to control status callbacks
-        ///
-        /// Calling `Repository.forEachFileStatus` is like calling the extended version with: `include_ignored`, 
-        /// `include_untracked`, and `recurse_untracked_dirs`. Those options are provided as `Options.Defaults`.
-        pub const Flags = packed struct {
-            /// Says that callbacks should be made on untracked files.
-            /// These will only be made if the workdir files are included in the status
-            /// "show" option.
-            include_untracked: bool = true,
-
-            /// Says that ignored files get callbacks.
-            /// Again, these callbacks will only be made if the workdir files are
-            /// included in the status "show" option.
-            include_ignored: bool = true,
-
-            /// Indicates that callback should be made even on unmodified files.
-            include_unmodified: bool = false,
-
-            /// Indicates that submodules should be skipped.
-            /// This only applies if there are no pending typechanges to the submodule
-            /// (either from or to another type).
-            exclude_submodules: bool = false,
-
-            /// Indicates that all files in untracked directories should be included.
-            /// Normally if an entire directory is new, then just the top-level
-            /// directory is included (with a trailing slash on the entry name).
-            /// This flag says to include all of the individual files in the directory
-            /// instead.
-            recurse_untracked_dirs: bool = true,
-
-            /// Indicates that the given path should be treated as a literal path,
-            /// and not as a pathspec pattern.
-            disable_pathspec_match: bool = false,
-
-            /// Indicates that the contents of ignored directories should be included
-            /// in the status. This is like doing `git ls-files -o -i --exclude-standard`
-            /// with core git.
-            recurse_ignored_dirs: bool = false,
-
-            /// Indicates that rename detection should be processed between the head and
-            /// the index and enables the GIT_STATUS_INDEX_RENAMED as a possible status
-            /// flag.
-            renames_head_to_index: bool = false,
-
-            /// Indicates that rename detection should be run between the index and the
-            /// working directory and enabled GIT_STATUS_WT_RENAMED as a possible status
-            /// flag.
-            renames_index_to_workdir: bool = false,
-
-            /// Overrides the native case sensitivity for the file system and forces
-            /// the output to be in case-sensitive order.
-            sort_case_sensitively: bool = false,
-
-            /// Overrides the native case sensitivity for the file system and forces
-            /// the output to be in case-insensitive order.
-            sort_case_insensitively: bool = false,
-
-            /// Iindicates that rename detection should include rewritten files.
-            renames_from_rewrites: bool = false,
-
-            /// Bypasses the default status behavior of doing a "soft" index reload
-            /// (i.e. reloading the index data if the file on disk has been modified
-            /// outside libgit2).
-            no_refresh: bool = false,
-
-            /// Tells libgit2 to refresh the stat cache in the index for files that are
-            /// unchanged but have out of date stat einformation in the index.
-            /// It will result in less work being done on subsequent calls to get status.
-            /// This is mutually exclusive with the no_refresh option.
-            update_index: bool = false,
-
-            /// Normally files that cannot be opened or read are ignored as
-            /// these are often transient files; this option will return
-            /// unreadable files as `GIT_STATUS_WT_UNREADABLE`.
-            include_unreadable: bool = false,
-
-            /// Unreadable files will be detected and given the status
-            /// untracked instead of unreadable.
-            include_unreadable_as_untracked: bool = false,
-
-            z_padding: u16 = 0,
-
-            pub fn format(
-                value: Flags,
-                comptime fmt: []const u8,
-                options: std.fmt.FormatOptions,
-                writer: anytype,
-            ) !void {
-                _ = fmt;
-                return internal.formatWithoutFields(
-                    value,
-                    options,
-                    writer,
-                    &.{"z_padding"},
-                );
-            }
-
-            test {
-                try std.testing.expectEqual(@sizeOf(c_uint), @sizeOf(Flags));
-                try std.testing.expectEqual(@bitSizeOf(c_uint), @bitSizeOf(Flags));
-            }
-
-            comptime {
-                std.testing.refAllDecls(@This());
-            }
-        };
-
-        comptime {
-            std.testing.refAllDecls(@This());
-        }
-    };
-
     /// Test if the ignore rules apply to a given file.
     ///
     /// ## Parameters
@@ -1176,8 +1040,8 @@ pub const Repository = opaque {
     pub fn applyDiff(
         self: *Repository,
         diff: *git.Diff,
-        location: ApplyLocation,
-        options: ApplyOptions,
+        location: git.ApplyLocation,
+        options: git.ApplyOptions,
     ) !void {
         log.debug("Repository.applyDiff called, diff: {*}, location: {}, options: {}", .{ diff, location, options });
 
@@ -1204,8 +1068,8 @@ pub const Repository = opaque {
         comptime T: type,
         self: *Repository,
         diff: *git.Diff,
-        location: ApplyLocation,
-        options: ApplyOptionsWithUserData(T),
+        location: git.ApplyLocation,
+        options: git.ApplyOptionsWithUserData(T),
     ) !void {
         log.debug("Repository.applyDiffWithUserData(" ++ @typeName(T) ++ ") called, diff: {*}, location: {}, options: {}", .{ diff, location, options });
 
@@ -1231,7 +1095,7 @@ pub const Repository = opaque {
         self: *Repository,
         diff: *git.Diff,
         preimage: *git.Tree,
-        options: ApplyOptions,
+        options: git.ApplyOptions,
     ) !*git.Index {
         log.debug(
             "Repository.applyDiffToTree called, diff: {*}, preimage: {*}, options: {}",
@@ -1266,7 +1130,7 @@ pub const Repository = opaque {
         self: *Repository,
         diff: *git.Diff,
         preimage: *git.Tree,
-        options: ApplyOptionsWithUserData(T),
+        options: git.ApplyOptionsWithUserData(T),
     ) !*git.Index {
         log.debug(
             "Repository.applyDiffToTreeWithUserData(" ++ @typeName(T) ++ ") called, diff: {*}, preimage: {*}, options: {}",
@@ -1290,103 +1154,6 @@ pub const Repository = opaque {
         return ret;
     }
 
-    pub const ApplyOptions = struct {
-        /// callback that will be made per delta (file)
-        ///
-        /// When the callback:
-        ///   - returns < 0, the apply process will be aborted.
-        ///   - returns > 0, the delta will not be applied, but the apply process continues
-        ///   - returns 0, the delta is applied, and the apply process continues.
-        delta_cb: ?fn (delta: *const git.DiffDelta) callconv(.C) c_int = null,
-
-        /// callback that will be made per hunk
-        ///
-        /// When the callback:
-        ///   - returns < 0, the apply process will be aborted.
-        ///   - returns > 0, the hunk will not be applied, but the apply process continues
-        ///   - returns 0, the hunk is applied, and the apply process continues.
-        hunk_cb: ?fn (hunk: *const git.DiffHunk) callconv(.C) c_int = null,
-
-        flags: ApplyOptionsFlags = .{},
-
-        comptime {
-            std.testing.refAllDecls(@This());
-        }
-    };
-
-    pub fn ApplyOptionsWithUserData(comptime T: type) type {
-        return struct {
-            /// callback that will be made per delta (file)
-            ///
-            /// When the callback:
-            ///   - returns < 0, the apply process will be aborted.
-            ///   - returns > 0, the delta will not be applied, but the apply process continues
-            ///   - returns 0, the delta is applied, and the apply process continues.
-            delta_cb: ?fn (delta: *const git.DiffDelta, user_data: T) callconv(.C) c_int = null,
-
-            /// callback that will be made per hunk
-            ///
-            /// When the callback:
-            ///   - returns < 0, the apply process will be aborted.
-            ///   - returns > 0, the hunk will not be applied, but the apply process continues
-            ///   - returns 0, the hunk is applied, and the apply process continues.
-            hunk_cb: ?fn (hunk: *const git.DiffHunk, user_data: T) callconv(.C) c_int = null,
-
-            payload: T,
-
-            flags: ApplyOptionsFlags = .{},
-
-            comptime {
-                std.testing.refAllDecls(@This());
-            }
-        };
-    }
-
-    pub const ApplyOptionsFlags = packed struct {
-        /// Don't actually make changes, just test that the patch applies. This is the equivalent of `git apply --check`.
-        check: bool = false,
-
-        z_padding: u31 = 0,
-
-        pub fn format(
-            value: ApplyOptionsFlags,
-            comptime fmt: []const u8,
-            options: std.fmt.FormatOptions,
-            writer: anytype,
-        ) !void {
-            _ = fmt;
-            return internal.formatWithoutFields(
-                value,
-                options,
-                writer,
-                &.{"z_padding"},
-            );
-        }
-
-        test {
-            try std.testing.expectEqual(@sizeOf(c_uint), @sizeOf(ApplyOptionsFlags));
-            try std.testing.expectEqual(@bitSizeOf(c_uint), @bitSizeOf(ApplyOptionsFlags));
-        }
-
-        comptime {
-            std.testing.refAllDecls(@This());
-        }
-    };
-
-    pub const ApplyLocation = enum(c_uint) {
-        /// Apply the patch to the workdir, leaving the index untouched.
-        /// This is the equivalent of `git apply` with no location argument.
-        workdir = 0,
-
-        /// Apply the patch to the index, leaving the working directory
-        /// untouched.  This is the equivalent of `git apply --cached`.
-        index = 1,
-
-        /// Apply the patch to both the working directory and the index.
-        /// This is the equivalent of `git apply --index`.
-        both = 2,
-    };
-
     /// Look up the value of one git attribute for path.
     ///
     /// ## Parameters
@@ -1394,7 +1161,7 @@ pub const Repository = opaque {
     /// * `path` - The path to check for attributes. Relative paths are interpreted relative to the repo root. The file does not
     /// have to exist, but if it does not, then it will be treated as a plain file (not a directory).
     /// * `name` - The name of the attribute to look up.
-    pub fn attribute(self: *Repository, flags: AttributeFlags, path: [:0]const u8, name: [:0]const u8) !git.Attribute {
+    pub fn attribute(self: *Repository, flags: git.AttributeFlags, path: [:0]const u8, name: [:0]const u8) !git.Attribute {
         log.debug("Repository.attribute called, flags: {}, path: {s}, name: {s}", .{ flags, path, name });
 
         var result: ?[*:0]const u8 = undefined;
@@ -1428,7 +1195,7 @@ pub const Repository = opaque {
     pub fn attributeMany(
         self: *Repository,
         output_buffer: [][*:0]const u8,
-        flags: AttributeFlags,
+        flags: git.AttributeFlags,
         path: [:0]const u8,
         names: [][*:0]const u8,
     ) ![]const [*:0]const u8 {
@@ -1464,7 +1231,7 @@ pub const Repository = opaque {
     /// * `value` - The attribute value. May be `null` if the attribute is explicitly set to unspecified using the '!' sign.
     pub fn attributeForeach(
         self: *const Repository,
-        flags: AttributeFlags,
+        flags: git.AttributeFlags,
         path: [:0]const u8,
         comptime callback_fn: fn (
             name: [:0]const u8,
@@ -1516,7 +1283,7 @@ pub const Repository = opaque {
     /// * `user_data_ptr` - Pointer to user data
     pub fn attributeForeachWithUserData(
         self: *const Repository,
-        flags: AttributeFlags,
+        flags: git.AttributeFlags,
         path: [:0]const u8,
         user_data: anytype,
         comptime callback_fn: fn (
@@ -1556,68 +1323,6 @@ pub const Repository = opaque {
         return ret;
     }
 
-    pub const AttributeFlags = struct {
-        location: Location = .file_then_index,
-
-        /// Controls extended attribute behavior
-        extended: Extended = .{},
-
-        pub const Location = enum(u32) {
-            file_then_index = 0,
-            index_then_file = 1,
-            index_only = 2,
-        };
-
-        pub const Extended = packed struct {
-            z_padding1: u2 = 0,
-
-            /// Normally, attribute checks include looking in the /etc (or system equivalent) directory for a `gitattributes`
-            /// file. Passing this flag will cause attribute checks to ignore that file. Setting the `no_system` flag will cause
-            /// attribute checks to ignore that file.
-            no_system: bool = false,
-
-            /// Passing the `include_head` flag will use attributes from a `.gitattributes` file in the repository
-            /// at the HEAD revision.
-            include_head: bool = false,
-
-            /// Passing the `include_commit` flag will use attributes from a `.gitattributes` file in a specific
-            /// commit.
-            include_commit: if (HAS_INCLUDE_COMMIT) bool else void = if (HAS_INCLUDE_COMMIT) false else {},
-
-            z_padding2: if (HAS_INCLUDE_COMMIT) u27 else u28 = 0,
-
-            const HAS_INCLUDE_COMMIT = @hasDecl(c, "GIT_ATTR_CHECK_INCLUDE_COMMIT");
-
-            pub fn format(
-                value: Extended,
-                comptime fmt: []const u8,
-                options: std.fmt.FormatOptions,
-                writer: anytype,
-            ) !void {
-                _ = fmt;
-                return internal.formatWithoutFields(
-                    value,
-                    options,
-                    writer,
-                    &.{ "z_padding1", "z_padding2" },
-                );
-            }
-
-            test {
-                try std.testing.expectEqual(@sizeOf(u32), @sizeOf(Extended));
-                try std.testing.expectEqual(@bitSizeOf(u32), @bitSizeOf(Extended));
-            }
-
-            comptime {
-                std.testing.refAllDecls(@This());
-            }
-        };
-
-        comptime {
-            std.testing.refAllDecls(@This());
-        }
-    };
-
     pub fn attributeCacheFlush(self: *Repository) !void {
         log.debug("Repository.attributeCacheFlush called", .{});
 
@@ -1634,7 +1339,7 @@ pub const Repository = opaque {
         log.debug("successfully added macro", .{});
     }
 
-    pub fn blameFile(self: *Repository, path: [:0]const u8, options: BlameOptions) !*git.Blame {
+    pub fn blameFile(self: *Repository, path: [:0]const u8, options: git.BlameOptions) !*git.Blame {
         log.debug("Repository.blameFile called, path: {s}, options: {}", .{ path, options });
 
         var blame: *git.Blame = undefined;
@@ -1652,95 +1357,6 @@ pub const Repository = opaque {
 
         return blame;
     }
-
-    pub const BlameOptions = struct {
-        flags: BlameFlags = .{},
-
-        /// The lower bound on the number of alphanumeric characters that must be detected as moving/copying within a file for it
-        /// to associate those lines with the parent commit. The default value is 20.
-        ///
-        /// This value only takes effect if any of the `BlameFlags.track_copies_*` flags are specified.
-        min_match_characters: u16 = 0,
-
-        /// The id of the newest commit to consider. The default is HEAD.
-        newest_commit: git.Oid = git.Oid.zero,
-
-        /// The id of the oldest commit to consider. The default is the first commit encountered with a `null` parent.
-        oldest_commit: git.Oid = git.Oid.zero,
-
-        /// The first line in the file to blame. The default is 1 (line numbers start with 1).
-        min_line: usize = 0,
-
-        /// The last line in the file to blame. The default is the last line of the file.
-        max_line: usize = 0,
-
-        pub const BlameFlags = packed struct {
-            normal: bool = false,
-
-            /// Track lines that have moved within a file (like `git blame -M`).
-            ///
-            /// This is not yet implemented and reserved for future use.
-            track_copies_same_file: bool = false,
-
-            /// Track lines that have moved across files in the same commit (like `git blame -C`).
-            ///
-            /// This is not yet implemented and reserved for future use.
-            track_copies_same_commit_moves: bool = false,
-
-            /// Track lines that have been copied from another file that exists in the same commit (like `git blame -CC`). 
-            /// Implies same_file.
-            ///
-            /// This is not yet implemented and reserved for future use.
-            track_copies_same_commit_copies: bool = false,
-
-            /// Track lines that have been copied from another file that exists in *any* commit (like `git blame -CCC`). Implies
-            /// same_commit_copies.
-            ///
-            /// This is not yet implemented and reserved for future use.
-            track_copies_any_commit_copies: bool = false,
-
-            /// Restrict the search of commits to those reachable following only the first parents.
-            first_parent: bool = false,
-
-            /// Use mailmap file to map author and committer names and email addresses to canonical real names and email
-            /// addresses. The mailmap will be read from the working directory, or HEAD in a bare repository.
-            use_mailmap: bool = false,
-
-            /// Ignore whitespace differences 
-            ignore_whitespace: bool = false,
-
-            z_padding1: u8 = 0,
-            z_padding2: u16 = 0,
-
-            pub fn format(
-                value: BlameFlags,
-                comptime fmt: []const u8,
-                options: std.fmt.FormatOptions,
-                writer: anytype,
-            ) !void {
-                _ = fmt;
-                return internal.formatWithoutFields(
-                    value,
-                    options,
-                    writer,
-                    &.{ "z_padding1", "z_padding2" },
-                );
-            }
-
-            test {
-                try std.testing.expectEqual(@sizeOf(c.git_blame_flag_t), @sizeOf(BlameFlags));
-                try std.testing.expectEqual(@bitSizeOf(c.git_blame_flag_t), @bitSizeOf(BlameFlags));
-            }
-
-            comptime {
-                std.testing.refAllDecls(@This());
-            }
-        };
-
-        comptime {
-            std.testing.refAllDecls(@This());
-        }
-    };
 
     pub fn blobLookup(self: *Repository, id: *const git.Oid) !*git.Blob {
         // This check is to prevent formating the oid when we are not going to print anything
@@ -2062,242 +1678,6 @@ pub const Repository = opaque {
         return @intCast(c_uint, ret);
     }
 
-    pub const CheckoutOptions = struct {
-        /// default will be a safe checkout
-        checkout_strategy: Strategy = .{
-            .safe = true,
-        },
-
-        /// don't apply filters like CRLF conversion
-        disable_filters: bool = false,
-
-        /// default is 0o755
-        dir_mode: c_uint = 0,
-
-        /// default is 0o644 or 0o755 as dictated by blob
-        file_mode: c_uint = 0,
-
-        /// default is O_CREAT | O_TRUNC | O_WRONLY
-        file_open_flags: c_int = 0,
-
-        /// Optional callback to get notifications on specific file states.
-        notify_flags: Notification = .{},
-
-        /// Optional callback to get notifications on specific file states.
-        notify_cb: ?fn (
-            why: Notification,
-            path: [*:0]const u8,
-            baseline: *git.DiffFile,
-            target: *git.DiffFile,
-            workdir: *git.DiffFile,
-            payload: ?*anyopaque,
-        ) callconv(.C) c_int = null,
-
-        /// Payload passed to notify_cb
-        notify_payload: ?*anyopaque = null,
-
-        /// Optional callback to notify the consumer of checkout progress
-        progress_cb: ?fn (
-            path: [*:0]const u8,
-            completed_steps: usize,
-            total_steps: usize,
-            payload: ?*anyopaque,
-        ) callconv(.C) void = null,
-
-        /// Payload passed to progress_cb
-        progress_payload: ?*anyopaque = null,
-
-        /// A list of wildmatch patterns or paths.
-        ///
-        /// By default, all paths are processed. If you pass an array of wildmatch patterns, those will be used to filter which
-        /// paths should be taken into account.
-        ///
-        /// Use GIT_CHECKOUT_DISABLE_PATHSPEC_MATCH to treat as a simple list.
-        paths: git.StrArray = .{},
-
-        /// The expected content of the working directory; defaults to HEAD.
-        ///
-        /// If the working directory does not match this baseline information, that will produce a checkout conflict.
-        baseline: ?*git.Tree = null,
-
-        /// Like `baseline` above, though expressed as an index. This option overrides `baseline`.
-        baseline_index: ?*git.Index = null,
-
-        /// alternative checkout path to workdir
-        target_directory: ?[:0]const u8 = null,
-
-        /// the name of the common ancestor side of conflicts
-        ancestor_label: ?[:0]const u8 = null,
-
-        /// the name of the "our" side of conflicts 
-        our_label: ?[:0]const u8 = null,
-
-        /// the name of the "their" side of conflicts
-        their_label: ?[:0]const u8 = null,
-
-        /// Optional callback to notify the consumer of performance data. 
-        perfdata_cb: ?fn (perfdata: *const PerfData, payload: *anyopaque) callconv(.C) void = null,
-
-        /// Payload passed to perfdata_cb
-        perfdata_payload: ?*anyopaque = null,
-
-        pub const PerfData = extern struct {
-            mkdir_calls: usize,
-            stat_calls: usize,
-            chmod_calls: usize,
-
-            test {
-                try std.testing.expectEqual(@sizeOf(c.git_checkout_perfdata), @sizeOf(PerfData));
-                try std.testing.expectEqual(@bitSizeOf(c.git_checkout_perfdata), @bitSizeOf(PerfData));
-            }
-
-            comptime {
-                std.testing.refAllDecls(@This());
-            }
-        };
-
-        pub const Strategy = packed struct {
-            /// Allow safe updates that cannot overwrite uncommitted data.
-            /// If the uncommitted changes don't conflict with the checked out files,
-            /// the checkout will still proceed, leaving the changes intact.
-            ///
-            /// Mutually exclusive with force.
-            /// force takes precedence over safe.
-            safe: bool = false,
-
-            /// Allow all updates to force working directory to look like index.
-            ///
-            /// Mutually exclusive with safe.
-            /// force takes precedence over safe.
-            force: bool = false,
-
-            /// Allow checkout to recreate missing files
-            recreate_missing: bool = false,
-
-            z_padding: bool = false,
-
-            /// Allow checkout to make safe updates even if conflicts are found
-            allow_conflicts: bool = false,
-
-            /// Remove untracked files not in index (that are not ignored)
-            remove_untracked: bool = false,
-
-            /// Remove ignored files not in index
-            remove_ignored: bool = false,
-
-            /// Only update existing files, don't create new ones
-            update_only: bool = false,
-
-            /// Normally checkout updates index entries as it goes; this stops that.
-            /// Implies `dont_write_index`.
-            dont_update_index: bool = false,
-
-            /// Don't refresh index/config/etc before doing checkout
-            no_refresh: bool = false,
-
-            /// Allow checkout to skip unmerged files
-            skip_unmerged: bool = false,
-
-            /// For unmerged files, checkout stage 2 from index
-            use_ours: bool = false,
-
-            /// For unmerged files, checkout stage 3 from index
-            use_theirs: bool = false,
-
-            /// Treat pathspec as simple list of exact match file paths
-            disable_pathspec_match: bool = false,
-
-            z_padding2: u2 = 0,
-
-            /// Recursively checkout submodules with same options (NOT IMPLEMENTED)
-            update_submodules: bool = false,
-
-            /// Recursively checkout submodules if HEAD moved in super repo (NOT IMPLEMENTED)
-            update_submodules_if_changed: bool = false,
-
-            /// Ignore directories in use, they will be left empty
-            skip_locked_directories: bool = false,
-
-            /// Don't overwrite ignored files that exist in the checkout target
-            dont_overwrite_ignored: bool = false,
-
-            /// Write normal merge files for conflicts
-            conflict_style_merge: bool = false,
-
-            /// Include common ancestor data in diff3 format files for conflicts
-            conflict_style_diff3: bool = false,
-
-            /// Don't overwrite existing files or folders
-            dont_remove_existing: bool = false,
-
-            /// Normally checkout writes the index upon completion; this prevents that.
-            dont_write_index: bool = false,
-
-            z_padding3: u8 = 0,
-
-            pub fn format(
-                value: Strategy,
-                comptime fmt: []const u8,
-                options: std.fmt.FormatOptions,
-                writer: anytype,
-            ) !void {
-                _ = fmt;
-                return internal.formatWithoutFields(
-                    value,
-                    options,
-                    writer,
-                    &.{ "z_padding", "z_padding2", "z_padding3" },
-                );
-            }
-
-            test {
-                try std.testing.expectEqual(@sizeOf(c_uint), @sizeOf(Strategy));
-                try std.testing.expectEqual(@bitSizeOf(c_uint), @bitSizeOf(Strategy));
-            }
-
-            comptime {
-                std.testing.refAllDecls(@This());
-            }
-        };
-
-        pub const Notification = packed struct {
-            /// Invokes checkout on conflicting paths.
-            conflict: bool = false,
-
-            /// Notifies about "dirty" files, i.e. those that do not need an update
-            /// but no longer match the baseline.  Core git displays these files when
-            /// checkout runs, but won't stop the checkout.
-            dirty: bool = false,
-
-            /// Sends notification for any file changed.
-            updated: bool = false,
-
-            /// Notifies about untracked files.
-            untracked: bool = false,
-
-            /// Notifies about ignored files.
-            ignored: bool = false,
-
-            z_padding: u11 = 0,
-            z_padding2: u16 = 0,
-
-            pub const all = @bitCast(Notification, @as(c_uint, 0xFFFF));
-
-            test {
-                try std.testing.expectEqual(@sizeOf(c_uint), @sizeOf(Notification));
-                try std.testing.expectEqual(@bitSizeOf(c_uint), @bitSizeOf(Notification));
-            }
-
-            comptime {
-                std.testing.refAllDecls(@This());
-            }
-        };
-
-        comptime {
-            std.testing.refAllDecls(@This());
-        }
-    };
-
     pub fn cherrypickCommit(
         self: *Repository,
         cherrypick_commit: *git.Commit,
@@ -2348,16 +1728,6 @@ pub const Repository = opaque {
 
         log.debug("successfully cherrypicked", .{});
     }
-
-    pub const CherrypickOptions = struct {
-        mainline: bool = false,
-        merge_options: git.MergeOptions = .{},
-        checkout_options: CheckoutOptions = .{},
-
-        comptime {
-            std.testing.refAllDecls(@This());
-        }
-    };
 
     /// Lookup a commit object from a repository.
     pub fn commitLookup(self: *Repository, oid: *const git.Oid) !*git.Commit {
@@ -2852,7 +2222,7 @@ pub const Repository = opaque {
     /// * `name` - The name of the attribute to look up.
     pub fn attributeExtended(
         self: *Repository,
-        options: AttributeOptions,
+        options: git.AttributeOptions,
         path: [:0]const u8,
         name: [:0]const u8,
     ) !git.Attribute {
@@ -2891,7 +2261,7 @@ pub const Repository = opaque {
     pub fn attributeManyExtended(
         self: *Repository,
         output_buffer: [][*:0]const u8,
-        options: AttributeOptions,
+        options: git.AttributeOptions,
         path: [:0]const u8,
         names: [][*:0]const u8,
     ) ![]const [*:0]const u8 {
@@ -2929,7 +2299,7 @@ pub const Repository = opaque {
     /// * `value` - The attribute value. May be `null` if the attribute is explicitly set to unspecified using the '!' sign.
     pub fn attributeForeachExtended(
         self: *const Repository,
-        options: AttributeOptions,
+        options: git.AttributeOptions,
         path: [:0]const u8,
         comptime callback_fn: fn (
             name: [:0]const u8,
@@ -2983,7 +2353,7 @@ pub const Repository = opaque {
     /// * `user_data_ptr` - Pointer to user data
     pub fn attributeForeachWithUserDataExtended(
         self: *const Repository,
-        options: AttributeOptions,
+        options: git.AttributeOptions,
         path: [:0]const u8,
         user_data: anytype,
         comptime callback_fn: fn (
@@ -3024,15 +2394,6 @@ pub const Repository = opaque {
 
         return ret;
     }
-
-    pub const AttributeOptions = struct {
-        flags: AttributeFlags,
-        commit_id: *git.Oid,
-
-        comptime {
-            std.testing.refAllDecls(@This());
-        }
-    };
 
     /// Read a file from the filesystem and write its content to the Object Database as a loose blob
     pub fn blobFromBuffer(self: *Repository, buffer: []const u8) !git.Oid {
@@ -3184,18 +2545,6 @@ pub const Repository = opaque {
         return ret;
     }
 
-    pub const WorktreeAddOptions = struct {
-        /// lock newly created worktree
-        lock: bool = false,
-
-        /// reference to use for the new worktree HEAD
-        ref: ?*git.Reference = null,
-
-        comptime {
-            std.testing.refAllDecls(@This());
-        }
-    };
-
     /// Add a new working tree
     ///
     /// Add a new working tree for the repository, that is create the required data structures inside the repository and
@@ -3205,7 +2554,7 @@ pub const Repository = opaque {
     /// * `name` - Name of the working tree
     /// * `path` - Path to create working tree at
     /// * `options` - Options to modify default behavior.
-    pub fn worktreeAdd(self: *Repository, name: [:0]const u8, path: [:0]const u8, options: WorktreeAddOptions) !*git.Worktree {
+    pub fn worktreeAdd(self: *Repository, name: [:0]const u8, path: [:0]const u8, options: git.WorktreeAddOptions) !*git.Worktree {
         log.debug("Repository.worktreeAdd called, name: {s}, path: {s}, options: {}", .{ name, path, options });
 
         var ret: *git.Worktree = undefined;
@@ -3280,7 +2629,7 @@ pub const Repository = opaque {
     /// Convert a tree entry to the git_object it points to.
     ///
     /// You must call `git.Object.deint` on the object when you are done with it.
-    pub fn treeEntrytoObject(self: *Repository, entry: *const git.Tree.TreeEntry) !*git.Object {
+    pub fn treeEntrytoObject(self: *Repository, entry: *const git.TreeEntry) !*git.Object {
         log.debug("Repository.treeEntrytoObject called, entry: {*}", .{entry});
 
         var ret: *git.Object = undefined;
@@ -4043,7 +3392,7 @@ pub const Repository = opaque {
     /// ## Parameters
     /// * `remote` - The name of the remote.
     /// * `value` - The new value to take.
-    pub fn remoteSetAutotag(self: *Repository, remote: [:0]const u8, value: git.Remote.AutoTagOption) !void {
+    pub fn remoteSetAutotag(self: *Repository, remote: [:0]const u8, value: git.RemoteAutoTagOption) !void {
         log.debug("Remote.setAutotag called, remote: {s}, value: {}", .{ remote, value });
 
         try internal.wrapCall("git_remote_set_autotag", .{
@@ -4122,7 +3471,7 @@ pub const Repository = opaque {
     pub fn pathspecMatchWorkdir(
         self: *Repository,
         pathspec: *git.Pathspec,
-        options: git.Pathspec.MatchOptions,
+        options: git.PathspecMatchOptions,
         match_list: ?**git.PathspecMatchList,
     ) !bool {
         log.debug("Repository.pathspecMatchWorkdir called, options: {}, pathspec: {*}", .{ options, pathspec });
@@ -4197,59 +3546,6 @@ pub const Repository = opaque {
 
         return ret;
     }
-
-    pub const RevSpec = extern struct {
-        /// The left element of the revspec; must be freed by the user
-        from: ?*git.Object,
-        /// The right element of the revspec; must be freed by the user
-        to: ?*git.Object,
-        /// The intent of the revspec
-        flags: RevSpecFlags,
-
-        pub const RevSpecFlags = packed struct {
-            /// The spec targeted a single object.
-            single: bool = false,
-            /// The spec targeted a range of commits.
-            range: bool = false,
-            /// The spec used the '...' operator, which invokes special semantics.
-            merge_base: bool = false,
-
-            z_padding: u29 = 0,
-
-            pub fn format(
-                value: RevSpecFlags,
-                comptime fmt: []const u8,
-                options: std.fmt.FormatOptions,
-                writer: anytype,
-            ) !void {
-                _ = fmt;
-                return internal.formatWithoutFields(
-                    value,
-                    options,
-                    writer,
-                    &.{"z_padding"},
-                );
-            }
-
-            test {
-                try std.testing.expectEqual(@sizeOf(c.git_revspec_t), @sizeOf(RevSpecFlags));
-                try std.testing.expectEqual(@bitSizeOf(c.git_revspec_t), @bitSizeOf(RevSpecFlags));
-            }
-
-            comptime {
-                std.testing.refAllDecls(@This());
-            }
-        };
-
-        test {
-            try std.testing.expectEqual(@sizeOf(c.git_revspec), @sizeOf(RevSpec));
-            try std.testing.expectEqual(@bitSizeOf(c.git_revspec), @bitSizeOf(RevSpec));
-        }
-
-        comptime {
-            std.testing.refAllDecls(@This());
-        }
-    };
 
     /// Parse a revision string for `from`, `to`, and intent.
     ///
@@ -4409,26 +3705,12 @@ pub const Repository = opaque {
         return ret;
     }
 
-    /// Options for revert
-    pub const RevertOptions = struct {
-        /// For merge commits, the "mainline" is treated as the parent.
-        mainline: bool = false,
-        /// Options for the merging
-        merge_options: git.MergeOptions = .{},
-        /// Options for the checkout
-        checkout_options: CheckoutOptions = .{},
-
-        comptime {
-            std.testing.refAllDecls(@This());
-        }
-    };
-
     /// Reverts the given commit, producing changes in the index and working directory.
     ///
     /// ## Parameters
     /// * `commit` - The commit to revert
     /// * `options` - The revert options
-    pub fn revert(self: *Repository, commit: *git.Commit, options: RevertOptions) !void {
+    pub fn revert(self: *Repository, commit: *git.Commit, options: git.RevertOptions) !void {
         log.debug("Repository.revert called, commit: {*}, options: {}", .{
             commit,
             options,
@@ -4467,6 +3749,301 @@ pub const Repository = opaque {
         log.debug("successfully initalized signature {*}", .{ret});
 
         return ret;
+    }
+
+    comptime {
+        std.testing.refAllDecls(@This());
+    }
+};
+
+pub const RepositoryInitOptions = struct {
+    flags: RepositoryInitExtendedFlags = .{},
+    mode: InitMode = .shared_umask,
+
+    /// The path to the working dir or `null` for default (i.e. repo_path parent on non-bare repos). 
+    /// *NOTE*: if this is a relative path, it must be relative to the repository path. 
+    /// If this is not the "natural" working directory, a .git gitlink file will be created linking to the repository path.
+    workdir_path: ?[:0]const u8 = null,
+
+    /// A "description" file to be used in the repository, instead of using the template content.
+    description: ?[:0]const u8 = null,
+
+    /// When `RepositoryInitExtendedFlags.external_template` is set, this must contain the path to use for the template
+    /// directory. If this is `null`, the config or default directory options will be used instead.
+    template_path: ?[:0]const u8 = null,
+
+    /// The name of the head to point HEAD at. If `null`, then this will be treated as "master" and the HEAD ref will be set
+    /// to "refs/heads/master".
+    /// If this begins with "refs/" it will be used verbatim; otherwise "refs/heads/" will be prefixed.
+    initial_head: ?[:0]const u8 = null,
+
+    /// If this is non-`null`, then after the rest of the repository initialization is completed, an "origin" remote will be 
+    /// added pointing to this URL.
+    origin_url: ?[:0]const u8 = null,
+
+    pub const RepositoryInitExtendedFlags = packed struct {
+        /// Create a bare repository with no working directory.
+        bare: bool = false,
+
+        /// Return an `GitError.EXISTS` error if the path appears to already be an git repository.
+        no_reinit: bool = false,
+
+        /// Normally a "/.git/" will be appended to the repo path for non-bare repos (if it is not already there), but passing 
+        /// this flag prevents that behavior.
+        no_dotgit_dir: bool = false,
+
+        /// Make the repo_path (and workdir_path) as needed. Init is always willing to create the ".git" directory even
+        /// without this flag. This flag tells init to create the trailing component of the repo and workdir paths as needed.
+        mkdir: bool = false,
+
+        /// Recursively make all components of the repo and workdir paths as necessary.
+        mkpath: bool = false,
+
+        /// libgit2 normally uses internal templates to initialize a new repo. 
+        /// This flag enables external templates, looking at the "template_path" from the options if set, or the
+        /// `init.templatedir` global config if not, or falling back on "/usr/share/git-core/templates" if it exists.
+        external_template: bool = false,
+
+        /// If an alternate workdir is specified, use relative paths for the gitdir and core.worktree.
+        relative_gitlink: bool = false,
+
+        z_padding: std.meta.Int(.unsigned, @bitSizeOf(c_uint) - 7) = 0,
+
+        pub fn toInt(self: RepositoryInitExtendedFlags) c_uint {
+            return @bitCast(c_uint, self);
+        }
+
+        pub fn format(
+            value: RepositoryInitExtendedFlags,
+            comptime fmt: []const u8,
+            options: std.fmt.FormatOptions,
+            writer: anytype,
+        ) !void {
+            _ = fmt;
+            return internal.formatWithoutFields(
+                value,
+                options,
+                writer,
+                &.{"z_padding"},
+            );
+        }
+
+        test {
+            try std.testing.expectEqual(@sizeOf(c_uint), @sizeOf(RepositoryInitExtendedFlags));
+            try std.testing.expectEqual(@bitSizeOf(c_uint), @bitSizeOf(RepositoryInitExtendedFlags));
+        }
+
+        comptime {
+            std.testing.refAllDecls(@This());
+        }
+    };
+
+    pub const InitMode = union(enum) {
+        /// Use permissions configured by umask - the default.
+        shared_umask: void,
+
+        /// Use "--shared=group" behavior, chmod'ing the new repo to be group writable and "g+sx" for sticky group assignment.
+        shared_group: void,
+
+        /// Use "--shared=all" behavior, adding world readability.
+        shared_all: void,
+
+        custom: c_uint,
+
+        pub fn toInt(self: InitMode) c_uint {
+            return switch (self) {
+                .shared_umask => 0,
+                .shared_group => 0o2775,
+                .shared_all => 0o2777,
+                .custom => |custom| custom,
+            };
+        }
+    };
+
+    comptime {
+        std.testing.refAllDecls(@This());
+    }
+};
+
+pub const FileStatusOptions = struct {
+    /// which files to scan
+    show: Show = .index_and_workdir,
+
+    /// Flags to control status callbacks
+    flags: Flags = .{},
+
+    /// The `pathspec` is an array of path patterns to match (using fnmatch-style matching), or just an array of paths to 
+    /// match exactly if `Flags.disable_pathspec_match` is specified in the flags.
+    pathspec: git.StrArray = .{},
+
+    /// The `baseline` is the tree to be used for comparison to the working directory and index; defaults to HEAD.
+    baseline: ?*git.Tree = null,
+
+    /// Select the files on which to report status.
+    pub const Show = enum(c_uint) {
+        /// The default. This roughly matches `git status --porcelain` regarding which files are included and in what order.
+        index_and_workdir,
+        /// Only gives status based on HEAD to index comparison, not looking at working directory changes.
+        index_only,
+        /// Only gives status based on index to working directory comparison, not comparing the index to the HEAD.
+        workdir_only,
+    };
+
+    /// Flags to control status callbacks
+    ///
+    /// Calling `Repository.forEachFileStatus` is like calling the extended version with: `include_ignored`, 
+    /// `include_untracked`, and `recurse_untracked_dirs`. Those options are provided as `Options.Defaults`.
+    pub const Flags = packed struct {
+        /// Says that callbacks should be made on untracked files.
+        /// These will only be made if the workdir files are included in the status
+        /// "show" option.
+        include_untracked: bool = true,
+
+        /// Says that ignored files get callbacks.
+        /// Again, these callbacks will only be made if the workdir files are
+        /// included in the status "show" option.
+        include_ignored: bool = true,
+
+        /// Indicates that callback should be made even on unmodified files.
+        include_unmodified: bool = false,
+
+        /// Indicates that submodules should be skipped.
+        /// This only applies if there are no pending typechanges to the submodule
+        /// (either from or to another type).
+        exclude_submodules: bool = false,
+
+        /// Indicates that all files in untracked directories should be included.
+        /// Normally if an entire directory is new, then just the top-level
+        /// directory is included (with a trailing slash on the entry name).
+        /// This flag says to include all of the individual files in the directory
+        /// instead.
+        recurse_untracked_dirs: bool = true,
+
+        /// Indicates that the given path should be treated as a literal path,
+        /// and not as a pathspec pattern.
+        disable_pathspec_match: bool = false,
+
+        /// Indicates that the contents of ignored directories should be included
+        /// in the status. This is like doing `git ls-files -o -i --exclude-standard`
+        /// with core git.
+        recurse_ignored_dirs: bool = false,
+
+        /// Indicates that rename detection should be processed between the head and
+        /// the index and enables the GIT_STATUS_INDEX_RENAMED as a possible status
+        /// flag.
+        renames_head_to_index: bool = false,
+
+        /// Indicates that rename detection should be run between the index and the
+        /// working directory and enabled GIT_STATUS_WT_RENAMED as a possible status
+        /// flag.
+        renames_index_to_workdir: bool = false,
+
+        /// Overrides the native case sensitivity for the file system and forces
+        /// the output to be in case-sensitive order.
+        sort_case_sensitively: bool = false,
+
+        /// Overrides the native case sensitivity for the file system and forces
+        /// the output to be in case-insensitive order.
+        sort_case_insensitively: bool = false,
+
+        /// Iindicates that rename detection should include rewritten files.
+        renames_from_rewrites: bool = false,
+
+        /// Bypasses the default status behavior of doing a "soft" index reload
+        /// (i.e. reloading the index data if the file on disk has been modified
+        /// outside libgit2).
+        no_refresh: bool = false,
+
+        /// Tells libgit2 to refresh the stat cache in the index for files that are
+        /// unchanged but have out of date stat einformation in the index.
+        /// It will result in less work being done on subsequent calls to get status.
+        /// This is mutually exclusive with the no_refresh option.
+        update_index: bool = false,
+
+        /// Normally files that cannot be opened or read are ignored as
+        /// these are often transient files; this option will return
+        /// unreadable files as `GIT_STATUS_WT_UNREADABLE`.
+        include_unreadable: bool = false,
+
+        /// Unreadable files will be detected and given the status
+        /// untracked instead of unreadable.
+        include_unreadable_as_untracked: bool = false,
+
+        z_padding: u16 = 0,
+
+        pub fn format(
+            value: Flags,
+            comptime fmt: []const u8,
+            options: std.fmt.FormatOptions,
+            writer: anytype,
+        ) !void {
+            _ = fmt;
+            return internal.formatWithoutFields(
+                value,
+                options,
+                writer,
+                &.{"z_padding"},
+            );
+        }
+
+        test {
+            try std.testing.expectEqual(@sizeOf(c_uint), @sizeOf(Flags));
+            try std.testing.expectEqual(@bitSizeOf(c_uint), @bitSizeOf(Flags));
+        }
+
+        comptime {
+            std.testing.refAllDecls(@This());
+        }
+    };
+
+    comptime {
+        std.testing.refAllDecls(@This());
+    }
+};
+
+pub const RepositoryOpenOptions = packed struct {
+    /// Only open the repository if it can be immediately found in the path. Do not walk up the directory tree to look for it.
+    no_search: bool = false,
+
+    /// Unless this flag is set, open will not search across filesystem boundaries.
+    cross_fs: bool = false,
+
+    /// Open repository as a bare repo regardless of core.bare config.
+    bare: bool = false,
+
+    /// Do not check for a repository by appending /.git to the path; only open the repository if path itself points to the
+    /// git directory.     
+    no_dotgit: bool = false,
+
+    /// Find and open a git repository, respecting the environment variables used by the git command-line tools. If set, 
+    /// `Handle.repositoryOpenExtended` will ignore the other flags and the `ceiling_dirs` argument, and will allow a `null`
+    /// `path` to use `GIT_DIR` or search from the current directory.
+    open_from_env: bool = false,
+
+    z_padding: std.meta.Int(.unsigned, @bitSizeOf(c_uint) - 5) = 0,
+
+    pub fn toInt(self: RepositoryOpenOptions) c_uint {
+        return @bitCast(c_uint, self);
+    }
+
+    pub fn format(
+        value: RepositoryOpenOptions,
+        comptime fmt: []const u8,
+        options: std.fmt.FormatOptions,
+        writer: anytype,
+    ) !void {
+        _ = fmt;
+        return internal.formatWithoutFields(
+            value,
+            options,
+            writer,
+            &.{"z_padding"},
+        );
+    }
+
+    test {
+        try std.testing.expectEqual(@sizeOf(c_uint), @sizeOf(RepositoryOpenOptions));
+        try std.testing.expectEqual(@bitSizeOf(c_uint), @bitSizeOf(RepositoryOpenOptions));
     }
 
     comptime {
@@ -4522,6 +4099,305 @@ pub const FileStatus = packed struct {
         try std.testing.expectEqual(@sizeOf(c_uint), @sizeOf(FileStatus));
         try std.testing.expectEqual(@bitSizeOf(c_uint), @bitSizeOf(FileStatus));
     }
+
+    comptime {
+        std.testing.refAllDecls(@This());
+    }
+};
+
+pub const RevSpec = extern struct {
+    /// The left element of the revspec; must be freed by the user
+    from: ?*git.Object,
+    /// The right element of the revspec; must be freed by the user
+    to: ?*git.Object,
+    /// The intent of the revspec
+    flags: RevSpecFlags,
+
+    pub const RevSpecFlags = packed struct {
+        /// The spec targeted a single object.
+        single: bool = false,
+        /// The spec targeted a range of commits.
+        range: bool = false,
+        /// The spec used the '...' operator, which invokes special semantics.
+        merge_base: bool = false,
+
+        z_padding: u29 = 0,
+
+        pub fn format(
+            value: RevSpecFlags,
+            comptime fmt: []const u8,
+            options: std.fmt.FormatOptions,
+            writer: anytype,
+        ) !void {
+            _ = fmt;
+            return internal.formatWithoutFields(
+                value,
+                options,
+                writer,
+                &.{"z_padding"},
+            );
+        }
+
+        test {
+            try std.testing.expectEqual(@sizeOf(c.git_revspec_t), @sizeOf(RevSpecFlags));
+            try std.testing.expectEqual(@bitSizeOf(c.git_revspec_t), @bitSizeOf(RevSpecFlags));
+        }
+
+        comptime {
+            std.testing.refAllDecls(@This());
+        }
+    };
+
+    test {
+        try std.testing.expectEqual(@sizeOf(c.git_revspec), @sizeOf(RevSpec));
+        try std.testing.expectEqual(@bitSizeOf(c.git_revspec), @bitSizeOf(RevSpec));
+    }
+
+    comptime {
+        std.testing.refAllDecls(@This());
+    }
+};
+
+pub const CheckoutOptions = struct {
+    /// default will be a safe checkout
+    checkout_strategy: Strategy = .{
+        .safe = true,
+    },
+
+    /// don't apply filters like CRLF conversion
+    disable_filters: bool = false,
+
+    /// default is 0o755
+    dir_mode: c_uint = 0,
+
+    /// default is 0o644 or 0o755 as dictated by blob
+    file_mode: c_uint = 0,
+
+    /// default is O_CREAT | O_TRUNC | O_WRONLY
+    file_open_flags: c_int = 0,
+
+    /// Optional callback to get notifications on specific file states.
+    notify_flags: Notification = .{},
+
+    /// Optional callback to get notifications on specific file states.
+    notify_cb: ?fn (
+        why: Notification,
+        path: [*:0]const u8,
+        baseline: *git.DiffFile,
+        target: *git.DiffFile,
+        workdir: *git.DiffFile,
+        payload: ?*anyopaque,
+    ) callconv(.C) c_int = null,
+
+    /// Payload passed to notify_cb
+    notify_payload: ?*anyopaque = null,
+
+    /// Optional callback to notify the consumer of checkout progress
+    progress_cb: ?fn (
+        path: [*:0]const u8,
+        completed_steps: usize,
+        total_steps: usize,
+        payload: ?*anyopaque,
+    ) callconv(.C) void = null,
+
+    /// Payload passed to progress_cb
+    progress_payload: ?*anyopaque = null,
+
+    /// A list of wildmatch patterns or paths.
+    ///
+    /// By default, all paths are processed. If you pass an array of wildmatch patterns, those will be used to filter which
+    /// paths should be taken into account.
+    ///
+    /// Use GIT_CHECKOUT_DISABLE_PATHSPEC_MATCH to treat as a simple list.
+    paths: git.StrArray = .{},
+
+    /// The expected content of the working directory; defaults to HEAD.
+    ///
+    /// If the working directory does not match this baseline information, that will produce a checkout conflict.
+    baseline: ?*git.Tree = null,
+
+    /// Like `baseline` above, though expressed as an index. This option overrides `baseline`.
+    baseline_index: ?*git.Index = null,
+
+    /// alternative checkout path to workdir
+    target_directory: ?[:0]const u8 = null,
+
+    /// the name of the common ancestor side of conflicts
+    ancestor_label: ?[:0]const u8 = null,
+
+    /// the name of the "our" side of conflicts 
+    our_label: ?[:0]const u8 = null,
+
+    /// the name of the "their" side of conflicts
+    their_label: ?[:0]const u8 = null,
+
+    /// Optional callback to notify the consumer of performance data. 
+    perfdata_cb: ?fn (perfdata: *const PerfData, payload: *anyopaque) callconv(.C) void = null,
+
+    /// Payload passed to perfdata_cb
+    perfdata_payload: ?*anyopaque = null,
+
+    pub const PerfData = extern struct {
+        mkdir_calls: usize,
+        stat_calls: usize,
+        chmod_calls: usize,
+
+        test {
+            try std.testing.expectEqual(@sizeOf(c.git_checkout_perfdata), @sizeOf(PerfData));
+            try std.testing.expectEqual(@bitSizeOf(c.git_checkout_perfdata), @bitSizeOf(PerfData));
+        }
+
+        comptime {
+            std.testing.refAllDecls(@This());
+        }
+    };
+
+    pub const Strategy = packed struct {
+        /// Allow safe updates that cannot overwrite uncommitted data.
+        /// If the uncommitted changes don't conflict with the checked out files,
+        /// the checkout will still proceed, leaving the changes intact.
+        ///
+        /// Mutually exclusive with force.
+        /// force takes precedence over safe.
+        safe: bool = false,
+
+        /// Allow all updates to force working directory to look like index.
+        ///
+        /// Mutually exclusive with safe.
+        /// force takes precedence over safe.
+        force: bool = false,
+
+        /// Allow checkout to recreate missing files
+        recreate_missing: bool = false,
+
+        z_padding: bool = false,
+
+        /// Allow checkout to make safe updates even if conflicts are found
+        allow_conflicts: bool = false,
+
+        /// Remove untracked files not in index (that are not ignored)
+        remove_untracked: bool = false,
+
+        /// Remove ignored files not in index
+        remove_ignored: bool = false,
+
+        /// Only update existing files, don't create new ones
+        update_only: bool = false,
+
+        /// Normally checkout updates index entries as it goes; this stops that.
+        /// Implies `dont_write_index`.
+        dont_update_index: bool = false,
+
+        /// Don't refresh index/config/etc before doing checkout
+        no_refresh: bool = false,
+
+        /// Allow checkout to skip unmerged files
+        skip_unmerged: bool = false,
+
+        /// For unmerged files, checkout stage 2 from index
+        use_ours: bool = false,
+
+        /// For unmerged files, checkout stage 3 from index
+        use_theirs: bool = false,
+
+        /// Treat pathspec as simple list of exact match file paths
+        disable_pathspec_match: bool = false,
+
+        z_padding2: u2 = 0,
+
+        /// Recursively checkout submodules with same options (NOT IMPLEMENTED)
+        update_submodules: bool = false,
+
+        /// Recursively checkout submodules if HEAD moved in super repo (NOT IMPLEMENTED)
+        update_submodules_if_changed: bool = false,
+
+        /// Ignore directories in use, they will be left empty
+        skip_locked_directories: bool = false,
+
+        /// Don't overwrite ignored files that exist in the checkout target
+        dont_overwrite_ignored: bool = false,
+
+        /// Write normal merge files for conflicts
+        conflict_style_merge: bool = false,
+
+        /// Include common ancestor data in diff3 format files for conflicts
+        conflict_style_diff3: bool = false,
+
+        /// Don't overwrite existing files or folders
+        dont_remove_existing: bool = false,
+
+        /// Normally checkout writes the index upon completion; this prevents that.
+        dont_write_index: bool = false,
+
+        z_padding3: u8 = 0,
+
+        pub fn format(
+            value: Strategy,
+            comptime fmt: []const u8,
+            options: std.fmt.FormatOptions,
+            writer: anytype,
+        ) !void {
+            _ = fmt;
+            return internal.formatWithoutFields(
+                value,
+                options,
+                writer,
+                &.{ "z_padding", "z_padding2", "z_padding3" },
+            );
+        }
+
+        test {
+            try std.testing.expectEqual(@sizeOf(c_uint), @sizeOf(Strategy));
+            try std.testing.expectEqual(@bitSizeOf(c_uint), @bitSizeOf(Strategy));
+        }
+
+        comptime {
+            std.testing.refAllDecls(@This());
+        }
+    };
+
+    pub const Notification = packed struct {
+        /// Invokes checkout on conflicting paths.
+        conflict: bool = false,
+
+        /// Notifies about "dirty" files, i.e. those that do not need an update
+        /// but no longer match the baseline.  Core git displays these files when
+        /// checkout runs, but won't stop the checkout.
+        dirty: bool = false,
+
+        /// Sends notification for any file changed.
+        updated: bool = false,
+
+        /// Notifies about untracked files.
+        untracked: bool = false,
+
+        /// Notifies about ignored files.
+        ignored: bool = false,
+
+        z_padding: u11 = 0,
+        z_padding2: u16 = 0,
+
+        pub const all = @bitCast(Notification, @as(c_uint, 0xFFFF));
+
+        test {
+            try std.testing.expectEqual(@sizeOf(c_uint), @sizeOf(Notification));
+            try std.testing.expectEqual(@bitSizeOf(c_uint), @bitSizeOf(Notification));
+        }
+
+        comptime {
+            std.testing.refAllDecls(@This());
+        }
+    };
+
+    comptime {
+        std.testing.refAllDecls(@This());
+    }
+};
+
+pub const CherrypickOptions = struct {
+    mainline: bool = false,
+    merge_options: git.MergeOptions = .{},
+    checkout_options: git.CheckoutOptions = .{},
 
     comptime {
         std.testing.refAllDecls(@This());

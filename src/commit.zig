@@ -420,6 +420,20 @@ pub const Commit = opaque {
     }
 };
 
+/// Options for revert
+pub const RevertOptions = struct {
+    /// For merge commits, the "mainline" is treated as the parent.
+    mainline: bool = false,
+    /// Options for the merging
+    merge_options: git.MergeOptions = .{},
+    /// Options for the checkout
+    checkout_options: git.CheckoutOptions = .{},
+
+    comptime {
+        std.testing.refAllDecls(@This());
+    }
+};
+
 comptime {
     std.testing.refAllDecls(@This());
 }
