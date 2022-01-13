@@ -63,7 +63,7 @@ There is currently no plan to port all the headers within "include/git2/sys", if
 - [ ] submodule.h
 - [ ] tag.h
 - [X] trace.h
-- [ ] transaction.h
+- [X] transaction.h
 - [X] tree.h
 - [X] worktree.h
 - [X] sys/alloc.h

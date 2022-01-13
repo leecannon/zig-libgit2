@@ -3746,7 +3746,7 @@ pub const Repository = opaque {
             @ptrCast(*c.git_repository, self),
         });
 
-        log.debug("successfully initalized signature {*}", .{ret});
+        log.debug("successfully initalized signature: {*}", .{ret});
 
         return ret;
     }
@@ -3839,6 +3839,24 @@ pub const Repository = opaque {
         });
 
         log.debug("successfully reset", .{});
+    }
+
+    /// Create a new transaction object
+    ///
+    /// This does not lock anything, but sets up the transaction object to know from which repository to lock.
+    pub fn transactionInit(self: *Repository) !*git.Transaction {
+        log.debug("Repository.transactionInit called", .{});
+
+        var ret: *git.Transaction = undefined;
+
+        try internal.wrapCall("git_transaction_new", .{
+            @ptrCast(*?*c.git_transaction, &ret),
+            @ptrCast(*c.git_repository, self),
+        });
+
+        log.debug("successfully initalized transaction: {*}", .{ret});
+
+        return ret;
     }
 
     comptime {
