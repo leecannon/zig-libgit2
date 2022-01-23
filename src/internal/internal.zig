@@ -3,6 +3,9 @@ const c = @import("c.zig");
 const git = @import("../git.zig");
 const log = std.log.scoped(.git);
 
+// TODO: Document
+const log_errors = std.meta.globalOption("libgit2_log_errors", bool) orelse false;
+
 pub const make_c_option = @import("make_c_option.zig");
 
 pub const has_credential = @hasDecl(c, "git_credential");
@@ -71,16 +74,16 @@ fn unwrapError(name: []const u8, value: c.git_error_code) git.GitError {
 
     // We dont want to output log messages in tests, as the error might be expected
     // also dont incur the cost of calling `getDetailedLastError` if we are not going to use it
-    if (!@import("builtin").is_test and @enumToInt(std.log.Level.warn) <= @enumToInt(std.log.level)) {
+    if (!@import("builtin").is_test and log_errors and @enumToInt(std.log.Level.err) <= @enumToInt(std.log.level)) {
         if (git.Handle.getDetailedLastError(undefined)) |detailed| {
-            log.warn("{s} failed with error {s}/{s} - {s}", .{
+            log.err("{s} failed with error {s}/{s} - {s}", .{
                 name,
                 @errorName(err),
                 @tagName(detailed.class),
                 detailed.message(),
             });
         } else {
-            log.warn("{s} failed with error {s}", .{
+            log.err("{s} failed with error {s}", .{
                 name,
                 @errorName(err),
             });
