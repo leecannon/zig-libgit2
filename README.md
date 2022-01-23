@@ -37,7 +37,6 @@ There is currently no plan to port all the headers within "include/git2/sys", if
 - [X] message.h
 - [X] notes.h
 - [X] object.h
-- [ ] odb_backend.h
 - [ ] odb.h
 - [X] oid.h
 - [X] oidarray.h
@@ -75,4 +74,4 @@ There is currently no plan to port all the headers within "include/git2/sys", if
 - [ ] sys/merge.h
 - [ ] sys/odb_backend.h
 - [X] sys/path.h
-- [ ] sys/repository.h
+- [X] sys/repository.h

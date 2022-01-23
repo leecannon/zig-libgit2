@@ -3859,6 +3859,152 @@ pub const Repository = opaque {
         return ret;
     }
 
+    /// Update the filesystem config settings for an open repository
+    ///
+    /// When a repository is initialized, config values are set based on the properties of the filesystem that the repository is
+    /// on, such as "core.ignorecase", "core.filemode", "core.symlinks", etc. If the repository is moved to a new filesystem,
+    /// these properties may no longer be correct and API calls may not behave as expected. This call reruns the phase of
+    /// repository initialization that sets those properties to compensate for the current filesystem of the repo.
+    ///
+    /// ## Parameters
+    /// * `recurse_submodules` - Should submodules be updated recursively.
+    pub fn reinitFilesystem(self: *Repository, recurse_submodules: bool) !void {
+        log.debug("Repository.reinitFilesystem called, recurse_submodules={}", .{recurse_submodules});
+
+        try internal.wrapCall("git_repository_reinit_filesystem", .{
+            @ptrCast(*c.git_repository, self),
+            @boolToInt(recurse_submodules),
+        });
+
+        log.debug("successfully initalized filesystem", .{});
+    }
+
+    /// Set the configuration file for this repository
+    ///
+    /// This configuration file will be used for all configuration queries involving this repository.
+    ///
+    /// The repository will keep a reference to the config file; the user must still free the config after setting it to the
+    /// repository, or it will leak.
+    ///
+    /// ## Parameters
+    /// * `config` - The config object.
+    pub fn setConfig(self: *Repository, config: *git.Config) !void {
+        log.debug("Repository.setConfig called, config={*}", .{config});
+
+        try internal.wrapCall("git_repository_set_config", .{
+            @ptrCast(*c.git_repository, self),
+            @ptrCast(*c.git_config, config),
+        });
+
+        log.debug("successfully set config", .{});
+    }
+
+    /// Set the Object Database for this repository
+    ///
+    /// The ODB will be used for all object-related operations involving this repository.
+    ///
+    /// The repository will keep a reference to the ODB; the user must still free the ODB object after setting it to the 
+    /// repository, or it will leak.
+    ///
+    /// ## Parameters
+    /// * `config` - The odb object.
+    pub fn setOdb(self: *Repository, odb: *git.Odb) !void {
+        log.debug("Repository.setOdb called, odb={*}", .{odb});
+
+        try internal.wrapCall("git_repository_set_odb", .{
+            @ptrCast(*c.git_repository, self),
+            @ptrCast(*c.git_odb, odb),
+        });
+
+        log.debug("successfully set odb", .{});
+    }
+
+    /// Set the Reference Database Backend for this repository
+    ///
+    /// The refdb will be used for all reference related operations involving this repository.
+    ///
+    /// The repository will keep a reference to the refdb; the user must still free the refdb object after setting it to the
+    /// repository, or it will leak.
+    ///
+    /// ## Parameters
+    /// * `refdb` - The refdb object.
+    pub fn setRefdb(self: *Repository, refdb: *git.Refdb) !void {
+        log.debug("Repository.setRefdb called, refdb={*}", .{refdb});
+
+        try internal.wrapCall("git_repository_set_refdb", .{
+            @ptrCast(*c.git_repository, self),
+            @ptrCast(*c.git_refdb, refdb),
+        });
+
+        log.debug("successfully set refdb", .{});
+    }
+
+    /// Set the index file for this repository
+    ///
+    /// This index will be used for all index-related operations involving this repository.
+    ///
+    /// The repository will keep a reference to the index file; the user must still free the index after setting it to the
+    /// repository, or it will leak.
+    ///
+    /// ## Parameters
+    /// * `index` - The index object.
+    pub fn setIndex(self: *Repository, index: ?*git.Index) !void {
+        log.debug("Repository.setIndex called, index={*}", .{index});
+
+        try internal.wrapCall("git_repository_set_index", .{
+            @ptrCast(*c.git_repository, self),
+            @ptrCast(?*c.git_index, index),
+        });
+
+        log.debug("successfully set index", .{});
+    }
+
+    /// Set a repository to be bare.
+    ///
+    /// Clear the working directory and set core.bare to true. You may also want to call `repo.setIndex(null)` since a bare repo
+    /// typically does not have an index, but this function will not do that for you.
+    pub fn setBare(self: *Repository) !void {
+        log.debug("Repository.setBare called", .{});
+
+        try internal.wrapCall("git_repository_set_bare", .{
+            @ptrCast(*c.git_repository, self),
+        });
+
+        log.debug("successfully set repository to bare", .{});
+    }
+
+    /// Load and cache all submodules.
+    ///
+    /// Because the `.gitmodules` file is unstructured, loading submodules is an O(N) operation. Any operation
+    /// (such as `git_rebase_init`) that requires accessing all submodules is O(N^2) in the number of submodules, if it has to
+    /// look each one up individually. This function loads all submodules and caches them so that subsequent calls to 
+    /// `Repository.submoduleLookup` are O(1).
+    pub fn submoduleCacheAll(self: *Repository) !void {
+        log.debug("Repository.submoduleCacheAll called", .{});
+
+        try internal.wrapCall("git_repository_submodule_cache_all", .{
+            @ptrCast(*c.git_repository, self),
+        });
+
+        log.debug("successfully cached submodules", .{});
+    }
+
+    /// Clear the submodule cache.
+    ///
+    /// Clear the submodule cache populated by `Repository.submoduleCacheAll`. If there is no cache, do nothing.
+    ///
+    /// The cache incorporates data from the repository's configuration, as well as the state of the working tree, the index,
+    /// and HEAD. So any time any of these has changed, the cache might become invalid.
+    pub fn submoduleCacheClear(self: *Repository) !void {
+        log.debug("Repository.submoduleCacheClear called", .{});
+
+        try internal.wrapCall("git_repository_submodule_cache_clear", .{
+            @ptrCast(*c.git_repository, self),
+        });
+
+        log.debug("successfully cleared submodule cache", .{});
+    }
+
     comptime {
         std.testing.refAllDecls(@This());
     }
