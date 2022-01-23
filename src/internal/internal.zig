@@ -12,11 +12,6 @@ pub const has_credential = @hasDecl(c, "git_credential");
 pub const RawCredentialType = if (has_credential) c.git_credential else c.git_cred;
 
 pub inline fn wrapCall(comptime name: []const u8, args: anytype) git.GitError!void {
-    if (@typeInfo(@TypeOf(@field(c, name))).Fn.return_type.? == void) {
-        @call(.{}, @field(c, name), args);
-        return;
-    }
-
     const result = @call(.{}, @field(c, name), args);
 
     if (result >= 0) return;
