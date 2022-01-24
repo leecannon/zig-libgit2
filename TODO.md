@@ -9,12 +9,9 @@
 - [ ] Add functionality to build.zig to include package as either static or dynamic
 - [ ] Package with zigmod/gyro
 
-182 sys/index.h
-182 sys/merge.h
 260 stash.h
 282 patch.h
 299 revwalk.h
-332 sys/filter.h
 367 rebase.h
 382 tag.h
 559 odb.h
