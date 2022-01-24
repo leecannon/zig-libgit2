@@ -4005,6 +4005,308 @@ pub const Repository = opaque {
         log.debug("successfully cleared submodule cache", .{});
     }
 
+    /// Save the local modifications to a new stash.
+    ///
+    /// ## Parameters
+    /// * `stasher` - The identity of the person performing the stashing.
+    /// * `message` - Optional description along with the stashed state.
+    /// * `flags` - Flags to control the stashing process.
+    pub fn stashSave(self: *Repository, stasher: *const git.Signature, message: ?[:0]const u8, flags: StashFlags) !git.Oid {
+        log.debug("Repository.stashSave called, stasher={*}, message={s}, flags={}", .{
+            stasher,
+            message,
+            flags,
+        });
+
+        var ret: git.Oid = undefined;
+
+        const c_message = if (message) |s| s.ptr else null;
+
+        try internal.wrapCall("git_stash_save", .{
+            @ptrCast(*c.git_oid, &ret),
+            @ptrCast(*c.git_repository, self),
+            @ptrCast(*const c.git_signature, stasher),
+            c_message,
+            @bitCast(u32, flags),
+        });
+
+        log.debug("successfully saved stash", .{});
+
+        return ret;
+    }
+
+    /// Apply a single stashed state from the stash list.
+    ///
+    /// If local changes in the working directory conflict with changes in the stash then `GitError.MergeConflict` will be returned.
+    /// In this case, the index will always remain unmodified and all files in the working directory will remain unmodified.
+    /// However, if you are restoring untracked files or ignored files and there is a conflict when applying the modified files,
+    /// then those files will remain in the working directory.
+    ///
+    /// If passing the `StashApplyOptions.Flags.reinstate_index` flag and there would be conflicts when reinstating the index,
+    /// the function will return GitError.MergeConflict` and both the working directory and index will be left unmodified.
+    ///
+    /// Note that a minimum checkout strategy of safe is implied.
+    ///
+    /// ## Parameters
+    /// * `index` - The position within the stash list. 0 points to the most recent stashed state.
+    /// * `options` - Options to control how stashes are applied.
+    pub fn stashApply(self: *Repository, index: usize, options: StashApplyOptions) !void {
+        log.debug("Repository.stashApply called, index={}, options={}", .{
+            index,
+            options,
+        });
+
+        const c_options = internal.make_c_option.stashApplyOptions(options);
+
+        try internal.wrapCall("git_stash_apply", .{
+            @ptrCast(*c.git_repository, self),
+            index,
+            &c_options,
+        });
+
+        log.debug("successfully applied stash", .{});
+    }
+
+    /// Remove a single stashed state from the stash list.
+    ///
+    /// ## Parameters
+    /// * `index` - The position within the stash list. 0 points to the most recent stashed state.
+    pub fn stashDrop(self: *Repository, index: usize) !void {
+        log.debug("Repository.stashDrop called, index={}", .{index});
+
+        try internal.wrapCall("git_stash_drop", .{
+            @ptrCast(*c.git_repository, self),
+            index,
+        });
+
+        log.debug("successfully dropped stashed state", .{});
+    }
+
+    /// Apply a single stashed state from the stash list and remove it from the list if successful.
+    ///
+    /// ## Parameters
+    /// * `index` - The position within the stash list. 0 points to the most recent stashed state.
+    /// * `options` - Options to control how stashes are applied.
+    pub fn stashPop(self: *Repository, index: usize, options: StashApplyOptions) !void {
+        log.debug("Repository.stashPop called, index={}, options={}", .{
+            index,
+            options,
+        });
+
+        const c_options = internal.make_c_option.stashApplyOptions(options);
+
+        try internal.wrapCall("git_stash_pop", .{
+            @ptrCast(*c.git_repository, self),
+            index,
+            &c_options,
+        });
+
+        log.debug("successfully popped stash", .{});
+    }
+
+    /// Loop over all the stashed states and issue a callback for each one.
+    ///
+    /// Return a non-zero value from the callback to stop the loop. This non-zero value is returned by the function.
+    ///
+    /// ## Parameters
+    /// * `callback_fn` - The callback function
+    ///
+    /// ## Callback Parameters
+    /// * `index` - The position within the stash list. 0 points to the most recent stashed state.
+    /// * `message` - The stash message.
+    /// * `stash_id` - The commit oid of the stashed state.
+    pub fn stashForeach(
+        self: *Repository,
+        comptime callback_fn: fn (
+            index: usize,
+            message: ?[:0]const u8,
+            stash_id: *const git.Oid,
+        ) c_int,
+    ) !c_int {
+        const cb = struct {
+            pub fn cb(
+                index: usize,
+                message: ?[:0]const u8,
+                stash_id: *const git.Oid,
+                _: *u8,
+            ) c_int {
+                return callback_fn(index, message, stash_id);
+            }
+        }.cb;
+
+        var dummy_data: u8 = undefined;
+        return self.stashForeachWithUserData(&dummy_data, cb);
+    }
+
+    /// Loop over all the stashed states and issue a callback for each one.
+    ///
+    /// Return a non-zero value from the callback to stop the loop. This non-zero value is returned by the function.
+    ///
+    /// ## Parameters
+    /// * `user_data` - Pointer to user data to be passed to the callback
+    /// * `callback_fn` - The callback function
+    ///
+    /// ## Callback Parameters
+    /// * `index` - The position within the stash list. 0 points to the most recent stashed state.
+    /// * `message` - The stash message.
+    /// * `stash_id` - The commit oid of the stashed state.
+    /// * `user_data_ptr` - Pointer to user data.
+    pub fn stashForeachWithUserData(
+        self: *Repository,
+        user_data: anytype,
+        comptime callback_fn: fn (
+            index: usize,
+            message: ?[:0]const u8,
+            stash_id: *const git.Oid,
+            user_data_ptr: @TypeOf(user_data),
+        ) c_int,
+    ) !c_int {
+        const UserDataType = @TypeOf(user_data);
+
+        const cb = struct {
+            pub fn cb(
+                index: usize,
+                message: ?[*:0]const u8,
+                stash_id: *const c.git_oid,
+                payload: ?*anyopaque,
+            ) callconv(.C) c_int {
+                return callback_fn(
+                    index,
+                    if (message) |m| std.mem.sliceTo(m, 0) else null,
+                    @ptrCast(*const git.Oid, stash_id),
+                    @ptrCast(UserDataType, payload),
+                );
+            }
+        }.cb;
+
+        log.debug("Repository.stashForeachWithUserData called", .{});
+
+        const ret = try internal.wrapCallWithReturn("git_stash_foreach", .{
+            @ptrCast(*c.git_repository, self),
+            cb,
+            user_data,
+        });
+
+        log.debug("callback returned: {}", .{ret});
+
+        return ret;
+    }
+
+    comptime {
+        std.testing.refAllDecls(@This());
+    }
+};
+
+/// Stash application options structure
+pub const StashApplyOptions = struct {
+    flags: StashApplyOptions.Flags = .{},
+
+    /// Options to use when writing files to the working directory.
+    checkout_options: CheckoutOptions = .{},
+
+    /// Optional callback to notify the consumer of application progress.
+    ///
+    /// Return 0 to continue processing, or a negative value to abort the stash application.
+    progress_callback: ?fn (progress: StashApplyProgress, payload: ?*anyopaque) callconv(.C) c_int = null,
+
+    progress_payload: ?*anyopaque = null,
+
+    /// Stash application flags.
+    pub const Flags = packed struct {
+        /// Try to reinstate not only the working tree's changes, but also the index's changes.
+        reinstate_index: bool = false,
+
+        z_padding: u31 = 0,
+
+        pub fn format(
+            value: Flags,
+            comptime fmt: []const u8,
+            options: std.fmt.FormatOptions,
+            writer: anytype,
+        ) !void {
+            _ = fmt;
+            return internal.formatWithoutFields(
+                value,
+                options,
+                writer,
+                &.{"z_padding"},
+            );
+        }
+
+        test {
+            try std.testing.expectEqual(@sizeOf(u32), @sizeOf(Flags));
+            try std.testing.expectEqual(@bitSizeOf(u32), @bitSizeOf(Flags));
+        }
+
+        comptime {
+            std.testing.refAllDecls(@This());
+        }
+    };
+
+    comptime {
+        std.testing.refAllDecls(@This());
+    }
+};
+
+/// Stash apply progression states
+pub const StashApplyProgress = enum(c_uint) {
+    none = 0,
+
+    /// Loading the stashed data from the object database.
+    loading_stash,
+
+    /// The stored index is being analyzed.
+    analyze_index,
+
+    /// The modified files are being analyzed.
+    analyze_modified,
+
+    /// The untracked and ignored files are being analyzed.
+    analyze_untracked,
+
+    /// The untracked files are being written to disk.
+    checkout_untracked,
+
+    /// The modified files are being written to disk.
+    checkout_modified,
+
+    /// The stash was applied successfully.
+    done,
+};
+
+/// Stash flags
+pub const StashFlags = packed struct {
+    /// All changes already added to the index are left intact in the working directory.
+    keep_index: bool = false,
+
+    /// All untracked files are also stashed and then cleaned up from the working directory.
+    include_untracked: bool = false,
+
+    /// All ignored files are also stashed and then cleaned up from the working directory.
+    include_ignored: bool = false,
+
+    z_padding: u29 = 0,
+
+    pub fn format(
+        value: StashFlags,
+        comptime fmt: []const u8,
+        options: std.fmt.FormatOptions,
+        writer: anytype,
+    ) !void {
+        _ = fmt;
+        return internal.formatWithoutFields(
+            value,
+            options,
+            writer,
+            &.{"z_padding"},
+        );
+    }
+
+    test {
+        try std.testing.expectEqual(@sizeOf(u32), @sizeOf(StashFlags));
+        try std.testing.expectEqual(@bitSizeOf(u32), @bitSizeOf(StashFlags));
+    }
+
     comptime {
         std.testing.refAllDecls(@This());
     }

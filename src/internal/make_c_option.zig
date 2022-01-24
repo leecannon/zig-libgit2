@@ -3,6 +3,16 @@ const c = @import("c.zig");
 
 const git = @import("../git.zig");
 
+pub fn stashApplyOptions(self: git.StashApplyOptions) c.git_stash_apply_options {
+    return .{
+        .version = c.GIT_STASH_APPLY_OPTIONS_VERSION,
+        .flags = @bitCast(u32, self.flags),
+        .checkout_options = checkoutOptions(self.checkout_options),
+        .progress_cb = @ptrCast(?fn (c.git_stash_apply_progress_t, ?*anyopaque) callconv(.C) c_int, self.progress_callback),
+        .progress_payload = self.progress_payload,
+    };
+}
+
 pub fn blobFilterOptions(self: git.BlobFilterOptions) c.git_blob_filter_options {
     return .{
         .version = c.GIT_BLOB_FILTER_OPTIONS_VERSION,
