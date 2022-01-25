@@ -1092,74 +1092,6 @@ pub const Handle = struct {
         return cred;
     }
 
-    /// Create a new ssh keyboard-interactive based credential object.
-    ///
-    /// ## Parameters
-    /// * `username` - Username to use to authenticate.
-    /// * `user_data` - Pointer to user data to be passed to the callback
-    /// * `callback_fn` - The callback function
-    pub fn credentialInitSshKeyInteractive(
-        self: Handle,
-        username: [:0]const u8,
-        user_data: anytype,
-        comptime callback_fn: fn (
-            name: []const u8,
-            instruction: []const u8,
-            prompts: []*const c.LIBSSH2_USERAUTH_KBDINT_PROMPT,
-            responses: []*c.LIBSSH2_USERAUTH_KBDINT_RESPONSE,
-            abstract: ?*?*anyopaque,
-        ) void,
-    ) !*git.Credential {
-        _ = self;
-
-        // TODO: This callback needs to be massively cleaned up
-
-        const cb = struct {
-            pub fn cb(
-                name: [*]const u8,
-                name_len: c_int,
-                instruction: [*]const u8,
-                instruction_len: c_int,
-                num_prompts: c_int,
-                prompts: ?*const c.LIBSSH2_USERAUTH_KBDINT_PROMPT,
-                responses: ?*c.LIBSSH2_USERAUTH_KBDINT_RESPONSE,
-                abstract: ?*?*anyopaque,
-            ) callconv(.C) void {
-                callback_fn(
-                    name[0..name_len],
-                    instruction[0..instruction_len],
-                    prompts[0..num_prompts],
-                    responses[0..num_prompts],
-                    abstract,
-                );
-            }
-        }.cb;
-
-        log.debug("Handle.credentialInitSshKeyInteractive called, username: {s}", .{username});
-
-        var cred: *git.Credential = undefined;
-
-        if (internal.has_credential) {
-            try internal.wrapCall("git_credential_ssh_interactive_new", .{
-                @ptrCast(*?*internal.RawCredentialType, &cred),
-                username.ptr,
-                cb,
-                user_data,
-            });
-        } else {
-            try internal.wrapCall("git_cred_ssh_interactive_new", .{
-                @ptrCast(*?*internal.RawCredentialType, &cred),
-                username.ptr,
-                cb,
-                user_data,
-            });
-        }
-
-        log.debug("created new credential {*}", .{cred});
-
-        return cred;
-    }
-
     pub fn credentialInitSshKeyFromAgent(self: Handle, username: [:0]const u8) !*git.Credential {
         _ = self;
 
@@ -1176,74 +1108,6 @@ pub const Handle = struct {
             try internal.wrapCall("git_cred_ssh_key_from_agent", .{
                 @ptrCast(*?*internal.RawCredentialType, &cred),
                 username.ptr,
-            });
-        }
-
-        log.debug("created new credential {*}", .{cred});
-
-        return cred;
-    }
-
-    pub fn credentialInitSshKeyCustom(
-        self: Handle,
-        username: [:0]const u8,
-        publickey: []const u8,
-        user_data: anytype,
-        comptime callback_fn: fn (
-            session: *c.LIBSSH2_SESSION,
-            out_signature: *[]const u8,
-            data: []const u8,
-            abstract: ?*?*anyopaque,
-        ) c_int,
-    ) !*git.Credential {
-        _ = self;
-
-        const cb = struct {
-            pub fn cb(
-                session: ?*c.LIBSSH2_SESSION,
-                sig: *[*:0]u8,
-                sig_len: *usize,
-                data: [*]const u8,
-                data_len: usize,
-                abstract: ?*?*anyopaque,
-            ) callconv(.C) c_int {
-                var out_sig: []const u8 = undefined;
-
-                const result = callback_fn(
-                    session,
-                    &out_sig,
-                    data[0..data_len],
-                    abstract,
-                );
-
-                sig.* = out_sig.ptr;
-                sig_len.* = out_sig.len;
-
-                return result;
-            }
-        }.cb;
-
-        log.debug("Handle.credentialInitSshKeyCustom called, username: {s}", .{username});
-
-        var cred: *git.Credential = undefined;
-
-        if (internal.has_credential) {
-            try internal.wrapCall("git_credential_ssh_custom_new", .{
-                @ptrCast(*?*internal.RawCredentialType, &cred),
-                username.ptr,
-                publickey.ptr,
-                publickey.len,
-                cb,
-                user_data,
-            });
-        } else {
-            try internal.wrapCall("git_cred_ssh_custom_new", .{
-                @ptrCast(*?*internal.RawCredentialType, &cred),
-                username.ptr,
-                publickey.ptr,
-                publickey.len,
-                cb,
-                user_data,
             });
         }
 
@@ -1636,6 +1500,146 @@ pub const Handle = struct {
 
         return ret;
     }
+
+    usingnamespace if (internal.has_libssh2) struct {
+        /// Create a new ssh keyboard-interactive based credential object.
+        ///
+        /// ## Parameters
+        /// * `username` - Username to use to authenticate.
+        /// * `user_data` - Pointer to user data to be passed to the callback
+        /// * `callback_fn` - The callback function
+        pub fn credentialInitSshKeyInteractive(
+            self: Handle,
+            username: [:0]const u8,
+            user_data: anytype,
+            comptime callback_fn: fn (
+                name: []const u8,
+                instruction: []const u8,
+                prompts: []*const c.LIBSSH2_USERAUTH_KBDINT_PROMPT,
+                responses: []*c.LIBSSH2_USERAUTH_KBDINT_RESPONSE,
+                abstract: ?*?*anyopaque,
+            ) void,
+        ) !*git.Credential {
+            _ = self;
+
+            const cb = struct {
+                pub fn cb(
+                    name: [*]const u8,
+                    name_len: c_int,
+                    instruction: [*]const u8,
+                    instruction_len: c_int,
+                    num_prompts: c_int,
+                    prompts: ?*const c.LIBSSH2_USERAUTH_KBDINT_PROMPT,
+                    responses: ?*c.LIBSSH2_USERAUTH_KBDINT_RESPONSE,
+                    abstract: ?*?*anyopaque,
+                ) callconv(.C) void {
+                    callback_fn(
+                        name[0..name_len],
+                        instruction[0..instruction_len],
+                        prompts[0..num_prompts],
+                        responses[0..num_prompts],
+                        abstract,
+                    );
+                }
+            }.cb;
+
+            log.debug("Handle.credentialInitSshKeyInteractive called, username: {s}", .{username});
+
+            var cred: *git.Credential = undefined;
+
+            if (internal.has_credential) {
+                try internal.wrapCall("git_credential_ssh_interactive_new", .{
+                    @ptrCast(*?*internal.RawCredentialType, &cred),
+                    username.ptr,
+                    cb,
+                    user_data,
+                });
+            } else {
+                try internal.wrapCall("git_cred_ssh_interactive_new", .{
+                    @ptrCast(*?*internal.RawCredentialType, &cred),
+                    username.ptr,
+                    cb,
+                    user_data,
+                });
+            }
+
+            log.debug("created new credential {*}", .{cred});
+
+            return cred;
+        }
+
+        pub fn credentialInitSshKeyCustom(
+            self: Handle,
+            username: [:0]const u8,
+            publickey: []const u8,
+            user_data: anytype,
+            comptime callback_fn: fn (
+                session: *c.LIBSSH2_SESSION,
+                out_signature: *[]const u8,
+                data: []const u8,
+                abstract: ?*?*anyopaque,
+            ) c_int,
+        ) !*git.Credential {
+            _ = self;
+
+            const cb = struct {
+                pub fn cb(
+                    session: ?*c.LIBSSH2_SESSION,
+                    sig: *[*:0]u8,
+                    sig_len: *usize,
+                    data: [*]const u8,
+                    data_len: usize,
+                    abstract: ?*?*anyopaque,
+                ) callconv(.C) c_int {
+                    var out_sig: []const u8 = undefined;
+
+                    const result = callback_fn(
+                        session,
+                        &out_sig,
+                        data[0..data_len],
+                        abstract,
+                    );
+
+                    sig.* = out_sig.ptr;
+                    sig_len.* = out_sig.len;
+
+                    return result;
+                }
+            }.cb;
+
+            log.debug("Handle.credentialInitSshKeyCustom called, username: {s}", .{username});
+
+            var cred: *git.Credential = undefined;
+
+            if (internal.has_credential) {
+                try internal.wrapCall("git_credential_ssh_custom_new", .{
+                    @ptrCast(*?*internal.RawCredentialType, &cred),
+                    username.ptr,
+                    publickey.ptr,
+                    publickey.len,
+                    cb,
+                    user_data,
+                });
+            } else {
+                try internal.wrapCall("git_cred_ssh_custom_new", .{
+                    @ptrCast(*?*internal.RawCredentialType, &cred),
+                    username.ptr,
+                    publickey.ptr,
+                    publickey.len,
+                    cb,
+                    user_data,
+                });
+            }
+
+            log.debug("created new credential {*}", .{cred});
+
+            return cred;
+        }
+
+        comptime {
+            std.testing.refAllDecls(@This());
+        }
+    } else struct {};
 
     comptime {
         std.testing.refAllDecls(@This());

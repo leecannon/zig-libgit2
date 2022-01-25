@@ -8,6 +8,8 @@ const log_errors = std.meta.globalOption("libgit2_log_errors", bool) orelse fals
 
 pub const make_c_option = @import("make_c_option.zig");
 
+pub const has_libssh2 = @hasDecl(c, "LIBSSH2_VERSION");
+
 pub const has_credential = @hasDecl(c, "git_credential");
 pub const RawCredentialType = if (has_credential) c.git_credential else c.git_cred;
 
