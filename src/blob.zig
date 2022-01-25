@@ -32,6 +32,108 @@ pub const Blob = opaque {
         return ret;
     }
 
+    /// Directly generate a patch from the difference between two blobs.
+    /// 
+    /// This is just like `Diff.blobs` except it generates a patch object for the difference instead of directly making callbacks.
+    /// You can use the standard `Patch` accessor functions to read the patch data, and you must call `Patch.deinit on the patch
+    /// when done.
+    ///
+    /// ## Parameters
+    /// * `old` - Blob for old side of diff, or `null` for empty blob
+    /// * `old_as_path` - Treat old blob as if it had this filename; can be `null`
+    /// * `new` - Blob for new side of diff, or `null` for empty blob
+    /// * `new_as_path` - Treat new blob as if it had this filename; can be `null`
+    /// * `options` - Options for diff.
+    pub fn toPatch(
+        old: ?*const Blob,
+        old_as_path: ?[:0]const u8,
+        new: ?*const Blob,
+        new_as_path: ?[:0]const u8,
+        options: git.DiffOptions,
+    ) !*git.Patch {
+        log.debug("Blob.toPatch called, old={*}, old_as_path={s}, new={*}, new_as_path={s}, options={}", .{
+            old,
+            old_as_path,
+            new,
+            new_as_path,
+            options,
+        });
+
+        var ret: *git.Patch = undefined;
+
+        const c_old_as_path = if (old_as_path) |s| s.ptr else null;
+        const c_new_as_path = if (new_as_path) |s| s.ptr else null;
+        const c_options = internal.make_c_option.diffOptions(options);
+
+        try internal.wrapCall("git_patch_from_blobs", .{
+            @ptrCast(*?*c.git_patch, &ret),
+            @ptrCast(?*const c.git_blob, old),
+            c_old_as_path,
+            @ptrCast(?*const c.git_blob, new),
+            c_new_as_path,
+            &c_options,
+        });
+
+        log.debug("successfully made patch {*} for blobs", .{ret});
+
+        return ret;
+    }
+
+    /// Directly generate a patch from the difference between a blob and a buffer.
+    ///
+    /// This is just like `Diff.blobs` except it generates a patch object for the difference instead of directly making callbacks.
+    /// You can use the standard `Patch` accessor functions to read the patch data, and you must call `Patch.deinit on the patch
+    /// when done.
+    ///
+    /// ## Parameters
+    /// * `old` - Blob for old side of diff, or `null` for empty blob
+    /// * `old_as_path` - Treat old blob as if it had this filename; can be `null`
+    /// * `buffer` - Raw data for new side of diff, or `null` for empty
+    /// * `buffer_as_path` - Treat buffer as if it had this filename; can be `null`
+    /// * `options` - Options for diff.
+    pub fn patchFromBuffer(
+        old: ?*const git.Blob,
+        old_as_path: ?[:0]const u8,
+        buffer: ?[]const u8,
+        buffer_as_path: ?[:0]const u8,
+        options: git.DiffOptions,
+    ) !*git.Patch {
+        log.debug("Blob.patchFromBuffer called, old={*}, old_as_path={s}, buffer_as_path={s}, options={}", .{
+            old,
+            old_as_path,
+            buffer_as_path,
+            options,
+        });
+
+        var ret: *git.Patch = undefined;
+
+        const c_old_as_path = if (old_as_path) |s| s.ptr else null;
+        const c_buffer_as_path = if (buffer_as_path) |s| s.ptr else null;
+        const c_options = internal.make_c_option.diffOptions(options);
+
+        var buffer_ptr: ?[*]const u8 = null;
+        var buffer_len: usize = 0;
+
+        if (buffer) |b| {
+            buffer_ptr = b.ptr;
+            buffer_len = b.len;
+        }
+
+        try internal.wrapCall("git_patch_from_blob_and_buffer", .{
+            @ptrCast(*?*c.git_patch, &ret),
+            @ptrCast(?*const c.git_blob, old),
+            c_old_as_path,
+            buffer_ptr,
+            buffer_len,
+            c_buffer_as_path,
+            &c_options,
+        });
+
+        log.debug("successfully made patch {*} for blob and buffer", .{ret});
+
+        return ret;
+    }
+
     pub fn owner(self: *const Blob) *git.Repository {
         log.debug("Blame.owner called", .{});
 

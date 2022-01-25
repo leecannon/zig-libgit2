@@ -22,6 +22,32 @@ pub const Diff = opaque {
         log.debug("diff freed successfully", .{});
     }
 
+    /// Return a patch for an entry in the diff list.
+    ///
+    /// The patch is a newly created object contains the text diffs for the delta. You have to call `Patch.deinit` when you are
+    /// done with it. You can use the patch object to loop over all the hunks and lines in the diff of the one delta.
+    ///
+    /// For an unchanged file or a binary file, no patch will be created, the output will be `null`, and the `binary` flag will be
+    /// set true in the `Diff` structure.
+    ///
+    /// ## Parameters
+    ////// `index` - Index into diff list
+    pub fn toPatch(self: *Diff, index: usize) !?*git.Patch {
+        log.debug("Diff.toPatch called, index={}", .{index});
+
+        var ret: ?*git.Patch = undefined;
+
+        try internal.wrapCall("git_patch_from_diff", .{
+            @ptrCast(*?*c.git_patch, &ret),
+            @ptrCast(*c.git_diff, self),
+            index,
+        });
+
+        log.debug("successfully made patch {*} for diff", .{ret});
+
+        return ret;
+    }
+
     /// Match a pathspec against files in a diff list.
     ///
     /// This matches the pathspec against the files in the given diff list.
@@ -79,6 +105,271 @@ pub const Diff = opaque {
 
         return ret;
     }
+
+    comptime {
+        std.testing.refAllDecls(@This());
+    }
+};
+
+/// Structure describing a line (or data span) of a diff.
+///
+/// A `line` is a range of characters inside a hunk. It could be a context line (i.e. in both old and new versions), an added line
+/// (i.e. only in the new version), or a removed line (i.e. only in the old version). Unfortunately, we don't know anything about
+/// the encoding of data in the file being diffed, so we cannot tell you much about the line content. Line data will not be
+/// NUL-byte terminated, however, because it will be just a span of bytes inside the larger file.
+pub const DiffLine = extern struct {
+    origin: Origin,
+
+    /// Line number in old file or -1 for added line
+    old_lineno: c_int,
+
+    /// Line number in new file or -1 for deleted line
+    new_lineno: c_int,
+
+    /// Number of newline characters in content
+    num_lines: c_int,
+
+    /// Number of bytes of data 
+    content_len: usize,
+
+    /// Offset in the original file to the content
+    content_offset: i64,
+
+    /// Pointer to diff text
+    content: [*]const u8,
+
+    /// Line origin constants.
+    ///
+    /// These values describe where a line came from and will be passed to the git_diff_line_cb when iterating over a diff. 
+    /// There are some special origin constants at the end that are used for the text output callbacks to demarcate lines that
+    /// are actually part of the file or hunk headers.
+    pub const Origin = enum(u8) {
+        CONTEXT = ' ',
+        ADDITION = '+',
+        DELETION = '-',
+        /// Both files have no LF at end
+        CONTEXT_EOFNL = '=',
+        /// Old has no LF at end, new does
+        ADD_EOFNL = '>',
+        /// Old has LF at end, new does not
+        DEL_EOFNL = '<',
+        FILE_HDR = 'F',
+        HUNK_HDR = 'H',
+        /// For "Binary files x and y differ"
+        BINARY = 'B',
+    };
+
+    pub fn getContent(self: DiffLine) []const u8 {
+        return self.content[0..self.content_len];
+    }
+
+    test {
+        try std.testing.expectEqual(@sizeOf(c.git_diff_line), @sizeOf(DiffLine));
+        try std.testing.expectEqual(@bitSizeOf(c.git_diff_line), @bitSizeOf(DiffLine));
+    }
+
+    comptime {
+        std.testing.refAllDecls(@This());
+    }
+};
+
+/// Structure describing options about how the diff should be executed.
+pub const DiffOptions = struct {
+    flags: DiffOptions.Flags = .{},
+
+    /// Overrides the submodule ignore setting for all submodules in the diff.
+    ignore_submodules: git.SubmoduleIgnore = .default,
+
+    /// An array of paths / fnmatch patterns to constrain diff. All paths are included by default.
+    pathspec: git.StrArray = .{},
+
+    /// An optional callback function, notifying the consumer of changes to the diff as new deltas are added.
+    /// The callback will be called for each file, just before the `DiffDelta` gets inserted into the diff.
+    ///
+    /// When the callback:
+    /// - returns < 0, the diff process will be aborted.
+    /// - returns > 0, the delta will not be inserted into the diff, but the diff process continues.
+    /// - returns 0, the delta is inserted into the diff, and the diff process continues.
+    notify_cb: ?fn (
+        diff_so_far: *const git.Diff,
+        delta_to_add: *const git.DiffDelta,
+        matched_pathspec: [*:0]const u8,
+        payload: ?*anyopaque,
+    ) callconv(.C) c_int = null,
+
+    /// An optional callback function, notifying the consumer of which files are being examined as the diff is generated.
+    /// Called before each file comparison.
+    ///
+    /// Return non-zero to abort the diff.
+    progress_cb: ?fn (
+        /// The diff being generated.
+        diff_so_far: *const git.Diff,
+        /// The path to the old file or `null`.
+        old_path: ?[*:0]const u8,
+        /// The path to the new file or `null`.
+        new_path: ?[*:0]const u8,
+        payload: ?*anyopaque,
+    ) callconv(.C) c_int = null,
+
+    payload: ?*anyopaque = null,
+
+    /// The number of unchanged lines that define the boundary of a hunk (and to display before and after).
+    context_lines: u32 = 3,
+
+    /// The maximum number of unchanged lines between hunk boundaries before the hunks will be merged into one.
+    interhunk_lines: u32 = 0,
+
+    /// The abbreviation length to use when formatting object ids. Defaults to the value of 'core.abbrev' from the config.
+    id_abbrev: u16 = 0,
+
+    /// A size (in bytes) above which a blob will be marked as binary automatically; pass a negative value to disable.
+    /// Defaults to 512MB.
+    max_size: i64 = 0,
+
+    /// The virtual "directory" prefix for old file names in hunk headers. Default is "a".
+    old_prefix: ?[*:0]const u8 = null,
+
+    /// The virtual "directory" prefix for new file names in hunk headers. Default is "b".
+    new_prefix: ?[*:0]const u8 = null,
+
+    pub const Flags = packed struct {
+        /// Reverse the sides of the diff
+        reverse: bool = false,
+
+        /// Include ignored files in the diff
+        include_ignored: bool = false,
+
+        /// Even with include_ignored, an entire ignored directory will be marked with only a single entry in the diff; this flag
+        /// adds all files under the directory as IGNORED entries, too.
+        recurse_ignored_dirs: bool = false,
+
+        /// Include untracked files in the diff
+        include_untracked: bool = false,
+
+        /// Even with include_untracked, an entire untracked directory will be marked with only a single entry in the diff
+        /// (a la what core Git does in `git status`); this flag adds *all* files under untracked directories as UNTRACKED
+        /// entries, too.
+        recurse_untracked_dirs: bool = false,
+
+        /// Include unmodified files in the diff
+        include_unmodified: bool = false,
+
+        /// Normally, a type change between files will be converted into a DELETED record for the old and an ADDED record for the
+        /// new; this options enabled the generation of TYPECHANGE delta records.
+        include_typechange: bool = false,
+
+        /// Even with include_typechange, blob->tree changes still generally show as a DELETED blob. This flag tries to correctly
+        /// label blob->tree transitions as TYPECHANGE records with new_file's mode set to tree. Note: the tree SHA will not be
+        /// available.
+        include_typechange_trees: bool = false,
+
+        /// Ignore file mode changes
+        ignore_filemode: bool = false,
+
+        /// Treat all submodules as unmodified
+        ignore_submodules: bool = false,
+
+        /// Use case insensitive filename comparisons
+        ignore_case: bool = false,
+
+        /// May be combined with `ignore_case` to specify that a file that has changed case will be returned as an add/delete pair.
+        include_casechange: bool = false,
+
+        /// If the pathspec is set in the diff options, this flags indicates that the paths will be treated as literal paths
+        /// instead of fnmatch patterns. Each path in the list must either be a full path to a file or a directory. 
+        /// (A trailing slash indicates that the path will _only_ match a directory). If a directory is specified, all children
+        /// will be included.
+        disable_pathspec_match: bool = false,
+
+        /// Disable updating of the `binary` flag in delta records. This is useful when iterating over a diff if you don't need
+        /// hunk and data callbacks and want to avoid having to load file completely.
+        skip_binary_check: bool = false,
+
+        /// When diff finds an untracked directory, to match the behavior of core Git, it scans the contents for IGNORED and
+        /// UNTRACKED files. If *all* contents are IGNORED, then the directory is IGNORED; if any contents are not IGNORED, then
+        /// the directory is UNTRACKED. This is extra work that may not matter in many cases. This flag turns off that scan and
+        /// immediately labels an untracked directory as UNTRACKED (changing the behavior to not match core Git).
+        enable_fast_untracked_dirs: bool = false,
+
+        /// When diff finds a file in the working directory with stat information different from the index, but the OID ends up
+        /// being the same, write the correct stat information into the index. Note: without this flag, diff will always leave the
+        /// index untouched.
+        update_index: bool = false,
+
+        /// Include unreadable files in the diff
+        include_unreadable: bool = false,
+
+        /// Include unreadable files in the diff
+        include_unreadable_as_untracked: bool = false,
+
+        /// Use a heuristic that takes indentation and whitespace into account which generally can produce better diffs when
+        /// dealing with ambiguous diff hunks.
+        indent_heuristic: bool = false,
+
+        z_padding1: u1 = 0,
+
+        /// Treat all files as text, disabling binary attributes & detection
+        force_text: bool = false,
+
+        /// Treat all files as binary, disabling text diffs
+        force_binary: bool = false,
+
+        /// Ignore all whitespace
+        ignore_whitespace: bool = false,
+
+        /// Ignore changes in amount of whitespace
+        ignore_whitespace_change: bool = false,
+
+        /// Ignore whitespace at end of line
+        ignore_whitespace_eol: bool = false,
+
+        /// When generating patch text, include the content of untracked files. This automatically turns on INCLUDE_UNTRACKED but
+        /// it does not turn on RECURSE_UNTRACKED_DIRS. Add that flag if you want the content of every single UNTRACKED file.
+        show_untracked_content: bool = false,
+
+        /// When generating output, include the names of unmodified files if they are included in the git_diff. Normally these are
+        /// skipped in the formats that list files (e.g. name-only, name-status, raw). Even with this, these will not be included
+        /// in patch format.
+        show_unmodified: bool = false,
+
+        z_padding2: u1 = 0,
+
+        /// Use the "patience diff" algorithm
+        patience: bool = false,
+
+        /// Take extra time to find minimal diff
+        minimal: bool = false,
+
+        /// Include the necessary deflate / delta information so that `git-apply` can apply given diff information to binary files.
+        show_binary: bool = false,
+
+        /// Ignore blank lines
+        ignore_blank_lines: bool = false,
+
+        pub fn format(
+            value: Flags,
+            comptime fmt: []const u8,
+            options: std.fmt.FormatOptions,
+            writer: anytype,
+        ) !void {
+            _ = fmt;
+            return internal.formatWithoutFields(
+                value,
+                options,
+                writer,
+                &.{ "z_padding1", "z_padding2" },
+            );
+        }
+
+        test {
+            try std.testing.expectEqual(@sizeOf(c.git_diff_option_t), @sizeOf(Flags));
+            try std.testing.expectEqual(@bitSizeOf(c.git_diff_option_t), @bitSizeOf(Flags));
+        }
+
+        comptime {
+            std.testing.refAllDecls(@This());
+        }
+    };
 
     comptime {
         std.testing.refAllDecls(@This());

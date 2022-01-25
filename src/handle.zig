@@ -1501,6 +1501,71 @@ pub const Handle = struct {
         return ret;
     }
 
+    /// Directly generate a patch from the difference between two buffers.
+    ///
+    /// This is just like `Diff.buffers` except it generates a patch object for the difference instead of directly making callbacks.
+    /// You can use the standard `Patch` accessor functions to read the patch data, and you must call `Patch.deinit on the patch
+    /// when done.
+    ///
+    /// ## Parameters
+    /// * `old_buffer` - Raw data for old side of diff, or `null` for empty
+    /// * `old_as_path` - Treat old buffer as if it had this filename; can be `null`
+    /// * `new_buffer` - Raw data for new side of diff, or `null` for empty
+    /// * `new_as_path` - Treat buffer as if it had this filename; can be `null`
+    /// * `options` - Options for diff.
+    pub fn patchFromBuffers(
+        self: Handle,
+        old_buffer: ?[]const u8,
+        old_as_path: ?[:0]const u8,
+        new_buffer: ?[]const u8,
+        new_as_path: ?[:0]const u8,
+        options: git.DiffOptions,
+    ) !*git.Patch {
+        _ = self;
+        log.debug("Handle.patchFromBuffers called, old_as_path={s}, new_as_path={s}, options={}", .{
+            old_as_path,
+            new_as_path,
+            options,
+        });
+
+        var ret: *git.Patch = undefined;
+
+        const c_old_as_path = if (old_as_path) |s| s.ptr else null;
+        const c_new_as_path = if (new_as_path) |s| s.ptr else null;
+        const c_options = internal.make_c_option.diffOptions(options);
+
+        var old_buffer_ptr: ?[*]const u8 = null;
+        var old_buffer_len: usize = 0;
+
+        if (old_buffer) |b| {
+            old_buffer_ptr = b.ptr;
+            old_buffer_len = b.len;
+        }
+
+        var new_buffer_ptr: ?[*]const u8 = null;
+        var new_buffer_len: usize = 0;
+
+        if (new_buffer) |b| {
+            new_buffer_ptr = b.ptr;
+            new_buffer_len = b.len;
+        }
+
+        try internal.wrapCall("git_patch_from_buffers", .{
+            @ptrCast(*?*c.git_patch, &ret),
+            old_buffer_ptr,
+            old_buffer_len,
+            c_old_as_path,
+            new_buffer_ptr,
+            new_buffer_len,
+            c_new_as_path,
+            &c_options,
+        });
+
+        log.debug("successfully made patch {*} from buffers", .{ret});
+
+        return ret;
+    }
+
     usingnamespace if (internal.has_libssh2) struct {
         /// Create a new ssh keyboard-interactive based credential object.
         ///

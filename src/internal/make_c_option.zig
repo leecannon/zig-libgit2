@@ -3,6 +3,24 @@ const c = @import("c.zig");
 
 const git = @import("../git.zig");
 
+pub fn diffOptions(self: git.DiffOptions) c.git_diff_options {
+    return .{
+        .version = c.GIT_DIFF_OPTIONS_VERSION,
+        .flags = @bitCast(u32, self.flags),
+        .ignore_submodules = @enumToInt(self.ignore_submodules),
+        .pathspec = @bitCast(c.git_strarray, self.pathspec),
+        .notify_cb = @ptrCast(c.git_diff_notify_cb, self.notify_cb),
+        .progress_cb = @ptrCast(c.git_diff_progress_cb, self.progress_cb),
+        .payload = self.payload,
+        .context_lines = self.context_lines,
+        .interhunk_lines = self.interhunk_lines,
+        .id_abbrev = self.id_abbrev,
+        .max_size = self.max_size,
+        .old_prefix = self.old_prefix,
+        .new_prefix = self.new_prefix,
+    };
+}
+
 pub fn stashApplyOptions(self: git.StashApplyOptions) c.git_stash_apply_options {
     return .{
         .version = c.GIT_STASH_APPLY_OPTIONS_VERSION,
