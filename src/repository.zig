@@ -4189,6 +4189,29 @@ pub const Repository = opaque {
         return ret;
     }
 
+    /// Allocate a new revision walker to iterate through a repo.
+    ///
+    /// This revision walker uses a custom memory pool and an internal commit cache, so it is relatively expensive to allocate.
+    ///
+    /// For maximum performance, this revision walker should be reused for different walks.
+    ///
+    /// This revision walker is *not* thread safe: it may only be used to walk a repository on a single thread; however, it is
+    /// possible to have several revision walkers in several different threads walking the same repository.
+    pub fn revwalkNew(self: *Repository) !*git.RevWalk {
+        log.debug("Repository.revwalkNew called", .{});
+
+        var ret: *git.RevWalk = undefined;
+
+        try internal.wrapCall("git_revwalk_new", .{
+            @ptrCast(*?*c.git_revwalk, &ret),
+            @ptrCast(*c.git_repository, self),
+        });
+
+        log.debug("successfully created revwalk: {*}", .{ret});
+
+        return ret;
+    }
+
     comptime {
         std.testing.refAllDecls(@This());
     }

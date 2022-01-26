@@ -11,7 +11,6 @@
 - [ ] Add functionality to build.zig to include package as either static or dynamic
 - [ ] Package with zigmod/gyro
 
-299 revwalk.h
 367 rebase.h
 382 tag.h
 559 odb.h
