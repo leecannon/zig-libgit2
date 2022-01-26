@@ -334,14 +334,11 @@ pub const Index = opaque {
                 @ptrCast(*?*c.git_index_entry, &index_entry),
                 @ptrCast(*c.git_index_iterator, self),
             }) catch |err| switch (err) {
-                git.GitError.IterOver => {
-                    log.debug("end of iteration reached", .{});
-                    return null;
-                },
-                else => return err,
+                git.GitError.IterOver => return null,
+                else => |e| return e,
             };
 
-            log.debug("successfully fetched index entry: {}", .{index_entry});
+            log.debug("successfully fetched index entry: {*}", .{index_entry});
 
             return index_entry;
         }
@@ -821,11 +818,8 @@ pub const Index = opaque {
                 @ptrCast(*?*const c.git_index_entry, &their_out),
                 @ptrCast(*c.git_index_conflict_iterator, self),
             }) catch |err| switch (err) {
-                git.GitError.IterOver => {
-                    log.debug("end of iteration reached", .{});
-                    return null;
-                },
-                else => return err,
+                git.GitError.IterOver => return null,
+                else => |e| return e,
             };
 
             log.debug("successfully fetched conflicts", .{});

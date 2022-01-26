@@ -70,11 +70,8 @@ pub const NoteIterator = opaque {
             @ptrCast(*c.git_oid, &ret.annotated_id),
             @ptrCast(*c.git_note_iterator, self),
         }) catch |err| switch (err) {
-            git.GitError.IterOver => {
-                log.debug("end of iteration reached", .{});
-                return null;
-            },
-            else => return err,
+            git.GitError.IterOver => return null,
+            else => |e| return e,
         };
 
         return ret;

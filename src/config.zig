@@ -413,14 +413,11 @@ pub const Config = opaque {
                 @ptrCast(*?*c.git_config_entry, &entry),
                 @ptrCast(*c.git_config_iterator, self),
             }) catch |err| switch (err) {
-                git.GitError.IterOver => {
-                    log.debug("end of iteration reached", .{});
-                    return null;
-                },
-                else => return err,
+                git.GitError.IterOver => return null,
+                else => |e| return e,
             };
 
-            log.debug("successfully fetched config entry: {}", .{entry});
+            log.debug("successfully fetched config entry: {*}", .{entry});
 
             return entry;
         }

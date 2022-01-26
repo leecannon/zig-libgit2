@@ -1501,11 +1501,8 @@ pub const Repository = opaque {
                 &branch_type,
                 @ptrCast(*c.git_branch_iterator, self),
             }) catch |err| switch (err) {
-                git.GitError.IterOver => {
-                    log.debug("end of iteration reached", .{});
-                    return null;
-                },
-                else => return err,
+                git.GitError.IterOver => return null,
+                else => |e| return e,
             };
 
             const ret = Item{
