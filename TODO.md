@@ -6,6 +6,8 @@
 - [ ] Build against each version from latest to oldest and mark added APIs using `@hasDecl`
 - [ ] Option to disable logging
 - [ ] Add documentation to *every* function and type including docs for return value
+- [ ] Remove most `{*}` usages in log messages
+- [ ] Wrap arguments in log messages in `"`
 - [ ] Add functionality to build.zig to include package as either static or dynamic
 - [ ] Package with zigmod/gyro
 
