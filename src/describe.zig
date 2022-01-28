@@ -50,6 +50,8 @@ pub const DescribeFormatOptions = struct {
 
 pub const DescribeResult = opaque {
     pub fn format(self: *const DescribeResult, options: DescribeFormatOptions) !git.Buf {
+        if (internal.trace_log) log.debug("DescribeResult.format called", .{});
+
         var buf: git.Buf = .{};
 
         const c_options = internal.make_c_option.describeFormatOptions(options);
@@ -60,17 +62,13 @@ pub const DescribeResult = opaque {
             &c_options,
         });
 
-        log.debug("successfully formatted describe", .{});
-
         return buf;
     }
 
     pub fn deinit(self: *DescribeResult) void {
-        log.debug("DescribeResult.deinit called", .{});
+        if (internal.trace_log) log.debug("DescribeResult.deinit called", .{});
 
         c.git_describe_result_free(@ptrCast(*c.git_describe_result, self));
-
-        log.debug("describe result freed successfully", .{});
     }
 
     comptime {

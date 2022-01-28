@@ -7,29 +7,21 @@ const git = @import("git.zig");
 
 pub const Rebase = opaque {
     pub fn deinit(self: *Rebase) void {
-        log.debug("Rebase.deinit called", .{});
+        if (internal.trace_log) log.debug("Rebase.deinit called", .{});
 
         c.git_rebase_free(@ptrCast(*c.git_rebase, self));
-
-        log.debug("Rebase freed successfully", .{});
     }
 
     /// Gets the original `HEAD` ref name for merge rebases.
     pub fn originalHeadName(self: *Rebase) [:0]const u8 {
-        log.debug("Rebase.originalHeadName called", .{});
+        if (internal.trace_log) log.debug("Rebase.originalHeadName called", .{});
 
-        const c_str = c.git_rebase_orig_head_name(@ptrCast(*c.git_rebase, self));
-
-        const slice = std.mem.sliceTo(c_str, 0);
-
-        log.debug("original head name: {s}", .{slice});
-
-        return slice;
+        return std.mem.sliceTo(c.git_rebase_orig_head_name(@ptrCast(*c.git_rebase, self)), 0);
     }
 
     /// Gets the original `HEAD` id for merge rebases.
     pub fn originalHeadId(self: *Rebase) *const git.Oid {
-        log.debug("Rebase.originalHeadId called", .{});
+        if (internal.trace_log) log.debug("Rebase.originalHeadId called", .{});
 
         return @ptrCast(
             *const git.Oid,
@@ -39,20 +31,14 @@ pub const Rebase = opaque {
 
     /// Gets the `onto` ref name for merge rebases.
     pub fn originalOntoName(self: *Rebase) [:0]const u8 {
-        log.debug("Rebase.originalOntoName called", .{});
+        if (internal.trace_log) log.debug("Rebase.originalOntoName called", .{});
 
-        const c_str = c.git_rebase_onto_name(@ptrCast(*c.git_rebase, self));
-
-        const slice = std.mem.sliceTo(c_str, 0);
-
-        log.debug("original head name: {s}", .{slice});
-
-        return slice;
+        return std.mem.sliceTo(c.git_rebase_onto_name(@ptrCast(*c.git_rebase, self)), 0);
     }
 
     /// Gets the `onto` id for merge rebases.
     pub fn originalOntoId(self: *Rebase) *const git.Oid {
-        log.debug("Rebase.originalOntoId called", .{});
+        if (internal.trace_log) log.debug("Rebase.originalOntoId called", .{});
 
         return @ptrCast(
             *const git.Oid,
@@ -62,7 +48,7 @@ pub const Rebase = opaque {
 
     /// Gets the count of rebase operations that are to be applied.
     pub fn operationEntryCount(self: *Rebase) usize {
-        log.debug("Rebase.operationEntryCount called", .{});
+        if (internal.trace_log) log.debug("Rebase.operationEntryCount called", .{});
 
         return c.git_rebase_operation_entrycount(@ptrCast(*c.git_rebase, self));
     }
@@ -70,7 +56,7 @@ pub const Rebase = opaque {
     /// Gets the index of the rebase operation that is currently being applied. If the first operation has not yet been applied
     /// (because you have called `init` but not yet `next`) then this returns `null`.
     pub fn currentOperation(self: *Rebase) ?usize {
-        log.debug("Rebase.currentOperation called", .{});
+        if (internal.trace_log) log.debug("Rebase.currentOperation called", .{});
 
         const ret = c.git_rebase_operation_current(@ptrCast(*c.git_rebase, self));
 
@@ -84,7 +70,7 @@ pub const Rebase = opaque {
     /// ## Parameters
     /// * `index` - The index of the rebase operation to retrieve.
     pub fn getOperation(self: *Rebase, index: usize) ?*RebaseOperation {
-        log.debug("Rebase.getOperation called, index={}", .{index});
+        if (internal.trace_log) log.debug("Rebase.getOperation called", .{});
 
         return @ptrCast(
             ?*RebaseOperation,
@@ -99,7 +85,7 @@ pub const Rebase = opaque {
     /// (which is any operation except `OperationType.exec`) then the patch will be applied and the index and working directory
     /// will be updated with the changes. If there are conflicts, you will need to address those before committing the changes.
     pub fn next(self: *Rebase) !*RebaseOperation {
-        log.debug("Rebase.next called", .{});
+        if (internal.trace_log) log.debug("Rebase.next called", .{});
 
         var ret: *RebaseOperation = undefined;
 
@@ -118,7 +104,7 @@ pub const Rebase = opaque {
     /// This is only applicable for in-memory rebases; for rebases within a working directory, the changes were applied to the
     /// repository's index.
     pub fn inMemoryIndex(self: *Rebase) !*git.Index {
-        log.debug("Rebase.inMemoryIndex called", .{});
+        if (internal.trace_log) log.debug("Rebase.inMemoryIndex called", .{});
 
         var ret: *git.Index = undefined;
 
@@ -147,7 +133,7 @@ pub const Rebase = opaque {
         message_encoding: ?[:0]const u8,
         message: ?[:0]const u8,
     ) !git.Oid {
-        log.debug("Rebase.commit called", .{});
+        if (internal.trace_log) log.debug("Rebase.commit called", .{});
 
         var ret: git.Oid = undefined;
 
@@ -169,7 +155,7 @@ pub const Rebase = opaque {
     /// Aborts a rebase that is currently in progress, resetting the repository and working directory to their state before rebase
     /// began.
     pub fn abort(self: *Rebase) !void {
-        log.debug("Rebase.abort called", .{});
+        if (internal.trace_log) log.debug("Rebase.abort called", .{});
 
         try internal.wrapCall("git_rebase_abort", .{
             @ptrCast(*c.git_rebase, self),
@@ -178,7 +164,7 @@ pub const Rebase = opaque {
 
     /// Finishes a rebase that is currently in progress once all patches have been applied.
     pub fn finish(self: *Rebase, signature: ?*const git.Signature) !void {
-        log.debug("Rebase.finish called", .{});
+        if (internal.trace_log) log.debug("Rebase.finish called", .{});
 
         try internal.wrapCall("git_rebase_finish", .{
             @ptrCast(*c.git_rebase, self),

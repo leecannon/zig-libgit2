@@ -8,11 +8,9 @@ const git = @import("git.zig");
 pub const Mailmap = opaque {
     /// Free the mailmap and its associated memory.
     pub fn deinit(self: *Mailmap) void {
-        log.debug("Mailmap.deinit called", .{});
+        if (internal.trace_log) log.debug("Mailmap.deinit called", .{});
 
         c.git_mailmap_free(@ptrCast(*c.git_mailmap, self));
-
-        log.debug("Mailmap freed successfully", .{});
     }
 
     /// Add a single entry to the given mailmap object. If the entry already exists, it will be replaced with the new entry.
@@ -29,10 +27,7 @@ pub const Mailmap = opaque {
         replace_name: ?[:0]const u8,
         replace_email: [:0]const u8,
     ) !void {
-        log.debug(
-            "Mailmap.addEntry called, real_name: {s}, real_email: {s}, replace_name: {s}, replace_email: {s}",
-            .{ real_name, real_email, replace_name, replace_email },
-        );
+        if (internal.trace_log) log.debug("Mailmap.addEntry called", .{});
 
         const c_real_name = if (real_name) |ptr| ptr.ptr else null;
         const c_real_email = if (real_email) |ptr| ptr.ptr else null;
@@ -45,8 +40,6 @@ pub const Mailmap = opaque {
             c_replace_name,
             replace_email.ptr,
         });
-
-        log.debug("successfully added entry to mailmap", .{});
     }
 
     pub const ResolveResult = struct {
@@ -63,7 +56,7 @@ pub const Mailmap = opaque {
     /// * `name` - The name to look up
     /// * `email` - The email to look up
     pub fn resolve(self: ?*const Mailmap, name: [:0]const u8, email: [:0]const u8) !ResolveResult {
-        log.debug("Mailmap.resolve called, name: {s}, email: {s}", .{ name, email });
+        if (internal.trace_log) log.debug("Mailmap.resolve called", .{});
 
         var real_name: ?[*:0]const u8 = undefined;
         var real_email: ?[*:0]const u8 = undefined;
@@ -76,14 +69,10 @@ pub const Mailmap = opaque {
             email.ptr,
         });
 
-        const ret = ResolveResult{
+        return ResolveResult{
             .real_name = std.mem.sliceTo(real_name.?, 0),
             .real_email = std.mem.sliceTo(real_email.?, 0),
         };
-
-        log.debug("successfully resolved name and email: {}", .{ret});
-
-        return ret;
     }
 
     /// Resolve a signature to use real names and emails with a mailmap.
@@ -93,7 +82,7 @@ pub const Mailmap = opaque {
     /// ## Parameters
     /// * `signature` - Signature to resolve
     pub fn resolveSignature(self: *const Mailmap, signature: *const git.Signature) !*git.Signature {
-        log.debug("Mailmap.resolveSignature called, signature: {*}", .{signature});
+        if (internal.trace_log) log.debug("Mailmap.resolveSignature called", .{});
 
         var sig: *git.Signature = undefined;
 
@@ -102,8 +91,6 @@ pub const Mailmap = opaque {
             @ptrCast(*const c.git_mailmap, self),
             @ptrCast(*const c.git_signature, signature),
         });
-
-        log.debug("successfully resolved signature", .{});
 
         return sig;
     }

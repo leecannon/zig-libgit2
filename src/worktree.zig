@@ -7,11 +7,9 @@ const git = @import("git.zig");
 
 pub const Worktree = opaque {
     pub fn deinit(self: *Worktree) void {
-        log.debug("Worktree.deinit called", .{});
+        if (internal.trace_log) log.debug("Worktree.deinit called", .{});
 
         c.git_worktree_free(@ptrCast(*c.git_worktree, self));
-
-        log.debug("worktree freed successfully", .{});
     }
 
     /// Check if worktree is valid
@@ -19,13 +17,11 @@ pub const Worktree = opaque {
     /// A valid worktree requires both the git data structures inside the linked parent repository and the linked working
     /// copy to be present.
     pub fn valid(self: *const Worktree) !void {
-        log.debug("Worktree.valid called", .{});
+        if (internal.trace_log) log.debug("Worktree.valid called", .{});
 
         try internal.wrapCall("git_worktree_validate", .{
             @ptrCast(*const c.git_worktree, self),
         });
-
-        log.debug("worktree is valid", .{});
     }
 
     /// Lock worktree if not already locked
@@ -35,38 +31,23 @@ pub const Worktree = opaque {
     /// ## Parameters
     /// * `reason` - Reason why the working tree is being locked
     pub fn lock(self: *Worktree, reason: ?[:0]const u8) !void {
-        log.debug("Worktree.lock called", .{});
+        if (internal.trace_log) log.debug("Worktree.lock called", .{});
 
         const c_reason = if (reason) |s| s.ptr else null;
 
-        internal.wrapCall("git_worktree_lock", .{
+        try internal.wrapCall("git_worktree_lock", .{
             @ptrCast(*c.git_worktree, self),
             c_reason,
-        }) catch |err| {
-            if (err == error.Locked) {
-                log.debug("worktree is already locked", .{});
-            }
-            return err;
-        };
-
-        log.debug("worktree locked", .{});
+        });
     }
 
     /// Unlock a locked worktree
     ///
     /// Returns `true` if the worktree was no locked
     pub fn unlock(self: *Worktree) !bool {
-        log.debug("Worktree.unlock called", .{});
+        if (internal.trace_log) log.debug("Worktree.unlock called", .{});
 
-        const not_locked = (try internal.wrapCallWithReturn("git_worktree_unlock", .{@ptrCast(*c.git_worktree, self)})) != 0;
-
-        if (not_locked) {
-            log.debug("worktree was not locked", .{});
-        } else {
-            log.debug("worktree unlocked", .{});
-        }
-
-        return not_locked;
+        return (try internal.wrapCallWithReturn("git_worktree_unlock", .{@ptrCast(*c.git_worktree, self)})) != 0;
     }
 
     /// Check if worktree is locked
@@ -75,7 +56,7 @@ pub const Worktree = opaque {
     ///
     /// Returns `null` if the worktree is *not* locked, returns the reason for the lock if it is locked.
     pub fn is_locked(self: *const Worktree) !?git.Buf {
-        log.debug("Worktree.is_locked called", .{});
+        if (internal.trace_log) log.debug("Worktree.is_locked called", .{});
 
         var ret: git.Buf = .{};
 
@@ -84,47 +65,29 @@ pub const Worktree = opaque {
             @ptrCast(*const c.git_worktree, self),
         })) != 0;
 
-        if (locked) {
-            log.debug("worktree is locked, reason: {s}", .{ret.toSlice()});
-            return ret;
-        }
-
-        log.debug("worktree is not locked", .{});
-        return null;
+        return if (locked) ret else null;
     }
 
     /// Retrieve the name of the worktree
     ///
     /// The slice returned is valid for the lifetime of the `Worktree`
     pub fn name(self: *Worktree) ![:0]const u8 {
-        log.debug("Worktree.name called", .{});
+        if (internal.trace_log) log.debug("Worktree.name called", .{});
 
-        const ptr = c.git_worktree_name(@ptrCast(*c.git_worktree, self));
-
-        const slice = std.mem.sliceTo(ptr, 0);
-
-        log.debug("worktree name: {s}", .{slice});
-
-        return slice;
+        return std.mem.sliceTo(c.git_worktree_name(@ptrCast(*c.git_worktree, self)), 0);
     }
 
     /// Retrieve the path of the worktree
     ///
     /// The slice returned is valid for the lifetime of the `Worktree`
     pub fn path(self: *Worktree) ![:0]const u8 {
-        log.debug("Worktree.path called", .{});
+        if (internal.trace_log) log.debug("Worktree.path called", .{});
 
-        const ptr = c.git_worktree_path(@ptrCast(*c.git_worktree, self));
-
-        const slice = std.mem.sliceTo(ptr, 0);
-
-        log.debug("worktree path: {s}", .{slice});
-
-        return slice;
+        return std.mem.sliceTo(c.git_worktree_path(@ptrCast(*c.git_worktree, self)), 0);
     }
 
     pub fn repositoryOpen(self: *Worktree) !*git.Repository {
-        log.debug("Worktree.repositoryOpen called", .{});
+        if (internal.trace_log) log.debug("Worktree.repositoryOpen called", .{});
 
         var repo: *git.Repository = undefined;
 
@@ -132,8 +95,6 @@ pub const Worktree = opaque {
             @ptrCast(*?*c.git_repository, &repo),
             @ptrCast(*c.git_worktree, self),
         });
-
-        log.debug("repository opened successfully", .{});
 
         return repo;
     }
@@ -148,18 +109,14 @@ pub const Worktree = opaque {
     /// If the worktree is not valid and not locked or if the above flags have been passed in, this function will return a
     /// `true`
     pub fn isPruneable(self: *Worktree, options: PruneOptions) !bool {
-        log.debug("Worktree.isPruneable called, options: {}", .{options});
+        if (internal.trace_log) log.debug("Worktree.isPruneable called", .{});
 
         var c_options = internal.make_c_option.pruneOptions(options);
 
-        const ret = (try internal.wrapCallWithReturn("git_worktree_is_prunable", .{
+        return (try internal.wrapCallWithReturn("git_worktree_is_prunable", .{
             @ptrCast(*c.git_worktree, self),
             &c_options,
         })) != 0;
-
-        log.debug("worktree is pruneable: {}", .{ret});
-
-        return ret;
     }
 
     /// Prune working tree
@@ -167,7 +124,7 @@ pub const Worktree = opaque {
     /// Prune the working tree, that is remove the git data structures on disk. The repository will only be pruned of
     /// `Worktree.isPruneable` succeeds.    
     pub fn prune(self: *Worktree, options: PruneOptions) !void {
-        log.debug("Worktree.prune called, options: {}", .{options});
+        if (internal.trace_log) log.debug("Worktree.prune called", .{});
 
         var c_options = internal.make_c_option.pruneOptions(options);
 
@@ -175,8 +132,6 @@ pub const Worktree = opaque {
             @ptrCast(*c.git_worktree, self),
             &c_options,
         });
-
-        log.debug("successfully pruned worktree", .{});
     }
 
     comptime {

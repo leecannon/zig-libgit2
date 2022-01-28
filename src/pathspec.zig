@@ -8,11 +8,9 @@ const git = @import("git.zig");
 pub const Pathspec = opaque {
     /// Free a pathspec
     pub fn deinit(self: *Pathspec) void {
-        log.debug("Pathspec.deinit called", .{});
+        if (internal.trace_log) log.debug("Pathspec.deinit called", .{});
 
         c.git_pathspec_free(@ptrCast(*c.git_pathspec, self));
-
-        log.debug("pathspec freed successfully", .{});
     }
 
     /// Try to match a path against a pathspec
@@ -24,17 +22,13 @@ pub const Pathspec = opaque {
     /// * `options` - Options to control match
     /// * `path` - The pathname to attempt to match
     pub fn matchesPath(self: *const Pathspec, options: PathspecMatchOptions, path: [:0]const u8) !bool {
-        log.debug("Pathspec.matchesPath called, options: {}, path: {s}", .{ options, path });
+        if (internal.trace_log) log.debug("Pathspec.matchesPath called", .{});
 
-        const ret = (try internal.wrapCallWithReturn("git_pathspec_matches_path", .{
+        return (try internal.wrapCallWithReturn("git_pathspec_matches_path", .{
             @ptrCast(*const c.git_pathspec, self),
             @bitCast(c.git_pathspec_flag_t, options),
             path.ptr,
         })) != 0;
-
-        log.debug("match: {}", .{ret});
-
-        return ret;
     }
 
     comptime {
@@ -96,24 +90,18 @@ pub const PathspecMatchOptions = packed struct {
 pub const PathspecMatchList = opaque {
     /// Free a pathspec match list
     pub fn deinit(self: *PathspecMatchList) void {
-        log.debug("PathspecMatchList.deinit called", .{});
+        if (internal.trace_log) log.debug("PathspecMatchList.deinit called", .{});
 
         c.git_pathspec_match_list_free(@ptrCast(*c.git_pathspec_match_list, self));
-
-        log.debug("pathspec match list freed successfully", .{});
     }
 
     /// Get the number of items in a match list.
     pub fn entryCount(self: *const PathspecMatchList) usize {
-        log.debug("PathspecMatchList.entryCount called", .{});
+        if (internal.trace_log) log.debug("PathspecMatchList.entryCount called", .{});
 
-        const ret = c.git_pathspec_match_list_entrycount(
+        return c.git_pathspec_match_list_entrycount(
             @ptrCast(*const c.git_pathspec_match_list, self),
         );
-
-        log.debug("entry count: {}", .{ret});
-
-        return ret;
     }
 
     /// Get a matching filename by position.
@@ -123,21 +111,14 @@ pub const PathspecMatchList = opaque {
     /// ## Parameters
     /// * `index` - The index into the list
     pub fn getEntry(self: *const PathspecMatchList, index: usize) ?[:0]const u8 {
-        log.debug("PathspecMatchList.getEntry called, index: {}", .{index});
+        if (internal.trace_log) log.debug("PathspecMatchList.getEntry called", .{});
 
         const opt_c_ptr = c.git_pathspec_match_list_entry(
             @ptrCast(*const c.git_pathspec_match_list, self),
             index,
         );
 
-        if (opt_c_ptr) |c_ptr| {
-            const slice = std.mem.sliceTo(c_ptr, 0);
-            log.debug("entry: {s}", .{slice});
-            return slice;
-        } else {
-            log.debug("no such match", .{});
-            return null;
-        }
+        return if (opt_c_ptr) |c_ptr| std.mem.sliceTo(c_ptr, 0) else null;
     }
 
     /// Get a matching diff delta by position.
@@ -148,7 +129,7 @@ pub const PathspecMatchList = opaque {
     /// ## Parameters
     /// * `index` - The index into the list
     pub fn getDiffEntry(self: *const PathspecMatchList, index: usize) ?*const git.DiffDelta {
-        log.debug("PathspecMatchList.getDiffEntry called, index: {}", .{index});
+        if (internal.trace_log) log.debug("PathspecMatchList.getDiffEntry called", .{});
 
         return @ptrCast(
             ?*const git.DiffDelta,
@@ -163,15 +144,11 @@ pub const PathspecMatchList = opaque {
     ///
     /// This will be zero unless you passed `PathspecMatchOptions.find_failures` when generating the `PathspecMatchList`.
     pub fn failedEntryCount(self: *const PathspecMatchList) usize {
-        log.debug("PathspecMatchList.failedEntryCount called", .{});
+        if (internal.trace_log) log.debug("PathspecMatchList.failedEntryCount called", .{});
 
-        const ret = c.git_pathspec_match_list_failed_entrycount(
+        return c.git_pathspec_match_list_failed_entrycount(
             @ptrCast(*const c.git_pathspec_match_list, self),
         );
-
-        log.debug("non-matching entry count: {}", .{ret});
-
-        return ret;
     }
 
     /// Get an original pathspec string that had no matches.
@@ -181,21 +158,14 @@ pub const PathspecMatchList = opaque {
     /// ## Parameters
     /// * `index` - The index into the failed items
     pub fn getFailedEntry(self: *const PathspecMatchList, index: usize) ?[:0]const u8 {
-        log.debug("PathspecMatchList.getFailedEntry called, index: {}", .{index});
+        if (internal.trace_log) log.debug("PathspecMatchList.getFailedEntry called", .{});
 
         const opt_c_ptr = c.git_pathspec_match_list_failed_entry(
             @ptrCast(*const c.git_pathspec_match_list, self),
             index,
         );
 
-        if (opt_c_ptr) |c_ptr| {
-            const slice = std.mem.sliceTo(c_ptr, 0);
-            log.debug("entry: {s}", .{slice});
-            return slice;
-        } else {
-            log.debug("no such failed match", .{});
-            return null;
-        }
+        return if (opt_c_ptr) |c_ptr| std.mem.sliceTo(c_ptr, 0) else null;
     }
 
     comptime {

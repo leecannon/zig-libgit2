@@ -9,22 +9,18 @@ const git = @import("git.zig");
 pub const Reflog = opaque {
     /// Free the reflog
     pub fn deinit(self: *Reflog) void {
-        log.debug("Reflog.deinit called", .{});
+        if (internal.trace_log) log.debug("Reflog.deinit called", .{});
 
         c.git_reflog_free(@ptrCast(*c.git_reflog, self));
-
-        log.debug("reflog freed successfully", .{});
     }
 
     /// Write an existing in-memory reflog object back to disk using an atomic file lock.
     pub fn write(self: *Reflog) !void {
-        log.debug("Reflog.write called", .{});
+        if (internal.trace_log) log.debug("Reflog.write called", .{});
 
         try internal.wrapCall("git_reflog_write", .{
             @ptrCast(*c.git_reflog, self),
         });
-
-        log.debug("successfully wrote reflog", .{});
     }
 
     /// Add a new entry to the in-memory reflog.
@@ -39,16 +35,7 @@ pub const Reflog = opaque {
         signature: git.Signature,
         msg: ?[:0]const u8,
     ) !void {
-        // This check is to prevent formating the oid when we are not going to print anything
-        if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-            var buf: [git.Oid.hex_buffer_size]u8 = undefined;
-            const slice = try id.formatHex(&buf);
-            log.debug("Reflog.append called, id: {s}, signature: {}, msg: {s}", .{
-                slice,
-                signature,
-                msg,
-            });
-        }
+        if (internal.trace_log) log.debug("Reflog.append called", .{});
 
         const c_msg = if (msg) |s| s.ptr else null;
 
@@ -58,21 +45,15 @@ pub const Reflog = opaque {
             @ptrCast(*const c.git_signature, &signature),
             c_msg,
         });
-
-        log.debug("appended successfully", .{});
     }
 
     /// Get the number of log entries in a reflog
     pub fn entryCount(self: *Reflog) usize {
-        log.debug("Reflog.entryCount called", .{});
+        if (internal.trace_log) log.debug("Reflog.entryCount called", .{});
 
-        const ret = c.git_reflog_entrycount(
+        return c.git_reflog_entrycount(
             @ptrCast(*c.git_reflog, self),
         );
-
-        log.debug("entry count: {}", .{ret});
-
-        return ret;
     }
 
     /// Lookup an entry by its index
@@ -82,7 +63,7 @@ pub const Reflog = opaque {
     /// ## Parameters
     /// * `index` - The position of the entry to lookup. Should be less than `Reflog.entryCount()`
     pub fn getEntry(self: *const Reflog, index: usize) ?*const ReflogEntry {
-        log.debug("Reflog.getEntry called, index: {}", .{index});
+        if (internal.trace_log) log.debug("Reflog.getEntry called", .{});
 
         return @ptrCast(
             ?*const ReflogEntry,
@@ -103,88 +84,53 @@ pub const Reflog = opaque {
     /// * `index` - The position of the entry to lookup. Should be less than `Reflog.entryCount()`
     /// * `rewrite_previous_entry` - `true` to rewrite the history; `false` otherwise
     pub fn removeEntry(self: *Reflog, index: usize, rewrite_previous_entry: bool) !void {
-        log.debug("Reflog.removeEntry called, index: {}, rewrite_previous_entry: {}", .{ index, rewrite_previous_entry });
+        if (internal.trace_log) log.debug("Reflog.removeEntry called", .{});
 
         try internal.wrapCall("git_reflog_drop", .{
             @ptrCast(*c.git_reflog, self),
             index,
             @boolToInt(rewrite_previous_entry),
         });
-
-        log.debug("successfully removed entry", .{});
     }
 
     /// Representation of a reference log entry
     pub const ReflogEntry = opaque {
         /// Get the old oid
         pub fn oldId(self: *const ReflogEntry) *const git.Oid {
-            log.debug("ReflogEntry.oldId called", .{});
+            if (internal.trace_log) log.debug("ReflogEntry.oldId called", .{});
 
-            const ret = @ptrCast(*const git.Oid, c.git_reflog_entry_id_old(
+            return @ptrCast(*const git.Oid, c.git_reflog_entry_id_old(
                 @ptrCast(*const c.git_reflog_entry, self),
             ));
-
-            // This check is to prevent formating the oid when we are not going to print anything
-            if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-                var buf: [git.Oid.hex_buffer_size]u8 = undefined;
-                if (ret.formatHex(&buf)) |slice| {
-                    log.debug("old id: {s}", .{slice});
-                } else |_| {}
-            }
-
-            return ret;
         }
 
         /// Get the new oid
         pub fn newId(self: *const ReflogEntry) *const git.Oid {
-            log.debug("ReflogEntry.newId called", .{});
+            if (internal.trace_log) log.debug("ReflogEntry.newId called", .{});
 
-            const ret = @ptrCast(*const git.Oid, c.git_reflog_entry_id_new(
+            return @ptrCast(*const git.Oid, c.git_reflog_entry_id_new(
                 @ptrCast(*const c.git_reflog_entry, self),
             ));
-
-            // This check is to prevent formating the oid when we are not going to print anything
-            if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-                var buf: [git.Oid.hex_buffer_size]u8 = undefined;
-                if (ret.formatHex(&buf)) |slice| {
-                    log.debug("new id: {s}", .{slice});
-                } else |_| {}
-            }
-
-            return ret;
         }
 
         /// Get the committer of this entry
         pub fn commiter(self: *const ReflogEntry) *const git.Signature {
-            log.debug("ReflogEntry.commiter called", .{});
+            if (internal.trace_log) log.debug("ReflogEntry.commiter called", .{});
 
-            const ret = @ptrCast(*const git.Signature, c.git_reflog_entry_committer(
+            return @ptrCast(*const git.Signature, c.git_reflog_entry_committer(
                 @ptrCast(*const c.git_reflog_entry, self),
             ));
-
-            log.debug("commiter: {*}", .{ret});
-
-            return ret;
         }
 
         /// Get the log message
         pub fn message(self: *const ReflogEntry) ?[:0]const u8 {
-            log.debug("ReflogEntry.message called", .{});
+            if (internal.trace_log) log.debug("ReflogEntry.message called", .{});
 
             const opt_ret = @ptrCast(?[*:0]const u8, c.git_reflog_entry_message(
                 @ptrCast(*const c.git_reflog_entry, self),
             ));
 
-            if (opt_ret) |ret| {
-                const slice = std.mem.sliceTo(ret, 0);
-
-                log.debug("message: {s}", .{slice});
-
-                return slice;
-            }
-
-            log.debug("no message", .{});
-            return null;
+            return if (opt_ret) |ret| std.mem.sliceTo(ret, 0) else null;
         }
 
         comptime {

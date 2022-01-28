@@ -6,6 +6,9 @@ const log = std.log.scoped(.git);
 // TODO: Document
 const log_errors = std.meta.globalOption("libgit2_log_errors", bool) orelse false;
 
+// TODO: Document
+pub const trace_log = std.meta.globalOption("libgit2_trace_log", bool) orelse false;
+
 pub const make_c_option = @import("make_c_option.zig");
 
 pub const has_libssh2 = @hasDecl(c, "LIBSSH2_VERSION");

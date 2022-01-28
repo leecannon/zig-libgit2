@@ -7,29 +7,15 @@ const git = @import("git.zig");
 
 pub const Blob = opaque {
     pub fn deinit(self: *Blob) void {
-        log.debug("Blob.deinit called", .{});
+        if (internal.trace_log) log.debug("Blob.deinit called", .{});
 
         c.git_blob_free(@ptrCast(*c.git_blob, self));
-
-        log.debug("Blob freed successfully", .{});
     }
 
     pub fn id(self: *const Blob) *const git.Oid {
-        log.debug("Blame.id called", .{});
+        if (internal.trace_log) log.debug("Blame.id called", .{});
 
-        const ret = @ptrCast(*const git.Oid, c.git_blob_id(@ptrCast(*const c.git_blob, self)));
-
-        // This check is to prevent formating the oid when we are not going to print anything
-        if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-            var buf: [git.Oid.hex_buffer_size]u8 = undefined;
-            if (ret.formatHex(&buf)) |slice| {
-                log.debug("successfully fetched blob id: {s}", .{slice});
-            } else |_| {
-                log.debug("successfully fetched blob id, but unable to format it", .{});
-            }
-        }
-
-        return ret;
+        return @ptrCast(*const git.Oid, c.git_blob_id(@ptrCast(*const c.git_blob, self)));
     }
 
     /// Directly generate a patch from the difference between two blobs.
@@ -51,13 +37,7 @@ pub const Blob = opaque {
         new_as_path: ?[:0]const u8,
         options: git.DiffOptions,
     ) !*git.Patch {
-        log.debug("Blob.toPatch called, old={*}, old_as_path={s}, new={*}, new_as_path={s}, options={}", .{
-            old,
-            old_as_path,
-            new,
-            new_as_path,
-            options,
-        });
+        if (internal.trace_log) log.debug("Blob.toPatch called", .{});
 
         var ret: *git.Patch = undefined;
 
@@ -73,8 +53,6 @@ pub const Blob = opaque {
             c_new_as_path,
             &c_options,
         });
-
-        log.debug("successfully made patch {*} for blobs", .{ret});
 
         return ret;
     }
@@ -98,12 +76,7 @@ pub const Blob = opaque {
         buffer_as_path: ?[:0]const u8,
         options: git.DiffOptions,
     ) !*git.Patch {
-        log.debug("Blob.patchFromBuffer called, old={*}, old_as_path={s}, buffer_as_path={s}, options={}", .{
-            old,
-            old_as_path,
-            buffer_as_path,
-            options,
-        });
+        if (internal.trace_log) log.debug("Blob.patchFromBuffer called", .{});
 
         var ret: *git.Patch = undefined;
 
@@ -129,59 +102,39 @@ pub const Blob = opaque {
             &c_options,
         });
 
-        log.debug("successfully made patch {*} for blob and buffer", .{ret});
-
         return ret;
     }
 
     pub fn owner(self: *const Blob) *git.Repository {
-        log.debug("Blame.owner called", .{});
+        if (internal.trace_log) log.debug("Blame.owner called", .{});
 
-        const ret = @ptrCast(
+        return @ptrCast(
             *git.Repository,
             c.git_blob_owner(@ptrCast(*const c.git_blob, self)),
         );
-
-        log.debug("successfully fetched owning repository: {s}", .{ret});
-
-        return ret;
     }
 
-    pub fn rawContent(self: *const Blob) !*const anyopaque {
-        log.debug("Blame.rawContent called", .{});
+    pub fn rawContent(self: *const Blob) ?*const anyopaque {
+        if (internal.trace_log) log.debug("Blame.rawContent called", .{});
 
-        if (c.git_blob_rawcontent(@ptrCast(*const c.git_blob, self))) |ret| {
-            log.debug("successfully fetched raw content pointer: {*}", .{ret});
-            return ret;
-        } else {
-            return error.Invalid;
-        }
+        return c.git_blob_rawcontent(@ptrCast(*const c.git_blob, self));
     }
 
     pub fn rawContentLength(self: *const Blob) u64 {
-        log.debug("Blame.rawContentLength called", .{});
+        if (internal.trace_log) log.debug("Blame.rawContentLength called", .{});
 
-        const return_type_signedness: std.builtin.Signedness = comptime blk: {
-            const ret_type = @typeInfo(@TypeOf(c.git_blob_rawsize)).Fn.return_type.?;
-            break :blk @typeInfo(ret_type).Int.signedness;
-        };
-
-        const ret = c.git_blob_rawsize(@ptrCast(*const c.git_blob, self));
-
-        log.debug("successfully fetched raw content length: {}", .{ret});
-
-        if (return_type_signedness == .signed) {
-            return @intCast(u64, ret);
-        }
-
-        return ret;
+        return c.git_blob_rawsize(@ptrCast(*const c.git_blob, self));
     }
 
     pub fn isBinary(self: *const Blob) bool {
+        if (internal.trace_log) log.debug("Blame.isBinary called", .{});
+
         return c.git_blob_is_binary(@ptrCast(*const c.git_blob, self)) == 1;
     }
 
     pub fn copy(self: *Blob) !*Blob {
+        if (internal.trace_log) log.debug("Blame.copy called", .{});
+
         var new_blob: *Blob = undefined;
 
         const ret = c.git_blob_dup(
@@ -195,7 +148,7 @@ pub const Blob = opaque {
     }
 
     pub fn filter(self: *Blob, as_path: [:0]const u8, options: BlobFilterOptions) !git.Buf {
-        log.debug("Blob.filter called, as_path: {s}, options: {}", .{ as_path, options });
+        if (internal.trace_log) log.debug("Blob.filter called", .{});
 
         var buf: git.Buf = .{};
 
@@ -207,8 +160,6 @@ pub const Blob = opaque {
             as_path.ptr,
             &c_options,
         });
-
-        log.debug("successfully filtered blob", .{});
 
         return buf;
     }

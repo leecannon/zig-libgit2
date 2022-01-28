@@ -10,49 +10,33 @@ pub const Credential = extern struct {
     free: fn (*Credential) callconv(.C) void,
 
     pub fn deinit(self: *Credential) void {
-        log.debug("Credential.deinit called", .{});
+        if (internal.trace_log) log.debug("Credential.deinit called", .{});
 
         if (internal.has_credential) {
             c.git_credential_free(@ptrCast(*internal.RawCredentialType, self));
         } else {
             c.git_cred_free(@ptrCast(*internal.RawCredentialType, self));
         }
-
-        log.debug("credential freed successfully", .{});
     }
 
     pub fn hasUsername(self: *Credential) bool {
-        log.debug("Credential.hasUsername called", .{});
+        if (internal.trace_log) log.debug("Credential.hasUsername called", .{});
 
-        var ret: bool = undefined;
-
-        if (internal.has_credential) {
-            ret = c.git_credential_has_username(@ptrCast(*internal.RawCredentialType, self)) != 0;
-        } else {
-            ret = c.git_cred_has_username(@ptrCast(*internal.RawCredentialType, self)) != 0;
-        }
-
-        log.debug("credential has username: {}", .{ret});
-
-        return ret;
+        return if (internal.has_credential)
+            c.git_credential_has_username(@ptrCast(*internal.RawCredentialType, self)) != 0
+        else
+            c.git_cred_has_username(@ptrCast(*internal.RawCredentialType, self)) != 0;
     }
 
     pub fn getUsername(self: *Credential) ?[:0]const u8 {
-        log.debug("Credential.getUsername called", .{});
+        if (internal.trace_log) log.debug("Credential.getUsername called", .{});
 
         const opt_username = if (internal.has_credential)
             c.git_credential_get_username(@ptrCast(*internal.RawCredentialType, self))
         else
             c.git_cred_get_username(@ptrCast(*internal.RawCredentialType, self));
 
-        if (opt_username) |username| {
-            const slice = std.mem.sliceTo(username, 0);
-            log.debug("credential has username: {s}", .{slice});
-            return slice;
-        } else {
-            log.debug("credential has no username", .{});
-            return null;
-        }
+        return if (opt_username) |username| std.mem.sliceTo(username, 0) else null;
     }
 
     /// A plaintext username and password

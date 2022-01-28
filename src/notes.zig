@@ -7,16 +7,14 @@ const git = @import("git.zig");
 
 pub const Note = opaque {
     pub fn deinit(self: *Note) void {
-        log.debug("Note.deinit called", .{});
+        if (internal.trace_log) log.debug("Note.deinit called", .{});
 
         c.git_note_free(@ptrCast(*c.git_note, self));
-
-        log.debug("note freed successfully", .{});
     }
 
     /// Get the note author
     pub fn author(self: *const Note) *const git.Signature {
-        log.debug("Note.author called", .{});
+        if (internal.trace_log) log.debug("Note.author called", .{});
 
         return @ptrCast(
             *const git.Signature,
@@ -26,7 +24,7 @@ pub const Note = opaque {
 
     /// Get the note committer
     pub fn committer(self: *const Note) *const git.Signature {
-        log.debug("Note.committer called", .{});
+        if (internal.trace_log) log.debug("Note.committer called", .{});
 
         return @ptrCast(
             *const git.Signature,
@@ -36,16 +34,17 @@ pub const Note = opaque {
 
     /// Get the note message
     pub fn message(self: *const Note) [:0]const u8 {
-        log.debug("Note.message called", .{});
+        if (internal.trace_log) log.debug("Note.message called", .{});
 
-        const ret = c.git_note_message(@ptrCast(*const c.git_note, self));
-
-        return std.mem.sliceTo(ret, 0);
+        return std.mem.sliceTo(
+            c.git_note_message(@ptrCast(*const c.git_note, self)),
+            0,
+        );
     }
 
     /// Get the note id
     pub fn id(self: *const Note) *const git.Oid {
-        log.debug("Note.id called", .{});
+        if (internal.trace_log) log.debug("Note.id called", .{});
 
         return @ptrCast(
             *const git.Oid,
@@ -61,7 +60,7 @@ pub const Note = opaque {
 pub const NoteIterator = opaque {
     /// Return the current item and advance the iterator internally to the next value
     pub fn next(self: *NoteIterator) !?NextItem {
-        log.debug("NoteIterator.next called", .{});
+        if (internal.trace_log) log.debug("NoteIterator.next called", .{});
 
         var ret: NextItem = undefined;
 
@@ -78,11 +77,9 @@ pub const NoteIterator = opaque {
     }
 
     pub fn deinit(self: *NoteIterator) void {
-        log.debug("NoteIterator.deinit called", .{});
+        if (internal.trace_log) log.debug("NoteIterator.deinit called", .{});
 
         c.git_note_iterator_free(@ptrCast(*c.git_note_iterator, self));
-
-        log.debug("note iterator freed successfully", .{});
     }
 
     pub const NextItem = struct {

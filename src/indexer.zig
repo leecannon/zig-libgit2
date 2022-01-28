@@ -13,7 +13,7 @@ pub const Indexer = opaque {
     /// * `data` - The data to add
     /// * `stats` - Stat storage
     pub fn append(self: *Indexer, data: []const u8, stats: *IndexerProgress) !void {
-        log.debug("Indexer.append called, data_len: {}, stats: {}", .{ data.len, stats });
+        if (internal.trace_log) log.debug("Indexer.append called", .{});
 
         try internal.wrapCall("git_indexer_append", .{
             @ptrCast(*c.git_indexer, self),
@@ -21,8 +21,6 @@ pub const Indexer = opaque {
             data.len,
             @ptrCast(*c.git_indexer_progress, stats),
         });
-
-        log.debug("successfully appended to indexer", .{});
     }
 
     /// Finalize the pack and index
@@ -33,14 +31,12 @@ pub const Indexer = opaque {
     /// * `data` - The data to add
     /// * `stats` - Stat storage
     pub fn commit(self: *Indexer, stats: *IndexerProgress) !void {
-        log.debug("Indexer.commit called, stats: {}", .{stats});
+        if (internal.trace_log) log.debug("Indexer.commit called", .{});
 
         try internal.wrapCall("git_indexer_commit", .{
             @ptrCast(*c.git_indexer, self),
             @ptrCast(*c.git_indexer_progress, stats),
         });
-
-        log.debug("successfully commited indexer", .{});
     }
 
     /// Get the packfile's hash
@@ -48,7 +44,7 @@ pub const Indexer = opaque {
     /// A packfile's name is derived from the sorted hashing of all object names. This is only correct after the index has been
     /// finalized.
     pub fn hash(self: *const Indexer) ?*const git.Oid {
-        log.debug("Indexer.hash called", .{});
+        if (internal.trace_log) log.debug("Indexer.hash called", .{});
 
         return @ptrCast(
             ?*const git.Oid,
@@ -57,11 +53,9 @@ pub const Indexer = opaque {
     }
 
     pub fn deinit(self: *Indexer) void {
-        log.debug("Indexer.deinit called", .{});
+        if (internal.trace_log) log.debug("Indexer.deinit called", .{});
 
         c.git_indexer_free(@ptrCast(*c.git_indexer, self));
-
-        log.debug("Indexer freed successfully", .{});
     }
 
     comptime {

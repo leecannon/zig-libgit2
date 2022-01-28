@@ -8,16 +8,14 @@ const git = @import("git.zig");
 pub const Remote = opaque {
     /// Free the memory associated with a remote.
     pub fn deinit(self: *Remote) !void {
-        log.debug("Remote.deinit called", .{});
+        if (internal.trace_log) log.debug("Remote.deinit called", .{});
 
         c.git_remote_free(@ptrCast(*c.git_remote, self));
-
-        log.debug("remote closed successfully", .{});
     }
 
     /// Create a copy of an existing remote. All internal strings are also duplicated. Callbacks are not duplicated.
     pub fn duplicate(self: *Remote) !*Remote {
-        log.debug("Remote.duplicate called", .{});
+        if (internal.trace_log) log.debug("Remote.duplicate called", .{});
 
         var remote: *Remote = undefined;
 
@@ -26,74 +24,56 @@ pub const Remote = opaque {
             @ptrCast(*c.git_remote, self),
         });
 
-        log.debug("successfully duplicated remote", .{});
-
         return remote;
     }
 
     /// Get the remote's repository.
     pub fn getOwner(self: *const Remote) ?*git.Repository {
-        log.debug("Remote.getOwner called", .{});
+        if (internal.trace_log) log.debug("Remote.getOwner called", .{});
 
-        const ret = @ptrCast(
+        return @ptrCast(
             ?*git.Repository,
             c.git_remote_owner(@ptrCast(*const c.git_remote, self)),
         );
-
-        log.debug("owner: {*}", .{ret});
-
-        return ret;
     }
 
     /// Get the remote's name.
     pub fn getName(self: *const Remote) ?[:0]const u8 {
-        log.debug("Remote.getName called", .{});
+        if (internal.trace_log) log.debug("Remote.getName called", .{});
 
-        const ret = if (c.git_remote_name(@ptrCast(*const c.git_remote, self))) |r|
+        return if (c.git_remote_name(@ptrCast(*const c.git_remote, self))) |r|
             std.mem.sliceTo(r, 0)
         else
             null;
-
-        log.debug("name: {s}", .{ret});
-
-        return ret;
     }
 
     /// Get the remote's url
     ///
     /// If url.*.insteadOf has been configured for this URL, it will return the modified URL.
     pub fn getUrl(self: *const Remote) ?[:0]const u8 {
-        log.debug("Remote.getUrl called", .{});
+        if (internal.trace_log) log.debug("Remote.getUrl called", .{});
 
-        const ret = if (c.git_remote_url(@ptrCast(*const c.git_remote, self))) |r|
+        return if (c.git_remote_url(@ptrCast(*const c.git_remote, self))) |r|
             std.mem.sliceTo(r, 0)
         else
             null;
-
-        log.debug("url: {s}", .{ret});
-
-        return ret;
     }
 
     /// Get the remote's url for pushing.
     pub fn getPushUrl(self: *const Remote) ?[:0]const u8 {
-        log.debug("Remote.getPushUrl called", .{});
+        if (internal.trace_log) log.debug("Remote.getPushUrl called", .{});
 
-        const ret = if (c.git_remote_pushurl(@ptrCast(*const c.git_remote, self))) |r|
+        return if (c.git_remote_pushurl(@ptrCast(*const c.git_remote, self))) |r|
             std.mem.sliceTo(r, 0)
         else
             null;
-
-        log.debug("push url: {s}", .{ret});
-
-        return ret;
     }
 
     /// Get the remote's list of fetch refspecs.
     ///
     /// The memory is owned by the caller and should be free with StrArray.deinit.
     pub fn getFetchRefspecs(self: *const Remote) !git.StrArray {
-        log.debug("Remote.getFetchRefspecs called", .{});
+        if (internal.trace_log) log.debug("Remote.getFetchRefspecs called", .{});
 
         var ret: git.StrArray = .{};
 
@@ -102,8 +82,6 @@ pub const Remote = opaque {
             @ptrCast(*const c.git_remote, self),
         });
 
-        log.debug("successfully got fetch refspecs", .{});
-
         return ret;
     }
 
@@ -111,7 +89,7 @@ pub const Remote = opaque {
     ///
     /// The memory is owned by the caller and should be free with StrArray.deinit.
     pub fn getPushRefspecs(self: *const Remote) !git.StrArray {
-        log.debug("Remote.getPushRefspecs called", .{});
+        if (internal.trace_log) log.debug("Remote.getPushRefspecs called", .{});
 
         var ret: git.StrArray = .{};
 
@@ -120,20 +98,14 @@ pub const Remote = opaque {
             @ptrCast(*const c.git_remote, self),
         });
 
-        log.debug("successfully got push refspecs", .{});
-
         return ret;
     }
 
     /// Get the number of refspecs for a remote.
     pub fn getRefspecCount(self: *const Remote) usize {
-        log.debug("Remote.getRefspecsCount called", .{});
+        if (internal.trace_log) log.debug("Remote.getRefspecsCount called", .{});
 
-        const ret = c.git_remote_refspec_count(@ptrCast(*const c.git_remote, self));
-
-        log.debug("refspec count: {}", .{ret});
-
-        return ret;
+        return c.git_remote_refspec_count(@ptrCast(*const c.git_remote, self));
     }
 
     /// Get a refspec from the remote
@@ -141,16 +113,12 @@ pub const Remote = opaque {
     /// ## Parameters
     /// * `n` - The refspec to get.
     pub fn getRefspec(self: *const Remote, n: usize) ?*const git.Refspec {
-        log.debug("Remote.getRefspec called", .{});
+        if (internal.trace_log) log.debug("Remote.getRefspec called", .{});
 
-        const ret = @ptrCast(
+        return @ptrCast(
             ?*const git.Refspec,
             c.git_remote_get_refspec(@ptrCast(*const c.git_remote, self), n),
         );
-
-        log.debug("got refspec: {*}", .{ret});
-
-        return ret;
     }
 
     /// Open a connection to a remote.
@@ -167,7 +135,7 @@ pub const Remote = opaque {
         proxy_opts: git.ProxyOptions,
         custom_headers: git.StrArray,
     ) !void {
-        log.debug("Remote.connect called, direction: {}, proxy_opts: {}", .{ direction, proxy_opts });
+        if (internal.trace_log) log.debug("Remote.connect called", .{});
 
         const c_proxy_opts = internal.make_c_option.proxyOptions(proxy_opts);
 
@@ -178,8 +146,6 @@ pub const Remote = opaque {
             &c_proxy_opts,
             @ptrCast(*const c.git_strarray, &custom_headers),
         });
-
-        log.debug("successfully made connection to remote", .{});
     }
 
     /// Get the remote repository's reference advertisement list
@@ -192,7 +158,7 @@ pub const Remote = opaque {
     /// The memory belongs to the remote. The pointer will be valid as long as a new connection is not initiated, but
     /// it is recommended that you make a copy in order to make use of the data.
     pub fn ls(self: *Remote) ![]*const Head {
-        log.debug("Remote.ls called", .{});
+        if (internal.trace_log) log.debug("Remote.ls called", .{});
 
         var head_ptr: [*]*const Head = undefined;
         var head_n: usize = undefined;
@@ -202,8 +168,6 @@ pub const Remote = opaque {
             &head_n,
             @ptrCast(*c.git_remote, self),
         });
-
-        log.debug("successfully found heads", .{});
 
         return head_ptr[0..head_n];
     }
@@ -230,16 +194,12 @@ pub const Remote = opaque {
 
         /// If the server send a symref mapping for this ref, this will point to the target.
         pub fn getSymrefTarget(self: Head) ?[:0]const u8 {
-            log.debug("Remote.getUrl called", .{});
+            if (internal.trace_log) log.debug("Remote.getUrl called", .{});
 
-            const symref = if (self.z_symref_target) |s|
+            return if (self.z_symref_target) |s|
                 std.mem.sliceTo(s, 0)
             else
                 null;
-
-            log.debug("symref: {s}", .{symref});
-
-            return symref;
         }
 
         test {
@@ -256,13 +216,9 @@ pub const Remote = opaque {
     ///
     /// Check whether the remote's underlying transport is connected to the remote host.
     pub fn connected(self: *const Remote) bool {
-        log.debug("Remote.connected called", .{});
+        if (internal.trace_log) log.debug("Remote.connected called", .{});
 
-        const res = c.git_remote_connected(@ptrCast(*const c.git_remote, self)) != 0;
-
-        log.debug("connected: {}", .{res});
-
-        return res;
+        return c.git_remote_connected(@ptrCast(*const c.git_remote, self)) != 0;
     }
 
     /// Cancel the operation.
@@ -270,26 +226,22 @@ pub const Remote = opaque {
     /// At certain points in its operation, the network code checks whether the operation has been cancelled and if so
     /// stops the operation.
     pub fn stop(self: *Remote) !void {
-        log.debug("Remote.stop called", .{});
+        if (internal.trace_log) log.debug("Remote.stop called", .{});
 
         try internal.wrapCall("git_remote_stop", .{
             @ptrCast(*c.git_remote, self),
         });
-
-        log.debug("successfully stopped remote operation", .{});
     }
 
     /// Disconnect from the remote
     ///
     /// Close the connection to the remote.
     pub fn disconnect(self: *Remote) !void {
-        log.debug("Remote.diconnect called", .{});
+        if (internal.trace_log) log.debug("Remote.diconnect called", .{});
 
         try internal.wrapCall("git_remote_disconnect", .{
             @ptrCast(*c.git_remote, self),
         });
-
-        log.debug("successfully disconnected remote", .{});
     }
 
     /// Download and index the packfile
@@ -303,7 +255,7 @@ pub const Remote = opaque {
     /// * `refspecs` - The refspecs to use for this negotiation and download. Use an empty array to use the base refspecs
     /// * `options` - The options to use for this fetch
     pub fn download(self: *Remote, refspecs: git.StrArray, options: FetchOptions) !void {
-        log.debug("Remote.download called, options: {}", .{options});
+        if (internal.trace_log) log.debug("Remote.download called", .{});
 
         const c_options = internal.make_c_option.fetchOptions(options);
 
@@ -312,8 +264,6 @@ pub const Remote = opaque {
             @ptrCast(*const c.git_strarray, &refspecs),
             &c_options,
         });
-
-        log.debug("successfully downloaded remote", .{});
     }
 
     /// Create a packfile and send it to the server
@@ -325,7 +275,7 @@ pub const Remote = opaque {
     /// * refspecs - the refspecs to use for this negotiation and upload. Use an empty array to use the base refspecs.
     /// * options - the options to use for this push.
     pub fn upload(self: *Remote, refspecs: git.StrArray, options: PushOptions) !void {
-        log.debug("Remote.upload called, options: {}", .{options});
+        if (internal.trace_log) log.debug("Remote.upload called", .{});
 
         const c_options = internal.make_c_option.pushOptions(options);
 
@@ -334,8 +284,6 @@ pub const Remote = opaque {
             @ptrCast(*const c.git_strarray, &refspecs),
             &c_options,
         });
-
-        log.debug("successfully completed upload", .{});
     }
 
     /// Update the tips to the new state.
@@ -357,11 +305,7 @@ pub const Remote = opaque {
         download_tags: RemoteAutoTagOption,
         reflog_message: ?[:0]const u8,
     ) !void {
-        log.debug("Remote.updateTips called, update_fetchhead: {}, download_tags: {}, reflog_message: {s}", .{
-            update_fetchead,
-            download_tags,
-            reflog_message,
-        });
+        if (internal.trace_log) log.debug("Remote.updateTips called", .{});
 
         const c_reflog_message = if (reflog_message) |s| s.ptr else null;
 
@@ -372,8 +316,6 @@ pub const Remote = opaque {
             @enumToInt(download_tags),
             c_reflog_message,
         });
-
-        log.debug("successfully updated tips", .{});
     }
 
     /// Download new data and update tips.
@@ -388,7 +330,7 @@ pub const Remote = opaque {
         options: FetchOptions,
         reflog_message: ?[:0]const u8,
     ) !void {
-        log.debug("Remote.fetch called, options: {}, reflog_message: {s}", .{ options, reflog_message });
+        if (internal.trace_log) log.debug("Remote.fetch called", .{});
 
         const c_reflog_message = if (reflog_message) |s| s.ptr else null;
         const c_options = internal.make_c_option.fetchOptions(options);
@@ -399,8 +341,6 @@ pub const Remote = opaque {
             &c_options,
             c_reflog_message,
         });
-
-        log.debug("successfully fetched remote", .{});
     }
 
     /// Prune tracking refs that are no longer present on remote.
@@ -408,14 +348,12 @@ pub const Remote = opaque {
     /// ## Parameters
     /// * `callbacks` - Callbacks to use for this prune.
     pub fn prune(self: *Remote, callbacks: RemoteCallbacks) !void {
-        log.debug("Remote.prune called", .{});
+        if (internal.trace_log) log.debug("Remote.prune called", .{});
 
         try internal.wrapCall("git_remote_prune", .{
             @ptrCast(*c.git_remote, self),
             @ptrCast(*const c.git_remote_callbacks, &callbacks),
         });
-
-        log.debug("successfully pruned remote", .{});
     }
 
     /// Preform a push.
@@ -424,7 +362,7 @@ pub const Remote = opaque {
     /// * `refspecs` - The refspecs to use for pushing. If an empty array is provided, the configured refspecs will be used.
     /// * `options` - The options to use for this push.
     pub fn push(self: *Remote, refspecs: git.StrArray, options: PushOptions) !void {
-        log.debug("Remote.push called, options: {}", .{options});
+        if (internal.trace_log) log.debug("Remote.push called", .{});
 
         const c_options = internal.make_c_option.pushOptions(options);
 
@@ -433,47 +371,33 @@ pub const Remote = opaque {
             @ptrCast(*const c.git_strarray, &refspecs),
             &c_options,
         });
-
-        log.debug("successfully pushed remote", .{});
     }
 
     /// Get the statistics structure that is filled in by the fetch operation.
     pub fn getStats(self: *Remote) *const git.IndexerProgress {
-        log.debug("Remote.getStats called", .{});
+        if (internal.trace_log) log.debug("Remote.getStats called", .{});
 
-        const ret = @ptrCast(
+        return @ptrCast(
             *const git.IndexerProgress,
             c.git_remote_stats(@ptrCast(*c.git_remote, self)),
         );
-
-        log.debug("successfully got statistics", .{});
-
-        return ret;
     }
 
     /// Retrieve the tag auto-follow setting.
     pub fn getAutotag(self: *const Remote) RemoteAutoTagOption {
-        log.debug("Remote.getAutotag called", .{});
+        if (internal.trace_log) log.debug("Remote.getAutotag called", .{});
 
-        const ret = @intToEnum(
+        return @intToEnum(
             RemoteAutoTagOption,
             c.git_remote_autotag(@ptrCast(*const c.git_remote, self)),
         );
-
-        log.debug("autotag setting: {}", .{ret});
-
-        return ret;
     }
 
     /// Retrieve the ref-prune setting.
     pub fn getPruneRefSetting(self: *const Remote) bool {
-        log.debug("Remote.getPruneRefSetting called", .{});
+        if (internal.trace_log) log.debug("Remote.getPruneRefSetting called", .{});
 
-        const ret = c.git_remote_prune_refs(@ptrCast(*const c.git_remote, self)) != 0;
-
-        log.debug("prune ref: {}", .{ret});
-
-        return ret;
+        return c.git_remote_prune_refs(@ptrCast(*const c.git_remote, self)) != 0;
     }
 
     /// Retrieve the name of the remote's default branch
@@ -484,7 +408,7 @@ pub const Remote = opaque {
     ///
     /// This function must only be called after connecting.
     pub fn defaultBranch(self: *Remote) !git.Buf {
-        log.debug("Remote.defaultBranch called", .{});
+        if (internal.trace_log) log.debug("Remote.defaultBranch called", .{});
 
         var buf = git.Buf{};
 
@@ -492,8 +416,6 @@ pub const Remote = opaque {
             @ptrCast(*c.git_buf, &buf),
             @ptrCast(*c.git_remote, self),
         });
-
-        log.debug("successfully found default branch: {s}", .{buf.toSlice()});
 
         return buf;
     }

@@ -18,11 +18,9 @@ pub const MessageTrailerArray = extern struct {
     }
 
     pub fn deinit(self: *MessageTrailerArray) void {
-        log.debug("MessageTrailerArray.deinit called", .{});
+        if (internal.trace_log) log.debug("MessageTrailerArray.deinit called", .{});
 
         c.git_message_trailer_array_free(@ptrCast(*c.git_message_trailer_array, self));
-
-        log.debug("message trailer array freed successfully", .{});
     }
 
     /// Represents a single git message trailer.

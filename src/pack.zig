@@ -7,158 +7,104 @@ const git = @import("git.zig");
 
 pub const PackBuilder = opaque {
     pub fn deinit(self: *PackBuilder) void {
-        log.debug("PackBuilder.deinit called", .{});
+        if (internal.trace_log) log.debug("PackBuilder.deinit called", .{});
 
         c.git_packbuilder_free(@ptrCast(*c.git_packbuilder, self));
-
-        log.debug("PackBuilder freed successfully", .{});
     }
 
     /// Set number of threads to spawn
     ///
     /// By default, libgit2 won't spawn any threads at all; when set to 0, libgit2 will autodetect the number of CPUs.
     pub fn setThreads(self: *PackBuilder, n: c_uint) c_uint {
-        log.debug("PackBuilder.setThreads called, n: {}", .{n});
+        if (internal.trace_log) log.debug("PackBuilder.setThreads called", .{});
 
-        const ret = c.git_packbuilder_set_threads(
+        return c.git_packbuilder_set_threads(
             @ptrCast(*c.git_packbuilder, self),
             n,
         );
-
-        log.debug("set number of threads to: {}", .{ret});
-
-        return ret;
     }
 
     /// Get the total number of objects the packbuilder will write out
     pub fn objectCount(self: *PackBuilder) usize {
-        log.debug("PackBuilder.objectCount called", .{});
+        if (internal.trace_log) log.debug("PackBuilder.objectCount called", .{});
 
-        const ret = c.git_packbuilder_object_count(@ptrCast(*c.git_packbuilder, self));
-
-        log.debug("number of objects: {}", .{ret});
-
-        return ret;
+        return c.git_packbuilder_object_count(@ptrCast(*c.git_packbuilder, self));
     }
 
     /// Get the number of objects the packbuilder has already written out
     pub fn writtenCount(self: *PackBuilder) usize {
-        log.debug("PackBuilder.writtenCount called", .{});
+        if (internal.trace_log) log.debug("PackBuilder.writtenCount called", .{});
 
-        const ret = c.git_packbuilder_written(@ptrCast(*c.git_packbuilder, self));
-
-        log.debug("number of written objects: {}", .{ret});
-
-        return ret;
+        return c.git_packbuilder_written(@ptrCast(*c.git_packbuilder, self));
     }
 
     /// Insert a single object
     ///
     /// For an optimal pack it's mandatory to insert objects in recency order, commits followed by trees and blobs.
     pub fn insert(self: *PackBuilder, id: *const git.Oid, name: [:0]const u8) !void {
-        // This check is to prevent formating the oid when we are not going to print anything
-        if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-            var buf: [git.Oid.hex_buffer_size]u8 = undefined;
-            const slice = try id.formatHex(&buf);
-            log.debug("PackBuilder.insert called, id: {s}, name: {s}", .{
-                slice,
-                name,
-            });
-        }
+        if (internal.trace_log) log.debug("PackBuilder.insert called", .{});
 
         try internal.wrapCall("git_packbuilder_insert", .{
             @ptrCast(*c.git_packbuilder, self),
             @ptrCast(*const c.git_oid, id),
             name.ptr,
         });
-
-        log.debug("successfully inserted object", .{});
     }
 
     /// Recursively insert an object and its referenced objects
     ///
     /// Insert the object as well as any object it references.
     pub fn insertRecursive(self: *PackBuilder, id: *const git.Oid, name: [:0]const u8) !void {
-        // This check is to prevent formating the oid when we are not going to print anything
-        if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-            var buf: [git.Oid.hex_buffer_size]u8 = undefined;
-            const slice = try id.formatHex(&buf);
-            log.debug("PackBuilder.insertRecursive called, id: {s}, name: {s}", .{
-                slice,
-                name,
-            });
-        }
+        if (internal.trace_log) log.debug("PackBuilder.insertRecursive called", .{});
 
         try internal.wrapCall("git_packbuilder_insert_recur", .{
             @ptrCast(*c.git_packbuilder, self),
             @ptrCast(*const c.git_oid, id),
             name.ptr,
         });
-
-        log.debug("successfully inserted object", .{});
     }
 
     /// Insert a root tree object
     ///
     /// This will add the tree as well as all referenced trees and blobs.
     pub fn insertTree(self: *PackBuilder, id: *const git.Oid) !void {
-        // This check is to prevent formating the oid when we are not going to print anything
-        if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-            var buf: [git.Oid.hex_buffer_size]u8 = undefined;
-            const slice = try id.formatHex(&buf);
-            log.debug("PackBuilder.insertTree called, id: {s}", .{
-                slice,
-            });
-        }
+        if (internal.trace_log) log.debug("PackBuilder.insertTree called", .{});
 
         try internal.wrapCall("git_packbuilder_insert_tree", .{
             @ptrCast(*c.git_packbuilder, self),
             @ptrCast(*const c.git_oid, id),
         });
-
-        log.debug("successfully inserted root tree", .{});
     }
 
     /// Insert a commit object
     ///
     /// This will add a commit as well as the completed referenced tree.
     pub fn insertCommit(self: *PackBuilder, id: *const git.Oid) !void {
-        // This check is to prevent formating the oid when we are not going to print anything
-        if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-            var buf: [git.Oid.hex_buffer_size]u8 = undefined;
-            const slice = try id.formatHex(&buf);
-            log.debug("PackBuilder.insertCommit called, id: {s}", .{
-                slice,
-            });
-        }
+        if (internal.trace_log) log.debug("PackBuilder.insertCommit called", .{});
 
         try internal.wrapCall("git_packbuilder_insert_commit", .{
             @ptrCast(*c.git_packbuilder, self),
             @ptrCast(*const c.git_oid, id),
         });
-
-        log.debug("successfully inserted commit", .{});
     }
 
     /// Insert objects as given by the walk
     ///
     /// Those commits and all objects they reference will be inserted into the packbuilder.
     pub fn insertWalk(self: *PackBuilder, walk: *git.RevWalk) !void {
-        log.debug("PackBuilder.insertWalk called, walk: {*}", .{walk});
+        if (internal.trace_log) log.debug("PackBuilder.insertWalk called", .{});
 
         try internal.wrapCall("git_packbuilder_insert_walk", .{
             @ptrCast(*c.git_packbuilder, self),
             @ptrCast(*c.git_revwalk, walk),
         });
-
-        log.debug("successfully inserted walk", .{});
     }
 
     /// Write the contents of the packfile to an in-memory buffer
     ///
     /// The contents of the buffer will become a valid packfile, even though there will be no attached index
     pub fn writeToBuffer(self: *PackBuilder) !git.Buf {
-        log.debug("PackBuilder.writeToBuffer called", .{});
+        if (internal.trace_log) log.debug("PackBuilder.writeToBuffer called", .{});
 
         var buf: git.Buf = .{};
 
@@ -166,8 +112,6 @@ pub const PackBuilder = opaque {
             @ptrCast(*c.git_buf, &buf),
             @ptrCast(*c.git_packbuilder, self),
         });
-
-        log.debug("successfully wrote packfile to buffer", .{});
 
         return buf;
     }
@@ -178,7 +122,7 @@ pub const PackBuilder = opaque {
     /// * `path` - Path to the directory where the packfile and index should be stored, or `null` for default location
     /// * `mode` - Permissions to use creating a packfile or 0 for defaults
     pub fn writeToFile(self: *PackBuilder, path: ?[:0]const u8, mode: c_uint) !void {
-        log.debug("PackBuilder.writeToFile called, path: {s}, mode: {o}", .{ path, mode });
+        if (internal.trace_log) log.debug("PackBuilder.writeToFile called", .{});
 
         const path_c = if (path) |str| str.ptr else null;
 
@@ -189,8 +133,6 @@ pub const PackBuilder = opaque {
             null,
             null,
         });
-
-        log.debug("successfully wrote packfile to file", .{});
     }
 
     /// Write the new pack and corresponding index file to path.
@@ -253,7 +195,7 @@ pub const PackBuilder = opaque {
             }
         }.cb;
 
-        log.debug("PackBuilder.writeToFileCallbackWithUserData called, path: {s}, mode: {o}", .{ path, mode });
+        if (internal.trace_log) log.debug("PackBuilder.writeToFileCallbackWithUserData called", .{});
 
         const path_c = if (path) |str| str.ptr else null;
 
@@ -264,8 +206,6 @@ pub const PackBuilder = opaque {
             cb,
             user_data,
         });
-
-        log.debug("successfully wrote packfile to file", .{});
     }
 
     /// Get the packfile's hash
@@ -273,20 +213,12 @@ pub const PackBuilder = opaque {
     /// A packfile's name is derived from the sorted hashing of all object names. 
     /// This is only correct after the packfile has been written.
     pub fn hash(self: *PackBuilder) *const git.Oid {
-        log.debug("PackBuilder.hash called", .{});
+        if (internal.trace_log) log.debug("PackBuilder.hash called", .{});
 
         const ret = @ptrCast(
             *const git.Oid,
             c.git_packbuilder_hash(@ptrCast(*c.git_packbuilder, self)),
         );
-
-        // This check is to prevent formating the oid when we are not going to print anything
-        if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-            var buf: [git.Oid.hex_buffer_size]u8 = undefined;
-            if (ret.formatHex(&buf)) |slice| {
-                log.debug("packfile hash: {s}", .{slice});
-            } else |_| {}
-        }
 
         return ret;
     }
@@ -351,7 +283,7 @@ pub const PackBuilder = opaque {
             }
         }.cb;
 
-        log.debug("PackBuilder.foreachWithUserData called", .{});
+        if (internal.trace_log) log.debug("PackBuilder.foreachWithUserData called", .{});
 
         try internal.wrapCall("git_packbuilder_foreach", .{
             @ptrCast(*c.git_packbuilder, self),
@@ -425,7 +357,7 @@ pub const PackBuilder = opaque {
             }
         }.cb;
 
-        log.debug("PackBuilder.setCallbacksWithUserData called", .{});
+        if (internal.trace_log) log.debug("PackBuilder.setCallbacksWithUserData called", .{});
 
         _ = c.git_packbuilder_set_callbacks(
             @ptrCast(*c.git_packbuilder, self),

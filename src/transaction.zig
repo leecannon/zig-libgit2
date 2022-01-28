@@ -10,11 +10,9 @@ pub const Transaction = opaque {
     ///
     /// If any references remain locked, they will be unlocked without any changes made to them.
     pub fn deinit(self: *Transaction) !void {
-        log.debug("Transaction.deinit called", .{});
+        if (internal.trace_log) log.debug("Transaction.deinit called", .{});
 
         c.git_transaction_free(@ptrCast(*c.git_transaction, self));
-
-        log.debug("transaction freed successfully", .{});
     }
 
     /// Lock a reference
@@ -24,14 +22,12 @@ pub const Transaction = opaque {
     /// ## Parameters
     /// * `refname` - The reference to lock
     pub fn lockReference(self: *Transaction, refname: [:0]const u8) !void {
-        log.debug("Transaction.lockReference called, refname={s}", .{refname});
+        if (internal.trace_log) log.debug("Transaction.lockReference called", .{});
 
         try internal.wrapCall("git_transaction_lock_ref", .{
             @ptrCast(*c.git_transaction, self),
             refname.ptr,
         });
-
-        log.debug("successfully locked reference", .{});
     }
 
     /// Set the target of a reference
@@ -50,12 +46,7 @@ pub const Transaction = opaque {
         signature: ?*const git.Signature,
         message: [:0]const u8,
     ) !void {
-        log.debug("Transaction.setTarget called, refname={s}, target={*}, signature={*}, message={s}", .{
-            refname,
-            target,
-            signature,
-            message,
-        });
+        if (internal.trace_log) log.debug("Transaction.setTarget called", .{});
 
         try internal.wrapCall("git_transaction_set_target", .{
             @ptrCast(*c.git_transaction, self),
@@ -64,8 +55,6 @@ pub const Transaction = opaque {
             @ptrCast(?*const c.git_signature, signature),
             message.ptr,
         });
-
-        log.debug("successfully set target", .{});
     }
 
     /// Set the target of a reference
@@ -84,12 +73,7 @@ pub const Transaction = opaque {
         signature: ?*const git.Signature,
         message: [:0]const u8,
     ) !void {
-        log.debug("Transaction.setSymbolicTarget called, refname={s}, target={s}, signature={*}, message={s}", .{
-            refname,
-            target,
-            signature,
-            message,
-        });
+        if (internal.trace_log) log.debug("Transaction.setSymbolicTarget called", .{});
 
         try internal.wrapCall("git_transaction_set_symbolic_target", .{
             @ptrCast(*c.git_transaction, self),
@@ -98,8 +82,6 @@ pub const Transaction = opaque {
             @ptrCast(?*const c.git_signature, signature),
             message.ptr,
         });
-
-        log.debug("successfully set target", .{});
     }
 
     /// Set the reflog of a reference
@@ -111,15 +93,13 @@ pub const Transaction = opaque {
     /// * `refname` - The reference to lock
     /// * `reflog` - The reflog as it should be written out
     pub fn setReflog(self: *Transaction, refname: [:0]const u8, reflog: *const git.Reflog) !void {
-        log.debug("Transaction.setReflog called, refname={s}, reflog={*}", .{ refname, reflog });
+        if (internal.trace_log) log.debug("Transaction.setReflog called", .{});
 
         try internal.wrapCall("git_transaction_set_reflog", .{
             @ptrCast(*c.git_transaction, self),
             refname.ptr,
             @ptrCast(?*const c.git_reflog, reflog),
         });
-
-        log.debug("successfully set reflog", .{});
     }
 
     /// Remove a reference
@@ -127,14 +107,12 @@ pub const Transaction = opaque {
     /// ## Parameters
     /// * `refname` - The reference to remove
     pub fn remove(self: *Transaction, refname: [:0]const u8) !void {
-        log.debug("Transaction.remove called, refname={s}", .{refname});
+        if (internal.trace_log) log.debug("Transaction.remove called", .{});
 
         try internal.wrapCall("git_transaction_remove", .{
             @ptrCast(*c.git_transaction, self),
             refname.ptr,
         });
-
-        log.debug("successfully removed reference", .{});
     }
 
     /// Commit the changes from the transaction
@@ -142,13 +120,11 @@ pub const Transaction = opaque {
     /// Perform the changes that have been queued. The updates will be made one by one, and the first failure will stop the
     /// processing.
     pub fn commit(self: *Transaction) !void {
-        log.debug("Transaction.commit called", .{});
+        if (internal.trace_log) log.debug("Transaction.commit called", .{});
 
         try internal.wrapCall("git_transaction_commit", .{
             @ptrCast(*c.git_transaction, self),
         });
-
-        log.debug("successfully commited transaction", .{});
     }
 
     comptime {

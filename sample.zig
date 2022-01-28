@@ -3,6 +3,8 @@ const git = @import("git");
 
 const repo_path = "./zig-cache/test_repo";
 
+pub const libgit2_trace_log = true;
+
 pub fn main() !void {
     defer std.fs.cwd().deleteTree(repo_path) catch {};
 

@@ -7,15 +7,13 @@ const git = @import("git.zig");
 
 pub const Config = opaque {
     pub fn deinit(self: *Config) void {
-        log.debug("Config.deinit called", .{});
+        if (internal.trace_log) log.debug("Config.deinit called", .{});
 
         c.git_config_free(@ptrCast(*c.git_config, self));
-
-        log.debug("config freed successfully", .{});
     }
 
     pub fn getEntry(self: *const Config, name: [:0]const u8) !*ConfigEntry {
-        log.debug("Config.getEntry called, name: {s}", .{name});
+        if (internal.trace_log) log.debug("Config.getEntry called", .{});
 
         var entry: *ConfigEntry = undefined;
 
@@ -25,75 +23,59 @@ pub const Config = opaque {
             name.ptr,
         });
 
-        log.debug("got entry: {*}", .{entry});
-
         return entry;
     }
 
     pub fn getInt(self: *const Config, name: [:0]const u8) !i32 {
-        log.debug("Config.getInt called, name: {s}", .{name});
+        if (internal.trace_log) log.debug("Config.getInt called", .{});
 
         var value: i32 = undefined;
 
         try internal.wrapCall("git_config_get_int32", .{ &value, @ptrCast(*const c.git_config, self), name.ptr });
 
-        log.debug("got int value: {}", .{value});
-
         return value;
     }
 
     pub fn setInt(self: *Config, name: [:0]const u8, value: i32) !void {
-        log.debug("Config.setInt called, name: {s}, value: {}", .{ name, value });
+        if (internal.trace_log) log.debug("Config.setInt called", .{});
 
         try internal.wrapCall("git_config_set_int32", .{ @ptrCast(*c.git_config, self), name.ptr, value });
-
-        log.debug("successfully set int value", .{});
     }
 
     pub fn getInt64(self: *const Config, name: [:0]const u8) !i64 {
-        log.debug("Config.getInt64 called, name: {s}", .{name});
+        if (internal.trace_log) log.debug("Config.getInt64 called", .{});
 
         var value: i64 = undefined;
 
         try internal.wrapCall("git_config_get_int64", .{ &value, @ptrCast(*const c.git_config, self), name.ptr });
 
-        log.debug("got int value: {}", .{value});
-
         return value;
     }
 
     pub fn setInt64(self: *Config, name: [:0]const u8, value: i64) !void {
-        log.debug("Config.setInt64 called, name: {s}, value: {}", .{ name, value });
+        if (internal.trace_log) log.debug("Config.setInt64 called", .{});
 
         try internal.wrapCall("git_config_set_int64", .{ @ptrCast(*c.git_config, self), name.ptr, value });
-
-        log.debug("successfully set int value", .{});
     }
 
     pub fn getBool(self: *const Config, name: [:0]const u8) !bool {
-        log.debug("Config.getBool called, name: {s}", .{name});
+        if (internal.trace_log) log.debug("Config.getBool called", .{});
 
         var value: c_int = undefined;
 
         try internal.wrapCall("git_config_get_bool", .{ &value, @ptrCast(*const c.git_config, self), name.ptr });
 
-        const ret = value != 0;
-
-        log.debug("got bool value: {}", .{ret});
-
-        return ret;
+        return value != 0;
     }
 
     pub fn setBool(self: *Config, name: [:0]const u8, value: bool) !void {
-        log.debug("Config.setBool called, name: {s}, value: {}", .{ name, value });
+        if (internal.trace_log) log.debug("Config.setBool called", .{});
 
         try internal.wrapCall("git_config_set_bool", .{ @ptrCast(*c.git_config, self), name.ptr, @boolToInt(value) });
-
-        log.debug("successfully set bool value", .{});
     }
 
     pub fn getPath(self: *const Config, name: [:0]const u8) !git.Buf {
-        log.debug("Config.getPath called, name: {s}", .{name});
+        if (internal.trace_log) log.debug("Config.getPath called", .{});
 
         var buf: git.Buf = .{};
 
@@ -103,13 +85,11 @@ pub const Config = opaque {
             name.ptr,
         });
 
-        log.debug("got path value: {s}", .{buf.toSlice()});
-
         return buf;
     }
 
     pub fn getString(self: *const Config, name: [:0]const u8) ![:0]const u8 {
-        log.debug("Config.getString called, name: {s}", .{name});
+        if (internal.trace_log) log.debug("Config.getString called", .{});
 
         var str: ?[*:0]const u8 = undefined;
 
@@ -119,31 +99,23 @@ pub const Config = opaque {
             name.ptr,
         });
 
-        const slice = std.mem.sliceTo(str.?, 0);
-
-        log.debug("got string value: {s}", .{slice});
-
-        return slice;
+        return std.mem.sliceTo(str.?, 0);
     }
 
     pub fn setString(self: *Config, name: [:0]const u8, value: [:0]const u8) !void {
-        log.debug("Config.setString called, name: {s}, value: {s}", .{ name, value });
+        if (internal.trace_log) log.debug("Config.setString called", .{});
 
         try internal.wrapCall("git_config_set_string", .{ @ptrCast(*c.git_config, self), name.ptr, value.ptr });
-
-        log.debug("successfully set string value", .{});
     }
 
     pub fn setMultivar(self: *Config, name: [:0]const u8, regex: [:0]const u8, value: [:0]const u8) !void {
-        log.debug("Config.setMultivar called, name: {s},regex: {s}, value: {s}", .{ name, regex, value });
+        if (internal.trace_log) log.debug("Config.setMultivar called", .{});
 
         try internal.wrapCall("git_config_set_multivar", .{ @ptrCast(*c.git_config, self), name.ptr, regex.ptr, value.ptr });
-
-        log.debug("successfully set multivar value", .{});
     }
 
     pub fn getStringBuf(self: *const Config, name: [:0]const u8) !git.Buf {
-        log.debug("Config.getStringBuf called, name: {s}", .{name});
+        if (internal.trace_log) log.debug("Config.getStringBuf called", .{});
 
         var buf: git.Buf = .{};
 
@@ -152,8 +124,6 @@ pub const Config = opaque {
             @ptrCast(*const c.git_config, self),
             name.ptr,
         });
-
-        log.debug("got string value: {s}", .{buf.toSlice()});
 
         return buf;
     }
@@ -179,21 +149,17 @@ pub const Config = opaque {
             }
         }.cb;
 
-        log.debug("Config.foreachMultivar called, name: {s}, regex: {s}", .{ name, regex });
+        if (internal.trace_log) log.debug("Config.foreachMultivar called", .{});
 
         const regex_c = if (regex) |str| str.ptr else null;
 
-        const ret = try internal.wrapCallWithReturn("git_config_get_multivar_foreach", .{
+        return try internal.wrapCallWithReturn("git_config_get_multivar_foreach", .{
             @ptrCast(*const c.git_config, self),
             name.ptr,
             regex_c,
             cb,
             user_data,
         });
-
-        log.debug("callback returned: {}", .{ret});
-
-        return ret;
     }
 
     pub fn foreachConfig(
@@ -215,17 +181,13 @@ pub const Config = opaque {
             }
         }.cb;
 
-        log.debug("Config.foreachConfig called", .{});
+        if (internal.trace_log) log.debug("Config.foreachConfig called", .{});
 
-        const ret = try internal.wrapCallWithReturn("git_config_foreach", .{
+        return try internal.wrapCallWithReturn("git_config_foreach", .{
             @ptrCast(*const c.git_config, self),
             cb,
             user_data,
         });
-
-        log.debug("callback returned: {}", .{ret});
-
-        return ret;
     }
 
     pub fn foreachConfigMatch(
@@ -248,52 +210,42 @@ pub const Config = opaque {
             }
         }.cb;
 
-        log.debug("Config.foreachConfigMatch called, regex: {s}", .{regex});
+        if (internal.trace_log) log.debug("Config.foreachConfigMatch called", .{});
 
-        const ret = try internal.wrapCallWithReturn("git_config_foreach_match", .{
+        return try internal.wrapCallWithReturn("git_config_foreach_match", .{
             @ptrCast(*const c.git_config, self),
             regex.ptr,
             cb,
             user_data,
         });
-
-        log.debug("callback returned: {}", .{ret});
-
-        return ret;
     }
 
     pub fn deleteEntry(self: *Config, name: [:0]const u8) !void {
-        log.debug("Config.deleteEntry called, name: {s}", .{name});
+        if (internal.trace_log) log.debug("Config.deleteEntry called", .{});
 
         try internal.wrapCall("git_config_delete_entry", .{ @ptrCast(*c.git_config, self), name.ptr });
-
-        log.debug("successfully deleted entry", .{});
     }
 
     pub fn deleteMultivar(self: *Config, name: [:0]const u8, regex: [:0]const u8) !void {
-        log.debug("Config.deleteMultivar called, name: {s}, regex: {s}", .{ name, regex });
+        if (internal.trace_log) log.debug("Config.deleteMultivar called", .{});
 
         try internal.wrapCall("git_config_delete_multivar", .{ @ptrCast(*c.git_config, self), name.ptr, regex.ptr });
-
-        log.debug("successfully deleted multivar", .{});
     }
 
     pub fn addFileOnDisk(self: *Config, path: [:0]const u8, level: ConfigLevel, repo: *const git.Repository, force: bool) !void {
-        log.debug("Config.addFileOnDisk called, path: {s}, level: {}, repo: {*}, force: {}", .{ path, level, repo, force });
+        if (internal.trace_log) log.debug("Config.addFileOnDisk called", .{});
 
         try internal.wrapCall("git_config_add_file_ondisk", .{
             @ptrCast(*c.git_config, self),
             path.ptr,
             @enumToInt(level),
-            @ptrCast(*const c.git_repository, self),
+            @ptrCast(*const c.git_repository, repo),
             @boolToInt(force),
         });
-
-        log.debug("", .{});
     }
 
     pub fn openLevel(self: *const Config, level: ConfigLevel) !*Config {
-        log.debug("Config.openLevel called, level: {}", .{level});
+        if (internal.trace_log) log.debug("Config.openLevel called", .{});
 
         var config: *Config = undefined;
 
@@ -303,13 +255,11 @@ pub const Config = opaque {
             @enumToInt(level),
         });
 
-        log.debug("opened config for level", .{});
-
         return config;
     }
 
     pub fn openGlobal(self: *git.Config) !*Config {
-        log.debug("Config.openGlobal called", .{});
+        if (internal.trace_log) log.debug("Config.openGlobal called", .{});
 
         var config: *Config = undefined;
 
@@ -318,13 +268,11 @@ pub const Config = opaque {
             @ptrCast(*c.git_config, self),
         });
 
-        log.debug("opened global config", .{});
-
         return config;
     }
 
     pub fn snapshot(self: *git.Config) !*Config {
-        log.debug("Config.snapshot called", .{});
+        if (internal.trace_log) log.debug("Config.snapshot called", .{});
 
         var config: *Config = undefined;
 
@@ -333,13 +281,11 @@ pub const Config = opaque {
             @ptrCast(*c.git_config, self),
         });
 
-        log.debug("created snapshot of config", .{});
-
         return config;
     }
 
     pub fn lock(self: *Config) !*git.Transaction {
-        log.debug("Config.lock called", .{});
+        if (internal.trace_log) log.debug("Config.lock called", .{});
 
         var transaction: *git.Transaction = undefined;
 
@@ -348,13 +294,11 @@ pub const Config = opaque {
             @ptrCast(*c.git_config, self),
         });
 
-        log.debug("successfully locked config", .{});
-
         return transaction;
     }
 
     pub fn iterateMultivar(self: *const Config, name: [:0]const u8, regex: ?[:0]const u8) !*ConfigIterator {
-        log.debug("Config.iterateMultivar called, name: {s}, regex: {s}", .{ name, regex });
+        if (internal.trace_log) log.debug("Config.iterateMultivar called", .{});
 
         var iterator: *ConfigIterator = undefined;
 
@@ -367,13 +311,11 @@ pub const Config = opaque {
             regex_c,
         });
 
-        log.debug("multivar config iterator created successfully", .{});
-
         return iterator;
     }
 
     pub fn iterate(self: *const Config) !*ConfigIterator {
-        log.debug("Config.iterate called", .{});
+        if (internal.trace_log) log.debug("Config.iterate called", .{});
 
         var iterator: *ConfigIterator = undefined;
 
@@ -382,13 +324,11 @@ pub const Config = opaque {
             @ptrCast(*const c.git_config, self),
         });
 
-        log.debug("config iterator created successfully", .{});
-
         return iterator;
     }
 
     pub fn iterateGlob(self: *const Config, regex: [:0]const u8) !*ConfigIterator {
-        log.debug("Config.iterateGlob called", .{});
+        if (internal.trace_log) log.debug("Config.iterateGlob called", .{});
 
         var iterator: *ConfigIterator = undefined;
 
@@ -398,14 +338,12 @@ pub const Config = opaque {
             regex.ptr,
         });
 
-        log.debug("config iterator created successfully", .{});
-
         return iterator;
     }
 
     pub const ConfigIterator = opaque {
         pub fn next(self: *ConfigIterator) !?*ConfigEntry {
-            log.debug("ConfigIterator.next called", .{});
+            if (internal.trace_log) log.debug("ConfigIterator.next called", .{});
 
             var entry: *ConfigEntry = undefined;
 
@@ -417,17 +355,13 @@ pub const Config = opaque {
                 else => |e| return e,
             };
 
-            log.debug("successfully fetched config entry: {*}", .{entry});
-
             return entry;
         }
 
         pub fn deinit(self: *ConfigIterator) void {
-            log.debug("ConfigIterator.deinit called", .{});
+            if (internal.trace_log) log.debug("ConfigIterator.deinit called", .{});
 
             c.git_config_iterator_free(@ptrCast(*c.git_config_iterator, self));
-
-            log.debug("config iterator freed successfully", .{});
         }
 
         comptime {
@@ -436,7 +370,7 @@ pub const Config = opaque {
     };
 
     pub fn getMapped(self: *const Config, name: [:0]const u8, maps: []const ConfigMap) !c_int {
-        log.debug("Config.getMapped called, name: {s}", .{name});
+        if (internal.trace_log) log.debug("Config.getMapped called", .{});
 
         var value: c_int = undefined;
 
@@ -448,30 +382,36 @@ pub const Config = opaque {
             maps.len,
         });
 
-        log.debug("mapped to: {}", .{value});
-
         return value;
     }
 
     pub fn parseBool(value: [:0]const u8) !bool {
+        if (internal.trace_log) log.debug("Config.parseBool called", .{});
+
         var res: c_int = undefined;
         try internal.wrapCall("git_config_parse_bool", .{ &res, value.ptr });
         return res != 0;
     }
 
     pub fn parseInt(value: [:0]const u8) !i32 {
+        if (internal.trace_log) log.debug("Config.parseInt called", .{});
+
         var res: i32 = undefined;
         try internal.wrapCall("git_config_parse_int32", .{ &res, value.ptr });
         return res;
     }
 
     pub fn parseInt64(value: [:0]const u8) !i64 {
+        if (internal.trace_log) log.debug("Config.parseInt64 called", .{});
+
         var res: i64 = undefined;
         try internal.wrapCall("git_config_parse_int64", .{ &res, value.ptr });
         return res;
     }
 
     pub fn parsePath(value: [:0]const u8) !git.Buf {
+        if (internal.trace_log) log.debug("Config.parsePath called", .{});
+
         var buf: git.Buf = .{};
         try internal.wrapCall("git_config_parse_path", .{ @ptrCast(*c.git_buf, &buf), value.ptr });
         return buf;
@@ -490,7 +430,7 @@ pub const Config = opaque {
         };
 
         pub fn lookupMapValue(maps: []const ConfigMap, value: [:0]const u8) !c_int {
-            log.debug("ConfigMap.lookupMapValue called, value: {s}", .{value});
+            if (internal.trace_log) log.debug("ConfigMap.lookupMapValue called", .{});
 
             var result: c_int = undefined;
 
@@ -500,8 +440,6 @@ pub const Config = opaque {
                 maps.len,
                 value.ptr,
             });
-
-            log.debug("mapped to: {}", .{result});
 
             return result;
         }
@@ -531,11 +469,9 @@ pub const Config = opaque {
         payload: *anyopaque,
 
         pub fn deinit(self: *ConfigEntry) void {
-            log.debug("ConfigEntry.deinit called", .{});
+            if (internal.trace_log) log.debug("ConfigEntry.deinit called", .{});
 
             c.git_config_entry_free(@ptrCast(*c.git_config_entry, self));
-
-            log.debug("config entry freed successfully", .{});
         }
 
         test {
@@ -574,18 +510,14 @@ pub const ConfigBackend = opaque {
             }
         }.cb;
 
-        log.debug("Config.foreachConfigBackendMatch called, regex: {s}", .{regex});
+        if (internal.trace_log) log.debug("Config.foreachConfigBackendMatch called", .{});
 
-        const ret = try internal.wrapCallWithReturn("git_config_backend_foreach_match", .{
+        return try internal.wrapCallWithReturn("git_config_backend_foreach_match", .{
             @ptrCast(*const c.git_config_backend, self),
             regex.ptr,
             cb,
             user_data,
         });
-
-        log.debug("callback returned: {}", .{ret});
-
-        return ret;
     }
 
     comptime {

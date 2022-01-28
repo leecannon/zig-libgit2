@@ -15,31 +15,19 @@ pub const Object = opaque {
     /// IMPORTANT:
     /// It *is* necessary to call this method when you stop using an object. Failure to do so will cause a memory leak.
     pub fn deinit(self: *Object) void {
-        log.debug("Object.deinit called", .{});
+        if (internal.trace_log) log.debug("Object.deinit called", .{});
 
         c.git_object_free(@ptrCast(*c.git_object, self));
-
-        log.debug("object freed successfully", .{});
     }
 
     /// Get the id (SHA1) of a repository object
     pub fn id(self: *const Object) *const git.Oid {
-        log.debug("Object.id called", .{});
+        if (internal.trace_log) log.debug("Object.id called", .{});
 
-        const ret = @ptrCast(
+        return @ptrCast(
             *const git.Oid,
             c.git_object_id(@ptrCast(*const c.git_object, self)),
         );
-
-        // This check is to prevent formating the oid when we are not going to print anything
-        if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-            var buf: [git.Oid.hex_buffer_size]u8 = undefined;
-            if (ret.formatHex(&buf)) |slice| {
-                log.debug("object id: {s}", .{slice});
-            } else |_| {}
-        }
-
-        return ret;
     }
 
     /// Get a short abbreviated OID string for the object
@@ -48,7 +36,7 @@ pub const Object = opaque {
     /// is ambiguous.
     /// The result will be unambiguous (at least until new objects are added to the repository).
     pub fn shortId(self: *const Object) !git.Buf {
-        log.debug("Object.shortId called", .{});
+        if (internal.trace_log) log.debug("Object.shortId called", .{});
 
         var buf: git.Buf = .{};
 
@@ -57,55 +45,44 @@ pub const Object = opaque {
             @ptrCast(*const c.git_object, self),
         });
 
-        log.debug("object short id: {s}", .{buf.toSlice()});
-
         return buf;
     }
 
     /// Get the object type of an object
     pub fn objectType(self: *const Object) ObjectType {
-        log.debug("Object.objectType called", .{});
+        if (internal.trace_log) log.debug("Object.objectType called", .{});
 
-        const ret = @intToEnum(
+        return @intToEnum(
             ObjectType,
             c.git_object_type(@ptrCast(*const c.git_object, self)),
         );
-
-        log.debug("object type: {}", .{ret});
-
-        return ret;
     }
 
     /// Get the repository that owns this object
     pub fn objectOwner(self: *const Object) *const git.Repository {
-        log.debug("Object.objectOwner called", .{});
+        if (internal.trace_log) log.debug("Object.objectOwner called", .{});
 
-        const ret = @ptrCast(
+        return @ptrCast(
             *const git.Repository,
             c.git_object_owner(@ptrCast(*const c.git_object, self)),
         );
-
-        log.debug("object owner: {*}", .{ret});
-
-        return ret;
     }
 
     /// Describe a commit
     ///
     /// Perform the describe operation on the given committish object.
     pub fn describe(self: *Object, options: git.DescribeOptions) !*git.DescribeResult {
-        log.debug("Object.describe called, options: {}", .{options});
+        if (internal.trace_log) log.debug("Object.describe called", .{});
 
         var result: *git.DescribeResult = undefined;
 
         var c_options = internal.make_c_option.describeOptions(options);
+
         try internal.wrapCall("git_describe_commit", .{
             @ptrCast(*?*c.git_describe_result, &result),
             @ptrCast(*c.git_object, self),
             &c_options,
         });
-
-        log.debug("successfully described commitish object", .{});
 
         return result;
     }
@@ -117,7 +94,7 @@ pub const Object = opaque {
     /// * `path` - Relative path from the root object to the desired object
     /// * `object_type` - Type of object desired
     pub fn lookupByPath(self: *const Object, path: [:0]const u8, object_type: ObjectType) !*Object {
-        log.debug("Object.lookupByPath called, path: {s}, object_type: {}", .{ path, object_type });
+        if (internal.trace_log) log.debug("Object.lookupByPath called", .{});
 
         var ret: *Object = undefined;
 
@@ -127,8 +104,6 @@ pub const Object = opaque {
             path.ptr,
             @enumToInt(object_type),
         });
-
-        log.debug("successfully found object: {*}", .{ret});
 
         return ret;
     }
@@ -150,7 +125,7 @@ pub const Object = opaque {
     /// ## Parameters
     /// * `target_type` - The type of the requested object
     pub fn peel(self: *const Object, target_type: ObjectType) !*git.Object {
-        log.debug("Object.peel called, target_type: {}", .{target_type});
+        if (internal.trace_log) log.debug("Object.peel called", .{});
 
         var ret: *Object = undefined;
 
@@ -160,14 +135,12 @@ pub const Object = opaque {
             @enumToInt(target_type),
         });
 
-        log.debug("successfully found object: {*}", .{ret});
-
         return ret;
     }
 
     /// Create an in-memory copy of a Git object. The copy must be explicitly `deinit`'d or it will leak.
     pub fn duplicate(self: *Object) *Object {
-        log.debug("Object.duplicate called", .{});
+        if (internal.trace_log) log.debug("Object.duplicate called", .{});
 
         var ret: *Object = undefined;
 
@@ -175,8 +148,6 @@ pub const Object = opaque {
             @ptrCast(*?*c.git_object, &ret),
             @ptrCast(*c.git_object, self),
         );
-
-        log.debug("successfully duplicated object", .{});
 
         return ret;
     }

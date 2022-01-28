@@ -7,15 +7,13 @@ const git = @import("git.zig");
 
 pub const Odb = opaque {
     pub fn deinit(self: *Odb) void {
-        log.debug("Odb.deinit called", .{});
+        if (internal.trace_log) log.debug("Odb.deinit called", .{});
 
         c.git_odb_free(@ptrCast(*c.git_odb, self));
-
-        log.debug("Odb freed successfully", .{});
     }
 
     pub fn repositoryOpen(self: *Odb) !*git.Repository {
-        log.debug("Odb.repositoryOpen called", .{});
+        if (internal.trace_log) log.debug("Odb.repositoryOpen called", .{});
 
         var repo: *git.Repository = undefined;
 
@@ -23,8 +21,6 @@ pub const Odb = opaque {
             @ptrCast(*?*c.git_repository, &repo),
             @ptrCast(*c.git_odb, self),
         });
-
-        log.debug("repository opened successfully", .{});
 
         return repo;
     }

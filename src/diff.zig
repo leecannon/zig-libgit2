@@ -15,11 +15,9 @@ const git = @import("git.zig");
 /// freed.
 pub const Diff = opaque {
     pub fn deinit(self: *Diff) void {
-        log.debug("Diff.deinit called", .{});
+        if (internal.trace_log) log.debug("Diff.deinit called", .{});
 
         c.git_diff_free(@ptrCast(*c.git_diff, self));
-
-        log.debug("diff freed successfully", .{});
     }
 
     /// Return a patch for an entry in the diff list.
@@ -33,7 +31,7 @@ pub const Diff = opaque {
     /// ## Parameters
     /// * `index` - Index into diff list
     pub fn toPatch(self: *Diff, index: usize) !?*git.Patch {
-        log.debug("Diff.toPatch called, index={}", .{index});
+        if (internal.trace_log) log.debug("Diff.toPatch called", .{});
 
         var ret: ?*git.Patch = undefined;
 
@@ -42,8 +40,6 @@ pub const Diff = opaque {
             @ptrCast(*c.git_diff, self),
             index,
         });
-
-        log.debug("successfully made patch {*} for diff", .{ret});
 
         return ret;
     }
@@ -67,23 +63,19 @@ pub const Diff = opaque {
         options: git.PathspecMatchOptions,
         match_list: ?**git.PathspecMatchList,
     ) !bool {
-        log.debug("Diff.pathspecMatch called, options: {}, pathspec: {*}", .{ options, pathspec });
+        if (internal.trace_log) log.debug("Diff.pathspecMatch called", .{});
 
-        const ret = (try internal.wrapCallWithReturn("git_pathspec_match_diff", .{
+        return (try internal.wrapCallWithReturn("git_pathspec_match_diff", .{
             @ptrCast(?*?*c.git_pathspec_match_list, match_list),
             @ptrCast(*c.git_diff, self),
             @bitCast(c.git_pathspec_flag_t, options),
             @ptrCast(*c.git_pathspec, pathspec),
         })) != 0;
-
-        log.debug("match: {}", .{ret});
-
-        return ret;
     }
 
     /// Get performance data for a diff object.
     pub fn getPerfData(self: *const Diff) !DiffPerfData {
-        log.debug("Diff.getPerfData called", .{});
+        if (internal.trace_log) log.debug("Diff.getPerfData called", .{});
 
         var c_ret = c.git_diff_perfdata{
             .version = c.GIT_DIFF_PERFDATA_VERSION,
@@ -96,14 +88,10 @@ pub const Diff = opaque {
             @ptrCast(*const c.git_diff, self),
         });
 
-        const ret: DiffPerfData = .{
+        return DiffPerfData{
             .stat_calls = c_ret.stat_calls,
             .oid_calculations = c_ret.oid_calculations,
         };
-
-        log.debug("perf data: {}", .{ret});
-
-        return ret;
     }
 
     comptime {

@@ -7,25 +7,19 @@ const git = @import("git.zig");
 
 pub const StatusList = opaque {
     pub fn deinit(self: *StatusList) void {
-        log.debug("StatusList.deinit called", .{});
+        if (internal.trace_log) log.debug("StatusList.deinit called", .{});
 
         c.git_status_list_free(@ptrCast(*c.git_status_list, self));
-
-        log.debug("status list freed successfully", .{});
     }
 
     pub fn entryCount(self: *StatusList) usize {
-        log.debug("StatusList.entryCount called", .{});
+        if (internal.trace_log) log.debug("StatusList.entryCount called", .{});
 
-        const ret = c.git_status_list_entrycount(@ptrCast(*c.git_status_list, self));
-
-        log.debug("status list entry count: {}", .{ret});
-
-        return ret;
+        return c.git_status_list_entrycount(@ptrCast(*c.git_status_list, self));
     }
 
     pub fn statusByIndex(self: *StatusList, index: usize) ?*const StatusEntry {
-        log.debug("StatusList.statusByIndex called, index: {}", .{index});
+        if (internal.trace_log) log.debug("StatusList.statusByIndex called", .{});
 
         return @ptrCast(
             ?*const StatusEntry,
@@ -35,7 +29,7 @@ pub const StatusList = opaque {
 
     /// Get performance data for diffs from a StatusList
     pub fn getPerfData(self: *const StatusList) !git.DiffPerfData {
-        log.debug("StatusList.getPerfData called", .{});
+        if (internal.trace_log) log.debug("StatusList.getPerfData called", .{});
 
         var c_ret = c.git_diff_perfdata{
             .version = c.GIT_DIFF_PERFDATA_VERSION,
@@ -48,14 +42,10 @@ pub const StatusList = opaque {
             @ptrCast(*const c.git_status_list, self),
         });
 
-        const ret: git.DiffPerfData = .{
+        return git.DiffPerfData{
             .stat_calls = c_ret.stat_calls,
             .oid_calculations = c_ret.oid_calculations,
         };
-
-        log.debug("perf data: {}", .{ret});
-
-        return ret;
     }
 
     /// A status entry, providing the differences between the file as it exists in HEAD and the index, and providing the 

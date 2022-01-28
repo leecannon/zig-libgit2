@@ -23,27 +23,23 @@ pub const StrArray = extern struct {
 
     /// This should be called only on `StrArray`'s provided by the library
     pub fn deinit(self: *StrArray) void {
-        log.debug("StrArray.deinit called", .{});
+        if (internal.trace_log) log.debug("StrArray.deinit called", .{});
 
         if (@hasDecl(c, "git_strarray_dispose")) {
             c.git_strarray_dispose(@ptrCast(*c.git_strarray, self));
         } else {
             c.git_strarray_free(@ptrCast(*c.git_strarray, self));
         }
-
-        log.debug("StrArray freed successfully", .{});
     }
 
     pub fn copy(self: StrArray) !StrArray {
-        log.debug("StrArray.copy called", .{});
+        if (internal.trace_log) log.debug("StrArray.copy called", .{});
 
         var result: StrArray = undefined;
         try internal.wrapCall("git_strarray_copy", .{
             @ptrCast(*c.git_strarray, &result),
             @ptrCast(*const c.git_strarray, &self),
         });
-
-        log.debug("StrArray copied successfully", .{});
 
         return result;
     }

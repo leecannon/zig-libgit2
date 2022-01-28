@@ -59,14 +59,12 @@ const git = @This();
 /// Initialize global state. This function must be called before any other function.
 /// *NOTE*: This function can called multiple times.
 pub fn init() !git.Handle {
-    log.debug("init called", .{});
+    if (internal.trace_log) log.debug("init called", .{});
 
     const number = try internal.wrapCallWithReturn("git_libgit2_init", .{});
 
-    if (number == 1) {
-        log.debug("libgit2 initalization successful", .{});
-    } else {
-        log.debug("{} ongoing initalizations without shutdown", .{number});
+    if (number > 1) {
+        if (internal.trace_log) log.debug("{} ongoing initalizations without shutdown", .{number});
     }
 
     return git.Handle{};

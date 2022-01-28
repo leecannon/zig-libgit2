@@ -155,25 +155,22 @@ pub const Oid = extern struct {
 /// E.g. look at the result of `git log --abbrev-commit`.
 pub const OidShortener = opaque {
     pub fn add(self: *OidShortener, str: []const u8) !c_uint {
-        log.debug("OidShortener.add called, str: {s}", .{str});
+        if (internal.trace_log) log.debug("OidShortener.add called", .{});
 
         if (str.len < Oid.hex_buffer_size) return error.BufferTooShort;
+
         const ret = try internal.wrapCallWithReturn("git_oid_shorten_add", .{
             @ptrCast(*c.git_oid_shorten, self),
             str.ptr,
         });
 
-        log.debug("shortest unique Oid length: {}", .{ret});
-
         return @bitCast(c_uint, ret);
     }
 
     pub fn deinit(self: *OidShortener) void {
-        log.debug("OidShortener.deinit called", .{});
+        if (internal.trace_log) log.debug("OidShortener.deinit called", .{});
 
         c.git_oid_shorten_free(@ptrCast(*c.git_oid_shorten, self));
-
-        log.debug("Oid shortener freed successfully", .{});
     }
 
     comptime {

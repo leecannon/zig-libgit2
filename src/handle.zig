@@ -12,14 +12,12 @@ pub const Handle = struct {
     pub fn deinit(self: Handle) void {
         _ = self;
 
-        log.debug("Handle.deinit called", .{});
+        if (internal.trace_log) log.debug("Handle.deinit called", .{});
 
         const number = internal.wrapCallWithReturn("git_libgit2_shutdown", .{}) catch unreachable;
 
-        if (number == 0) {
-            log.debug("libgit2 shutdown successful", .{});
-        } else {
-            log.debug("{} initializations have not been shutdown (after this one)", .{number});
+        if (number > 0) {
+            if (internal.trace_log) log.debug("{} initializations have not been shutdown (after this one)", .{number});
         }
     }
 
@@ -31,7 +29,7 @@ pub const Handle = struct {
     pub fn indexOpen(self: Handle, path: [:0]const u8) !*git.Index {
         _ = self;
 
-        log.debug("Handle.indexOpen called, path: {s}", .{path});
+        if (internal.trace_log) log.debug("Handle.indexOpen called", .{});
 
         var index: *git.Index = undefined;
 
@@ -39,8 +37,6 @@ pub const Handle = struct {
             @ptrCast(*?*c.git_index, &index),
             path.ptr,
         });
-
-        log.debug("index opened successfully", .{});
 
         return index;
     }
@@ -51,15 +47,13 @@ pub const Handle = struct {
     pub fn indexNew(self: Handle) !*git.Index {
         _ = self;
 
-        log.debug("Handle.indexInit called", .{});
+        if (internal.trace_log) log.debug("Handle.indexInit called", .{});
 
         var index: *git.Index = undefined;
 
         try internal.wrapCall("git_index_new", .{
             @ptrCast(*?*c.git_index, &index),
         });
-
-        log.debug("index created successfully", .{});
 
         return index;
     }
@@ -74,7 +68,7 @@ pub const Handle = struct {
     pub fn repositoryInit(self: Handle, path: [:0]const u8, is_bare: bool) !*git.Repository {
         _ = self;
 
-        log.debug("Handle.repositoryInit called, path: {s}, is_bare: {}", .{ path, is_bare });
+        if (internal.trace_log) log.debug("Handle.repositoryInit called", .{});
 
         var repo: *git.Repository = undefined;
 
@@ -83,8 +77,6 @@ pub const Handle = struct {
             path.ptr,
             @boolToInt(is_bare),
         });
-
-        log.debug("repository created successfully", .{});
 
         return repo;
     }
@@ -97,7 +89,7 @@ pub const Handle = struct {
     pub fn repositoryInitExtended(self: Handle, path: [:0]const u8, options: git.RepositoryInitOptions) !*git.Repository {
         _ = self;
 
-        log.debug("Handle.repositoryInitExtended called, path: {s}, options: {}", .{ path, options });
+        if (internal.trace_log) log.debug("Handle.repositoryInitExtended called", .{});
 
         var repo: *git.Repository = undefined;
 
@@ -109,8 +101,6 @@ pub const Handle = struct {
             &c_options,
         });
 
-        log.debug("repository created successfully", .{});
-
         return repo;
     }
 
@@ -121,7 +111,7 @@ pub const Handle = struct {
     pub fn repositoryOpen(self: Handle, path: [:0]const u8) !*git.Repository {
         _ = self;
 
-        log.debug("Handle.repositoryOpen called, path: {s}", .{path});
+        if (internal.trace_log) log.debug("Handle.repositoryOpen called", .{});
 
         var repo: *git.Repository = undefined;
 
@@ -129,8 +119,6 @@ pub const Handle = struct {
             @ptrCast(*?*c.git_repository, &repo),
             path.ptr,
         });
-
-        log.debug("repository opened successfully", .{});
 
         return repo;
     }
@@ -152,7 +140,7 @@ pub const Handle = struct {
     ) !*git.Repository {
         _ = self;
 
-        log.debug("Handle.repositoryOpenExtended called, path: {s}, flags: {}, ceiling_dirs: {s}", .{ path, flags, ceiling_dirs });
+        if (internal.trace_log) log.debug("Handle.repositoryOpenExtended called", .{});
 
         var repo: *git.Repository = undefined;
 
@@ -166,8 +154,6 @@ pub const Handle = struct {
             ceiling_dirs_temp,
         });
 
-        log.debug("repository opened successfully", .{});
-
         return repo;
     }
 
@@ -178,7 +164,7 @@ pub const Handle = struct {
     pub fn repositoryOpenBare(self: Handle, path: [:0]const u8) !*git.Repository {
         _ = self;
 
-        log.debug("Handle.repositoryOpenBare called, path: {s}", .{path});
+        if (internal.trace_log) log.debug("Handle.repositoryOpenBare called", .{});
 
         var repo: *git.Repository = undefined;
 
@@ -186,8 +172,6 @@ pub const Handle = struct {
             @ptrCast(*?*c.git_repository, &repo),
             path.ptr,
         });
-
-        log.debug("repository opened successfully", .{});
 
         return repo;
     }
@@ -205,10 +189,7 @@ pub const Handle = struct {
     pub fn repositoryDiscover(self: Handle, start_path: [:0]const u8, across_fs: bool, ceiling_dirs: ?[:0]const u8) !git.Buf {
         _ = self;
 
-        log.debug(
-            "Handle.repositoryDiscover called, start_path: {s}, across_fs: {}, ceiling_dirs: {s}",
-            .{ start_path, across_fs, ceiling_dirs },
-        );
+        if (internal.trace_log) log.debug("Handle.repositoryDiscover called", .{});
 
         var buf: git.Buf = .{};
 
@@ -220,8 +201,6 @@ pub const Handle = struct {
             @boolToInt(across_fs),
             ceiling_dirs_temp,
         });
-
-        log.debug("repository discovered - {s}", .{buf.toSlice()});
 
         return buf;
     }
@@ -238,7 +217,7 @@ pub const Handle = struct {
     pub fn clone(self: Handle, url: [:0]const u8, local_path: [:0]const u8, options: CloneOptions) !*git.Repository {
         _ = self;
 
-        log.debug("Handle.clone called, url: {s}, local_path: {s}", .{ url, local_path });
+        if (internal.trace_log) log.debug("Handle.clone called", .{});
 
         var repo: *git.Repository = undefined;
 
@@ -251,20 +230,16 @@ pub const Handle = struct {
             &c_options,
         });
 
-        log.debug("repository cloned successfully", .{});
-
         return repo;
     }
 
     pub fn optionGetMaximumMmapWindowSize(self: Handle) !usize {
         _ = self;
 
-        log.debug("Handle.optionGetMmapWindowSize called", .{});
+        if (internal.trace_log) log.debug("Handle.optionGetMmapWindowSize called", .{});
 
         var result: usize = undefined;
         try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_GET_MWINDOW_SIZE, &result });
-
-        log.debug("maximum mmap window size: {}", .{result});
 
         return result;
     }
@@ -272,22 +247,19 @@ pub const Handle = struct {
     pub fn optionSetMaximumMmapWindowSize(self: Handle, value: usize) !void {
         _ = self;
 
-        log.debug("Handle.optionSetMaximumMmapWindowSize called, value: {}", .{value});
+        if (internal.trace_log) log.debug("Handle.optionSetMaximumMmapWindowSize called", .{});
 
         try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_SET_MWINDOW_SIZE, value });
-
-        log.debug("successfully set maximum mmap window size", .{});
     }
 
     pub fn optionGetMaximumMmapLimit(self: Handle) !usize {
         _ = self;
 
-        log.debug("Handle.optionGetMaximumMmapLimit called", .{});
+        if (internal.trace_log) log.debug("Handle.optionGetMaximumMmapLimit called", .{});
 
         var result: usize = undefined;
-        try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_GET_MWINDOW_MAPPED_LIMIT, &result });
 
-        log.debug("maximum mmap limit: {}", .{result});
+        try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_GET_MWINDOW_MAPPED_LIMIT, &result });
 
         return result;
     }
@@ -295,23 +267,20 @@ pub const Handle = struct {
     pub fn optionSetMaximumMmapLimit(self: Handle, value: usize) !void {
         _ = self;
 
-        log.debug("Handle.optionSetMaximumMmapLimit called, value: {}", .{value});
+        if (internal.trace_log) log.debug("Handle.optionSetMaximumMmapLimit called", .{});
 
         try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_SET_MWINDOW_MAPPED_LIMIT, value });
-
-        log.debug("successfully set maximum mmap limit", .{});
     }
 
     /// zero means unlimited
     pub fn optionGetMaximumMappedFiles(self: Handle) !usize {
         _ = self;
 
-        log.debug("Handle.optionGetMaximumMappedFiles called", .{});
+        if (internal.trace_log) log.debug("Handle.optionGetMaximumMappedFiles called", .{});
 
         var result: usize = undefined;
-        try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_GET_MWINDOW_FILE_LIMIT, &result });
 
-        log.debug("maximum mapped files: {}", .{result});
+        try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_GET_MWINDOW_FILE_LIMIT, &result });
 
         return result;
     }
@@ -320,26 +289,23 @@ pub const Handle = struct {
     pub fn optionSetMaximumMmapFiles(self: Handle, value: usize) !void {
         _ = self;
 
-        log.debug("Handle.optionSetMaximumMmapFiles called, value: {}", .{value});
+        if (internal.trace_log) log.debug("Handle.optionSetMaximumMmapFiles called", .{});
 
         try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_SET_MWINDOW_FILE_LIMIT, value });
-
-        log.debug("successfully set maximum mapped files", .{});
     }
 
     pub fn optionGetSearchPath(self: Handle, level: git.ConfigLevel) !git.Buf {
         _ = self;
 
-        log.debug("Handle.optionGetSearchPath called, level: {s}", .{@tagName(level)});
+        if (internal.trace_log) log.debug("Handle.optionGetSearchPath called", .{});
 
         var buf: git.Buf = .{};
+
         try internal.wrapCall("git_libgit2_opts", .{
             c.GIT_OPT_GET_SEARCH_PATH,
             @enumToInt(level),
             @ptrCast(*c.git_buf, &buf),
         });
-
-        log.debug("got search path: {s}", .{buf.toSlice()});
 
         return buf;
     }
@@ -350,54 +316,45 @@ pub const Handle = struct {
     pub fn optionSetSearchPath(self: Handle, level: git.ConfigLevel, path: ?[:0]const u8) !void {
         _ = self;
 
-        log.debug("Handle.optionSetSearchPath called, path: {s}", .{path});
+        if (internal.trace_log) log.debug("Handle.optionSetSearchPath called", .{});
 
         const path_c = if (path) |slice| slice.ptr else null;
 
         try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_SET_SEARCH_PATH, @enumToInt(level), path_c });
-
-        log.debug("successfully set search path", .{});
     }
 
     pub fn optionSetCacheObjectLimit(self: Handle, object_type: git.ObjectType, value: usize) !void {
         _ = self;
 
-        log.debug("Handle.optionSetCacheObjectLimit called, object_type: {s}, value: {}", .{ @tagName(object_type), value });
+        if (internal.trace_log) log.debug("Handle.optionSetCacheObjectLimit called", .{});
 
         try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_SET_CACHE_OBJECT_LIMIT, @enumToInt(object_type), value });
-
-        log.debug("successfully set cache object limit", .{});
     }
 
     pub fn optionSetMaximumCacheSize(self: Handle, value: usize) !void {
         _ = self;
 
-        log.debug("Handle.optionSetCacheMaximumSize called, value: {}", .{value});
+        if (internal.trace_log) log.debug("Handle.optionSetCacheMaximumSize called", .{});
 
         try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_SET_CACHE_MAX_SIZE, value });
-
-        log.debug("successfully set maximum cache size", .{});
     }
 
     pub fn optionSetCaching(self: Handle, enabled: bool) !void {
         _ = self;
 
-        log.debug("Handle.optionSetCaching called, enabled: {}", .{enabled});
+        if (internal.trace_log) log.debug("Handle.optionSetCaching called", .{});
 
         try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_ENABLE_CACHING, enabled });
-
-        log.debug("successfully set caching status", .{});
     }
 
     pub fn optionGetCachedMemory(self: Handle) !CachedMemory {
         _ = self;
 
-        log.debug("Handle.optionGetCachedMemory called", .{});
+        if (internal.trace_log) log.debug("Handle.optionGetCachedMemory called", .{});
 
         var result: CachedMemory = undefined;
-        try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_GET_CACHED_MEMORY, &result.current, &result.allowed });
 
-        log.debug("cached memory: {}", .{result});
+        try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_GET_CACHED_MEMORY, &result.current, &result.allowed });
 
         return result;
     }
@@ -410,7 +367,7 @@ pub const Handle = struct {
     pub fn optionGetTemplatePath(self: Handle) !git.Buf {
         _ = self;
 
-        log.debug("Handle.optionGetTemplatePath called", .{});
+        if (internal.trace_log) log.debug("Handle.optionGetTemplatePath called", .{});
 
         var result: git.Buf = .{};
         try internal.wrapCall("git_libgit2_opts", .{
@@ -418,57 +375,48 @@ pub const Handle = struct {
             @ptrCast(*c.git_buf, &result),
         });
 
-        log.debug("got template path: {s}", .{result.toSlice()});
-
         return result;
     }
 
     pub fn optionSetTemplatePath(self: Handle, path: [:0]const u8) !void {
         _ = self;
 
-        log.debug("Handle.optionSetTemplatePath called, path: {s}", .{path});
+        if (internal.trace_log) log.debug("Handle.optionSetTemplatePath called", .{});
 
         try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_SET_TEMPLATE_PATH, path.ptr });
-
-        log.debug("successfully set template path", .{});
     }
 
     /// Either parameter may be `null`, but not both.
     pub fn optionSetSslCertLocations(self: Handle, file: ?[:0]const u8, path: ?[:0]const u8) !void {
         _ = self;
 
-        log.debug("Handle.optionSetSslCertLocations called, file: {s}, path: {s}", .{ file, path });
+        if (internal.trace_log) log.debug("Handle.optionSetSslCertLocations called", .{});
 
         const file_c = if (file) |ptr| ptr.ptr else null;
         const path_c = if (path) |ptr| ptr.ptr else null;
 
         try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_SET_SSL_CERT_LOCATIONS, file_c, path_c });
-
-        log.debug("successfully set ssl certificate location", .{});
     }
 
     pub fn optionSetUserAgent(self: Handle, user_agent: [:0]const u8) !void {
         _ = self;
 
-        log.debug("Handle.optionSetUserAgent called, user_agent: {s}", .{user_agent});
+        if (internal.trace_log) log.debug("Handle.optionSetUserAgent called", .{});
 
         try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_SET_USER_AGENT, user_agent.ptr });
-
-        log.debug("successfully set user agent", .{});
     }
 
     pub fn optionGetUserAgent(self: Handle) !git.Buf {
         _ = self;
 
-        log.debug("Handle.optionGetUserAgent called", .{});
+        if (internal.trace_log) log.debug("Handle.optionGetUserAgent called", .{});
 
         var result: git.Buf = .{};
+
         try internal.wrapCall("git_libgit2_opts", .{
             c.GIT_OPT_GET_USER_AGENT,
             @ptrCast(*c.git_buf, &result),
         });
-
-        log.debug("got user agent: {s}", .{result.toSlice()});
 
         return result;
     }
@@ -476,22 +424,18 @@ pub const Handle = struct {
     pub fn optionSetWindowsSharemode(self: Handle, value: c_uint) !void {
         _ = self;
 
-        log.debug("Handle.optionSetWindowsSharemode called, value: {}", .{value});
+        if (internal.trace_log) log.debug("Handle.optionSetWindowsSharemode called", .{});
 
         try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_SET_WINDOWS_SHAREMODE, value });
-
-        log.debug("successfully set windows share mode", .{});
     }
 
     pub fn optionGetWindowSharemode(self: Handle) !c_uint {
         _ = self;
 
-        log.debug("Handle.optionGetWindowSharemode called", .{});
+        if (internal.trace_log) log.debug("Handle.optionGetWindowSharemode called", .{});
 
         var result: c_uint = undefined;
         try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_GET_WINDOWS_SHAREMODE, &result });
-
-        log.debug("got windows share mode: {}", .{result});
 
         return result;
     }
@@ -499,93 +443,76 @@ pub const Handle = struct {
     pub fn optionSetStrictObjectCreation(self: Handle, enabled: bool) !void {
         _ = self;
 
-        log.debug("Handle.optionSetStrictObjectCreation called, enabled: {}", .{enabled});
+        if (internal.trace_log) log.debug("Handle.optionSetStrictObjectCreation called", .{});
 
         try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_ENABLE_STRICT_OBJECT_CREATION, @boolToInt(enabled) });
-
-        log.debug("successfully set strict object creation mode", .{});
     }
 
     pub fn optionSetStrictSymbolicRefCreations(self: Handle, enabled: bool) !void {
         _ = self;
 
-        log.debug("Handle.optionSetStrictSymbolicRefCreations called, enabled: {}", .{enabled});
+        if (internal.trace_log) log.debug("Handle.optionSetStrictSymbolicRefCreations called", .{});
 
         try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_ENABLE_STRICT_SYMBOLIC_REF_CREATION, @boolToInt(enabled) });
-
-        log.debug("successfully set strict symbolic ref creation mode", .{});
     }
 
     pub fn optionSetSslCiphers(self: Handle, ciphers: [:0]const u8) !void {
         _ = self;
 
-        log.debug("Handle.optionSetSslCiphers called, ciphers: {s}", .{ciphers});
+        if (internal.trace_log) log.debug("Handle.optionSetSslCiphers called", .{});
 
         try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_SET_SSL_CIPHERS, ciphers.ptr });
-
-        log.debug("successfully set SSL ciphers", .{});
     }
 
     pub fn optionSetOffsetDeltas(self: Handle, enabled: bool) !void {
         _ = self;
 
-        log.debug("Handle.optionSetOffsetDeltas called, enabled: {}", .{enabled});
+        if (internal.trace_log) log.debug("Handle.optionSetOffsetDeltas called", .{});
 
         try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_ENABLE_OFS_DELTA, @boolToInt(enabled) });
-
-        log.debug("successfully set offset deltas mode", .{});
     }
 
     pub fn optionSetFsyncDir(self: Handle, enabled: bool) !void {
         _ = self;
 
-        log.debug("Handle.optionSetFsyncDir called, enabled: {}", .{enabled});
+        if (internal.trace_log) log.debug("Handle.optionSetFsyncDir called", .{});
 
         try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_ENABLE_FSYNC_GITDIR, @boolToInt(enabled) });
-
-        log.debug("successfully set fsync dir mode", .{});
     }
 
     pub fn optionSetStrictHashVerification(self: Handle, enabled: bool) !void {
         _ = self;
 
-        log.debug("Handle.optionSetStrictHashVerification called, enabled: {}", .{enabled});
+        if (internal.trace_log) log.debug("Handle.optionSetStrictHashVerification called", .{});
 
         try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_ENABLE_STRICT_HASH_VERIFICATION, @boolToInt(enabled) });
-
-        log.debug("successfully set strict hash verification mode", .{});
     }
 
     /// If the given `allocator` is `null`, then the system default will be restored.
     pub fn optionSetAllocator(self: Handle, allocator: ?*git.GitAllocator) !void {
         _ = self;
 
-        log.debug("Handle.optionSetAllocator called, allocator: {*}", .{allocator});
+        if (internal.trace_log) log.debug("Handle.optionSetAllocator called", .{});
 
         try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_SET_ALLOCATOR, allocator });
-
-        log.debug("successfully set allocator", .{});
     }
 
     pub fn optionSetUnsafedIndexSafety(self: Handle, enabled: bool) !void {
         _ = self;
 
-        log.debug("Handle.optionSetUnsafedIndexSafety called, enabled: {}", .{enabled});
+        if (internal.trace_log) log.debug("Handle.optionSetUnsafedIndexSafety called", .{});
 
         try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_ENABLE_UNSAVED_INDEX_SAFETY, @boolToInt(enabled) });
-
-        log.debug("successfully set unsaved index safety mode", .{});
     }
 
     pub fn optionGetMaximumPackObjects(self: Handle) !usize {
         _ = self;
 
-        log.debug("Handle.optionGetMaximumPackObjects called", .{});
+        if (internal.trace_log) log.debug("Handle.optionGetMaximumPackObjects called", .{});
 
         var result: usize = undefined;
-        try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_GET_PACK_MAX_OBJECTS, &result });
 
-        log.debug("maximum pack objects: {}", .{result});
+        try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_GET_PACK_MAX_OBJECTS, &result });
 
         return result;
     }
@@ -593,66 +520,53 @@ pub const Handle = struct {
     pub fn optionSetMaximumPackObjects(self: Handle, value: usize) !void {
         _ = self;
 
-        log.debug("Handle.optionSetMaximumPackObjects called, value: {}", .{value});
+        if (internal.trace_log) log.debug("Handle.optionSetMaximumPackObjects called", .{});
 
         try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_SET_PACK_MAX_OBJECTS, value });
-
-        log.debug("successfully set maximum pack objects", .{});
     }
 
     pub fn optionSetDisablePackKeepFileChecks(self: Handle, enabled: bool) !void {
         _ = self;
 
-        log.debug("Handle.optionSetDisablePackKeepFileChecks called, enabled: {}", .{enabled});
+        if (internal.trace_log) log.debug("Handle.optionSetDisablePackKeepFileChecks called", .{});
 
         try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_DISABLE_PACK_KEEP_FILE_CHECKS, @boolToInt(enabled) });
-
-        log.debug("successfully set unsaved index safety mode", .{});
     }
 
     pub fn optionSetHTTPExpectContinue(self: Handle, enabled: bool) !void {
         _ = self;
 
-        log.debug("Handle.optionSetHTTPExpectContinue called, enabled: {}", .{enabled});
+        if (internal.trace_log) log.debug("Handle.optionSetHTTPExpectContinue called", .{});
 
         try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_ENABLE_HTTP_EXPECT_CONTINUE, @boolToInt(enabled) });
-
-        log.debug("successfully set HTTP expect continue mode", .{});
     }
 
     pub fn branchNameIsValid(self: Handle, name: [:0]const u8) !bool {
         _ = self;
 
-        log.debug("Handle.branchNameIsValid, name: {s}", .{name});
+        if (internal.trace_log) log.debug("Handle.branchNameIsValid, name: {s}", .{name});
 
         var valid: c_int = undefined;
+
         try internal.wrapCall("git_branch_name_is_valid", .{ &valid, name.ptr });
 
-        const ret = valid == 1;
-
-        log.debug("branch name valid: {}", .{ret});
-
-        return ret;
+        return valid != 0;
     }
 
     pub fn optionSetOdbPackedPriority(self: Handle, value: usize) !void {
         _ = self;
 
-        log.debug("Handle.optionSetOdbPackedPriority called, value: {}", .{value});
+        if (internal.trace_log) log.debug("Handle.optionSetOdbPackedPriority called", .{});
 
         try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_SET_ODB_PACKED_PRIORITY, value });
-
-        log.debug("successfully set odb packed priority", .{});
     }
 
     pub fn optionSetOdbLoosePriority(self: Handle, value: usize) !void {
         _ = self;
 
-        log.debug("Handle.optionSetOdbLoosePriority called, value: {}", .{value});
+        if (internal.trace_log) log.debug("Handle.optionSetOdbLoosePriority called", .{});
 
         try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_SET_ODB_LOOSE_PRIORITY, value });
-
-        log.debug("successfully set odb loose priority", .{});
     }
 
     /// Clean up excess whitespace and make sure there is a trailing newline in the message.
@@ -665,7 +579,7 @@ pub const Handle = struct {
     pub fn messagePrettify(self: Handle, message: [:0]const u8, strip_comment_char: ?u8) !git.Buf {
         _ = self;
 
-        log.debug("Handle.messagePrettify called, message: {s}, strip_comment_char: {}", .{ message, strip_comment_char });
+        if (internal.trace_log) log.debug("Handle.messagePrettify called", .{});
 
         var ret: git.Buf = .{};
 
@@ -685,8 +599,6 @@ pub const Handle = struct {
             });
         }
 
-        log.debug("prettified message: {s}", .{ret.toSlice()});
-
         return ret;
     }
 
@@ -697,7 +609,7 @@ pub const Handle = struct {
     pub fn messageParseTrailers(self: Handle, message: [:0]const u8) !git.MessageTrailerArray {
         _ = self;
 
-        log.debug("Handle.messageParseTrailers called, message: {s}", .{message});
+        if (internal.trace_log) log.debug("Handle.messageParseTrailers called", .{});
 
         var ret: git.MessageTrailerArray = undefined;
 
@@ -705,8 +617,6 @@ pub const Handle = struct {
             @ptrCast(*c.git_message_trailer_array, &ret),
             message.ptr,
         });
-
-        log.debug("successfully parsed {} message trailers", .{ret.count});
 
         return ret;
     }
@@ -747,7 +657,7 @@ pub const Handle = struct {
     ) !void {
         _ = self;
 
-        log.debug("Handle.traceSet called, level: {}", .{level});
+        if (internal.trace_log) log.debug("Handle.traceSet called", .{});
 
         const cb = struct {
             pub fn cb(
@@ -765,8 +675,6 @@ pub const Handle = struct {
             @enumToInt(level),
             cb,
         });
-
-        log.debug("successfully enabled tracing", .{});
     }
 
     /// The kinds of git-specific files we know about.
@@ -802,24 +710,20 @@ pub const Handle = struct {
     pub fn pathIsGitfile(self: Handle, path: []const u8, gitfile: GitFile, fs: FileSystem) !bool {
         _ = self;
 
-        log.debug("Handle.pathIsGitfile called, path: {s}, gitfile: {}, fs: {}", .{ path, gitfile, fs });
+        if (internal.trace_log) log.debug("Handle.pathIsGitfile called", .{});
 
-        const ret = (try internal.wrapCallWithReturn("git_path_is_gitfile", .{
+        return (try internal.wrapCallWithReturn("git_path_is_gitfile", .{
             path.ptr,
             path.len,
             @enumToInt(gitfile),
             @enumToInt(fs),
         })) != 0;
-
-        log.debug("is git file: {}", .{ret});
-
-        return ret;
     }
 
     pub fn configNew(self: Handle) !*git.Config {
         _ = self;
 
-        log.debug("Handle.configNew called", .{});
+        if (internal.trace_log) log.debug("Handle.configNew called", .{});
 
         var config: *git.Config = undefined;
 
@@ -827,15 +731,13 @@ pub const Handle = struct {
             @ptrCast(*?*c.git_config, &config),
         });
 
-        log.debug("created new config", .{});
-
         return config;
     }
 
     pub fn configOpenOnDisk(self: Handle, path: [:0]const u8) !*git.Config {
         _ = self;
 
-        log.debug("Handle.configOpenOnDisk called, path: {s}", .{path});
+        if (internal.trace_log) log.debug("Handle.configOpenOnDisk called", .{});
 
         var config: *git.Config = undefined;
 
@@ -844,15 +746,13 @@ pub const Handle = struct {
             path.ptr,
         });
 
-        log.debug("opened config from file", .{});
-
         return config;
     }
 
     pub fn configOpenDefault(self: Handle) !*git.Config {
         _ = self;
 
-        log.debug("Handle.configOpenDefault called", .{});
+        if (internal.trace_log) log.debug("Handle.configOpenDefault called", .{});
 
         var config: *git.Config = undefined;
 
@@ -860,21 +760,17 @@ pub const Handle = struct {
             @ptrCast(*?*c.git_config, &config),
         });
 
-        log.debug("opened default config", .{});
-
         return config;
     }
 
     pub fn configFindGlobal(self: Handle) ?git.Buf {
         _ = self;
 
-        log.debug("Handle.configFindGlobal called", .{});
+        if (internal.trace_log) log.debug("Handle.configFindGlobal called", .{});
 
         var buf: git.Buf = .{};
 
         if (c.git_config_find_global(@ptrCast(*c.git_buf, &buf)) == 0) return null;
-
-        log.debug("global config path: {s}", .{buf.toSlice()});
 
         return buf;
     }
@@ -882,13 +778,11 @@ pub const Handle = struct {
     pub fn configFindXdg(self: Handle) ?git.Buf {
         _ = self;
 
-        log.debug("Handle.configFindXdg called", .{});
+        if (internal.trace_log) log.debug("Handle.configFindXdg called", .{});
 
         var buf: git.Buf = .{};
 
         if (c.git_config_find_xdg(@ptrCast(*c.git_buf, &buf)) == 0) return null;
-
-        log.debug("xdg config path: {s}", .{buf.toSlice()});
 
         return buf;
     }
@@ -896,13 +790,11 @@ pub const Handle = struct {
     pub fn configFindSystem(self: Handle) ?git.Buf {
         _ = self;
 
-        log.debug("Handle.configFindSystem called", .{});
+        if (internal.trace_log) log.debug("Handle.configFindSystem called", .{});
 
         var buf: git.Buf = .{};
 
         if (c.git_config_find_system(@ptrCast(*c.git_buf, &buf)) == 0) return null;
-
-        log.debug("system config path: {s}", .{buf.toSlice()});
 
         return buf;
     }
@@ -910,13 +802,11 @@ pub const Handle = struct {
     pub fn configFindProgramdata(self: Handle) ?git.Buf {
         _ = self;
 
-        log.debug("Handle.configFindProgramdata called", .{});
+        if (internal.trace_log) log.debug("Handle.configFindProgramdata called", .{});
 
         var buf: git.Buf = .{};
 
         if (c.git_config_find_programdata(@ptrCast(*c.git_buf, &buf)) == 0) return null;
-
-        log.debug("programdata config path: {s}", .{buf.toSlice()});
 
         return buf;
     }
@@ -924,7 +814,7 @@ pub const Handle = struct {
     pub fn credentialInitUserPassPlaintext(self: Handle, username: [:0]const u8, password: [:0]const u8) !*git.Credential {
         _ = self;
 
-        log.debug("Handle.credentialInitUserPassPlaintext called, username: {s}, password: {s}", .{ username, password });
+        if (internal.trace_log) log.debug("Handle.credentialInitUserPassPlaintext called", .{});
 
         var cred: *git.Credential = undefined;
 
@@ -942,8 +832,6 @@ pub const Handle = struct {
             });
         }
 
-        log.debug("created new credential {*}", .{cred});
-
         return cred;
     }
 
@@ -951,7 +839,7 @@ pub const Handle = struct {
     pub fn credentialInitDefault(self: Handle) !*git.Credential {
         _ = self;
 
-        log.debug("Handle.credentialInitDefault", .{});
+        if (internal.trace_log) log.debug("Handle.credentialInitDefault", .{});
 
         var cred: *git.Credential = undefined;
 
@@ -965,8 +853,6 @@ pub const Handle = struct {
             });
         }
 
-        log.debug("created new credential {*}", .{cred});
-
         return cred;
     }
 
@@ -976,7 +862,7 @@ pub const Handle = struct {
     pub fn credentialInitUsername(self: Handle, username: [:0]const u8) !*git.Credential {
         _ = self;
 
-        log.debug("Handle.credentialInitUsername called, username: {s}", .{username});
+        if (internal.trace_log) log.debug("Handle.credentialInitUsername called", .{});
 
         var cred: *git.Credential = undefined;
 
@@ -991,8 +877,6 @@ pub const Handle = struct {
                 username.ptr,
             });
         }
-
-        log.debug("created new credential {*}", .{cred});
 
         return cred;
     }
@@ -1013,10 +897,7 @@ pub const Handle = struct {
     ) !*git.Credential {
         _ = self;
 
-        log.debug(
-            "Handle.credentialInitSshKey called, username: {s}, publickey: {s}, privatekey: {s}, passphrase: {s}",
-            .{ username, publickey, privatekey, passphrase },
-        );
+        if (internal.trace_log) log.debug("Handle.credentialInitSshKey called", .{});
 
         var cred: *git.Credential = undefined;
 
@@ -1041,8 +922,6 @@ pub const Handle = struct {
             });
         }
 
-        log.debug("created new credential {*}", .{cred});
-
         return cred;
     }
 
@@ -1062,7 +941,7 @@ pub const Handle = struct {
     ) !*git.Credential {
         _ = self;
 
-        log.debug("Handle.credentialInitSshKeyMemory called", .{});
+        if (internal.trace_log) log.debug("Handle.credentialInitSshKeyMemory called", .{});
 
         var cred: *git.Credential = undefined;
 
@@ -1087,15 +966,13 @@ pub const Handle = struct {
             });
         }
 
-        log.debug("created new credential {*}", .{cred});
-
         return cred;
     }
 
     pub fn credentialInitSshKeyFromAgent(self: Handle, username: [:0]const u8) !*git.Credential {
         _ = self;
 
-        log.debug("Handle.credentialInitSshKeyFromAgent called, username: {s}", .{username});
+        if (internal.trace_log) log.debug("Handle.credentialInitSshKeyFromAgent called", .{});
 
         var cred: *git.Credential = undefined;
 
@@ -1110,8 +987,6 @@ pub const Handle = struct {
                 username.ptr,
             });
         }
-
-        log.debug("created new credential {*}", .{cred});
 
         return cred;
     }
@@ -1196,7 +1071,7 @@ pub const Handle = struct {
             }
         }.cb;
 
-        log.debug("Handle.indexerInitWithUserData called, path: {s}, odb: {*}, options: {}", .{ path, odb, options });
+        if (internal.trace_log) log.debug("Handle.indexerInitWithUserData called", .{});
 
         var c_opts = c.git_indexer_options{
             .version = c.GIT_INDEXER_OPTIONS_VERSION,
@@ -1215,8 +1090,6 @@ pub const Handle = struct {
             &c_opts,
         });
 
-        log.debug("successfully initalized Indexer", .{});
-
         return ret;
     }
 
@@ -1227,15 +1100,13 @@ pub const Handle = struct {
     pub fn mailmapInit(self: Handle) !*git.Mailmap {
         _ = self;
 
-        log.debug("Handle.mailmapInit called", .{});
+        if (internal.trace_log) log.debug("Handle.mailmapInit called", .{});
 
         var mailmap: *git.Mailmap = undefined;
 
         try internal.wrapCall("git_mailmap_new", .{
             @ptrCast(*?*c.git_mailmap, &mailmap),
         });
-
-        log.debug("successfully initalized mailmap {*}", .{mailmap});
 
         return mailmap;
     }
@@ -1247,7 +1118,7 @@ pub const Handle = struct {
     pub fn pathspecInit(self: Handle, pathspec: git.StrArray) !*git.Pathspec {
         _ = self;
 
-        log.debug("Handle.pathspecInit called", .{});
+        if (internal.trace_log) log.debug("Handle.pathspecInit called", .{});
 
         var ret: *git.Pathspec = undefined;
 
@@ -1255,8 +1126,6 @@ pub const Handle = struct {
             @ptrCast(*?*c.git_pathspec, &ret),
             @ptrCast(*const c.git_strarray, &pathspec),
         });
-
-        log.debug("successfully created pathspec: {*}", .{ret});
 
         return ret;
     }
@@ -1269,7 +1138,7 @@ pub const Handle = struct {
     pub fn refspecParse(self: Handle, input: [:0]const u8, is_fetch: bool) !*git.Refspec {
         _ = self;
 
-        log.debug("Handle.refspecParse called, input: {s}, is_fetch: {}", .{ input, is_fetch });
+        if (internal.trace_log) log.debug("Handle.refspecParse called", .{});
 
         var ret: *git.Refspec = undefined;
 
@@ -1278,8 +1147,6 @@ pub const Handle = struct {
             input.ptr,
             @boolToInt(is_fetch),
         });
-
-        log.debug("successfully parsed refspec: {*}", .{ret});
 
         return ret;
     }
@@ -1294,7 +1161,7 @@ pub const Handle = struct {
     pub fn remoteCreateWithOptions(self: Handle, url: [:0]const u8, options: git.RemoteCreateOptions) !*git.Remote {
         _ = self;
 
-        log.debug("Handle.remoteCreateWithOptions called, url: {s}, options: {}", .{ url, options });
+        if (internal.trace_log) log.debug("Handle.remoteCreateWithOptions called", .{});
 
         var remote: *git.Remote = undefined;
 
@@ -1305,8 +1172,6 @@ pub const Handle = struct {
             url.ptr,
             &c_opts,
         });
-
-        log.debug("successfully created remote: {*}", .{remote});
 
         return remote;
     }
@@ -1323,7 +1188,7 @@ pub const Handle = struct {
     pub fn remoreCreateDetached(self: Handle, url: [:0]const u8) !*git.Remote {
         _ = self;
 
-        log.debug("Handle.remoreCreateDetached called, url: {s}", .{url});
+        if (internal.trace_log) log.debug("Handle.remoreCreateDetached called", .{});
 
         var remote: *git.Remote = undefined;
 
@@ -1332,8 +1197,6 @@ pub const Handle = struct {
             url.ptr,
         });
 
-        log.debug("successfully created remote: {*}", .{remote});
-
         return remote;
     }
 
@@ -1341,11 +1204,9 @@ pub const Handle = struct {
     pub fn oidShortenerInit(self: Handle, min_length: usize) !*git.OidShortener {
         _ = self;
 
-        log.debug("Handle.oidShortenerInit called, min_length: {}", .{min_length});
+        if (internal.trace_log) log.debug("Handle.oidShortenerInit called", .{});
 
         if (c.git_oid_shorten_new(min_length)) |ret| {
-            log.debug("Oid shortener created successfully", .{});
-
             return @ptrCast(*git.OidShortener, ret);
         }
 
@@ -1359,10 +1220,14 @@ pub const Handle = struct {
     pub fn oidTryParsePtr(self: Handle, str: [*:0]const u8) ?git.Oid {
         _ = self;
 
+        if (internal.trace_log) log.debug("Handle.oidTryParsePtr called", .{});
+
         var result: git.Oid = undefined;
+
         internal.wrapCall("git_oid_fromstrp", .{ @ptrCast(*c.git_oid, &result), str }) catch {
             return null;
         };
+
         return result;
     }
 
@@ -1397,12 +1262,7 @@ pub const Handle = struct {
     ) !*git.Signature {
         _ = self;
 
-        log.debug("Handle.signatureInit called, name: {s}, email: {s}, time: {}, offset: {}", .{
-            name,
-            email,
-            time,
-            offset,
-        });
+        if (internal.trace_log) log.debug("Handle.signatureInit called", .{});
 
         var ret: *git.Signature = undefined;
 
@@ -1413,8 +1273,6 @@ pub const Handle = struct {
             time,
             offset,
         });
-
-        log.debug("successfully initalized signature: {*}", .{ret});
 
         return ret;
     }
@@ -1433,7 +1291,7 @@ pub const Handle = struct {
     ) !*git.Signature {
         _ = self;
 
-        log.debug("Handle.signatureInitNow called, name: {s}, email: {s}", .{ name, email });
+        if (internal.trace_log) log.debug("Handle.signatureInitNow called", .{});
 
         var ret: *git.Signature = undefined;
 
@@ -1442,8 +1300,6 @@ pub const Handle = struct {
             name.ptr,
             email.ptr,
         });
-
-        log.debug("successfully initalized signature: {*}", .{ret});
 
         return ret;
     }
@@ -1459,7 +1315,7 @@ pub const Handle = struct {
     pub fn hashsigInit(self: Handle, buf: []u8, options: git.HashsigOptions) !*git.Hashsig {
         _ = self;
 
-        log.debug("Handle.hashsigInit called, options: {}", .{options});
+        if (internal.trace_log) log.debug("Handle.hashsigInit called", .{});
 
         var ret: *git.Hashsig = undefined;
 
@@ -1469,8 +1325,6 @@ pub const Handle = struct {
             buf.len,
             internal.make_c_option.hashsigOptions(options),
         });
-
-        log.debug("successfully initalized hashsig: {*}", .{ret});
 
         return ret;
     }
@@ -1486,7 +1340,7 @@ pub const Handle = struct {
     pub fn hashsigInitFromFile(self: Handle, path: [:0]const u8, options: git.HashsigOptions) !*git.Hashsig {
         _ = self;
 
-        log.debug("Handle.hashsigInitFromFile called, file: {s}, options: {}", .{ path, options });
+        if (internal.trace_log) log.debug("Handle.hashsigInitFromFile called", .{});
 
         var ret: *git.Hashsig = undefined;
 
@@ -1495,8 +1349,6 @@ pub const Handle = struct {
             path.ptr,
             internal.make_c_option.hashsigOptions(options),
         });
-
-        log.debug("successfully initalized hashsig: {*}", .{ret});
 
         return ret;
     }
@@ -1522,11 +1374,7 @@ pub const Handle = struct {
         options: git.DiffOptions,
     ) !*git.Patch {
         _ = self;
-        log.debug("Handle.patchFromBuffers called, old_as_path={s}, new_as_path={s}, options={}", .{
-            old_as_path,
-            new_as_path,
-            options,
-        });
+        if (internal.trace_log) log.debug("Handle.patchFromBuffers called", .{});
 
         var ret: *git.Patch = undefined;
 
@@ -1560,8 +1408,6 @@ pub const Handle = struct {
             c_new_as_path,
             &c_options,
         });
-
-        log.debug("successfully made patch {*} from buffers", .{ret});
 
         return ret;
     }
@@ -1608,7 +1454,7 @@ pub const Handle = struct {
                 }
             }.cb;
 
-            log.debug("Handle.credentialInitSshKeyInteractive called, username: {s}", .{username});
+            if (internal.trace_log) log.debug("Handle.credentialInitSshKeyInteractive called", .{});
 
             var cred: *git.Credential = undefined;
 
@@ -1627,8 +1473,6 @@ pub const Handle = struct {
                     user_data,
                 });
             }
-
-            log.debug("created new credential {*}", .{cred});
 
             return cred;
         }
@@ -1672,7 +1516,7 @@ pub const Handle = struct {
                 }
             }.cb;
 
-            log.debug("Handle.credentialInitSshKeyCustom called, username: {s}", .{username});
+            if (internal.trace_log) log.debug("Handle.credentialInitSshKeyCustom called", .{});
 
             var cred: *git.Credential = undefined;
 
@@ -1695,8 +1539,6 @@ pub const Handle = struct {
                     user_data,
                 });
             }
-
-            log.debug("created new credential {*}", .{cred});
 
             return cred;
         }

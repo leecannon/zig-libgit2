@@ -15,11 +15,9 @@ pub const OidArray = extern struct {
     /// This method must (and must only) be called on `OidArray` objects where the array is allocated by the library.
     /// Not doing so, will result in a memory leak.
     pub fn deinit(self: *OidArray) void {
-        log.debug("OidArray.deinit called", .{});
+        if (internal.trace_log) log.debug("OidArray.deinit called", .{});
 
         c.git_oidarray_free(@ptrCast(*c.git_oidarray, self));
-
-        log.debug("Oid array freed successfully", .{});
     }
 
     test {

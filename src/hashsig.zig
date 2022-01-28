@@ -8,27 +8,27 @@ const git = @import("git.zig");
 /// Similarity signature of arbitrary text content based on line hashes
 pub const Hashsig = opaque {
     pub fn deinit(self: *Hashsig) void {
-        log.debug("Hashsig.deinit called", .{});
+        if (internal.trace_log) log.debug("Hashsig.deinit called", .{});
 
         c.git_hashsig_free(@ptrCast(*c.git_hashsig, self));
-
-        log.debug("hashsig freed successfully", .{});
     }
 
     /// Measure similarity score between two similarity signatures
     ///
     /// Returns [0 to 100] as the similarity score
     pub fn compare(self: *const Hashsig, other: *const Hashsig) !u7 {
-        log.debug("Hashsig.compare called, other: {*}", .{other});
+        if (internal.trace_log) log.debug("Hashsig.compare called", .{});
 
-        const ret = try internal.wrapCallWithReturn("git_hashsig_compare", .{
-            @ptrCast(*const c.git_hashsig, self),
-            @ptrCast(*const c.git_hashsig, other),
-        });
-
-        log.debug("similarity score: {}", .{ret});
-
-        return @truncate(u7, @intCast(c_uint, ret));
+        return @truncate(
+            u7,
+            @intCast(
+                c_uint,
+                try internal.wrapCallWithReturn("git_hashsig_compare", .{
+                    @ptrCast(*const c.git_hashsig, self),
+                    @ptrCast(*const c.git_hashsig, other),
+                }),
+            ),
+        );
     }
 
     comptime {

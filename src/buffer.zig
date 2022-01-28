@@ -26,11 +26,9 @@ pub const Buf = extern struct {
     /// *Note*: This will not free the memory if it looks like it was not allocated by libgit2, but it will clear the buffer back
     /// to the empty state.
     pub fn deinit(self: *Buf) void {
-        log.debug("Buf.deinit called", .{});
+        if (internal.trace_log) log.debug("Buf.deinit called", .{});
 
         c.git_buf_dispose(@ptrCast(*c.git_buf, self));
-
-        log.debug("Buf freed successfully", .{});
     }
 
     /// Resize the buffer allocation to make more space.
@@ -45,31 +43,21 @@ pub const Buf = extern struct {
     /// If the allocation fails, this will return an error and the buffer will be marked as invalid for future operations,
     /// invaliding the contents.
     pub fn grow(self: *Buf, target_size: usize) !void {
-        log.debug("Buf.grow called, target_size: {}", .{target_size});
+        if (internal.trace_log) log.debug("Buf.grow called", .{});
 
         try internal.wrapCall("git_buf_grow", .{ @ptrCast(*c.git_buf, self), target_size });
-
-        log.debug("Buf grown successfully", .{});
     }
 
     pub fn isBinary(self: Buf) bool {
-        log.debug("Buf.isBinary called", .{});
+        if (internal.trace_log) log.debug("Buf.isBinary called", .{});
 
-        const ret = c.git_buf_is_binary(@ptrCast(*const c.git_buf, &self)) == 1;
-
-        log.debug("Buf is binary: {}", .{ret});
-
-        return ret;
+        return c.git_buf_is_binary(@ptrCast(*const c.git_buf, &self)) == 1;
     }
 
     pub fn containsNull(self: Buf) bool {
-        log.debug("Buf.isBinary called", .{});
+        if (internal.trace_log) log.debug("Buf.containsNull called", .{});
 
-        const ret = std.mem.indexOfScalar(u8, self.toSlice(), 0) != null;
-
-        log.debug("Buf contains null: {}", .{ret});
-
-        return ret;
+        return std.mem.indexOfScalar(u8, self.toSlice(), 0) != null;
     }
 
     test {

@@ -13,7 +13,7 @@ pub const WriteStream = extern struct {
     free: fn (self: *WriteStream) callconv(.C) void,
 
     pub fn commit(self: *WriteStream) !git.Oid {
-        log.debug("WriteStream.commit called", .{});
+        if (internal.trace_log) log.debug("WriteStream.commit called", .{});
 
         var ret: git.Oid = undefined;
 
@@ -21,13 +21,6 @@ pub const WriteStream = extern struct {
             @ptrCast(*c.git_oid, &ret),
             @ptrCast(*c.git_writestream, self),
         });
-
-        // This check is to prevent formating the oid when we are not going to print anything
-        if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-            var buf: [git.Oid.hex_buffer_size]u8 = undefined;
-            const slice = try ret.formatHex(&buf);
-            log.debug("successfully fetched blob id: {s}", .{slice});
-        }
 
         return ret;
     }

@@ -98,13 +98,9 @@ pub const FilterList = opaque {
     /// ## Parameters
     /// * `name` - The name of the filter to query
     pub fn contains(self: *FilterList, name: [:0]const u8) bool {
-        log.debug("FilterList.contains called, name: {s}", .{name});
+        if (internal.trace_log) log.debug("FilterList.contains called", .{});
 
-        const ret = c.git_filter_list_contains(@ptrCast(*c.git_filter_list, self), name.ptr) != 0;
-
-        log.debug("filter list contains filter: {}", .{ret});
-
-        return ret;
+        return c.git_filter_list_contains(@ptrCast(*c.git_filter_list, self), name.ptr) != 0;
     }
 
     /// Apply a filter list to the contents of a file on disk
@@ -113,7 +109,7 @@ pub const FilterList = opaque {
     /// * `repo` - The repository in which to perform the filtering
     /// * `path` - The path of the file to filter, a relative path will be taken as relative to the workdir
     pub fn applyToFile(self: *FilterList, repo: *git.Repository, path: [:0]const u8) !git.Buf {
-        log.debug("FilterList.applyToFile called, repo: {*}, path: {s}", .{ repo, path });
+        if (internal.trace_log) log.debug("FilterList.applyToFile called", .{});
 
         var ret: git.Buf = .{};
 
@@ -124,8 +120,6 @@ pub const FilterList = opaque {
             path.ptr,
         });
 
-        log.debug("result: {s}", .{ret.toSlice()});
-
         return ret;
     }
 
@@ -134,7 +128,7 @@ pub const FilterList = opaque {
     /// ## Parameters
     /// * `blob` - The blob to filter
     pub fn applyToBlob(self: *FilterList, blob: *git.Blob) !git.Buf {
-        log.debug("FilterList.applyToBlob called, blob: {*}", .{blob});
+        if (internal.trace_log) log.debug("FilterList.applyToBlob called", .{});
 
         var ret: git.Buf = .{};
 
@@ -143,8 +137,6 @@ pub const FilterList = opaque {
             @ptrCast(*c.git_filter_list, self),
             @ptrCast(*c.git_blob, blob),
         });
-
-        log.debug("result: {s}", .{ret.toSlice()});
 
         return ret;
     }
@@ -161,7 +153,7 @@ pub const FilterList = opaque {
         path: [:0]const u8,
         target: *git.WriteStream,
     ) !void {
-        log.debug("FilterList.applyToFileToStream called, repo: {*}, path: {s}, target: {*}", .{ repo, path, target });
+        if (internal.trace_log) log.debug("FilterList.applyToFileToStream called", .{});
 
         try internal.wrapCall("git_filter_list_stream_file", .{
             @ptrCast(*c.git_filter_list, self),
@@ -169,8 +161,6 @@ pub const FilterList = opaque {
             path.ptr,
             @ptrCast(*c.git_writestream, target),
         });
-
-        log.debug("successfully filtered file to stream", .{});
     }
 
     /// Apply a filter list to a blob as a stream
@@ -179,23 +169,19 @@ pub const FilterList = opaque {
     /// * `blob` - The blob to filter
     /// * `target` - The stream into which the data will be written
     pub fn applyToBlobToStream(self: *FilterList, blob: *git.Blob, target: *git.WriteStream) !void {
-        log.debug("FilterList.applyToBlobToStream called, blob: {*}, target: {*}", .{ blob, target });
+        if (internal.trace_log) log.debug("FilterList.applyToBlobToStream called", .{});
 
         try internal.wrapCall("git_filter_list_stream_blob", .{
             @ptrCast(*c.git_filter_list, self),
             @ptrCast(*c.git_blob, blob),
             @ptrCast(*c.git_writestream, target),
         });
-
-        log.debug("successfully filtered blob to stream", .{});
     }
 
     pub fn deinit(self: *FilterList) void {
-        log.debug("FilterList.deinit called", .{});
+        if (internal.trace_log) log.debug("FilterList.deinit called", .{});
 
         c.git_filter_list_free(@ptrCast(*c.git_filter_list, self));
-
-        log.debug("filter list freed successfully", .{});
     }
 
     /// Apply filter list to a data buffer.
@@ -203,7 +189,7 @@ pub const FilterList = opaque {
     /// ## Parameters
     /// * `name` - Buffer containing the data to filter
     pub fn applyToBuffer(self: *FilterList, in: [:0]const u8) !git.Buf {
-        log.debug("FilterList.applyToBuffer called, in: {s}", .{in});
+        if (internal.trace_log) log.debug("FilterList.applyToBuffer called", .{});
 
         var ret: git.Buf = .{};
 
@@ -214,8 +200,6 @@ pub const FilterList = opaque {
             in.len,
         });
 
-        log.debug("result: {s}", .{ret.toSlice()});
-
         return ret;
     }
 
@@ -225,7 +209,7 @@ pub const FilterList = opaque {
     /// * `buffer` - The buffer to filter
     /// * `target` - The stream into which the data will be written
     pub fn applyToBufferToStream(self: *FilterList, buffer: [:0]const u8, target: *git.WriteStream) !void {
-        log.debug("FilterList.applyToBufferToStream called, buffer: {s}, target: {*}", .{ buffer, target });
+        if (internal.trace_log) log.debug("FilterList.applyToBufferToStream called", .{});
 
         try internal.wrapCall("git_filter_list_stream_buffer", .{
             @ptrCast(*c.git_filter_list, self),
@@ -233,8 +217,6 @@ pub const FilterList = opaque {
             buffer.len,
             @ptrCast(*c.git_writestream, target),
         });
-
-        log.debug("successfully filtered buffer to stream", .{});
     }
 
     comptime {

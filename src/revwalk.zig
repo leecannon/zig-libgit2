@@ -8,25 +8,19 @@ const git = @import("git.zig");
 /// Representation of an in-progress walk through the commits in a repo
 pub const RevWalk = opaque {
     pub fn deinit(self: *RevWalk) void {
-        log.debug("RevWalk.deinit called", .{});
+        if (internal.trace_log) log.debug("RevWalk.deinit called", .{});
 
         c.git_revwalk_free(@ptrCast(*c.git_revwalk, self));
-
-        log.debug("revwalk freed successfully", .{});
     }
 
     /// Return the repository on which this walker is operating.
     pub fn repository(self: *RevWalk) *git.Repository {
-        log.debug("RevWalk.repository called", .{});
+        if (internal.trace_log) log.debug("RevWalk.repository called", .{});
 
-        const ret = @ptrCast(
+        return @ptrCast(
             *git.Repository,
             c.git_revwalk_repository(@ptrCast(*c.git_revwalk, self)),
         );
-
-        log.debug("successfully fetched owning repository: {s}", .{ret});
-
-        return ret;
     }
 
     /// Reset the revision walker for reuse.
@@ -36,13 +30,11 @@ pub const RevWalk = opaque {
     ///
     /// The revision walk is automatically reset when a walk is over.
     pub fn reset(self: *RevWalk) !void {
-        log.debug("RevWalk.reset called", .{});
+        if (internal.trace_log) log.debug("RevWalk.reset called", .{});
 
         try internal.wrapCall("git_revwalk_reset", .{
             @ptrCast(*c.git_revwalk, self),
         });
-
-        log.debug("successfully reset revwalk", .{});
     }
 
     /// Add a new root for the traversal
@@ -57,19 +49,12 @@ pub const RevWalk = opaque {
     /// ## Parameters
     /// * `id` - The oid of the commit to start from.
     pub fn push(self: *RevWalk, id: git.Oid) !void {
-        // This check is to prevent formating the oid when we are not going to print anything
-        if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-            var buf: [git.Oid.hex_buffer_size]u8 = undefined;
-            const slice = try id.formatHex(&buf);
-            log.debug("RevWalk.reset called, id={s}", .{slice});
-        }
+        if (internal.trace_log) log.debug("RevWalk.reset called", .{});
 
         try internal.wrapCall("git_revwalk_push", .{
             @ptrCast(*c.git_revwalk, self),
             @ptrCast(*const c.git_oid, &id),
         });
-
-        log.debug("successfully pushed traversal root", .{});
     }
 
     /// Push matching references
@@ -83,25 +68,21 @@ pub const RevWalk = opaque {
     /// ## Parameters
     /// * `glob` - The glob pattern references should match.
     pub fn pushGlob(self: *RevWalk, glob: [:0]const u8) !void {
-        log.debug("RevWalk.pushGlob called, glob={s}", .{glob});
+        if (internal.trace_log) log.debug("RevWalk.pushGlob called", .{});
 
         try internal.wrapCall("git_revwalk_push_glob", .{
             @ptrCast(*c.git_revwalk, self),
             glob.ptr,
         });
-
-        log.debug("successfully pushed globbed references", .{});
     }
 
     /// Push the repository's HEAD
     pub fn pushHead(self: *RevWalk) !void {
-        log.debug("RevWalk.pushHead called", .{});
+        if (internal.trace_log) log.debug("RevWalk.pushHead called", .{});
 
         try internal.wrapCall("git_revwalk_push_head", .{
             @ptrCast(*c.git_revwalk, self),
         });
-
-        log.debug("successfully pushed HEAD", .{});
     }
 
     /// Mark a commit (and its ancestors) uninteresting for the output.
@@ -113,19 +94,12 @@ pub const RevWalk = opaque {
     /// ## Parameters
     /// * `id` - The oid of commit that will be ignored during the traversal.
     pub fn hide(self: *RevWalk, id: git.Oid) !void {
-        // This check is to prevent formating the oid when we are not going to print anything
-        if (@enumToInt(std.log.Level.debug) <= @enumToInt(std.log.level)) {
-            var buf: [git.Oid.hex_buffer_size]u8 = undefined;
-            const slice = try id.formatHex(&buf);
-            log.debug("RevWalk.hide called, id={s}", .{slice});
-        }
+        if (internal.trace_log) log.debug("RevWalk.hide called", .{});
 
         try internal.wrapCall("git_revwalk_hide", .{
             @ptrCast(*c.git_revwalk, self),
             @ptrCast(*const c.git_oid, &id),
         });
-
-        log.debug("successfully hidden commit fro revwalk", .{});
     }
 
     /// Hide matching references.
@@ -140,25 +114,21 @@ pub const RevWalk = opaque {
     /// ## Parameters
     /// * `glob` - The glob pattern references should match.
     pub fn hideGlob(self: *RevWalk, glob: [:0]const u8) !void {
-        log.debug("RevWalk.hideGlob called, glob={s}", .{glob});
+        if (internal.trace_log) log.debug("RevWalk.hideGlob called", .{});
 
         try internal.wrapCall("git_revwalk_hide_glob", .{
             @ptrCast(*c.git_revwalk, self),
             glob.ptr,
         });
-
-        log.debug("successfully hidden globbed references", .{});
     }
 
     /// Hide the repository's HEAD
     pub fn hideHead(self: *RevWalk) !void {
-        log.debug("RevWalk.hideHead called", .{});
+        if (internal.trace_log) log.debug("RevWalk.hideHead called", .{});
 
         try internal.wrapCall("git_revwalk_hide_head", .{
             @ptrCast(*c.git_revwalk, self),
         });
-
-        log.debug("successfully hidden HEAD", .{});
     }
 
     /// Push the OID pointed to by a reference
@@ -168,14 +138,12 @@ pub const RevWalk = opaque {
     /// ## Parameters
     /// * `ref` - The reference to push.
     pub fn pushRef(self: *RevWalk, ref: [:0]const u8) !void {
-        log.debug("RevWalk.pushRef called, ref={s}", .{ref});
+        if (internal.trace_log) log.debug("RevWalk.pushRef called", .{});
 
         try internal.wrapCall("git_revwalk_push_ref", .{
             @ptrCast(*c.git_revwalk, self),
             ref.ptr,
         });
-
-        log.debug("successfully pushed reference", .{});
     }
 
     /// Hide the OID pointed to by a reference
@@ -185,14 +153,12 @@ pub const RevWalk = opaque {
     /// ## Parameters
     /// * `ref` - The reference to hide.
     pub fn hideRef(self: *RevWalk, ref: [:0]const u8) !void {
-        log.debug("RevWalk.hideRef called, ref={s}", .{ref});
+        if (internal.trace_log) log.debug("RevWalk.hideRef called", .{});
 
         try internal.wrapCall("git_revwalk_hide_ref", .{
             @ptrCast(*c.git_revwalk, self),
             ref.ptr,
         });
-
-        log.debug("successfully hidden reference", .{});
     }
 
     /// Push and hide the respective endpoints of the given range.
@@ -203,27 +169,23 @@ pub const RevWalk = opaque {
     /// ## Parameters
     /// * `range` - The range.
     pub fn pushRange(self: *RevWalk, range: [:0]const u8) !void {
-        log.debug("RevWalk.pushRange called, range={s}", .{range});
+        if (internal.trace_log) log.debug("RevWalk.pushRange called", .{});
 
         try internal.wrapCall("git_revwalk_push_range", .{
             @ptrCast(*c.git_revwalk, self),
             range.ptr,
         });
-
-        log.debug("successfully pushed range", .{});
     }
 
     /// Simplify the history by first-parent.
     ///
     /// No parents other than the first for each commit will be enqueued.
     pub fn simplifyFirstParent(self: *RevWalk) !void {
-        log.debug("RevWalk.simplifyFirstParent called", .{});
+        if (internal.trace_log) log.debug("RevWalk.simplifyFirstParent called", .{});
 
         try internal.wrapCall("git_revwalk_simplify_first_parent", .{
             @ptrCast(*c.git_revwalk, self),
         });
-
-        log.debug("successfully hidden HEAD", .{});
     }
 
     /// Get the next commit from the revision walk.
@@ -235,7 +197,7 @@ pub const RevWalk = opaque {
     ///
     /// The revision walker is reset when the walk is over.
     pub fn next(self: *RevWalk) !?git.Oid {
-        log.debug("RevWalk.next called", .{});
+        if (internal.trace_log) log.debug("RevWalk.next called", .{});
 
         var oid: git.Oid = undefined;
 
@@ -257,14 +219,12 @@ pub const RevWalk = opaque {
     /// ## Parameters
     /// * `sort_mode` - The sort mode to apply.
     pub fn setSortingMode(self: *RevWalk, sort_mode: SortMode) !void {
-        log.debug("RevWalk.setSortingMode called, sort_mode={}", .{sort_mode});
+        if (internal.trace_log) log.debug("RevWalk.setSortingMode called", .{});
 
         try internal.wrapCall("git_revwalk_sorting", .{
             @ptrCast(*c.git_revwalk, self),
             @bitCast(u32, sort_mode),
         });
-
-        log.debug("successfully set sort mode", .{});
     }
 
     /// Mode to specify the sorting which a revwalk should perform.
@@ -365,15 +325,13 @@ pub const RevWalk = opaque {
             }
         }.cb;
 
-        log.debug("RevWalk.addHideCallbackWithUserData called", .{});
+        if (internal.trace_log) log.debug("RevWalk.addHideCallbackWithUserData called", .{});
 
         try internal.wrapCall("git_revwalk_add_hide_cb", .{
             @ptrCast(*c.git_revwalk, self),
             cb,
             user_data,
         });
-
-        log.debug("successfully added hide callback", .{});
     }
 
     comptime {

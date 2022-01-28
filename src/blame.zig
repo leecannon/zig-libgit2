@@ -7,25 +7,19 @@ const git = @import("git.zig");
 
 pub const Blame = opaque {
     pub fn deinit(self: *Blame) void {
-        log.debug("Blame.deinit called", .{});
+        if (internal.trace_log) log.debug("Blame.deinit called", .{});
 
         c.git_blame_free(@ptrCast(*c.git_blame, self));
-
-        log.debug("blame freed successfully", .{});
     }
 
     pub fn hunkCount(self: *Blame) u32 {
-        log.debug("Blame.hunkCount called", .{});
+        if (internal.trace_log) log.debug("Blame.hunkCount called", .{});
 
-        const ret = c.git_blame_get_hunk_count(@ptrCast(*c.git_blame, self));
-
-        log.debug("blame hunk count: {}", .{ret});
-
-        return ret;
+        return c.git_blame_get_hunk_count(@ptrCast(*c.git_blame, self));
     }
 
     pub fn hunkByIndex(self: *Blame, index: u32) ?*const BlameHunk {
-        log.debug("Blame.hunkByIndex called, index: {}", .{index});
+        if (internal.trace_log) log.debug("Blame.hunkByIndex called", .{});
 
         return @ptrCast(
             ?*const git.BlameHunk,
@@ -34,7 +28,7 @@ pub const Blame = opaque {
     }
 
     pub fn hunkByLine(self: *Blame, line: usize) ?*const BlameHunk {
-        log.debug("Blame.hunkByLine called, line: {}", .{line});
+        if (internal.trace_log) log.debug("Blame.hunkByLine called", .{});
 
         return @ptrCast(
             ?*const git.BlameHunk,
@@ -48,7 +42,7 @@ pub const Blame = opaque {
     ///
     /// Lines that differ between the buffer and the committed version are marked as having a zero OID for their final_commit_id.
     pub fn blameBuffer(self: *Blame, buffer: [:0]const u8) !*git.Blame {
-        log.debug("Blame.blameBuffer called, buffer: {s}", .{buffer});
+        if (internal.trace_log) log.debug("Blame.blameBuffer called", .{});
 
         var blame: *git.Blame = undefined;
 
@@ -58,8 +52,6 @@ pub const Blame = opaque {
             buffer.ptr,
             buffer.len,
         });
-
-        log.debug("successfully fetched blame buffer", .{});
 
         return blame;
     }

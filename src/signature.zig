@@ -26,11 +26,9 @@ pub const Signature = extern struct {
 
     /// Free an existing signature.
     pub fn deinit(self: *Signature) void {
-        log.debug("Signature.deinit called", .{});
+        if (internal.trace_log) log.debug("Signature.deinit called", .{});
 
         c.git_signature_free(@ptrCast(*c.git_signature, self));
-
-        log.debug("signature freed successfully", .{});
     }
 
     /// Create a new signature by parsing the given buffer, which is expected to be in the format
@@ -40,7 +38,7 @@ pub const Signature = extern struct {
     /// ## Parameters
     /// * `buf` - Signature string
     pub fn fromSlice(buf: [:0]const u8) !*Signature {
-        log.debug("Signature.fromSlice called, buf: {s}", .{buf});
+        if (internal.trace_log) log.debug("Signature.fromSlice called", .{});
 
         var ret: *git.Signature = undefined;
 
@@ -49,14 +47,12 @@ pub const Signature = extern struct {
             buf.ptr,
         });
 
-        log.debug("successfully initalized signature {*}", .{ret});
-
         return ret;
     }
 
     /// Create a copy of an existing signature. All internal strings are also duplicated.
     pub fn duplicate(self: *const git.Signature) !*git.Signature {
-        log.debug("Signature.duplicate called", .{});
+        if (internal.trace_log) log.debug("Signature.duplicate called", .{});
 
         var ret: *git.Signature = undefined;
 
@@ -64,8 +60,6 @@ pub const Signature = extern struct {
             @ptrCast(*?*c.git_signature, &ret),
             @ptrCast(*const c.git_signature, self),
         });
-
-        log.debug("successfully duplicated signature", .{});
 
         return ret;
     }
