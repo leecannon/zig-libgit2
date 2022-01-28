@@ -3516,7 +3516,7 @@ pub const Repository = opaque {
     /// accepted.
     ///
     /// In some cases (`@{<-n>}` or `<branchname>@{upstream}`), the expression may point to an intermediate reference. When such
-    //// expressions are being passed in, `reference` will be valued as well.
+    /// expressions are being passed in, `reference` will be valued as well.
     ///
     /// The returned object should be released with `Object.deinit()` when no longer needed.
     ///
@@ -4208,6 +4208,71 @@ pub const Repository = opaque {
         });
 
         log.debug("successfully created revwalk: {*}", .{ret});
+
+        return ret;
+    }
+
+    /// Initializes a rebase operation to rebase the changes in `branch` relative to `upstream` onto another branch. To begin the
+    /// rebase process, call `Rebase.next`. When you have finished with this object, call `Rebase.deinit`.
+    ///
+    /// ## Parameters
+    /// * `branch` - The terminal commit to rebase, or `null` to rebase the current branch.
+    /// * `upstream` - The commit to begin rebasing from, or `null` to rebase all reachable commits.
+    /// * `onto` - The branch to rebase onto, or `null` to rebase onto the given upstream.
+    /// * `options` - Options to specify how rebase is performed.
+    pub fn rebaseInit(
+        self: *Repository,
+        branch: ?*const git.AnnotatedCommit,
+        upstream: ?*const git.AnnotatedCommit,
+        onto: ?*const git.AnnotatedCommit,
+        options: git.RebaseOptions,
+    ) !*git.Rebase {
+        log.debug("Repository.rebaseInit called, branch={*}, upstream={*}, onto={*}, options={}", .{
+            branch,
+            upstream,
+            onto,
+            options,
+        });
+
+        var ret: *git.Rebase = undefined;
+
+        const c_options = internal.make_c_option.rebaseOptions(options);
+
+        try internal.wrapCall("git_rebase_init", .{
+            @ptrCast(*?*c.git_rebase, &ret),
+            @ptrCast(*c.git_repository, self),
+            @ptrCast(?*const c.git_annotated_commit, branch),
+            @ptrCast(?*const c.git_annotated_commit, upstream),
+            @ptrCast(?*const c.git_annotated_commit, onto),
+            &c_options,
+        });
+
+        log.debug("successfully created rebase: {*}", .{ret});
+
+        return ret;
+    }
+
+    /// Opens an existing rebase that was previously started by either an invocation of `Repository.rebaseInit` or by another client.
+    ///
+    /// ## Parameters
+    /// * `options` - Options to specify how rebase is performed.
+    pub fn rebaseOpen(
+        self: *Repository,
+        options: git.RebaseOptions,
+    ) !*git.Rebase {
+        log.debug("Repository.rebaseOpen called, options={}", .{options});
+
+        var ret: *git.Rebase = undefined;
+
+        const c_options = internal.make_c_option.rebaseOptions(options);
+
+        try internal.wrapCall("git_rebase_open", .{
+            @ptrCast(*?*c.git_rebase, &ret),
+            @ptrCast(*c.git_repository, self),
+            &c_options,
+        });
+
+        log.debug("successfully opened rebase: {*}", .{ret});
 
         return ret;
     }

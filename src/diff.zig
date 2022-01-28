@@ -31,7 +31,7 @@ pub const Diff = opaque {
     /// set true in the `Diff` structure.
     ///
     /// ## Parameters
-    ////// `index` - Index into diff list
+    /// * `index` - Index into diff list
     pub fn toPatch(self: *Diff, index: usize) !?*git.Patch {
         log.debug("Diff.toPatch called, index={}", .{index});
 

@@ -36,6 +36,7 @@ pub usingnamespace @import("pack.zig");
 pub usingnamespace @import("patch.zig");
 pub usingnamespace @import("pathspec.zig");
 pub usingnamespace @import("proxy.zig");
+pub usingnamespace @import("rebase.zig");
 pub usingnamespace @import("refdb.zig");
 pub usingnamespace @import("reference.zig");
 pub usingnamespace @import("reflog.zig");

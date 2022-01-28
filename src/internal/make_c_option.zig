@@ -3,6 +3,19 @@ const c = @import("c.zig");
 
 const git = @import("../git.zig");
 
+pub fn rebaseOptions(self: git.RebaseOptions) c.git_rebase_options {
+    return .{
+        .version = c.GIT_REBASE_OPTIONS_VERSION,
+        .quiet = @boolToInt(self.quiet),
+        .inmemory = @boolToInt(self.in_memory),
+        .rewrite_notes_ref = if (self.rewrite_notes_ref) |s| s.ptr else null,
+        .merge_options = mergeOptions(self.merge_options),
+        .checkout_options = checkoutOptions(self.checkout_options),
+        .signing_cb = @ptrCast(c.git_commit_signing_cb, self.signing_cb),
+        .payload = self.payload,
+    };
+}
+
 pub fn diffOptions(self: git.DiffOptions) c.git_diff_options {
     return .{
         .version = c.GIT_DIFF_OPTIONS_VERSION,
