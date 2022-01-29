@@ -48,10 +48,10 @@ pub const Buf = extern struct {
         try internal.wrapCall("git_buf_grow", .{ @ptrCast(*c.git_buf, self), target_size });
     }
 
-    pub fn isBinary(self: Buf) bool {
+    pub fn isBinary(self: *const Buf) bool {
         if (internal.trace_log) log.debug("Buf.isBinary called", .{});
 
-        return c.git_buf_is_binary(@ptrCast(*const c.git_buf, &self)) == 1;
+        return c.git_buf_is_binary(@ptrCast(*const c.git_buf, self)) == 1;
     }
 
     pub fn containsNull(self: Buf) bool {

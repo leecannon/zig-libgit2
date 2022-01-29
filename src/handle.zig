@@ -1115,7 +1115,7 @@ pub const Handle = struct {
     ///
     /// ## Parameters
     /// * `pathspec` - A `git.StrArray` of the paths to match
-    pub fn pathspecInit(self: Handle, pathspec: git.StrArray) !*git.Pathspec {
+    pub fn pathspecInit(self: Handle, pathspec: *const git.StrArray) !*git.Pathspec {
         _ = self;
 
         if (internal.trace_log) log.debug("Handle.pathspecInit called", .{});
@@ -1124,7 +1124,7 @@ pub const Handle = struct {
 
         try internal.wrapCall("git_pathspec_new", .{
             @ptrCast(*?*c.git_pathspec, &ret),
-            @ptrCast(*const c.git_strarray, &pathspec),
+            @ptrCast(*const c.git_strarray, pathspec),
         });
 
         return ret;

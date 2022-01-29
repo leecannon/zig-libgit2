@@ -48,12 +48,12 @@ pub const RevWalk = opaque {
     ///
     /// ## Parameters
     /// * `id` - The oid of the commit to start from.
-    pub fn push(self: *RevWalk, id: git.Oid) !void {
+    pub fn push(self: *RevWalk, id: *const git.Oid) !void {
         if (internal.trace_log) log.debug("RevWalk.reset called", .{});
 
         try internal.wrapCall("git_revwalk_push", .{
             @ptrCast(*c.git_revwalk, self),
-            @ptrCast(*const c.git_oid, &id),
+            @ptrCast(*const c.git_oid, id),
         });
     }
 
@@ -93,12 +93,12 @@ pub const RevWalk = opaque {
     ///
     /// ## Parameters
     /// * `id` - The oid of commit that will be ignored during the traversal.
-    pub fn hide(self: *RevWalk, id: git.Oid) !void {
+    pub fn hide(self: *RevWalk, id: *const git.Oid) !void {
         if (internal.trace_log) log.debug("RevWalk.hide called", .{});
 
         try internal.wrapCall("git_revwalk_hide", .{
             @ptrCast(*c.git_revwalk, self),
-            @ptrCast(*const c.git_oid, &id),
+            @ptrCast(*const c.git_oid, id),
         });
     }
 

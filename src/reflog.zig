@@ -31,8 +31,8 @@ pub const Reflog = opaque {
     /// * `msg` - The reflog message, optional
     pub fn append(
         self: *Reflog,
-        id: git.Oid,
-        signature: git.Signature,
+        id: *const git.Oid,
+        signature: *const git.Signature,
         msg: ?[:0]const u8,
     ) !void {
         if (internal.trace_log) log.debug("Reflog.append called", .{});
@@ -41,8 +41,8 @@ pub const Reflog = opaque {
 
         try internal.wrapCall("git_reflog_append", .{
             @ptrCast(*c.git_reflog, self),
-            @ptrCast(*const c.git_oid, &id),
-            @ptrCast(*const c.git_signature, &signature),
+            @ptrCast(*const c.git_oid, id),
+            @ptrCast(*const c.git_signature, signature),
             c_msg,
         });
     }

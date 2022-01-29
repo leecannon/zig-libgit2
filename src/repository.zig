@@ -149,12 +149,12 @@ pub const Repository = opaque {
     ///
     /// ## Parameters
     /// * `commit` - Object id of the commit the HEAD should point to
-    pub fn headDetachedSet(self: *Repository, commit: git.Oid) !void {
+    pub fn headDetachedSet(self: *Repository, commit: *const git.Oid) !void {
         if (internal.trace_log) log.debug("Repository.headDetachedSet called", .{});
 
         try internal.wrapCall("git_repository_set_head_detached", .{
             @ptrCast(*c.git_repository, self),
-            @ptrCast(*const c.git_oid, &commit),
+            @ptrCast(*const c.git_oid, commit),
         });
     }
 
@@ -812,7 +812,7 @@ pub const Repository = opaque {
         self: *git.Repository,
         branch_name: [:0]const u8,
         remote_url: [:0]const u8,
-        id: git.Oid,
+        id: *const git.Oid,
     ) !*git.AnnotatedCommit {
         if (internal.trace_log) log.debug("Repository.annotatedCommitCreateFromFetchHead", .{});
 
@@ -823,13 +823,13 @@ pub const Repository = opaque {
             @ptrCast(*c.git_repository, self),
             branch_name.ptr,
             remote_url.ptr,
-            @ptrCast(*const c.git_oid, &id),
+            @ptrCast(*const c.git_oid, id),
         });
 
         return result;
     }
 
-    pub fn annotatedCommitCreateFromLookup(self: *Repository, id: git.Oid) !*git.AnnotatedCommit {
+    pub fn annotatedCommitCreateFromLookup(self: *Repository, id: *const git.Oid) !*git.AnnotatedCommit {
         if (internal.trace_log) log.debug("Repository.annotatedCommitCreateFromLookup called", .{});
 
         var result: *git.AnnotatedCommit = undefined;
@@ -837,7 +837,7 @@ pub const Repository = opaque {
         try internal.wrapCall("git_annotated_commit_lookup", .{
             @ptrCast(*?*c.git_annotated_commit, &result),
             @ptrCast(*c.git_repository, self),
-            @ptrCast(*const c.git_oid, &id),
+            @ptrCast(*const c.git_oid, id),
         });
 
         return result;
@@ -3619,6 +3619,27 @@ pub const Repository = opaque {
             @ptrCast(*?*c.git_rebase, &ret),
             @ptrCast(*c.git_repository, self),
             &c_options,
+        });
+
+        return ret;
+    }
+
+    /// Lookup a tag object from the repository.
+    ///
+    /// ## Parameters
+    /// * `id` - Identity of the tag to locate.
+    pub fn tagLookup(
+        self: *Repository,
+        id: *const git.Oid,
+    ) !*git.Tag {
+        if (internal.trace_log) log.debug("Repository.tagLookup called", .{});
+
+        var ret: *git.Tag = undefined;
+
+        try internal.wrapCall("git_tag_lookup", .{
+            @ptrCast(*?*c.git_tag, &ret),
+            @ptrCast(*c.git_repository, self),
+            @ptrCast(*const c.git_oid, id),
         });
 
         return ret;
