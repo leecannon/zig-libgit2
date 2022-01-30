@@ -468,6 +468,9 @@ pub const Repository = opaque {
         ) c_int,
     ) !c_int {
         const UserDataType = @TypeOf(user_data);
+        const ptr_info = @typeInfo(UserDataType);
+        comptime std.debug.assert(ptr_info == .Pointer); // Must be a pointer
+        const alignment = ptr_info.Pointer.alignment;
 
         const cb = struct {
             pub fn cb(
@@ -482,7 +485,7 @@ pub const Repository = opaque {
                     std.mem.sliceTo(c_remote_url.?, 0),
                     @ptrCast(*const git.Oid, c_oid),
                     c_is_merge == 1,
-                    @ptrCast(UserDataType, payload),
+                    @ptrCast(UserDataType, @alignCast(alignment, payload)),
                 );
             }
         }.cb;
@@ -539,10 +542,16 @@ pub const Repository = opaque {
         ) c_int,
     ) !c_int {
         const UserDataType = @TypeOf(user_data);
+        const ptr_info = @typeInfo(UserDataType);
+        comptime std.debug.assert(ptr_info == .Pointer); // Must be a pointer
+        const alignment = ptr_info.Pointer.alignment;
 
         const cb = struct {
             pub fn cb(c_oid: ?*const c.git_oid, payload: ?*anyopaque) callconv(.C) c_int {
-                return callback_fn(@ptrCast(*const git.Oid, c_oid), @ptrCast(UserDataType, payload));
+                return callback_fn(
+                    @ptrCast(*const git.Oid, c_oid),
+                    @ptrCast(UserDataType, @alignCast(alignment, payload)),
+                );
             }
         }.cb;
 
@@ -1047,28 +1056,13 @@ pub const Repository = opaque {
         ) c_int,
     ) !c_int {
         const cb = struct {
-            pub fn cb(
-                name: ?[*:0]const u8,
-                value: ?[*:0]const u8,
-                payload: ?*anyopaque,
-            ) callconv(.C) c_int {
-                _ = payload;
-                return callback_fn(
-                    std.mem.sliceTo(name.?, 0),
-                    if (value) |ptr| std.mem.sliceTo(ptr, 0) else null,
-                );
+            pub fn cb(name: [:0]const u8, value: ?[:0]const u8, _: *u8) c_int {
+                return callback_fn(name, value);
             }
         }.cb;
 
-        if (internal.trace_log) log.debug("Repository.attributeForeach called", .{});
-
-        return try internal.wrapCallWithReturn("git_attr_foreach", .{
-            @ptrCast(*const c.git_repository, self),
-            internal.make_c_option.attributeFlags(flags),
-            path.ptr,
-            cb,
-            null,
-        });
+        var dummy_data: u8 = undefined;
+        return self.attributeForeachWithUserData(flags, path, &dummy_data, cb);
     }
 
     /// Invoke `callback_fn` for all the git attributes for a path.
@@ -1097,6 +1091,9 @@ pub const Repository = opaque {
         ) c_int,
     ) !c_int {
         const UserDataType = @TypeOf(user_data);
+        const ptr_info = @typeInfo(UserDataType);
+        comptime std.debug.assert(ptr_info == .Pointer); // Must be a pointer
+        const alignment = ptr_info.Pointer.alignment;
 
         const cb = struct {
             pub fn cb(
@@ -1107,7 +1104,7 @@ pub const Repository = opaque {
                 return callback_fn(
                     std.mem.sliceTo(name.?, 0),
                     if (value) |ptr| std.mem.sliceTo(ptr, 0) else null,
-                    @ptrCast(UserDataType, payload),
+                    @ptrCast(UserDataType, @alignCast(alignment, payload)),
                 );
             }
         }.cb;
@@ -1932,30 +1929,13 @@ pub const Repository = opaque {
         ) c_int,
     ) !c_int {
         const cb = struct {
-            pub fn cb(
-                name: ?[*:0]const u8,
-                value: ?[*:0]const u8,
-                payload: ?*anyopaque,
-            ) callconv(.C) c_int {
-                _ = payload;
-                return callback_fn(
-                    std.mem.sliceTo(name.?, 0),
-                    if (value) |ptr| std.mem.sliceTo(ptr, 0) else null,
-                );
+            pub fn cb(name: [:0]const u8, value: ?[:0]const u8, _: *u8) c_int {
+                return callback_fn(name, value);
             }
         }.cb;
 
-        if (internal.trace_log) log.debug("Repository.attributeForeach called", .{});
-
-        const c_options = internal.make_c_option.attributeOptions(options);
-
-        return try internal.wrapCallWithReturn("git_attr_foreach_ext", .{
-            @ptrCast(*const c.git_repository, self),
-            &c_options,
-            path.ptr,
-            cb,
-            null,
-        });
+        var dummy_data: u8 = undefined;
+        return self.attributeForeachExtendedWithUserData(options, path, &dummy_data, cb);
     }
 
     /// Invoke `callback_fn` for all the git attributes for a path with extended options.
@@ -1972,7 +1952,7 @@ pub const Repository = opaque {
     /// * `name` - The attribute name
     /// * `value` - The attribute value. May be `null` if the attribute is explicitly set to unspecified using the '!' sign.
     /// * `user_data_ptr` - Pointer to user data
-    pub fn attributeForeachWithUserDataExtended(
+    pub fn attributeForeachExtendedWithUserData(
         self: *const Repository,
         options: git.AttributeOptions,
         path: [:0]const u8,
@@ -1984,6 +1964,9 @@ pub const Repository = opaque {
         ) c_int,
     ) !c_int {
         const UserDataType = @TypeOf(user_data);
+        const ptr_info = @typeInfo(UserDataType);
+        comptime std.debug.assert(ptr_info == .Pointer); // Must be a pointer
+        const alignment = ptr_info.Pointer.alignment;
 
         const cb = struct {
             pub fn cb(
@@ -1994,7 +1977,7 @@ pub const Repository = opaque {
                 return callback_fn(
                     std.mem.sliceTo(name.?, 0),
                     if (value) |ptr| std.mem.sliceTo(ptr, 0) else null,
-                    @ptrCast(UserDataType, payload),
+                    @ptrCast(UserDataType, @alignCast(alignment, payload)),
                 );
             }
         }.cb;
@@ -2564,6 +2547,9 @@ pub const Repository = opaque {
         ) c_int,
     ) !c_int {
         const UserDataType = @TypeOf(user_data);
+        const ptr_info = @typeInfo(UserDataType);
+        comptime std.debug.assert(ptr_info == .Pointer); // Must be a pointer
+        const alignment = ptr_info.Pointer.alignment;
 
         const cb = struct {
             pub fn cb(
@@ -2574,7 +2560,7 @@ pub const Repository = opaque {
                 return callback_fn(
                     @ptrCast(*const git.Oid, blob_id),
                     @ptrCast(*const git.Oid, annotated_object_id),
-                    @ptrCast(UserDataType, payload),
+                    @ptrCast(UserDataType, @alignCast(alignment, payload)),
                 );
             }
         }.cb;
@@ -3521,6 +3507,9 @@ pub const Repository = opaque {
         ) c_int,
     ) !c_int {
         const UserDataType = @TypeOf(user_data);
+        const ptr_info = @typeInfo(UserDataType);
+        comptime std.debug.assert(ptr_info == .Pointer); // Must be a pointer
+        const alignment = ptr_info.Pointer.alignment;
 
         const cb = struct {
             pub fn cb(
@@ -3533,7 +3522,7 @@ pub const Repository = opaque {
                     index,
                     if (message) |m| std.mem.sliceTo(m, 0) else null,
                     @ptrCast(*const git.Oid, stash_id),
-                    @ptrCast(UserDataType, payload),
+                    @ptrCast(UserDataType, @alignCast(alignment, payload)),
                 );
             }
         }.cb;
@@ -3905,6 +3894,9 @@ pub const Repository = opaque {
         if (internal.trace_log) log.debug("Index.tagForeachWithUserData called", .{});
 
         const UserDataType = @TypeOf(user_data);
+        const ptr_info = @typeInfo(UserDataType);
+        comptime std.debug.assert(ptr_info == .Pointer); // Must be a pointer
+        const alignment = ptr_info.Pointer.alignment;
 
         const cb = struct {
             pub fn cb(
@@ -3915,7 +3907,7 @@ pub const Repository = opaque {
                 return callback_fn(
                     std.mem.sliceTo(name, 0),
                     @ptrCast(*const git.Oid, oid),
-                    @ptrCast(UserDataType, payload),
+                    @ptrCast(UserDataType, @alignCast(alignment, payload)),
                 );
             }
         }.cb;

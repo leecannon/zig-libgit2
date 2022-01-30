@@ -185,13 +185,19 @@ pub const PackBuilder = opaque {
         ) c_int,
     ) !void {
         const UserDataType = @TypeOf(user_data);
+        const ptr_info = @typeInfo(UserDataType);
+        comptime std.debug.assert(ptr_info == .Pointer); // Must be a pointer
+        const alignment = ptr_info.Pointer.alignment;
 
         const cb = struct {
             pub fn cb(
                 stats: *const c.git_indexer_progress,
                 payload: ?*anyopaque,
             ) callconv(.C) c_int {
-                return callback_fn(@ptrCast(*const git.IndexerProgress, stats), @ptrCast(UserDataType, payload));
+                return callback_fn(
+                    @ptrCast(*const git.IndexerProgress, stats),
+                    @ptrCast(UserDataType, @alignCast(alignment, payload)),
+                );
             }
         }.cb;
 
@@ -269,6 +275,9 @@ pub const PackBuilder = opaque {
         ) c_int,
     ) !void {
         const UserDataType = @TypeOf(user_data);
+        const ptr_info = @typeInfo(UserDataType);
+        comptime std.debug.assert(ptr_info == .Pointer); // Must be a pointer
+        const alignment = ptr_info.Pointer.alignment;
 
         const cb = struct {
             pub fn cb(
@@ -278,7 +287,7 @@ pub const PackBuilder = opaque {
             ) callconv(.C) c_int {
                 return callback_fn(
                     @ptrCast([*]u8, ptr)[0..len],
-                    @ptrCast(UserDataType, payload),
+                    @ptrCast(UserDataType, @alignCast(alignment, payload)),
                 );
             }
         }.cb;
@@ -337,8 +346,9 @@ pub const PackBuilder = opaque {
         ) void,
     ) void {
         const UserDataType = @TypeOf(user_data);
-
-        // fn (c_int, u32, u32, ?*anyopaque) callconv(.C) c_int
+        const ptr_info = @typeInfo(UserDataType);
+        comptime std.debug.assert(ptr_info == .Pointer); // Must be a pointer
+        const alignment = ptr_info.Pointer.alignment;
 
         const cb = struct {
             pub fn cb(
@@ -351,7 +361,7 @@ pub const PackBuilder = opaque {
                     @intToEnum(PackbuilderStage, stage),
                     current,
                     total,
-                    @ptrCast(UserDataType, payload),
+                    @ptrCast(UserDataType, @alignCast(alignment, payload)),
                 );
                 return 0;
             }

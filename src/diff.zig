@@ -516,6 +516,9 @@ pub const ApplyOptions = struct {
 };
 
 pub fn ApplyOptionsWithUserData(comptime T: type) type {
+    const ptr_info = @typeInfo(T);
+    comptime std.debug.assert(ptr_info == .Pointer); // Must be a pointer
+
     return struct {
         /// callback that will be made per delta (file)
         ///
@@ -541,6 +544,10 @@ pub fn ApplyOptionsWithUserData(comptime T: type) type {
             std.testing.refAllDecls(@This());
         }
     };
+}
+
+comptime {
+    if (@import("builtin").is_test) _ = ApplyOptionsWithUserData(*u8);
 }
 
 pub const ApplyOptionsFlags = packed struct {

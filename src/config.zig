@@ -132,10 +132,32 @@ pub const Config = opaque {
         self: *const Config,
         name: [:0]const u8,
         regex: ?[:0]const u8,
+        comptime callback_fn: fn (entry: *const ConfigEntry) c_int,
+    ) !c_int {
+        const cb = struct {
+            pub fn cb(
+                entry: *const ConfigEntry,
+                _: *u8,
+            ) c_int {
+                return callback_fn(entry);
+            }
+        }.cb;
+
+        var dummy_data: u8 = undefined;
+        return self.foreachMultivarWithUserData(name, regex, &dummy_data, cb);
+    }
+
+    pub fn foreachMultivarWithUserData(
+        self: *const Config,
+        name: [:0]const u8,
+        regex: ?[:0]const u8,
         user_data: anytype,
         comptime callback_fn: fn (entry: *const ConfigEntry, user_data_ptr: @TypeOf(user_data)) c_int,
     ) !c_int {
         const UserDataType = @TypeOf(user_data);
+        const ptr_info = @typeInfo(UserDataType);
+        comptime std.debug.assert(ptr_info == .Pointer); // Must be a pointer
+        const alignment = ptr_info.Pointer.alignment;
 
         const cb = struct {
             pub fn cb(
@@ -144,7 +166,7 @@ pub const Config = opaque {
             ) callconv(.C) c_int {
                 return callback_fn(
                     @ptrCast(*const ConfigEntry, entry),
-                    @ptrCast(UserDataType, payload),
+                    @ptrCast(UserDataType, @alignCast(alignment, payload)),
                 );
             }
         }.cb;
@@ -164,10 +186,30 @@ pub const Config = opaque {
 
     pub fn foreachConfig(
         self: *const Config,
+        comptime callback_fn: fn (entry: *const ConfigEntry) c_int,
+    ) !c_int {
+        const cb = struct {
+            pub fn cb(
+                entry: *const ConfigEntry,
+                _: *u8,
+            ) c_int {
+                return callback_fn(entry);
+            }
+        }.cb;
+
+        var dummy_data: u8 = undefined;
+        return self.foreachConfigWithUserData(&dummy_data, cb);
+    }
+
+    pub fn foreachConfigWithUserData(
+        self: *const Config,
         user_data: anytype,
         comptime callback_fn: fn (entry: *const ConfigEntry, user_data_ptr: @TypeOf(user_data)) c_int,
     ) !c_int {
         const UserDataType = @TypeOf(user_data);
+        const ptr_info = @typeInfo(UserDataType);
+        comptime std.debug.assert(ptr_info == .Pointer); // Must be a pointer
+        const alignment = ptr_info.Pointer.alignment;
 
         const cb = struct {
             pub fn cb(
@@ -176,7 +218,7 @@ pub const Config = opaque {
             ) callconv(.C) c_int {
                 return callback_fn(
                     @ptrCast(*const ConfigEntry, entry),
-                    @ptrCast(UserDataType, payload),
+                    @ptrCast(UserDataType, @alignCast(alignment, payload)),
                 );
             }
         }.cb;
@@ -193,10 +235,31 @@ pub const Config = opaque {
     pub fn foreachConfigMatch(
         self: *const Config,
         regex: [:0]const u8,
+        comptime callback_fn: fn (entry: *const ConfigEntry) c_int,
+    ) !c_int {
+        const cb = struct {
+            pub fn cb(
+                entry: *const ConfigEntry,
+                _: *u8,
+            ) c_int {
+                return callback_fn(entry);
+            }
+        }.cb;
+
+        var dummy_data: u8 = undefined;
+        return self.foreachConfigMatchWithUserData(regex, &dummy_data, cb);
+    }
+
+    pub fn foreachConfigMatchWithUserData(
+        self: *const Config,
+        regex: [:0]const u8,
         user_data: anytype,
         comptime callback_fn: fn (entry: *const ConfigEntry, user_data_ptr: @TypeOf(user_data)) c_int,
     ) !c_int {
         const UserDataType = @TypeOf(user_data);
+        const ptr_info = @typeInfo(UserDataType);
+        comptime std.debug.assert(ptr_info == .Pointer); // Must be a pointer
+        const alignment = ptr_info.Pointer.alignment;
 
         const cb = struct {
             pub fn cb(
@@ -205,7 +268,7 @@ pub const Config = opaque {
             ) callconv(.C) c_int {
                 return callback_fn(
                     @ptrCast(*const ConfigEntry, entry),
-                    @ptrCast(UserDataType, payload),
+                    @ptrCast(UserDataType, @alignCast(alignment, payload)),
                 );
             }
         }.cb;
@@ -493,10 +556,31 @@ pub const ConfigBackend = opaque {
     pub fn foreachConfigBackendMatch(
         self: *const ConfigBackend,
         regex: [:0]const u8,
+        comptime callback_fn: fn (entry: *const Config.ConfigEntry) c_int,
+    ) !c_int {
+        const cb = struct {
+            pub fn cb(
+                entry: *const Config.ConfigEntry,
+                _: *u8,
+            ) c_int {
+                return callback_fn(entry);
+            }
+        }.cb;
+
+        var dummy_data: u8 = undefined;
+        return self.foreachConfigBackendMatchWithUserData(regex, &dummy_data, cb);
+    }
+
+    pub fn foreachConfigBackendMatchWithUserData(
+        self: *const ConfigBackend,
+        regex: [:0]const u8,
         user_data: anytype,
         comptime callback_fn: fn (entry: *const Config.ConfigEntry, user_data_ptr: @TypeOf(user_data)) c_int,
     ) !c_int {
         const UserDataType = @TypeOf(user_data);
+        const ptr_info = @typeInfo(UserDataType);
+        comptime std.debug.assert(ptr_info == .Pointer); // Must be a pointer
+        const alignment = ptr_info.Pointer.alignment;
 
         const cb = struct {
             pub fn cb(
@@ -505,7 +589,7 @@ pub const ConfigBackend = opaque {
             ) callconv(.C) c_int {
                 return callback_fn(
                     @ptrCast(*const Config.ConfigEntry, entry),
-                    @ptrCast(UserDataType, payload),
+                    @ptrCast(UserDataType, @alignCast(alignment, payload)),
                 );
             }
         }.cb;

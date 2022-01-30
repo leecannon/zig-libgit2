@@ -315,13 +315,19 @@ pub const RevWalk = opaque {
         ) c_int,
     ) !void {
         const UserDataType = @TypeOf(user_data);
+        const ptr_info = @typeInfo(UserDataType);
+        comptime std.debug.assert(ptr_info == .Pointer); // Must be a pointer
+        const alignment = ptr_info.Pointer.alignment;
 
         const cb = struct {
             pub fn cb(
                 commit_id: *const c.commit_id,
                 payload: ?*anyopaque,
             ) callconv(.C) c_int {
-                return callback_fn(@ptrCast(*const git.Oid, commit_id), @ptrCast(UserDataType, payload));
+                return callback_fn(
+                    @ptrCast(*const git.Oid, commit_id),
+                    @ptrCast(UserDataType, @alignCast(alignment, payload)),
+                );
             }
         }.cb;
 

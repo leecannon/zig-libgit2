@@ -187,6 +187,9 @@ pub const Tree = opaque {
         ) c_int,
     ) !void {
         const UserDataType = @TypeOf(user_data);
+        const ptr_info = @typeInfo(UserDataType);
+        comptime std.debug.assert(ptr_info == .Pointer); // Must be a pointer
+        const alignment = ptr_info.Pointer.alignment;
 
         const cb = struct {
             pub fn cb(
@@ -197,7 +200,7 @@ pub const Tree = opaque {
                 return callback_fn(
                     std.mem.sliceTo(root, 0),
                     @ptrCast(*const TreeEntry, entry),
-                    @ptrCast(UserDataType, payload),
+                    @ptrCast(UserDataType, @alignCast(alignment, payload)),
                 );
             }
         }.cb;
@@ -427,6 +430,9 @@ pub const TreeBuilder = opaque {
         ) bool,
     ) !void {
         const UserDataType = @TypeOf(user_data);
+        const ptr_info = @typeInfo(UserDataType);
+        comptime std.debug.assert(ptr_info == .Pointer); // Must be a pointer
+        const alignment = ptr_info.Pointer.alignment;
 
         const cb = struct {
             pub fn cb(
@@ -435,7 +441,7 @@ pub const TreeBuilder = opaque {
             ) callconv(.C) c_int {
                 return callback_fn(
                     @ptrCast(*const TreeEntry, entry),
-                    @ptrCast(UserDataType, payload),
+                    @ptrCast(UserDataType, @alignCast(alignment, payload)),
                 ) != 0;
             }
         }.cb;

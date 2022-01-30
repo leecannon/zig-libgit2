@@ -1061,13 +1061,19 @@ pub const Handle = struct {
         _ = self;
 
         const UserDataType = @TypeOf(user_data);
+        const ptr_info = @typeInfo(UserDataType);
+        comptime std.debug.assert(ptr_info == .Pointer); // Must be a pointer
+        const alignment = ptr_info.Pointer.alignment;
 
         const cb = struct {
             pub fn cb(
                 stats: *const c.git_indexer_progress,
                 payload: ?*anyopaque,
             ) callconv(.C) c_int {
-                return callback_fn(@ptrCast(*const git.IndexerProgress, stats), @ptrCast(UserDataType, payload));
+                return callback_fn(
+                    @ptrCast(*const git.IndexerProgress, stats),
+                    @ptrCast(UserDataType, @alignCast(alignment, payload)),
+                );
             }
         }.cb;
 

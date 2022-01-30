@@ -205,6 +205,9 @@ pub const Patch = opaque {
         ) c_int,
     ) !c_int {
         const UserDataType = @TypeOf(user_data);
+        const ptr_info = @typeInfo(UserDataType);
+        comptime std.debug.assert(ptr_info == .Pointer); // Must be a pointer
+        const alignment = ptr_info.Pointer.alignment;
 
         const cb = struct {
             pub fn cb(
@@ -217,7 +220,7 @@ pub const Patch = opaque {
                     @ptrCast(*const git.DiffDelta, delta),
                     @ptrCast(*const git.DiffHunk, hunk),
                     @ptrCast(*const git.DiffLine, line),
-                    @ptrCast(UserDataType, payload),
+                    @ptrCast(UserDataType, @alignCast(alignment, payload)),
                 );
             }
         }.cb;

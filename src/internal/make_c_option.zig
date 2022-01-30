@@ -153,6 +153,13 @@ pub fn applyOptionsWithUserData(comptime T: type, self: git.ApplyOptionsWithUser
     };
 }
 
+comptime {
+    if (@import("builtin").is_test) {
+        var temp: u8 = undefined;
+        _ = applyOptionsWithUserData(*u8, .{ .payload = &temp });
+    }
+}
+
 pub fn blameOptions(self: git.BlameOptions) c.git_blame_options {
     return .{
         .version = c.GIT_BLAME_OPTIONS_VERSION,
