@@ -1412,6 +1412,25 @@ pub const Handle = struct {
         return ret;
     }
 
+    /// Determine whether a tag name is valid, meaning that (when prefixed with `refs/tags/`) that it is a valid reference name,
+    /// and that any additional tag name restrictions are imposed (eg, it cannot start with a `-`).
+    ///
+    /// ## Parameters
+    /// * `name` - Aa tag name to test
+    pub fn tagNameValid(self: Handle, name: [:0]const u8) !bool {
+        _ = self;
+        if (internal.trace_log) log.debug("Handle.tagNameValid called", .{});
+
+        var valid: c_int = undefined;
+
+        try internal.wrapCall("git_tag_name_is_valid", .{
+            &valid,
+            name.ptr,
+        });
+
+        return valid != 0;
+    }
+
     usingnamespace if (internal.has_libssh2) struct {
         /// Create a new ssh keyboard-interactive based credential object.
         ///

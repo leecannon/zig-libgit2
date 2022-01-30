@@ -3628,10 +3628,7 @@ pub const Repository = opaque {
     ///
     /// ## Parameters
     /// * `id` - Identity of the tag to locate.
-    pub fn tagLookup(
-        self: *Repository,
-        id: *const git.Oid,
-    ) !*git.Tag {
+    pub fn tagLookup(self: *Repository, id: *const git.Oid) !*git.Tag {
         if (internal.trace_log) log.debug("Repository.tagLookup called", .{});
 
         var ret: *git.Tag = undefined;
@@ -3643,6 +3640,291 @@ pub const Repository = opaque {
         });
 
         return ret;
+    }
+
+    /// Lookup a tag object from the repository, given a prefix of its identifier (short id).
+    ///
+    /// ## Parameters
+    /// * `id` - Identity of the tag to locate.
+    /// * `id` - The length of the short identifier
+    pub fn tagLookupPrefix(self: *Repository, id: *const git.Oid, len: usize) !*git.Tag {
+        if (internal.trace_log) log.debug("Repository.tagLookupPrefix called", .{});
+
+        var ret: *git.Tag = undefined;
+
+        try internal.wrapCall("git_tag_lookup_prefix", .{
+            @ptrCast(*?*c.git_tag, &ret),
+            @ptrCast(*c.git_repository, self),
+            @ptrCast(*const c.git_oid, id),
+            len,
+        });
+
+        return ret;
+    }
+
+    /// Create a new tag in the repository from an object.
+    ///
+    /// A new reference will also be created pointing to this tag object. If `force` is `true` and a reference already exists with
+    /// the given name, it'll be replaced.
+    ///
+    /// The message will not be cleaned up. This can be achieved through `Handle.messagePrettify`.
+    ///
+    /// The tag name will be checked for validity. You must avoid the characters '~', '^', ':', '\\', '?', '[', and '*', and the
+    /// sequences ".." and "@{" which have special meaning to revparse.
+    ///
+    /// ## Parameters
+    /// * `tag_name` - Name for the tag; this name is validated for consistency. It should also not conflict with an already
+    ///                existing tag name unless `force` is `true`.
+    /// * `target` - Object to which this tag points.
+    /// * `tagger` - Signature of the tagger for this tag, and of the tagging time.
+    /// * `message` - Full message for this tag.
+    /// * `force` - Overwrite existing references.
+    pub fn tagCreate(
+        self: *Repository,
+        tag_name: [:0]const u8,
+        target: *const git.Object,
+        tagger: ?*const git.Signature,
+        message: ?[:0]const u8,
+        force: bool,
+    ) !git.Oid {
+        if (internal.trace_log) log.debug("Repository.tagCreate called", .{});
+
+        var ret: git.Oid = undefined;
+
+        const c_message = if (message) |s| s.ptr else null;
+
+        try internal.wrapCall("git_tag_create", .{
+            @ptrCast(*c.git_oid, &ret),
+            @ptrCast(*c.git_repository, self),
+            tag_name.ptr,
+            @ptrCast(*const c.git_object, target),
+            @ptrCast(?*const c.git_signature, tagger),
+            c_message,
+            @boolToInt(force),
+        });
+
+        return ret;
+    }
+
+    /// Create a new tag in the object database pointing to a `git.Object`.
+    ///
+    /// The message will not be cleaned up. This can be achieved through `Handle.messagePrettify`.
+    ///
+    /// ## Parameters
+    /// * `tag_name` - Name for the tag.
+    /// * `target` - Object to which this tag points.
+    /// * `tagger` - Signature of the tagger for this tag, and of the tagging time.
+    /// * `message` - Full message for this tag.
+    pub fn tagAnnotationCreate(
+        self: *Repository,
+        tag_name: [:0]const u8,
+        target: *const git.Object,
+        tagger: ?*const git.Signature,
+        message: ?[:0]const u8,
+    ) !git.Oid {
+        if (internal.trace_log) log.debug("Repository.tagAnnotationCreate called", .{});
+
+        var ret: git.Oid = undefined;
+
+        const c_message = if (message) |s| s.ptr else null;
+
+        try internal.wrapCall("git_tag_annotation_create", .{
+            @ptrCast(*c.git_oid, &ret),
+            @ptrCast(*c.git_repository, self),
+            tag_name.ptr,
+            @ptrCast(*const c.git_object, target),
+            @ptrCast(?*const c.git_signature, tagger),
+            c_message,
+        });
+
+        return ret;
+    }
+
+    /// Create a new tag in the repository from a buffer
+    ///
+    /// ## Parameters
+    /// * `buffer` - Raw tag data.
+    /// * `force` - Overwrite existing tags.
+    pub fn tagCreateFromBuffer(
+        self: *Repository,
+        buffer: [:0]const u8,
+        force: bool,
+    ) !git.Oid {
+        if (internal.trace_log) log.debug("Repository.tagCreateFromBuffer called", .{});
+
+        var ret: git.Oid = undefined;
+
+        try internal.wrapCall("git_tag_create_from_buffer", .{
+            @ptrCast(*c.git_oid, &ret),
+            @ptrCast(*c.git_repository, self),
+            buffer.ptr,
+            @boolToInt(force),
+        });
+
+        return ret;
+    }
+
+    /// Create a new lightweight tag pointing at a target object.
+    ///
+    /// A new reference will also be created pointing to this tag object. If `force` is `true` and a reference already exists with
+    /// the given name, it'll be replaced.
+    ///
+    /// The tag name will be checked for validity. You must avoid the characters '~', '^', ':', '\\', '?', '[', and '*', and the
+    /// sequences ".." and "@{" which have special meaning to revparse.
+    ///
+    /// ## Parameters
+    /// * `tag_name` - Name for the tag; this name is validated for consistency. It should also not conflict with an already
+    ///                existing tag name unless `force` is `true`.
+    /// * `target` - Object to which this tag points.
+    /// * `force` - Overwrite existing references.
+    pub fn tagCreateLightweight(
+        self: *Repository,
+        tag_name: [:0]const u8,
+        target: *const git.Object,
+        force: bool,
+    ) !git.Oid {
+        if (internal.trace_log) log.debug("Repository.tagCreateLightweight called", .{});
+
+        var ret: git.Oid = undefined;
+
+        try internal.wrapCall("git_tag_create_lightweight", .{
+            @ptrCast(*c.git_oid, &ret),
+            @ptrCast(*c.git_repository, self),
+            tag_name.ptr,
+            @ptrCast(*const c.git_object, target),
+            @boolToInt(force),
+        });
+
+        return ret;
+    }
+
+    /// Delete an existing tag reference.
+    ///
+    /// The tag name will be checked for validity. See `Repository.tagCreate` for rules about valid names.
+    pub fn tagDelete(self: *Repository, name: [:0]const u8) !void {
+        if (internal.trace_log) log.debug("Repository.tagDelete called", .{});
+
+        try internal.wrapCall("git_tag_delete", .{
+            @ptrCast(*c.git_repository, self),
+            name.ptr,
+        });
+    }
+
+    /// Fill a list with all the tags in the Repository
+    ///
+    /// The string array will be filled with the names of the matching tags; these values are owned by the user and should be
+    /// free'd manually when no longer needed, using `StrArray.deinit`.
+    pub fn tagList(self: *Repository) !git.StrArray {
+        if (internal.trace_log) log.debug("Repository.tagList called", .{});
+
+        var ret: git.StrArray = undefined;
+
+        try internal.wrapCall("git_tag_list", .{
+            @ptrCast(*c.git_strarray, &ret),
+            @ptrCast(*c.git_repository, self),
+        });
+
+        return ret;
+    }
+
+    /// Fill a list with all the tags in the Repository which name match a defined pattern.
+    ///
+    /// If an empty pattern is provided, all the tags will be returned.
+    ///
+    /// The string array will be filled with the names of the matching tags; these values are owned by the user and should be
+    /// free'd manually when no longer needed, using `StrArray.deinit`.
+    ///
+    /// ## Parameters
+    /// * `pattern` - Standard fnmatch pattern.
+    pub fn tagListMatch(self: *Repository, pattern: [:0]const u8) !git.StrArray {
+        if (internal.trace_log) log.debug("Repository.tagListMatch called", .{});
+
+        var ret: git.StrArray = undefined;
+
+        try internal.wrapCall("git_tag_list_match", .{
+            @ptrCast(*c.git_strarray, &ret),
+            pattern.ptr,
+            @ptrCast(*c.git_repository, self),
+        });
+
+        return ret;
+    }
+
+    /// Invoke `callback_fn` for each entry tag in the repository.
+    ///
+    /// Return a non-zero value from the callback to stop the loop. This non-zero value is returned by the function.
+    ///
+    /// ## Parameters
+    /// * `callback_fn` - The callback function; non-zero to terminate the iteration.
+    ///
+    /// ## Callback Parameters
+    /// * `name` - The tag name.
+    /// * `oid` - The tag's OID.
+    pub fn tagForeach(
+        self: *Repository,
+        comptime callback_fn: fn (
+            name: [:0]const u8,
+            oid: *const git.Oid,
+        ) void,
+    ) !c_int {
+        const cb = struct {
+            pub fn cb(
+                name: [:0]const u8,
+                oid: *const git.Oid,
+                _: *u8,
+            ) c_int {
+                return callback_fn(name, oid);
+            }
+        }.cb;
+
+        var dummy_data: u8 = undefined;
+        return self.tagForeachWithUserData(&dummy_data, cb);
+    }
+
+    /// Invoke `callback_fn` for each entry tag in the repository.
+    ///
+    /// Return a non-zero value from the callback to stop the loop. This non-zero value is returned by the function.
+    ///
+    /// ## Parameters
+    /// * `user_data` - Pointer to user data to be passed to the callback
+    /// * `callback_fn` - The callback function; non-zero to terminate the iteration.
+    ///
+    /// ## Callback Parameters
+    /// * `name` - The tag name.
+    /// * `oid` - The tag's OID.
+    /// * `user_data_ptr` - The user data.
+    pub fn tagForeachWithUserData(
+        self: *Repository,
+        user_data: anytype,
+        comptime callback_fn: fn (
+            name: [:0]const u8,
+            oid: *const git.Oid,
+            user_data_ptr: @TypeOf(user_data),
+        ) void,
+    ) !c_int {
+        if (internal.trace_log) log.debug("Index.tagForeachWithUserData called", .{});
+
+        const UserDataType = @TypeOf(user_data);
+
+        const cb = struct {
+            pub fn cb(
+                name: [*:0]const u8,
+                oid: *const c.git_oid,
+                payload: ?*anyopaque,
+            ) callconv(.C) c_int {
+                return callback_fn(
+                    std.mem.sliceTo(name, 0),
+                    @ptrCast(*const git.Oid, oid),
+                    @ptrCast(UserDataType, payload),
+                );
+            }
+        }.cb;
+
+        return try internal.wrapCallWithReturn("git_tag_foreach", .{
+            @ptrCast(*c.git_repository, self),
+            cb,
+            user_data,
+        });
     }
 
     comptime {

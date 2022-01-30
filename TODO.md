@@ -7,7 +7,6 @@
 - [ ] Add functionality to build.zig to include package as either static or dynamic
 - [ ] Package with zigmod/gyro
 
-382 tag.h
 559 odb.h
 606 merge.h
 663 submodule.h

@@ -48,6 +48,7 @@ pub usingnamespace @import("signature.zig");
 pub usingnamespace @import("status_list.zig");
 pub usingnamespace @import("strarray.zig");
 pub usingnamespace @import("submodule.zig");
+pub usingnamespace @import("tag.zig");
 pub usingnamespace @import("transaction.zig");
 pub usingnamespace @import("transport.zig");
 pub usingnamespace @import("tree.zig");

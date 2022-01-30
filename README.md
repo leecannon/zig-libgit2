@@ -60,7 +60,7 @@ There is currently no plan to port all the headers within "include/git2/sys", if
 - [X] status.h
 - [X] strarray.h
 - [ ] submodule.h
-- [ ] tag.h
+- [X] tag.h
 - [X] trace.h
 - [X] transaction.h
 - [X] tree.h
