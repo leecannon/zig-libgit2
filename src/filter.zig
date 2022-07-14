@@ -69,7 +69,7 @@ pub const FilterOptions = struct {
 
 /// A filter that can transform file data
 ///
-/// This represents a filter that can be used to transform or even replace file data. 
+/// This represents a filter that can be used to transform or even replace file data.
 /// Libgit2 includes one built in filter and it is possible to write your own (see git2/sys/filter.h for information on that).
 ///
 /// The two builtin filters are:
@@ -90,7 +90,6 @@ pub const Filter = opaque {
 /// and dispose it with a third. In typical usage, there are not many occasions where a `FilterList` is needed directly since the
 /// library will generally handle conversions for you, but it can be convenient to be able to build and apply the list sometimes.
 pub const FilterList = opaque {
-
     /// Query the filter list to see if a given filter (by name) will run.
     /// The built-in filters "crlf" and "ident" can be queried, otherwise this is the name of the filter specified by the filter
     /// attribute.

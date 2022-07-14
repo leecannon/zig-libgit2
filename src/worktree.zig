@@ -122,7 +122,7 @@ pub const Worktree = opaque {
     /// Prune working tree
     ///
     /// Prune the working tree, that is remove the git data structures on disk. The repository will only be pruned of
-    /// `Worktree.isPruneable` succeeds.    
+    /// `Worktree.isPruneable` succeeds.
     pub fn prune(self: *Worktree, options: PruneOptions) !void {
         if (internal.trace_log) log.debug("Worktree.prune called", .{});
 

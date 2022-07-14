@@ -291,12 +291,12 @@ pub const Remote = opaque {
     /// ## Parameters
     /// * `callbacks` - The callback structure to use
     /// * `update_fetchhead` - Whether to write to FETCH_HEAD. Pass true to behave like git.
-    /// * `download_tags` - What the behaviour for downloading tags is for this fetch. 
-    ///                     This is ignored for push. 
+    /// * `download_tags` - What the behaviour for downloading tags is for this fetch.
+    ///                     This is ignored for push.
     ///                     This must be the same value passed to `Remote.download()`.
-    /// * `reflog_message` - The message to insert into the reflogs. 
-    ///                      If `null` and fetching, the default is "fetch <name>", where <name> is the name of the remote 
-    ///                      (or its url, for in-memory remotes). 
+    /// * `reflog_message` - The message to insert into the reflogs.
+    ///                      If `null` and fetching, the default is "fetch <name>", where <name> is the name of the remote
+    ///                      (or its url, for in-memory remotes).
     ///                      This parameter is ignored when pushing.
     pub fn updateTips(
         self: *Remote,
@@ -536,7 +536,7 @@ pub const FetchOptions = struct {
 
 pub const PushOptions = struct {
     /// If the transport being used to push to the remote requires the creation of a pack file, this controls the
-    /// number of worker threads used by the packbuilder when creating that pack file to be sent to the remote. 
+    /// number of worker threads used by the packbuilder when creating that pack file to be sent to the remote.
     /// If set to 0, the packbuilder will auto-detect the number of threads to create. The default value is 1.
     pb_parallelism: c_uint = 1,
 
@@ -664,7 +664,7 @@ pub const RemoteCallbacks = extern struct {
     // This will be passed to each of the callbacks in this sruct as the last parameter.
     payload: ?*anyopaque = null,
 
-    /// Resolve URL before connecting to remote. The returned URL will be used to connect to the remote instead. 
+    /// Resolve URL before connecting to remote. The returned URL will be used to connect to the remote instead.
     /// This callback is deprecated; users should use git_remote_ready_cb and configure the instance URL instead.
     ///
     /// Return 0 on success, `errorToCInt(GitError.Passthrough)` or an error

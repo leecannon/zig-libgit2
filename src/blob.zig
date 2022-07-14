@@ -19,7 +19,7 @@ pub const Blob = opaque {
     }
 
     /// Directly generate a patch from the difference between two blobs.
-    /// 
+    ///
     /// This is just like `Diff.blobs` except it generates a patch object for the difference instead of directly making callbacks.
     /// You can use the standard `Patch` accessor functions to read the patch data, and you must call `Patch.deinit on the patch
     /// when done.

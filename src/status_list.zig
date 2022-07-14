@@ -48,7 +48,7 @@ pub const StatusList = opaque {
         };
     }
 
-    /// A status entry, providing the differences between the file as it exists in HEAD and the index, and providing the 
+    /// A status entry, providing the differences between the file as it exists in HEAD and the index, and providing the
     /// differences between the index and the working directory.
     pub const StatusEntry = extern struct {
         /// The status for this file

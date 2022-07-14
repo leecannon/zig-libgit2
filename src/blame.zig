@@ -146,7 +146,7 @@ pub const BlameOptions = struct {
         /// This is not yet implemented and reserved for future use.
         track_copies_same_commit_moves: bool = false,
 
-        /// Track lines that have been copied from another file that exists in the same commit (like `git blame -CC`). 
+        /// Track lines that have been copied from another file that exists in the same commit (like `git blame -CC`).
         /// Implies same_file.
         ///
         /// This is not yet implemented and reserved for future use.
@@ -165,7 +165,7 @@ pub const BlameOptions = struct {
         /// addresses. The mailmap will be read from the working directory, or HEAD in a bare repository.
         use_mailmap: bool = false,
 
-        /// Ignore whitespace differences 
+        /// Ignore whitespace differences
         ignore_whitespace: bool = false,
 
         z_padding1: u8 = 0,

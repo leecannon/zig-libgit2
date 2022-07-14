@@ -62,8 +62,8 @@ pub const Handle = struct {
     ///
     /// ## Parameters
     /// * `path` - The path to the repository
-    /// * `is_bare` - If true, a Git repository without a working directory is created at the pointed path. 
-    ///               If false, provided path will be considered as the working directory into which the .git directory will be 
+    /// * `is_bare` - If true, a Git repository without a working directory is created at the pointed path.
+    ///               If false, provided path will be considered as the working directory into which the .git directory will be
     ///               created.
     pub fn repositoryInit(self: Handle, path: [:0]const u8, is_bare: bool) !*git.Repository {
         _ = self;
@@ -184,7 +184,7 @@ pub const Handle = struct {
     /// ## Parameters
     /// * `start_path` - The path where the lookup starts.
     /// * `across_fs` - If true, then the lookup will not stop when a filesystem device change is encountered.
-    /// * `ceiling_dirs` - A `path_list_separator` separated list of absolute symbolic link free paths. The lookup will stop 
+    /// * `ceiling_dirs` - A `path_list_separator` separated list of absolute symbolic link free paths. The lookup will stop
     ///                    when any of this paths is reached.
     pub fn repositoryDiscover(self: Handle, start_path: [:0]const u8, across_fs: bool, ceiling_dirs: ?[:0]const u8) !git.Buf {
         _ = self;
@@ -207,7 +207,7 @@ pub const Handle = struct {
 
     /// Clone a remote repository.
     ///
-    /// By default this creates its repository and initial remote to match git's defaults. 
+    /// By default this creates its repository and initial remote to match git's defaults.
     /// You can use the options in the callback to customize how these are created.
     ///
     /// ## Parameters
@@ -1101,7 +1101,7 @@ pub const Handle = struct {
 
     /// Allocate a new mailmap object.
     ///
-    /// This object is empty, so you'll have to add a mailmap file before you can do anything with it. 
+    /// This object is empty, so you'll have to add a mailmap file before you can do anything with it.
     /// The mailmap must be freed with 'deinit'.
     pub fn mailmapInit(self: Handle) !*git.Mailmap {
         _ = self;
@@ -1616,7 +1616,7 @@ pub const CloneOptions = struct {
     /// This parameter is ignored unless repository_cb is non-`null`.
     repository_cb_payload: ?*anyopaque = null,
 
-    /// A callback used to create the git remote, prior to its being used to perform the clone option. 
+    /// A callback used to create the git remote, prior to its being used to perform the clone option.
     /// This parameter may be `null`, indicating that `Handle.clone` should provide default behavior.
     ///
     /// Return 0, or an error code

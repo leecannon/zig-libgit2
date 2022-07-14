@@ -117,7 +117,7 @@ pub const DiffLine = extern struct {
     /// Number of newline characters in content
     num_lines: c_int,
 
-    /// Number of bytes of data 
+    /// Number of bytes of data
     content_len: usize,
 
     /// Offset in the original file to the content
@@ -128,7 +128,7 @@ pub const DiffLine = extern struct {
 
     /// Line origin constants.
     ///
-    /// These values describe where a line came from and will be passed to the git_diff_line_cb when iterating over a diff. 
+    /// These values describe where a line came from and will be passed to the git_diff_line_cb when iterating over a diff.
     /// There are some special origin constants at the end that are used for the text output callbacks to demarcate lines that
     /// are actually part of the file or hunk headers.
     pub const Origin = enum(u8) {
@@ -264,7 +264,7 @@ pub const DiffOptions = struct {
         include_casechange: bool = false,
 
         /// If the pathspec is set in the diff options, this flags indicates that the paths will be treated as literal paths
-        /// instead of fnmatch patterns. Each path in the list must either be a full path to a file or a directory. 
+        /// instead of fnmatch patterns. Each path in the list must either be a full path to a file or a directory.
         /// (A trailing slash indicates that the path will _only_ match a directory). If a directory is specified, all children
         /// will be included.
         disable_pathspec_match: bool = false,
@@ -473,7 +473,7 @@ pub const DiffDelta = extern struct {
         ignored,
         /// entry is untracked item in workdir
         untracked,
-        /// type of entry changed between old and new 
+        /// type of entry changed between old and new
         typechange,
         /// entry is unreadable
         unreadable,
@@ -628,7 +628,7 @@ pub const DiffFile = extern struct {
 /// Flags for the delta object and the file objects on each side.
 ///
 /// These flags are used for both the `flags` value of the `git_diff_delta` and the flags for the `git_diff_file` objects
-/// representing the old and new sides of the delta.  Values outside of this public range should be considered reserved 
+/// representing the old and new sides of the delta.  Values outside of this public range should be considered reserved
 /// for internal or future use.
 pub const DiffFlags = packed struct {
     /// file(s) treated as binary data

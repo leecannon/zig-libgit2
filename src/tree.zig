@@ -41,7 +41,7 @@ pub const Tree = opaque {
 
     /// Lookup a tree entry by its filename
     ///
-    /// This returns a `git.TreeEntry` that is owned by the `git.Tree`.  
+    /// This returns a `git.TreeEntry` that is owned by the `git.Tree`.
     /// You don't have to free it, but you must not use it after the `git.Tree` is `deinit`ed.
     pub fn entryByName(self: *const Tree, name: [:0]const u8) ?*const TreeEntry {
         if (internal.trace_log) log.debug("Tree.entryByName called", .{});
@@ -54,7 +54,7 @@ pub const Tree = opaque {
 
     /// Lookup a tree entry by its position in the tree
     ///
-    /// This returns a `git.TreeEntry` that is owned by the `git.Tree`.  
+    /// This returns a `git.TreeEntry` that is owned by the `git.Tree`.
     /// You don't have to free it, but you must not use it after the `git.Tree` is `deinit`ed.
     pub fn entryByIndex(self: *const Tree, index: usize) ?*const TreeEntry {
         if (internal.trace_log) log.debug("Tree.entryByIndex called", .{});
@@ -83,7 +83,7 @@ pub const Tree = opaque {
 
     ///  * Lookup a tree entry by SHA value.
     ///
-    /// This returns a `git.TreeEntry` that is owned by the `git.Tree`.  
+    /// This returns a `git.TreeEntry` that is owned by the `git.Tree`.
     /// You don't have to free it, but you must not use it after the `git.Tree` is `deinit`ed.
     ///
     /// Warning: this must examine every entry in the tree, so it is not fast.
@@ -98,7 +98,7 @@ pub const Tree = opaque {
 
     /// Retrieve a tree entry contained in a tree or in any of its subtrees, given its relative path.
     ///
-    /// Unlike the other lookup functions, the returned tree entry is owned by the user and must be freed explicitly with 
+    /// Unlike the other lookup functions, the returned tree entry is owned by the user and must be freed explicitly with
     /// `TreeEntry.deinit`.
     pub fn entryByPath(self: *const Tree, path: [:0]const u8) !*TreeEntry {
         if (internal.trace_log) log.debug("Tree.entryByPath called", .{});

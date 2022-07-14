@@ -7,14 +7,14 @@ const git = @import("git.zig");
 
 /// An instance for a custom memory allocator
 ///
-/// Setting the pointers of this structure allows the developer to implement custom memory allocators. 
+/// Setting the pointers of this structure allows the developer to implement custom memory allocators.
 /// The global memory allocator can be set by using `Handle.optionSetAllocator` function.
 /// Keep in mind that all fields need to be set to a proper function.
 pub const GitAllocator = extern struct {
     /// Allocate `n` bytes of memory
     malloc: fn (n: usize, file: [*:0]const u8, line: c_int) callconv(.C) ?*anyopaque,
 
-    /// Allocate memory for an array of `nelem` elements, where each element has a size of `elsize`. 
+    /// Allocate memory for an array of `nelem` elements, where each element has a size of `elsize`.
     /// Returned memory shall be initialized to all-zeroes
     calloc: fn (nelem: usize, elsize: usize, file: [*:0]const u8, line: c_int) callconv(.C) ?*anyopaque,
 
@@ -28,7 +28,7 @@ pub const GitAllocator = extern struct {
     /// may happen.
     substrdup: fn (str: [*:0]const u8, n: usize, file: [*:0]const u8, line: c_int) callconv(.C) [*:0]const u8,
 
-    /// This function shall deallocate the old object `ptr` and return a pointer to a new object that has the size specified by 
+    /// This function shall deallocate the old object `ptr` and return a pointer to a new object that has the size specified by
     /// size`. In case `ptr` is `null`, a new array shall be allocated.
     realloc: fn (ptr: ?*anyopaque, size: usize, file: [*:0]const u8, line: c_int) callconv(.C) ?*anyopaque,
 

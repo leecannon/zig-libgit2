@@ -95,7 +95,7 @@ pub const Repository = opaque {
     /// This namespace affects all reference operations for the repo. See `man gitnamespaces`
     ///
     /// ## Parameters
-    /// * `namespace` - The namespace. This should not include the refs folder, e.g. to namespace all references under 
+    /// * `namespace` - The namespace. This should not include the refs folder, e.g. to namespace all references under
     ///                 "refs/namespaces/foo/", use "foo" as the namespace.
     pub fn namespaceSet(self: *Repository, namespace: [:0]const u8) !void {
         if (internal.trace_log) log.debug("Repository.namespaceSet called", .{});
@@ -160,7 +160,7 @@ pub const Repository = opaque {
 
     /// Make the repository HEAD directly point to the commit.
     ///
-    /// This behaves like `Repository.setHeadDetached` but takes an annotated commit, which lets you specify which 
+    /// This behaves like `Repository.setHeadDetached` but takes an annotated commit, which lets you specify which
     /// extended sha syntax string was specified by a user, allowing for more exact reflog messages.
     ///
     /// See the documentation for `Repository.setHeadDetached`.
@@ -300,7 +300,7 @@ pub const Repository = opaque {
 
     /// Get the configuration file for this repository.
     ///
-    /// If a configuration file has not been set, the default config set for the repository will be returned, including any global 
+    /// If a configuration file has not been set, the default config set for the repository will be returned, including any global
     /// and system configurations.
     pub fn configGet(self: *Repository) !*git.Config {
         if (internal.trace_log) log.debug("Repository.configGet called", .{});
@@ -372,7 +372,7 @@ pub const Repository = opaque {
 
     /// Retrieve git's prepared message
     ///
-    /// Operations such as git revert/cherry-pick/merge with the -n option stop just short of creating a commit with the changes 
+    /// Operations such as git revert/cherry-pick/merge with the -n option stop just short of creating a commit with the changes
     /// and save their prepared message in .git/MERGE_MSG so the next git-commit execution can present it to the user for them to
     /// amend if they wish.
     ///
@@ -1712,7 +1712,7 @@ pub const Repository = opaque {
 
     /// Add ignore rules for a repository.
     ///
-    /// Excludesfile rules (i.e. .gitignore rules) are generally read from .gitignore files in the repository tree or from a 
+    /// Excludesfile rules (i.e. .gitignore rules) are generally read from .gitignore files in the repository tree or from a
     /// shared system file only if a "core.excludesfile" config value is set. The library also keeps a set of per-repository
     /// internal ignores that can be configured in-memory and will not persist. This function allows you to add to that internal
     /// rules list.
@@ -2222,7 +2222,7 @@ pub const Repository = opaque {
     pub const TreeUpdateAction = extern struct {
         /// Update action. If it's an removal, only the path is looked at
         action: Action,
-        /// The entry's id 
+        /// The entry's id
         id: git.Oid,
         /// The filemode/kind of object
         filemode: git.FileMode,
@@ -3278,7 +3278,7 @@ pub const Repository = opaque {
     ///
     /// The ODB will be used for all object-related operations involving this repository.
     ///
-    /// The repository will keep a reference to the ODB; the user must still free the ODB object after setting it to the 
+    /// The repository will keep a reference to the ODB; the user must still free the ODB object after setting it to the
     /// repository, or it will leak.
     ///
     /// ## Parameters
@@ -3344,7 +3344,7 @@ pub const Repository = opaque {
     ///
     /// Because the `.gitmodules` file is unstructured, loading submodules is an O(N) operation. Any operation
     /// (such as `git_rebase_init`) that requires accessing all submodules is O(N^2) in the number of submodules, if it has to
-    /// look each one up individually. This function loads all submodules and caches them so that subsequent calls to 
+    /// look each one up individually. This function loads all submodules and caches them so that subsequent calls to
     /// `Repository.submoduleLookup` are O(1).
     pub fn submoduleCacheAll(self: *Repository) !void {
         if (internal.trace_log) log.debug("Repository.submoduleCacheAll called", .{});
@@ -4053,8 +4053,8 @@ pub const RepositoryInitOptions = struct {
     flags: RepositoryInitExtendedFlags = .{},
     mode: InitMode = .shared_umask,
 
-    /// The path to the working dir or `null` for default (i.e. repo_path parent on non-bare repos). 
-    /// *NOTE*: if this is a relative path, it must be relative to the repository path. 
+    /// The path to the working dir or `null` for default (i.e. repo_path parent on non-bare repos).
+    /// *NOTE*: if this is a relative path, it must be relative to the repository path.
     /// If this is not the "natural" working directory, a .git gitlink file will be created linking to the repository path.
     workdir_path: ?[:0]const u8 = null,
 
@@ -4070,7 +4070,7 @@ pub const RepositoryInitOptions = struct {
     /// If this begins with "refs/" it will be used verbatim; otherwise "refs/heads/" will be prefixed.
     initial_head: ?[:0]const u8 = null,
 
-    /// If this is non-`null`, then after the rest of the repository initialization is completed, an "origin" remote will be 
+    /// If this is non-`null`, then after the rest of the repository initialization is completed, an "origin" remote will be
     /// added pointing to this URL.
     origin_url: ?[:0]const u8 = null,
 
@@ -4081,7 +4081,7 @@ pub const RepositoryInitOptions = struct {
         /// Return an `GitError.EXISTS` error if the path appears to already be an git repository.
         no_reinit: bool = false,
 
-        /// Normally a "/.git/" will be appended to the repo path for non-bare repos (if it is not already there), but passing 
+        /// Normally a "/.git/" will be appended to the repo path for non-bare repos (if it is not already there), but passing
         /// this flag prevents that behavior.
         no_dotgit_dir: bool = false,
 
@@ -4092,7 +4092,7 @@ pub const RepositoryInitOptions = struct {
         /// Recursively make all components of the repo and workdir paths as necessary.
         mkpath: bool = false,
 
-        /// libgit2 normally uses internal templates to initialize a new repo. 
+        /// libgit2 normally uses internal templates to initialize a new repo.
         /// This flag enables external templates, looking at the "template_path" from the options if set, or the
         /// `init.templatedir` global config if not, or falling back on "/usr/share/git-core/templates" if it exists.
         external_template: bool = false,
@@ -4165,7 +4165,7 @@ pub const FileStatusOptions = struct {
     /// Flags to control status callbacks
     flags: Flags = .{},
 
-    /// The `pathspec` is an array of path patterns to match (using fnmatch-style matching), or just an array of paths to 
+    /// The `pathspec` is an array of path patterns to match (using fnmatch-style matching), or just an array of paths to
     /// match exactly if `Flags.disable_pathspec_match` is specified in the flags.
     pathspec: git.StrArray = .{},
 
@@ -4184,7 +4184,7 @@ pub const FileStatusOptions = struct {
 
     /// Flags to control status callbacks
     ///
-    /// Calling `Repository.forEachFileStatus` is like calling the extended version with: `include_ignored`, 
+    /// Calling `Repository.forEachFileStatus` is like calling the extended version with: `include_ignored`,
     /// `include_untracked`, and `recurse_untracked_dirs`. Those options are provided as `Options.Defaults`.
     pub const Flags = packed struct {
         /// Says that callbacks should be made on untracked files.
@@ -4305,10 +4305,10 @@ pub const RepositoryOpenOptions = packed struct {
     bare: bool = false,
 
     /// Do not check for a repository by appending /.git to the path; only open the repository if path itself points to the
-    /// git directory.     
+    /// git directory.
     no_dotgit: bool = false,
 
-    /// Find and open a git repository, respecting the environment variables used by the git command-line tools. If set, 
+    /// Find and open a git repository, respecting the environment variables used by the git command-line tools. If set,
     /// `Handle.repositoryOpenExtended` will ignore the other flags and the `ceiling_dirs` argument, and will allow a `null`
     /// `path` to use `GIT_DIR` or search from the current directory.
     open_from_env: bool = false,
@@ -4518,13 +4518,13 @@ pub const CheckoutOptions = struct {
     /// the name of the common ancestor side of conflicts
     ancestor_label: ?[:0]const u8 = null,
 
-    /// the name of the "our" side of conflicts 
+    /// the name of the "our" side of conflicts
     our_label: ?[:0]const u8 = null,
 
     /// the name of the "their" side of conflicts
     their_label: ?[:0]const u8 = null,
 
-    /// Optional callback to notify the consumer of performance data. 
+    /// Optional callback to notify the consumer of performance data.
     perfdata_cb: ?fn (perfdata: *const PerfData, payload: *anyopaque) callconv(.C) void = null,
 
     /// Payload passed to perfdata_cb

@@ -6,7 +6,6 @@ const log = std.log.scoped(.git);
 const git = @import("git.zig");
 
 pub const Indexer = opaque {
-
     /// Add data to the indexer
     ///
     /// ## Parameters

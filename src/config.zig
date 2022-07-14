@@ -526,7 +526,7 @@ pub const Config = opaque {
         include_depth: u32,
         /// Which config file this was found in
         level: ConfigLevel,
-        /// Free function for this entry 
+        /// Free function for this entry
         free_fn: ?fn (?*ConfigEntry) callconv(.C) void,
         /// Opaque value for the free function. Do not read or write
         payload: *anyopaque,
@@ -623,7 +623,7 @@ pub const ConfigLevel = enum(c_int) {
     local = 5,
     /// Application specific configuration file; freely defined by applications
     app = 6,
-    /// Represents the highest level available config file (i.e. the most specific config file available that actually is 
+    /// Represents the highest level available config file (i.e. the most specific config file available that actually is
     /// loaded)
     highest = -1,
 };

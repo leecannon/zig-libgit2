@@ -121,7 +121,7 @@ pub const Patch = opaque {
     }
 
     /// Look up size of patch diff data in bytes
-    /// 
+    ///
     /// This returns the raw size of the patch data.This only includes the actual data from the lines of the diff, not the file or
     /// hunk headers.
     ///

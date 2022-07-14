@@ -231,7 +231,7 @@ pub const RebaseOptions = struct {
     quiet: bool = false,
 
     /// Used by `Repository.rebaseInit`, this will begin an in-memory rebase, which will allow callers to step through the rebase
-    /// operations andcommit the rebased changes, but will not rewind HEAD or update the repository to be in a rebasing state. 
+    /// operations andcommit the rebased changes, but will not rewind HEAD or update the repository to be in a rebasing state.
     /// This will not interfere with the working directory (if there is one).
     in_memory: bool = false,
 

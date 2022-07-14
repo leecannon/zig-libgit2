@@ -216,7 +216,7 @@ pub const PackBuilder = opaque {
 
     /// Get the packfile's hash
     ///
-    /// A packfile's name is derived from the sorted hashing of all object names. 
+    /// A packfile's name is derived from the sorted hashing of all object names.
     /// This is only correct after the packfile has been written.
     pub fn hash(self: *PackBuilder) *const git.Oid {
         if (internal.trace_log) log.debug("PackBuilder.hash called", .{});
@@ -304,7 +304,7 @@ pub const PackBuilder = opaque {
     /// Set the callbacks for a packbuilder
     ///
     /// ## Parameters
-    /// * `callback_fn` - Function to call with progress information during pack building. 
+    /// * `callback_fn` - Function to call with progress information during pack building.
     ///                   Be aware that this is called inline with pack building operations, so performance may be affected.
     pub fn setCallbacks(
         self: *PackBuilder,
@@ -333,7 +333,7 @@ pub const PackBuilder = opaque {
     ///
     /// ## Parameters
     /// * `user_data` - Pointer to user data to be passed to the callback
-    /// * `callback_fn` - Function to call with progress information during pack building. 
+    /// * `callback_fn` - Function to call with progress information during pack building.
     ///                   Be aware that this is called inline with pack building operations, so performance may be affected.
     pub fn setCallbacksWithUserData(
         self: *PackBuilder,
