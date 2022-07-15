@@ -21,6 +21,49 @@ pub const Handle = struct {
         }
     }
 
+    /// Create a new object database and automatically add
+    /// the two default backends:
+    ///
+    ///	- git_odb_backend_loose: read and write loose object files
+    ///		from disk, assuming `objects_dir` as the Objects folder
+    ///
+    ///	- git_odb_backend_pack: read objects from packfiles,
+    ///		assuming `objects_dir` as the Objects folder which
+    ///		contains a 'pack/' folder with the corresponding data
+    ///
+    /// ## Parameters
+    /// * `objects_dir` - path of the backends' "objects" directory.
+    pub fn odbOpen(self: Handle, objects_dir: [:0]const u8) !*git.Odb {
+        _ = self;
+        if (internal.trace_log) log.debug("Handle.odbOpen called", .{});
+
+        var odb: *git.Odb = undefined;
+
+        try internal.wrapCall("git_odb_open", .{
+            @ptrCast(*?*c.git_odb, &odb),
+            objects_dir.ptr,
+        });
+
+        return odb;
+    }
+
+    /// Create a new object database with no backends.
+    ///
+    /// Before the ODB can be used for read/writing, a custom database
+    /// backend must be manually added using `addBackend`
+    pub fn obdNew(self: Handle) !*git.Odb {
+        _ = self;
+        if (internal.trace_log) log.debug("Handle.obdNew called", .{});
+
+        var odb: *git.Odb = undefined;
+
+        try internal.wrapCall("git_odb_new", .{
+            @ptrCast(*?*c.git_odb, &odb),
+        });
+
+        return odb;
+    }
+
     /// Create a new bare Git index object as a memory representation of the Git index file in `path`, without a repository to
     /// back it.
     ///
