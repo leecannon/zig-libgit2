@@ -1551,7 +1551,7 @@ pub const Repository = opaque {
             message.ptr,
             @ptrCast(*const c.git_tree, tree),
             parents.len,
-            @ptrCast([*]?*const c.git_commit, parents.ptr),
+            @ptrCast(?[*]?*const c.git_commit, parents.ptr),
         });
 
         return ret;
@@ -1581,7 +1581,7 @@ pub const Repository = opaque {
             message.ptr,
             @ptrCast(*const c.git_tree, tree),
             parents.len,
-            @ptrCast([*]?*const c.git_commit, parents.ptr),
+            @ptrCast(?[*]?*const c.git_commit, parents.ptr),
         });
 
         return ret;
