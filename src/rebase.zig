@@ -263,7 +263,7 @@ pub const RebaseOptions = struct {
     /// - returns `errorToCInt(GitError.Passthrough)`, no signature will be added to the commit.
     /// - returns < 0, commit creation will be aborted.
     /// - returns 0, the signature parameter is expected to be filled.
-    signing_cb: ?fn (
+    signing_cb: ?*const fn (
         signature: *git.Buf,
         signature_field: *git.Buf,
         commit_content: [*:0]const u8,

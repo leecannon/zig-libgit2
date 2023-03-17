@@ -39,7 +39,7 @@ pub fn stashApplyOptions(self: git.StashApplyOptions) c.git_stash_apply_options 
         .version = c.GIT_STASH_APPLY_OPTIONS_VERSION,
         .flags = @bitCast(u32, self.flags),
         .checkout_options = checkoutOptions(self.checkout_options),
-        .progress_cb = @ptrCast(?fn (c.git_stash_apply_progress_t, ?*anyopaque) callconv(.C) c_int, self.progress_callback),
+        .progress_cb = @ptrCast(?*const fn (c.git_stash_apply_progress_t, ?*anyopaque) callconv(.C) c_int, self.progress_callback),
         .progress_payload = self.progress_payload,
     };
 }
@@ -127,7 +127,7 @@ pub fn fileStatusOptions(self: git.FileStatusOptions) c.git_status_options {
     return .{
         .version = c.GIT_STATUS_OPTIONS_VERSION,
         .show = @enumToInt(self.show),
-        .flags = @bitCast(c_int, self.flags),
+        .flags = @bitCast(c_uint, self.flags),
         .pathspec = @bitCast(c.git_strarray, self.pathspec),
         .baseline = @ptrCast(?*c.git_tree, self.baseline),
     };
@@ -285,7 +285,7 @@ pub fn cloneOptions(self: git.CloneOptions) c.git_clone_options {
 pub fn proxyOptions(self: git.ProxyOptions) c.git_proxy_options {
     return .{
         .version = c.GIT_PROXY_OPTIONS_VERSION,
-        .@"type" = @enumToInt(self.proxy_type),
+        .type = @enumToInt(self.proxy_type),
         .url = if (self.url) |s| s.ptr else null,
         .credentials = @ptrCast(c.git_credential_acquire_cb, self.credentials),
         .payload = self.payload,

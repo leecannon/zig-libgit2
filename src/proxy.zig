@@ -22,7 +22,7 @@ pub const ProxyOptions = struct {
     /// * `username_from_url` - The username that was embedded in a "user\@host" remote url, or `null` if not included.
     /// * `allowed_types` - A bitmask stating which credential types are OK to return.
     /// * `payload` - The payload provided when specifying this callback.
-    credentials: ?fn (
+    credentials: ?*const fn (
         out: **git.Credential,
         url: [*:0]const u8,
         username_from_url: [*:0]const u8,
@@ -41,7 +41,7 @@ pub const ProxyOptions = struct {
     /// * `valid` - Whether the libgit2 checks (OpenSSL or WinHTTP) think this certificate is valid.
     /// * `host` - Hostname of the host libgit2 connected to
     /// * `payload` - Payload provided by the caller
-    certificate_check: ?fn (
+    certificate_check: ?*const fn (
         cert: *git.Certificate,
         valid: bool,
         host: [*:0]const u8,

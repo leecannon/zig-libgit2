@@ -563,10 +563,10 @@ pub const RemoteCallbacks = extern struct {
     /// * `str` - The message from the transport
     /// * `len` - The length of the message
     /// * `payload` - Payload provided by the caller
-    sideband_progress: ?fn (str: [*:0]const u8, len: c_uint, payload: ?*anyopaque) callconv(.C) c_int = null,
+    sideband_progress: ?*const fn (str: [*:0]const u8, len: c_uint, payload: ?*anyopaque) callconv(.C) c_int = null,
 
     /// Completion is called when different parts of the download process are done (currently unused).
-    completion: ?fn (completion_type: RemoteCompletion, payload: ?*anyopaque) callconv(.C) c_int = null,
+    completion: ?*const fn (completion_type: RemoteCompletion, payload: ?*anyopaque) callconv(.C) c_int = null,
 
     /// This will be called if the remote host requires authentication in order to connect to it.
     ///
@@ -579,7 +579,7 @@ pub const RemoteCallbacks = extern struct {
     /// * `username_from_url` - The username that was embedded in a "user\@host" remote url, or `null` if not included.
     /// * `allowed_types` - A bitmask stating which credential types are OK to return.
     /// * `payload` - The payload provided when specifying this callback.
-    credentials: ?fn (
+    credentials: ?*const fn (
         out: **git.Credential,
         url: [*:0]const u8,
         username_from_url: [*:0]const u8,
@@ -598,7 +598,7 @@ pub const RemoteCallbacks = extern struct {
     /// * `valid` - Whether the libgit2 checks (OpenSSL or WinHTTP) think this certificate is valid.
     /// * `host` - Hostname of the host libgit2 connected to
     /// * `payload` - Payload provided by the caller
-    certificate_check: ?fn (
+    certificate_check: ?*const fn (
         cert: *git.Certificate,
         valid: bool,
         host: [*:0]const u8,
@@ -613,10 +613,10 @@ pub const RemoteCallbacks = extern struct {
     /// ## Parameters
     /// * `stats` - Structure containing information about the state of the transfer
     /// * `payload` - Payload provided by the caller
-    transfer_progress: ?fn (stats: *const git.IndexerProgress, payload: ?*anyopaque) callconv(.C) c_int = null,
+    transfer_progress: ?*const fn (stats: *const git.IndexerProgress, payload: ?*anyopaque) callconv(.C) c_int = null,
 
     /// Each time a reference is updated locally, this function will be called with information about it.
-    update_tips: ?fn (
+    update_tips: ?*const fn (
         refname: [*:0]const u8,
         a: *const git.Oid,
         b: *const git.Oid,
@@ -625,11 +625,11 @@ pub const RemoteCallbacks = extern struct {
 
     /// Function to call with progress information during pack building. Be aware that this is called inline with pack
     /// building operations, so perfomance may be affected.
-    pack_progress: ?fn (stage: git.PackbuilderStage, current: u32, total: u32, payload: ?*anyopaque) callconv(.C) c_int = null,
+    pack_progress: ?*const fn (stage: git.PackbuilderStage, current: u32, total: u32, payload: ?*anyopaque) callconv(.C) c_int = null,
 
     /// Function to call with progress information during the upload portion nof a push. Be aware that this is called
     /// inline with pack building operations, so performance may be affected.
-    push_transfer_progress: ?fn (current: c_uint, total: c_uint, size: usize, payload: ?*anyopaque) callconv(.C) c_int = null,
+    push_transfer_progress: ?*const fn (current: c_uint, total: c_uint, size: usize, payload: ?*anyopaque) callconv(.C) c_int = null,
 
     /// Callback used to inform of the update status from the remote.
     ///
@@ -642,7 +642,7 @@ pub const RemoteCallbacks = extern struct {
     /// * `refname` - Refname specifying to the remote ref
     /// * `status` - Status message sent from the remote
     /// * `data` - Data provided by the caller
-    push_update_reference: ?fn (
+    push_update_reference: ?*const fn (
         refname: [*:0]const u8,
         status: ?[*:0]const u8,
         data: ?*anyopaque,
@@ -656,10 +656,10 @@ pub const RemoteCallbacks = extern struct {
     /// * `updates` - An array containing the updates which will be sent as commands to the destination.
     /// * `len` - Number of elements in `updates`
     /// * `payload` - Payload provided by the caller
-    push_negotiation: ?fn (updates: [*]*const PushUpdate, len: usize, payload: ?*anyopaque) callconv(.C) c_int = null,
+    push_negotiation: ?*const fn (updates: [*]*const PushUpdate, len: usize, payload: ?*anyopaque) callconv(.C) c_int = null,
 
     /// Create the transport to use for this operation. Leave `null` to auto-detect.
-    transport: ?fn (out: **git.Transport, owner: *Remote, param: ?*anyopaque) callconv(.C) c_int = null,
+    transport: ?*const fn (out: **git.Transport, owner: *Remote, param: ?*anyopaque) callconv(.C) c_int = null,
 
     // This will be passed to each of the callbacks in this sruct as the last parameter.
     payload: ?*anyopaque = null,
@@ -675,7 +675,7 @@ pub const RemoteCallbacks = extern struct {
     /// * `url` - The URL to resolve
     /// * `direction` - Direction of the resolution
     /// * `payload` - Payload provided by the caller
-    resolve_url: ?fn (
+    resolve_url: ?*const fn (
         url_resolved: *git.Buf,
         url: [*:0]const u8,
         direction: git.Direction,

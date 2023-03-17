@@ -445,7 +445,7 @@ pub const Handle = struct {
 
         if (internal.trace_log) log.debug("Handle.optionSetStrictObjectCreation called", .{});
 
-        try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_ENABLE_STRICT_OBJECT_CREATION, @boolToInt(enabled) });
+        try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_ENABLE_STRICT_OBJECT_CREATION, internal.boolToCInt(enabled) });
     }
 
     pub fn optionSetStrictSymbolicRefCreations(self: Handle, enabled: bool) !void {
@@ -453,7 +453,7 @@ pub const Handle = struct {
 
         if (internal.trace_log) log.debug("Handle.optionSetStrictSymbolicRefCreations called", .{});
 
-        try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_ENABLE_STRICT_SYMBOLIC_REF_CREATION, @boolToInt(enabled) });
+        try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_ENABLE_STRICT_SYMBOLIC_REF_CREATION, internal.boolToCInt(enabled) });
     }
 
     pub fn optionSetSslCiphers(self: Handle, ciphers: [:0]const u8) !void {
@@ -469,7 +469,7 @@ pub const Handle = struct {
 
         if (internal.trace_log) log.debug("Handle.optionSetOffsetDeltas called", .{});
 
-        try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_ENABLE_OFS_DELTA, @boolToInt(enabled) });
+        try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_ENABLE_OFS_DELTA, internal.boolToCInt(enabled) });
     }
 
     pub fn optionSetFsyncDir(self: Handle, enabled: bool) !void {
@@ -477,7 +477,7 @@ pub const Handle = struct {
 
         if (internal.trace_log) log.debug("Handle.optionSetFsyncDir called", .{});
 
-        try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_ENABLE_FSYNC_GITDIR, @boolToInt(enabled) });
+        try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_ENABLE_FSYNC_GITDIR, internal.boolToCInt(enabled) });
     }
 
     pub fn optionSetStrictHashVerification(self: Handle, enabled: bool) !void {
@@ -485,7 +485,7 @@ pub const Handle = struct {
 
         if (internal.trace_log) log.debug("Handle.optionSetStrictHashVerification called", .{});
 
-        try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_ENABLE_STRICT_HASH_VERIFICATION, @boolToInt(enabled) });
+        try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_ENABLE_STRICT_HASH_VERIFICATION, internal.boolToCInt(enabled) });
     }
 
     /// If the given `allocator` is `null`, then the system default will be restored.
@@ -502,7 +502,7 @@ pub const Handle = struct {
 
         if (internal.trace_log) log.debug("Handle.optionSetUnsafedIndexSafety called", .{});
 
-        try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_ENABLE_UNSAVED_INDEX_SAFETY, @boolToInt(enabled) });
+        try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_ENABLE_UNSAVED_INDEX_SAFETY, internal.boolToCInt(enabled) });
     }
 
     pub fn optionGetMaximumPackObjects(self: Handle) !usize {
@@ -530,7 +530,7 @@ pub const Handle = struct {
 
         if (internal.trace_log) log.debug("Handle.optionSetDisablePackKeepFileChecks called", .{});
 
-        try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_DISABLE_PACK_KEEP_FILE_CHECKS, @boolToInt(enabled) });
+        try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_DISABLE_PACK_KEEP_FILE_CHECKS, internal.boolToCInt(enabled) });
     }
 
     pub fn optionSetHTTPExpectContinue(self: Handle, enabled: bool) !void {
@@ -538,7 +538,7 @@ pub const Handle = struct {
 
         if (internal.trace_log) log.debug("Handle.optionSetHTTPExpectContinue called", .{});
 
-        try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_ENABLE_HTTP_EXPECT_CONTINUE, @boolToInt(enabled) });
+        try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_ENABLE_HTTP_EXPECT_CONTINUE, internal.boolToCInt(enabled) });
     }
 
     pub fn branchNameIsValid(self: Handle, name: [:0]const u8) !bool {
@@ -1605,7 +1605,7 @@ pub const CloneOptions = struct {
     /// * `path` - Path in which to create the repository
     /// * `bare` - Whether the repository is bare. This is the value from the clone options
     /// * `payload` - Payload specified by the options
-    repository_cb: ?fn (
+    repository_cb: ?*const fn (
         out: **git.Repository,
         path: [*:0]const u8,
         bare: bool,
@@ -1627,7 +1627,7 @@ pub const CloneOptions = struct {
     /// * `name` - The remote's name
     /// * `url` - The remote's url
     /// * `payload` - An opaque payload
-    remote_cb: ?fn (
+    remote_cb: ?*const fn (
         out: **git.Remote,
         repo: *git.Repository,
         name: [*:0]const u8,

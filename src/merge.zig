@@ -6,9 +6,9 @@ const log = std.log.scoped(.git);
 const git = @import("git.zig");
 
 pub const SimilarityMetric = extern struct {
-    file_signature: fn (out: *?*anyopaque, file: *const git.DiffFile, full_path: [*:0]const u8, payload: ?*anyopaque) callconv(.C) c_int,
+    file_signature: *const fn (out: *?*anyopaque, file: *const git.DiffFile, full_path: [*:0]const u8, payload: ?*anyopaque) callconv(.C) c_int,
 
-    buffer_signature: fn (
+    buffer_signature: *const fn (
         out: *?*anyopaque,
         file: *const git.DiffFile,
         buf: [*:0]const u8,
@@ -16,9 +16,9 @@ pub const SimilarityMetric = extern struct {
         payload: ?*anyopaque,
     ) callconv(.C) c_int,
 
-    free_signature: fn (sig: ?*anyopaque, payload: ?*anyopaque) callconv(.C) void,
+    free_signature: *const fn (sig: ?*anyopaque, payload: ?*anyopaque) callconv(.C) void,
 
-    similarity: fn (score: *c_int, siga: ?*anyopaque, sigb: ?*anyopaque, payload: ?*anyopaque) callconv(.C) c_int,
+    similarity: *const fn (score: *c_int, siga: ?*anyopaque, sigb: ?*anyopaque, payload: ?*anyopaque) callconv(.C) c_int,
 
     payload: ?*anyopaque,
 

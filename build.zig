@@ -1,23 +1,31 @@
 const std = @import("std");
 
-pub fn build(b: *std.build.Builder) void {
+pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
-    const mode = b.standardReleaseOptions();
+    const optimize = b.standardOptimizeOption(.{});
+
+    const module = b.addModule("git", .{
+        .source_file = .{ .path = "src/git.zig" },
+    });
 
     // Tests
     {
-        const lib_test = b.addTest("src/tests.zig");
-        lib_test.setTarget(target);
-        lib_test.setBuildMode(mode);
-        addLibGit(lib_test);
+        const lib_test = b.addTest(.{
+            .root_source_file = .{ .path = "src/tests.zig" },
+            .target = target,
+            .optimize = optimize,
+        });
+        addLibGit(lib_test, module);
 
         const lib_test_step = b.step("test_lib", "Run the lib tests");
         lib_test_step.dependOn(&lib_test.step);
 
-        const sample_test = b.addTest("sample.zig");
-        sample_test.setTarget(target);
-        sample_test.setBuildMode(mode);
-        addLibGit(sample_test);
+        const sample_test = b.addTest(.{
+            .root_source_file = .{ .path = "sample.zig" },
+            .target = target,
+            .optimize = optimize,
+        });
+        addLibGit(sample_test, module);
 
         const sample_test_step = b.step("test_sample", "Run the sample tests");
         sample_test_step.dependOn(&sample_test.step);
@@ -31,10 +39,13 @@ pub fn build(b: *std.build.Builder) void {
 
     // Sample
     {
-        const sample_exe = b.addExecutable("sample", "sample.zig");
-        sample_exe.setTarget(target);
-        sample_exe.setBuildMode(mode);
-        addLibGit(sample_exe);
+        const sample_exe = b.addExecutable(.{
+            .name = "sample",
+            .root_source_file = .{ .path = "sample.zig" },
+            .target = target,
+            .optimize = optimize,
+        });
+        addLibGit(sample_exe, module);
         sample_exe.install();
 
         const run_cmd = sample_exe.run();
@@ -48,16 +59,13 @@ pub fn build(b: *std.build.Builder) void {
     }
 }
 
-pub fn addLibGit(exe: *std.build.LibExeObjStep) void {
-    const prefix_path = comptime std.fs.path.dirname(@src().file) orelse unreachable;
-
-    const path = exe.builder.pathJoin(&.{
-        prefix_path,
-        "src",
-        "git.zig",
-    });
-
-    exe.addPackagePath("git", path);
+// TODO: Support optionally adding libgit2 source directly
+pub fn addLibGit(exe: *std.Build.CompileStep, module: *std.Build.Module) void {
+    exe.addModule("git", module);
     exe.linkLibC();
-    exe.linkSystemLibrary("git2");
+
+    // TODO: Don't hard code this...
+    exe.addIncludePath("../libgit2/include");
+    exe.addLibraryPath("../libgit2/build");
+    exe.linkSystemLibraryName("git2");
 }

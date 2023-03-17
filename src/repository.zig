@@ -3934,7 +3934,7 @@ pub const StashApplyOptions = struct {
     /// Optional callback to notify the consumer of application progress.
     ///
     /// Return 0 to continue processing, or a negative value to abort the stash application.
-    progress_callback: ?fn (progress: StashApplyProgress, payload: ?*anyopaque) callconv(.C) c_int = null,
+    progress_callback: ?*const fn (progress: StashApplyProgress, payload: ?*anyopaque) callconv(.C) c_int = null,
 
     progress_payload: ?*anyopaque = null,
 
@@ -4473,7 +4473,7 @@ pub const CheckoutOptions = struct {
     notify_flags: Notification = .{},
 
     /// Optional callback to get notifications on specific file states.
-    notify_cb: ?fn (
+    notify_cb: ?*const fn (
         why: Notification,
         path: [*:0]const u8,
         baseline: *git.DiffFile,
@@ -4486,7 +4486,7 @@ pub const CheckoutOptions = struct {
     notify_payload: ?*anyopaque = null,
 
     /// Optional callback to notify the consumer of checkout progress
-    progress_cb: ?fn (
+    progress_cb: ?*const fn (
         path: [*:0]const u8,
         completed_steps: usize,
         total_steps: usize,
@@ -4525,7 +4525,7 @@ pub const CheckoutOptions = struct {
     their_label: ?[:0]const u8 = null,
 
     /// Optional callback to notify the consumer of performance data.
-    perfdata_cb: ?fn (perfdata: *const PerfData, payload: *anyopaque) callconv(.C) void = null,
+    perfdata_cb: ?*const fn (perfdata: *const PerfData, payload: *anyopaque) callconv(.C) void = null,
 
     /// Payload passed to perfdata_cb
     perfdata_payload: ?*anyopaque = null,

@@ -178,7 +178,7 @@ pub const DiffOptions = struct {
     /// - returns < 0, the diff process will be aborted.
     /// - returns > 0, the delta will not be inserted into the diff, but the diff process continues.
     /// - returns 0, the delta is inserted into the diff, and the diff process continues.
-    notify_cb: ?fn (
+    notify_cb: ?*const fn (
         diff_so_far: *const git.Diff,
         delta_to_add: *const git.DiffDelta,
         matched_pathspec: [*:0]const u8,
@@ -189,7 +189,7 @@ pub const DiffOptions = struct {
     /// Called before each file comparison.
     ///
     /// Return non-zero to abort the diff.
-    progress_cb: ?fn (
+    progress_cb: ?*const fn (
         /// The diff being generated.
         diff_so_far: *const git.Diff,
         /// The path to the old file or `null`.
@@ -498,7 +498,7 @@ pub const ApplyOptions = struct {
     ///   - returns < 0, the apply process will be aborted.
     ///   - returns > 0, the delta will not be applied, but the apply process continues
     ///   - returns 0, the delta is applied, and the apply process continues.
-    delta_cb: ?fn (delta: *const git.DiffDelta) callconv(.C) c_int = null,
+    delta_cb: ?*const fn (delta: *const git.DiffDelta) callconv(.C) c_int = null,
 
     /// callback that will be made per hunk
     ///
@@ -506,7 +506,7 @@ pub const ApplyOptions = struct {
     ///   - returns < 0, the apply process will be aborted.
     ///   - returns > 0, the hunk will not be applied, but the apply process continues
     ///   - returns 0, the hunk is applied, and the apply process continues.
-    hunk_cb: ?fn (hunk: *const git.DiffHunk) callconv(.C) c_int = null,
+    hunk_cb: ?*const fn (hunk: *const git.DiffHunk) callconv(.C) c_int = null,
 
     flags: ApplyOptionsFlags = .{},
 
@@ -526,7 +526,7 @@ pub fn ApplyOptionsWithUserData(comptime T: type) type {
         ///   - returns < 0, the apply process will be aborted.
         ///   - returns > 0, the delta will not be applied, but the apply process continues
         ///   - returns 0, the delta is applied, and the apply process continues.
-        delta_cb: ?fn (delta: *const git.DiffDelta, user_data: T) callconv(.C) c_int = null,
+        delta_cb: ?*const fn (delta: *const git.DiffDelta, user_data: T) callconv(.C) c_int = null,
 
         /// callback that will be made per hunk
         ///
@@ -534,7 +534,7 @@ pub fn ApplyOptionsWithUserData(comptime T: type) type {
         ///   - returns < 0, the apply process will be aborted.
         ///   - returns > 0, the hunk will not be applied, but the apply process continues
         ///   - returns 0, the hunk is applied, and the apply process continues.
-        hunk_cb: ?fn (hunk: *const git.DiffHunk, user_data: T) callconv(.C) c_int = null,
+        hunk_cb: ?*const fn (hunk: *const git.DiffHunk, user_data: T) callconv(.C) c_int = null,
 
         payload: T,
 

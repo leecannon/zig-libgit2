@@ -486,8 +486,8 @@ pub const Config = opaque {
         map_value: c_int,
 
         pub const MapType = enum(c_int) {
-            @"false" = 0,
-            @"true" = 1,
+            false = 0,
+            true = 1,
             int32 = 2,
             string = 3,
         };
@@ -527,7 +527,7 @@ pub const Config = opaque {
         /// Which config file this was found in
         level: ConfigLevel,
         /// Free function for this entry
-        free_fn: ?fn (?*ConfigEntry) callconv(.C) void,
+        free_fn: ?*const fn (?*ConfigEntry) callconv(.C) void,
         /// Opaque value for the free function. Do not read or write
         payload: *anyopaque,
 

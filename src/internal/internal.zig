@@ -16,8 +16,12 @@ pub const has_libssh2 = @hasDecl(c, "LIBSSH2_VERSION");
 pub const has_credential = @hasDecl(c, "git_credential");
 pub const RawCredentialType = if (has_credential) c.git_credential else c.git_cred;
 
+pub inline fn boolToCInt(value: bool) c_int {
+    return if (value) 0 else 1;
+}
+
 pub inline fn wrapCall(comptime name: []const u8, args: anytype) git.GitError!void {
-    const result = @call(.{}, @field(c, name), args);
+    const result = @call(.auto, @field(c, name), args);
 
     if (result >= 0) return;
 
@@ -28,7 +32,7 @@ pub inline fn wrapCallWithReturn(
     comptime name: []const u8,
     args: anytype,
 ) git.GitError!@typeInfo(@TypeOf(@field(c, name))).Fn.return_type.? {
-    const result = @call(.{}, @field(c, name), args);
+    const result = @call(.auto, @field(c, name), args);
 
     if (result >= 0) return result;
 

@@ -12,34 +12,34 @@ const git = @import("git.zig");
 /// Keep in mind that all fields need to be set to a proper function.
 pub const GitAllocator = extern struct {
     /// Allocate `n` bytes of memory
-    malloc: fn (n: usize, file: [*:0]const u8, line: c_int) callconv(.C) ?*anyopaque,
+    malloc: *const fn (n: usize, file: [*:0]const u8, line: c_int) callconv(.C) ?*anyopaque,
 
     /// Allocate memory for an array of `nelem` elements, where each element has a size of `elsize`.
     /// Returned memory shall be initialized to all-zeroes
-    calloc: fn (nelem: usize, elsize: usize, file: [*:0]const u8, line: c_int) callconv(.C) ?*anyopaque,
+    calloc: *const fn (nelem: usize, elsize: usize, file: [*:0]const u8, line: c_int) callconv(.C) ?*anyopaque,
 
     /// Allocate memory for the string `str` and duplicate its contents.
-    strdup: fn (str: [*:0]const u8, file: [*:0]const u8, line: c_int) callconv(.C) [*:0]const u8,
+    strdup: *const fn (str: [*:0]const u8, file: [*:0]const u8, line: c_int) callconv(.C) [*:0]const u8,
 
     /// Equivalent to the `gstrdup` function, but only duplicating at most `n + 1` bytes
-    strndup: fn (str: [*:0]const u8, n: usize, file: [*:0]const u8, line: c_int) callconv(.C) [*:0]const u8,
+    strndup: *const fn (str: [*:0]const u8, n: usize, file: [*:0]const u8, line: c_int) callconv(.C) [*:0]const u8,
 
     /// Equivalent to `gstrndup`, but will always duplicate exactly `n` bytes of `str`. Thus, out of bounds reads at `str`
     /// may happen.
-    substrdup: fn (str: [*:0]const u8, n: usize, file: [*:0]const u8, line: c_int) callconv(.C) [*:0]const u8,
+    substrdup: *const fn (str: [*:0]const u8, n: usize, file: [*:0]const u8, line: c_int) callconv(.C) [*:0]const u8,
 
     /// This function shall deallocate the old object `ptr` and return a pointer to a new object that has the size specified by
     /// size`. In case `ptr` is `null`, a new array shall be allocated.
-    realloc: fn (ptr: ?*anyopaque, size: usize, file: [*:0]const u8, line: c_int) callconv(.C) ?*anyopaque,
+    realloc: *const fn (ptr: ?*anyopaque, size: usize, file: [*:0]const u8, line: c_int) callconv(.C) ?*anyopaque,
 
     /// This function shall be equivalent to `grealloc`, but allocating `neleme * elsize` bytes.
-    reallocarray: fn (ptr: ?*anyopaque, nelem: usize, elsize: usize, file: [*:0]const u8, line: c_int) callconv(.C) ?*anyopaque,
+    reallocarray: *const fn (ptr: ?*anyopaque, nelem: usize, elsize: usize, file: [*:0]const u8, line: c_int) callconv(.C) ?*anyopaque,
 
     /// This function shall allocate a new array of `nelem` elements, where each element has a size of `elsize` bytes.
-    mallocarray: fn (nelem: usize, elsize: usize, file: [*:0]const u8, line: c_int) callconv(.C) ?*anyopaque,
+    mallocarray: *const fn (nelem: usize, elsize: usize, file: [*:0]const u8, line: c_int) callconv(.C) ?*anyopaque,
 
     /// This function shall free the memory pointed to by `ptr`. In case `ptr` is `null`, this shall be a no-op.
-    free: fn (ptr: ?*anyopaque) callconv(.C) void,
+    free: *const fn (ptr: ?*anyopaque) callconv(.C) void,
 
     test {
         try std.testing.expectEqual(@sizeOf(c.git_allocator), @sizeOf(GitAllocator));

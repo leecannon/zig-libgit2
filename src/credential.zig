@@ -7,7 +7,7 @@ const git = @import("git.zig");
 
 pub const Credential = extern struct {
     credtype: CredentialType,
-    free: fn (*Credential) callconv(.C) void,
+    free: *const fn (*Credential) callconv(.C) void,
 
     pub fn deinit(self: *Credential) void {
         if (internal.trace_log) log.debug("Credential.deinit called", .{});
@@ -112,7 +112,7 @@ pub const Credential = extern struct {
             username: [*:0]const u8,
 
             /// Callback used for authentication.
-            prompt_callback: fn (
+            prompt_callback: *const fn (
                 name: [*]const u8,
                 name_len: c_int,
                 instruction: [*]const u8,
@@ -147,7 +147,7 @@ pub const Credential = extern struct {
             /// Length of the public key
             publickey_len: usize,
 
-            sign_callback: fn (
+            sign_callback: *const fn (
                 session: ?*c.LIBSSH2_SESSION,
                 sig: *[*:0]u8,
                 sig_len: *usize,

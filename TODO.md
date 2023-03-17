@@ -4,8 +4,8 @@
 - [ ] Update with all API changes up to latest master
 - [ ] Build against each version from latest to oldest and mark added APIs using `@hasDecl`
 - [ ] Add documentation to *every* function and type including docs for return value
-- [ ] Add functionality to build.zig to include package as either static or dynamic
-- [ ] Package with zigmod/gyro
+- [ ] Remove unnecessary duplicated named, e.g. `Credential.CredentialUsername` should be `Credential.Username`
+- [ ] Add functionality to build.zig to include as either static or dynamic
 
 559 odb.h
 606 merge.h

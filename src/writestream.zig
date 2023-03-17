@@ -7,10 +7,10 @@ const git = @import("git.zig");
 
 pub const WriteStream = extern struct {
     /// if this returns non-zero this will be counted as an error
-    write: fn (self: *WriteStream, buffer: [*:0]const u8, len: usize) callconv(.C) c_int,
+    write: *const fn (self: *WriteStream, buffer: [*:0]const u8, len: usize) callconv(.C) c_int,
     /// if this returns non-zero this will be counted as an error
-    close: fn (self: *WriteStream) callconv(.C) c_int,
-    free: fn (self: *WriteStream) callconv(.C) void,
+    close: *const fn (self: *WriteStream) callconv(.C) c_int,
+    free: *const fn (self: *WriteStream) callconv(.C) void,
 
     pub fn commit(self: *WriteStream) !git.Oid {
         if (internal.trace_log) log.debug("WriteStream.commit called", .{});
