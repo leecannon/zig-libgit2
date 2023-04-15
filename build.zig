@@ -16,9 +16,10 @@ pub fn build(b: *std.Build) void {
             .optimize = optimize,
         });
         addLibGit(lib_test, module);
+        const run_lib_test = b.addRunArtifact(lib_test);
 
         const lib_test_step = b.step("test_lib", "Run the lib tests");
-        lib_test_step.dependOn(&lib_test.step);
+        lib_test_step.dependOn(&run_lib_test.step);
 
         const sample_test = b.addTest(.{
             .root_source_file = .{ .path = "sample.zig" },
@@ -26,13 +27,14 @@ pub fn build(b: *std.Build) void {
             .optimize = optimize,
         });
         addLibGit(sample_test, module);
+        const run_sample_test = b.addRunArtifact(sample_test);
 
         const sample_test_step = b.step("test_sample", "Run the sample tests");
-        sample_test_step.dependOn(&sample_test.step);
+        sample_test_step.dependOn(&run_sample_test.step);
 
         const test_step = b.step("test", "Run all the tests");
-        test_step.dependOn(&lib_test.step);
-        test_step.dependOn(&sample_test.step);
+        test_step.dependOn(lib_test_step);
+        test_step.dependOn(sample_test_step);
 
         b.default_step = test_step;
     }
@@ -46,9 +48,9 @@ pub fn build(b: *std.Build) void {
             .optimize = optimize,
         });
         addLibGit(sample_exe, module);
-        sample_exe.install();
+        b.installArtifact(sample_exe);
 
-        const run_cmd = sample_exe.run();
+        const run_cmd = b.addRunArtifact(sample_exe);
         run_cmd.step.dependOn(b.getInstallStep());
         if (b.args) |args| {
             run_cmd.addArgs(args);
