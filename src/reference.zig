@@ -51,7 +51,7 @@ pub const Reference = opaque {
             @ptrCast(*?*c.git_reference, &ref),
             @ptrCast(*c.git_reference, self),
             new_branch_name.ptr,
-            @boolToInt(force),
+            @intFromBool(force),
         });
 
         return ref;

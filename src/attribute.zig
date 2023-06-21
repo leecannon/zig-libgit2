@@ -15,7 +15,7 @@ pub const Attribute = struct {
     ///
     /// Then for file `xyz.c` looking up attribute "foo" gives a value for which this is true.
     pub fn isTrue(self: Attribute) bool {
-        return self.getValue() == .@"true";
+        return self.getValue() == .true;
     }
 
     /// Checks if an attribute is set off. In core git parlance, this is the value for attributes that are "Unset" (not to be
@@ -26,7 +26,7 @@ pub const Attribute = struct {
     ///
     /// Then for file `zyx.h` looking up attribute "foo" gives a value for which this is true.
     pub fn isFalse(self: Attribute) bool {
-        return self.getValue() == .@"false";
+        return self.getValue() == .false;
     }
 
     /// Checks if an attribute is unspecified. This may be due to the attribute not being mentioned at all or because the
@@ -53,16 +53,16 @@ pub const Attribute = struct {
     }
 
     pub fn getValue(self: Attribute) AttributeValue {
-        return @intToEnum(AttributeValue, c.git_attr_value(self.z_attr));
+        return @enumFromInt(AttributeValue, c.git_attr_value(self.z_attr));
     }
 
     pub const AttributeValue = enum(c_uint) {
         /// The attribute has been left unspecified
         unspecified = 0,
         /// The attribute has been set
-        @"true",
+        true,
         /// The attribute has been unset
-        @"false",
+        false,
         /// This attribute has a value
         string,
     };

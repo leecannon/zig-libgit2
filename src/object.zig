@@ -52,7 +52,7 @@ pub const Object = opaque {
     pub fn objectType(self: *const Object) ObjectType {
         if (internal.trace_log) log.debug("Object.objectType called", .{});
 
-        return @intToEnum(
+        return @enumFromInt(
             ObjectType,
             c.git_object_type(@ptrCast(*const c.git_object, self)),
         );
@@ -102,7 +102,7 @@ pub const Object = opaque {
             @ptrCast(*?*c.git_object, &ret),
             @ptrCast(*const c.git_object, self),
             path.ptr,
-            @enumToInt(object_type),
+            @intFromEnum(object_type),
         });
 
         return ret;
@@ -132,7 +132,7 @@ pub const Object = opaque {
         try internal.wrapCall("git_object_peel", .{
             @ptrCast(*?*c.git_object, &ret),
             @ptrCast(*const c.git_object, self),
-            @enumToInt(target_type),
+            @intFromEnum(target_type),
         });
 
         return ret;
@@ -179,7 +179,7 @@ pub const ObjectType = enum(c_int) {
     /// Convert an object type to its string representation.
     pub fn toString(self: ObjectType) [:0]const u8 {
         return std.mem.sliceTo(
-            c.git_object_type2string(@enumToInt(self)),
+            c.git_object_type2string(@intFromEnum(self)),
             0,
         );
     }
@@ -188,12 +188,12 @@ pub const ObjectType = enum(c_int) {
     ///
     /// If the given string is not a valid object type `.invalid` is returned.
     pub fn fromString(str: [:0]const u8) ObjectType {
-        return @intToEnum(ObjectType, c.git_object_string2type(str.ptr));
+        return @enumFromInt(ObjectType, c.git_object_string2type(str.ptr));
     }
 
     /// Determine if the given `ObjectType` is a valid loose object type.
     pub fn validLoose(self: ObjectType) bool {
-        return c.git_object_typeisloose(@enumToInt(self)) != 0;
+        return c.git_object_typeisloose(@intFromEnum(self)) != 0;
     }
 };
 

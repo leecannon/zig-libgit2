@@ -75,7 +75,7 @@ pub const Handle = struct {
         try internal.wrapCall("git_repository_init", .{
             @ptrCast(*?*c.git_repository, &repo),
             path.ptr,
-            @boolToInt(is_bare),
+            @intFromBool(is_bare),
         });
 
         return repo;
@@ -198,7 +198,7 @@ pub const Handle = struct {
         try internal.wrapCall("git_repository_discover", .{
             @ptrCast(*c.git_buf, &buf),
             start_path.ptr,
-            @boolToInt(across_fs),
+            @intFromBool(across_fs),
             ceiling_dirs_temp,
         });
 
@@ -303,7 +303,7 @@ pub const Handle = struct {
 
         try internal.wrapCall("git_libgit2_opts", .{
             c.GIT_OPT_GET_SEARCH_PATH,
-            @enumToInt(level),
+            @intFromEnum(level),
             @ptrCast(*c.git_buf, &buf),
         });
 
@@ -320,7 +320,7 @@ pub const Handle = struct {
 
         const path_c = if (path) |slice| slice.ptr else null;
 
-        try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_SET_SEARCH_PATH, @enumToInt(level), path_c });
+        try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_SET_SEARCH_PATH, @intFromEnum(level), path_c });
     }
 
     pub fn optionSetCacheObjectLimit(self: Handle, object_type: git.ObjectType, value: usize) !void {
@@ -328,7 +328,7 @@ pub const Handle = struct {
 
         if (internal.trace_log) log.debug("Handle.optionSetCacheObjectLimit called", .{});
 
-        try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_SET_CACHE_OBJECT_LIMIT, @enumToInt(object_type), value });
+        try internal.wrapCall("git_libgit2_opts", .{ c.GIT_OPT_SET_CACHE_OBJECT_LIMIT, @intFromEnum(object_type), value });
     }
 
     pub fn optionSetMaximumCacheSize(self: Handle, value: usize) !void {
@@ -665,14 +665,14 @@ pub const Handle = struct {
                 msg: ?[*:0]const u8,
             ) callconv(.C) void {
                 callback_fn(
-                    @intToEnum(TraceLevel, c_level),
+                    @enumFromInt(TraceLevel, c_level),
                     std.mem.sliceTo(msg.?, 0),
                 );
             }
         }.cb;
 
         try internal.wrapCall("git_trace_set", .{
-            @enumToInt(level),
+            @intFromEnum(level),
             cb,
         });
     }
@@ -715,8 +715,8 @@ pub const Handle = struct {
         return (try internal.wrapCallWithReturn("git_path_is_gitfile", .{
             path.ptr,
             path.len,
-            @enumToInt(gitfile),
-            @enumToInt(fs),
+            @intFromEnum(gitfile),
+            @intFromEnum(fs),
         })) != 0;
     }
 
@@ -1083,7 +1083,7 @@ pub const Handle = struct {
             .version = c.GIT_INDEXER_OPTIONS_VERSION,
             .progress_cb = cb,
             .progress_cb_payload = user_data,
-            .verify = @boolToInt(options.verify),
+            .verify = @intFromBool(options.verify),
         };
 
         var ret: *git.Indexer = undefined;
@@ -1151,7 +1151,7 @@ pub const Handle = struct {
         try internal.wrapCall("git_refspec_parse", .{
             @ptrCast(*?*c.git_refspec, &ret),
             input.ptr,
-            @boolToInt(is_fetch),
+            @intFromBool(is_fetch),
         });
 
         return ret;

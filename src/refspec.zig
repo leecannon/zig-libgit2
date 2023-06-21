@@ -64,7 +64,7 @@ pub const Refspec = opaque {
     pub fn direction(self: *const Refspec) git.Direction {
         if (internal.trace_log) log.debug("Refspec.direction called", .{});
 
-        return @intToEnum(
+        return @enumFromInt(
             git.Direction,
             c.git_refspec_direction(@ptrCast(
                 *const c.git_refspec,

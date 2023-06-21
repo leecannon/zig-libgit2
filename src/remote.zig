@@ -141,7 +141,7 @@ pub const Remote = opaque {
 
         try internal.wrapCall("git_remote_connect", .{
             @ptrCast(*c.git_remote, self),
-            @enumToInt(direction),
+            @intFromEnum(direction),
             @ptrCast(*const c.git_remote_callbacks, &callbacks),
             &c_proxy_opts,
             @ptrCast(*const c.git_strarray, &custom_headers),
@@ -312,8 +312,8 @@ pub const Remote = opaque {
         try internal.wrapCall("git_remote_update_tips", .{
             @ptrCast(*c.git_remote, self),
             @ptrCast(*const c.git_remote_callbacks, &callbacks),
-            @boolToInt(update_fetchead),
-            @enumToInt(download_tags),
+            @intFromBool(update_fetchead),
+            @intFromEnum(download_tags),
             c_reflog_message,
         });
     }
@@ -387,7 +387,7 @@ pub const Remote = opaque {
     pub fn getAutotag(self: *const Remote) RemoteAutoTagOption {
         if (internal.trace_log) log.debug("Remote.getAutotag called", .{});
 
-        return @intToEnum(
+        return @enumFromInt(
             RemoteAutoTagOption,
             c.git_remote_autotag(@ptrCast(*const c.git_remote, self)),
         );

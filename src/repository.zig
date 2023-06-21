@@ -15,7 +15,7 @@ pub const Repository = opaque {
     pub fn state(self: *Repository) RepositoryState {
         if (internal.trace_log) log.debug("Repository.state called", .{});
 
-        return @intToEnum(RepositoryState, c.git_repository_state(@ptrCast(*c.git_repository, self)));
+        return @enumFromInt(RepositoryState, c.git_repository_state(@ptrCast(*c.git_repository, self)));
     }
 
     pub const RepositoryState = enum(c_int) {
@@ -247,7 +247,7 @@ pub const Repository = opaque {
         try internal.wrapCall("git_repository_item_path", .{
             @ptrCast(*c.git_buf, &buf),
             @ptrCast(*const c.git_repository, self),
-            @enumToInt(item),
+            @intFromEnum(item),
         });
 
         return buf;
@@ -288,7 +288,7 @@ pub const Repository = opaque {
         try internal.wrapCall("git_repository_set_workdir", .{
             @ptrCast(*c.git_repository, self),
             workdir.ptr,
-            @boolToInt(update_gitlink),
+            @intFromBool(update_gitlink),
         });
     }
 
@@ -594,7 +594,7 @@ pub const Repository = opaque {
             @ptrCast(*c.git_oid, &oid),
             @ptrCast(*c.git_repository, self),
             path.ptr,
-            @enumToInt(object_type),
+            @intFromEnum(object_type),
             as_path_temp,
         });
 
@@ -885,7 +885,7 @@ pub const Repository = opaque {
         try internal.wrapCall("git_apply", .{
             @ptrCast(*c.git_repository, self),
             @ptrCast(*c.git_diff, diff),
-            @enumToInt(location),
+            @intFromEnum(location),
             &c_options,
         });
     }
@@ -1203,7 +1203,7 @@ pub const Repository = opaque {
             @ptrCast(*c.git_repository, self),
             branch_name.ptr,
             @ptrCast(*const c.git_commit, target),
-            @boolToInt(force),
+            @intFromBool(force),
         });
 
         return reference;
@@ -1234,7 +1234,7 @@ pub const Repository = opaque {
             @ptrCast(*c.git_repository, self),
             branch_name.ptr,
             @ptrCast(*const c.git_annotated_commit, target),
-            @boolToInt(force),
+            @intFromBool(force),
         });
 
         return reference;
@@ -1248,7 +1248,7 @@ pub const Repository = opaque {
         try internal.wrapCall("git_branch_iterator_new", .{
             @ptrCast(*?*c.git_branch_iterator, &iterator),
             @ptrCast(*c.git_repository, self),
-            @enumToInt(branch_type),
+            @intFromEnum(branch_type),
         });
 
         return iterator;
@@ -1278,7 +1278,7 @@ pub const Repository = opaque {
 
             return Item{
                 .reference = reference,
-                .branch_type = @intToEnum(BranchType, branch_type),
+                .branch_type = @enumFromInt(BranchType, branch_type),
             };
         }
 
@@ -1311,7 +1311,7 @@ pub const Repository = opaque {
             @ptrCast(*?*c.git_reference, &ref),
             @ptrCast(*c.git_repository, self),
             branch_name.ptr,
-            @enumToInt(branch_type),
+            @intFromEnum(branch_type),
         });
 
         return ref;
@@ -1447,7 +1447,7 @@ pub const Repository = opaque {
             @ptrCast(*c.git_repository, self),
             @ptrCast(*c.git_commit, cherrypick_commit),
             @ptrCast(*c.git_commit, our_commit),
-            @boolToInt(mainline),
+            @intFromBool(mainline),
             &c_options,
         });
 
@@ -1656,7 +1656,7 @@ pub const Repository = opaque {
             @ptrCast(*c.git_repository, self),
             @ptrCast(?*c.git_blob, blob),
             path.ptr,
-            @enumToInt(mode),
+            @intFromEnum(mode),
             @bitCast(c_uint, flags),
         });
 
@@ -1795,7 +1795,7 @@ pub const Repository = opaque {
             @ptrCast(*c.git_repository, self),
             @ptrCast(?*c.git_blob, blob),
             path.ptr,
-            @enumToInt(mode),
+            @intFromEnum(mode),
             &c_options,
         });
 
@@ -2369,7 +2369,7 @@ pub const Repository = opaque {
             @ptrCast(*const c.git_signature, commiter),
             @ptrCast(*const c.git_oid, oid),
             note.ptr,
-            @boolToInt(force),
+            @intFromBool(force),
         });
 
         return ret;
@@ -2413,7 +2413,7 @@ pub const Repository = opaque {
             @ptrCast(*const c.git_signature, commiter),
             @ptrCast(*const c.git_oid, oid),
             note.ptr,
-            @boolToInt(allow_note_overwrite),
+            @intFromBool(allow_note_overwrite),
         });
 
         return ret;
@@ -2596,7 +2596,7 @@ pub const Repository = opaque {
             @ptrCast(*?*c.git_object, &ret),
             @ptrCast(*c.git_repository, self),
             @ptrCast(*const c.git_oid, id),
-            @enumToInt(object_type),
+            @intFromEnum(object_type),
         });
 
         return ret;
@@ -2628,7 +2628,7 @@ pub const Repository = opaque {
             @ptrCast(*c.git_repository, self),
             @ptrCast(*const c.git_oid, id),
             len,
-            @enumToInt(object_type),
+            @intFromEnum(object_type),
         });
 
         return ret;
@@ -2833,7 +2833,7 @@ pub const Repository = opaque {
         try internal.wrapCall("git_remote_set_autotag", .{
             @ptrCast(*c.git_repository, self),
             remote.ptr,
-            @enumToInt(value),
+            @intFromEnum(value),
         });
     }
 
@@ -3100,7 +3100,7 @@ pub const Repository = opaque {
             @ptrCast(*c.git_repository, self),
             @ptrCast(*c.git_commit, revert_commit),
             @ptrCast(*c.git_commit, our_commit),
-            @boolToInt(mainline),
+            @intFromBool(mainline),
             &c_options,
         });
 
@@ -3170,7 +3170,7 @@ pub const Repository = opaque {
         try internal.wrapCall("git_reset", .{
             @ptrCast(*c.git_repository, self),
             @ptrCast(*const c.git_object, target),
-            @enumToInt(reset_type),
+            @intFromEnum(reset_type),
             &c_options,
         });
     }
@@ -3198,7 +3198,7 @@ pub const Repository = opaque {
         try internal.wrapCall("git_reset_from_annotated", .{
             @ptrCast(*c.git_repository, self),
             @ptrCast(*const c.git_annotated_commit, commit),
-            @enumToInt(reset_type),
+            @intFromEnum(reset_type),
             &c_options,
         });
     }
@@ -3252,7 +3252,7 @@ pub const Repository = opaque {
 
         try internal.wrapCall("git_repository_reinit_filesystem", .{
             @ptrCast(*c.git_repository, self),
-            @boolToInt(recurse_submodules),
+            @intFromBool(recurse_submodules),
         });
     }
 
@@ -3689,7 +3689,7 @@ pub const Repository = opaque {
             @ptrCast(*const c.git_object, target),
             @ptrCast(?*const c.git_signature, tagger),
             c_message,
-            @boolToInt(force),
+            @intFromBool(force),
         });
 
         return ret;
@@ -3747,7 +3747,7 @@ pub const Repository = opaque {
             @ptrCast(*c.git_oid, &ret),
             @ptrCast(*c.git_repository, self),
             buffer.ptr,
-            @boolToInt(force),
+            @intFromBool(force),
         });
 
         return ret;
@@ -3781,7 +3781,7 @@ pub const Repository = opaque {
             @ptrCast(*c.git_repository, self),
             tag_name.ptr,
             @ptrCast(*const c.git_object, target),
-            @boolToInt(force),
+            @intFromBool(force),
         });
 
         return ret;

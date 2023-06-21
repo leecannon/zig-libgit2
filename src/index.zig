@@ -24,7 +24,7 @@ pub const Index = opaque {
     pub fn versionSet(self: *Index, version: IndexVersion) !void {
         if (internal.trace_log) log.debug("Index.setVersion called", .{});
 
-        try internal.wrapCall("git_index_set_version", .{ @ptrCast(*c.git_index, self), @enumToInt(version) });
+        try internal.wrapCall("git_index_set_version", .{ @ptrCast(*c.git_index, self), @intFromEnum(version) });
     }
 
     pub const IndexVersion = enum(c_uint) {
@@ -39,7 +39,7 @@ pub const Index = opaque {
     pub fn readIndexFromDisk(self: *Index, force: bool) !void {
         if (internal.trace_log) log.debug("Index.readIndexFromDisk called", .{});
 
-        try internal.wrapCall("git_index_read", .{ @ptrCast(*c.git_index, self), @boolToInt(force) });
+        try internal.wrapCall("git_index_read", .{ @ptrCast(*c.git_index, self), @intFromBool(force) });
     }
 
     pub fn writeToDisk(self: *Index) !void {

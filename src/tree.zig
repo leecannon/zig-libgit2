@@ -209,7 +209,7 @@ pub const Tree = opaque {
 
         _ = try internal.wrapCallWithReturn("git_tree_walk", .{
             @ptrCast(*c.git_tree, self),
-            @enumToInt(mode),
+            @intFromEnum(mode),
             cb,
             user_data,
         });
@@ -251,14 +251,14 @@ pub const TreeEntry = opaque {
     pub fn getType(self: *const TreeEntry) git.ObjectType {
         if (internal.trace_log) log.debug("TreeEntry.getType called", .{});
 
-        return @intToEnum(git.ObjectType, c.git_tree_entry_type(@ptrCast(*const c.git_tree_entry, self)));
+        return @enumFromInt(git.ObjectType, c.git_tree_entry_type(@ptrCast(*const c.git_tree_entry, self)));
     }
 
     /// Get the UNIX file attributes of a tree entry
     pub fn filemode(self: *const TreeEntry) git.FileMode {
         if (internal.trace_log) log.debug("TreeEntry.filemode called", .{});
 
-        return @intToEnum(git.FileMode, c.git_tree_entry_filemode(@ptrCast(*const c.git_tree_entry, self)));
+        return @enumFromInt(git.FileMode, c.git_tree_entry_filemode(@ptrCast(*const c.git_tree_entry, self)));
     }
 
     /// Get the raw UNIX file attributes of a tree entry
@@ -366,7 +366,7 @@ pub const TreeBuilder = opaque {
             @ptrCast(*c.git_treebuilder, self),
             filename.ptr,
             @ptrCast(*const c.git_oid, id),
-            @enumToInt(filemode),
+            @intFromEnum(filemode),
         });
 
         return ret;

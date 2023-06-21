@@ -89,7 +89,7 @@ pub const Reflog = opaque {
         try internal.wrapCall("git_reflog_drop", .{
             @ptrCast(*c.git_reflog, self),
             index,
-            @boolToInt(rewrite_previous_entry),
+            @intFromBool(rewrite_previous_entry),
         });
     }
 

@@ -59,7 +59,7 @@ pub const Tag = opaque {
     pub fn targetType(self: *const Tag) git.ObjectType {
         if (internal.trace_log) log.debug("Tag.targetType called", .{});
 
-        return @intToEnum(git.ObjectType, c.git_tag_target_type(
+        return @enumFromInt(git.ObjectType, c.git_tag_target_type(
             @ptrCast(*const c.git_tag, self),
         ));
     }

@@ -358,7 +358,7 @@ pub const PackBuilder = opaque {
                 payload: ?*anyopaque,
             ) callconv(.C) c_int {
                 callback_fn(
-                    @intToEnum(PackbuilderStage, stage),
+                    @enumFromInt(PackbuilderStage, stage),
                     current,
                     total,
                     @ptrCast(UserDataType, @alignCast(alignment, payload)),

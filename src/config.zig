@@ -71,7 +71,7 @@ pub const Config = opaque {
     pub fn setBool(self: *Config, name: [:0]const u8, value: bool) !void {
         if (internal.trace_log) log.debug("Config.setBool called", .{});
 
-        try internal.wrapCall("git_config_set_bool", .{ @ptrCast(*c.git_config, self), name.ptr, @boolToInt(value) });
+        try internal.wrapCall("git_config_set_bool", .{ @ptrCast(*c.git_config, self), name.ptr, @intFromBool(value) });
     }
 
     pub fn getPath(self: *const Config, name: [:0]const u8) !git.Buf {
@@ -301,9 +301,9 @@ pub const Config = opaque {
         try internal.wrapCall("git_config_add_file_ondisk", .{
             @ptrCast(*c.git_config, self),
             path.ptr,
-            @enumToInt(level),
+            @intFromEnum(level),
             @ptrCast(*const c.git_repository, repo),
-            @boolToInt(force),
+            @intFromBool(force),
         });
     }
 
@@ -315,7 +315,7 @@ pub const Config = opaque {
         try internal.wrapCall("git_config_open_level", .{
             @ptrCast(*?*c.git_config, &config),
             @ptrCast(*const c.git_config, self),
-            @enumToInt(level),
+            @intFromEnum(level),
         });
 
         return config;

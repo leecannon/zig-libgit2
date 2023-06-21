@@ -137,9 +137,9 @@ pub const Patch = opaque {
 
         const ret = c.git_patch_size(
             @ptrCast(*c.git_patch, self),
-            @boolToInt(include_context),
-            @boolToInt(include_hunk_headers),
-            @boolToInt(include_file_header),
+            @intFromBool(include_context),
+            @intFromBool(include_hunk_headers),
+            @intFromBool(include_file_header),
         );
 
         return ret;

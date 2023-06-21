@@ -6,8 +6,8 @@ const git = @import("../git.zig");
 pub fn rebaseOptions(self: git.RebaseOptions) c.git_rebase_options {
     return .{
         .version = c.GIT_REBASE_OPTIONS_VERSION,
-        .quiet = @boolToInt(self.quiet),
-        .inmemory = @boolToInt(self.in_memory),
+        .quiet = @intFromBool(self.quiet),
+        .inmemory = @intFromBool(self.in_memory),
         .rewrite_notes_ref = if (self.rewrite_notes_ref) |s| s.ptr else null,
         .merge_options = mergeOptions(self.merge_options),
         .checkout_options = checkoutOptions(self.checkout_options),
@@ -20,7 +20,7 @@ pub fn diffOptions(self: git.DiffOptions) c.git_diff_options {
     return .{
         .version = c.GIT_DIFF_OPTIONS_VERSION,
         .flags = @bitCast(u32, self.flags),
-        .ignore_submodules = @enumToInt(self.ignore_submodules),
+        .ignore_submodules = @intFromEnum(self.ignore_submodules),
         .pathspec = @bitCast(c.git_strarray, self.pathspec),
         .notify_cb = @ptrCast(c.git_diff_notify_cb, self.notify_cb),
         .progress_cb = @ptrCast(c.git_diff_progress_cb, self.progress_cb),
@@ -56,10 +56,10 @@ pub fn describeOptions(self: git.DescribeOptions) c.git_describe_options {
     return .{
         .version = c.GIT_DESCRIBE_OPTIONS_VERSION,
         .max_candidates_tags = self.max_candidate_tags,
-        .describe_strategy = @enumToInt(self.describe_strategy),
+        .describe_strategy = @intFromEnum(self.describe_strategy),
         .pattern = if (self.pattern) |slice| slice.ptr else null,
-        .only_follow_first_parent = @boolToInt(self.only_follow_first_parent),
-        .show_commit_oid_as_fallback = @boolToInt(self.show_commit_oid_as_fallback),
+        .only_follow_first_parent = @intFromBool(self.only_follow_first_parent),
+        .show_commit_oid_as_fallback = @intFromBool(self.show_commit_oid_as_fallback),
     };
 }
 
@@ -67,7 +67,7 @@ pub fn describeFormatOptions(self: git.DescribeFormatOptions) c.git_describe_for
     return .{
         .version = c.GIT_DESCRIBE_FORMAT_OPTIONS_VERSION,
         .abbreviated_size = self.abbreviated_size,
-        .always_use_long_format = @boolToInt(self.always_use_long_format),
+        .always_use_long_format = @intFromBool(self.always_use_long_format),
         .dirty_suffix = if (self.dirty_suffix) |slice| slice.ptr else null,
     };
 }
@@ -118,7 +118,7 @@ pub fn mergeOptions(self: git.MergeOptions) c.git_merge_options {
         .metric = @ptrCast(?*c.git_diff_similarity_metric, self.metric),
         .recursion_limit = self.recursion_limit,
         .default_driver = if (self.default_driver) |ptr| ptr.ptr else null,
-        .file_favor = @enumToInt(self.file_favor),
+        .file_favor = @intFromEnum(self.file_favor),
         .file_flags = @bitCast(u32, self.file_flags),
     };
 }
@@ -126,7 +126,7 @@ pub fn mergeOptions(self: git.MergeOptions) c.git_merge_options {
 pub fn fileStatusOptions(self: git.FileStatusOptions) c.git_status_options {
     return .{
         .version = c.GIT_STATUS_OPTIONS_VERSION,
-        .show = @enumToInt(self.show),
+        .show = @intFromEnum(self.show),
         .flags = @bitCast(c_uint, self.flags),
         .pathspec = @bitCast(c.git_strarray, self.pathspec),
         .baseline = @ptrCast(?*c.git_tree, self.baseline),
@@ -176,7 +176,7 @@ pub fn checkoutOptions(self: git.CheckoutOptions) c.git_checkout_options {
     return .{
         .version = c.GIT_CHECKOUT_OPTIONS_VERSION,
         .checkout_strategy = @bitCast(c_uint, self.checkout_strategy),
-        .disable_filters = @boolToInt(self.disable_filters),
+        .disable_filters = @intFromBool(self.disable_filters),
         .dir_mode = self.dir_mode,
         .file_mode = self.file_mode,
         .file_open_flags = self.file_open_flags,
@@ -200,7 +200,7 @@ pub fn checkoutOptions(self: git.CheckoutOptions) c.git_checkout_options {
 pub fn cherrypickOptions(self: git.CherrypickOptions) c.git_cherrypick_options {
     return .{
         .version = c.GIT_CHERRYPICK_OPTIONS_VERSION,
-        .mainline = @boolToInt(self.mainline),
+        .mainline = @intFromBool(self.mainline),
         .merge_opts = mergeOptions(self.merge_options),
         .checkout_opts = checkoutOptions(self.checkout_options),
     };
@@ -241,7 +241,7 @@ pub fn attributeFlags(self: git.AttributeFlags) c_uint {
 pub fn worktreeAddOptions(self: git.WorktreeAddOptions) c.git_worktree_add_options {
     return .{
         .version = c.GIT_WORKTREE_ADD_OPTIONS_VERSION,
-        .lock = @boolToInt(self.lock),
+        .lock = @intFromBool(self.lock),
         .ref = @ptrCast(?*c.git_reference, self.ref),
     };
 }
@@ -249,7 +249,7 @@ pub fn worktreeAddOptions(self: git.WorktreeAddOptions) c.git_worktree_add_optio
 pub fn revertOptions(self: git.RevertOptions) c.git_revert_options {
     return .{
         .version = c.GIT_REVERT_OPTIONS_VERSION,
-        .mainline = @boolToInt(self.mainline),
+        .mainline = @intFromBool(self.mainline),
         .merge_opts = mergeOptions(self.merge_options),
         .checkout_opts = checkoutOptions(self.checkout_options),
     };
@@ -259,9 +259,9 @@ pub fn fetchOptions(self: git.FetchOptions) c.git_fetch_options {
     return .{
         .version = c.GIT_FETCH_OPTIONS_VERSION,
         .callbacks = @bitCast(c.git_remote_callbacks, self.callbacks),
-        .prune = @enumToInt(self.prune),
-        .update_fetchhead = @boolToInt(self.update_fetchhead),
-        .download_tags = @enumToInt(self.download_tags),
+        .prune = @intFromEnum(self.prune),
+        .update_fetchhead = @intFromBool(self.update_fetchhead),
+        .download_tags = @intFromEnum(self.download_tags),
         .proxy_opts = proxyOptions(self.proxy_opts),
         .custom_headers = @bitCast(c.git_strarray, self.custom_headers),
     };
@@ -272,8 +272,8 @@ pub fn cloneOptions(self: git.CloneOptions) c.git_clone_options {
         .version = c.GIT_CHECKOUT_OPTIONS_VERSION,
         .checkout_opts = checkoutOptions(self.checkout_options),
         .fetch_opts = fetchOptions(self.fetch_options),
-        .bare = @boolToInt(self.bare),
-        .local = @enumToInt(self.local),
+        .bare = @intFromBool(self.bare),
+        .local = @intFromEnum(self.local),
         .checkout_branch = if (self.checkout_branch) |b| b.ptr else null,
         .repository_cb = @ptrCast(c.git_repository_create_cb, self.repository_cb),
         .repository_cb_payload = self.repository_cb_payload,
@@ -285,7 +285,7 @@ pub fn cloneOptions(self: git.CloneOptions) c.git_clone_options {
 pub fn proxyOptions(self: git.ProxyOptions) c.git_proxy_options {
     return .{
         .version = c.GIT_PROXY_OPTIONS_VERSION,
-        .type = @enumToInt(self.proxy_type),
+        .type = @intFromEnum(self.proxy_type),
         .url = if (self.url) |s| s.ptr else null,
         .credentials = @ptrCast(c.git_credential_acquire_cb, self.credentials),
         .payload = self.payload,

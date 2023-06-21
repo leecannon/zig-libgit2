@@ -78,7 +78,7 @@ fn unwrapError(name: []const u8, value: c.git_error_code) git.GitError {
 
     // We dont want to output log messages in tests, as the error might be expected
     // also dont incur the cost of calling `getDetailedLastError` if we are not going to use it
-    if (!@import("builtin").is_test and log_errors and @enumToInt(std.log.Level.err) <= @enumToInt(std.log.level)) {
+    if (!@import("builtin").is_test and log_errors and @intFromEnum(std.log.Level.err) <= @intFromEnum(std.log.level)) {
         if (git.Handle.getDetailedLastError(undefined)) |detailed| {
             log.err("{s} failed with error {s}/{s} - {s}", .{
                 name,
