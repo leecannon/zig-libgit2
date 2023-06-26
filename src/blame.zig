@@ -9,31 +9,25 @@ pub const Blame = opaque {
     pub fn deinit(self: *Blame) void {
         if (internal.trace_log) log.debug("Blame.deinit called", .{});
 
-        c.git_blame_free(@ptrCast(*c.git_blame, self));
+        c.git_blame_free(@ptrCast(self));
     }
 
     pub fn hunkCount(self: *Blame) u32 {
         if (internal.trace_log) log.debug("Blame.hunkCount called", .{});
 
-        return c.git_blame_get_hunk_count(@ptrCast(*c.git_blame, self));
+        return c.git_blame_get_hunk_count(@ptrCast(self));
     }
 
     pub fn hunkByIndex(self: *Blame, index: u32) ?*const BlameHunk {
         if (internal.trace_log) log.debug("Blame.hunkByIndex called", .{});
 
-        return @ptrCast(
-            ?*const git.BlameHunk,
-            c.git_blame_get_hunk_byindex(@ptrCast(*c.git_blame, self), index),
-        );
+        return @ptrCast(c.git_blame_get_hunk_byindex(@ptrCast(self), index));
     }
 
     pub fn hunkByLine(self: *Blame, line: usize) ?*const BlameHunk {
         if (internal.trace_log) log.debug("Blame.hunkByLine called", .{});
 
-        return @ptrCast(
-            ?*const git.BlameHunk,
-            c.git_blame_get_hunk_byline(@ptrCast(*c.git_blame, self), line),
-        );
+        return @ptrCast(c.git_blame_get_hunk_byline(@ptrCast(self), line));
     }
 
     /// Get blame data for a file that has been modified in memory. The `reference` parameter is a pre-calculated blame for the
@@ -47,8 +41,8 @@ pub const Blame = opaque {
         var blame: *git.Blame = undefined;
 
         try internal.wrapCall("git_blame_buffer", .{
-            @ptrCast(*?*c.git_blame, &blame),
-            @ptrCast(*c.git_blame, self),
+            @as(*?*c.git_blame, @ptrCast(&blame)),
+            @as(*c.git_blame, @ptrCast(self)),
             buffer.ptr,
             buffer.len,
         });

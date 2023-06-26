@@ -9,7 +9,7 @@ pub const Worktree = opaque {
     pub fn deinit(self: *Worktree) void {
         if (internal.trace_log) log.debug("Worktree.deinit called", .{});
 
-        c.git_worktree_free(@ptrCast(*c.git_worktree, self));
+        c.git_worktree_free(@as(*c.git_worktree, @ptrCast(self)));
     }
 
     /// Check if worktree is valid
@@ -20,7 +20,7 @@ pub const Worktree = opaque {
         if (internal.trace_log) log.debug("Worktree.valid called", .{});
 
         try internal.wrapCall("git_worktree_validate", .{
-            @ptrCast(*const c.git_worktree, self),
+            @as(*const c.git_worktree, @ptrCast(self)),
         });
     }
 
@@ -36,7 +36,7 @@ pub const Worktree = opaque {
         const c_reason = if (reason) |s| s.ptr else null;
 
         try internal.wrapCall("git_worktree_lock", .{
-            @ptrCast(*c.git_worktree, self),
+            @as(*c.git_worktree, @ptrCast(self)),
             c_reason,
         });
     }
@@ -47,7 +47,7 @@ pub const Worktree = opaque {
     pub fn unlock(self: *Worktree) !bool {
         if (internal.trace_log) log.debug("Worktree.unlock called", .{});
 
-        return (try internal.wrapCallWithReturn("git_worktree_unlock", .{@ptrCast(*c.git_worktree, self)})) != 0;
+        return (try internal.wrapCallWithReturn("git_worktree_unlock", .{@as(*c.git_worktree, @ptrCast(self))})) != 0;
     }
 
     /// Check if worktree is locked
@@ -61,8 +61,8 @@ pub const Worktree = opaque {
         var ret: git.Buf = .{};
 
         const locked = (try internal.wrapCallWithReturn("git_worktree_is_locked", .{
-            @ptrCast(*c.git_buf, &ret),
-            @ptrCast(*const c.git_worktree, self),
+            @as(*c.git_buf, @ptrCast(&ret)),
+            @as(*const c.git_worktree, @ptrCast(self)),
         })) != 0;
 
         return if (locked) ret else null;
@@ -74,7 +74,7 @@ pub const Worktree = opaque {
     pub fn name(self: *Worktree) ![:0]const u8 {
         if (internal.trace_log) log.debug("Worktree.name called", .{});
 
-        return std.mem.sliceTo(c.git_worktree_name(@ptrCast(*c.git_worktree, self)), 0);
+        return std.mem.sliceTo(c.git_worktree_name(@as(*c.git_worktree, @ptrCast(self))), 0);
     }
 
     /// Retrieve the path of the worktree
@@ -83,7 +83,7 @@ pub const Worktree = opaque {
     pub fn path(self: *Worktree) ![:0]const u8 {
         if (internal.trace_log) log.debug("Worktree.path called", .{});
 
-        return std.mem.sliceTo(c.git_worktree_path(@ptrCast(*c.git_worktree, self)), 0);
+        return std.mem.sliceTo(c.git_worktree_path(@as(*c.git_worktree, @ptrCast(self))), 0);
     }
 
     pub fn repositoryOpen(self: *Worktree) !*git.Repository {
@@ -92,8 +92,8 @@ pub const Worktree = opaque {
         var repo: *git.Repository = undefined;
 
         try internal.wrapCall("git_repository_open_from_worktree", .{
-            @ptrCast(*?*c.git_repository, &repo),
-            @ptrCast(*c.git_worktree, self),
+            @as(*?*c.git_repository, @ptrCast(&repo)),
+            @as(*c.git_worktree, @ptrCast(self)),
         });
 
         return repo;
@@ -114,7 +114,7 @@ pub const Worktree = opaque {
         var c_options = internal.make_c_option.pruneOptions(options);
 
         return (try internal.wrapCallWithReturn("git_worktree_is_prunable", .{
-            @ptrCast(*c.git_worktree, self),
+            @as(*c.git_worktree, @ptrCast(self)),
             &c_options,
         })) != 0;
     }
@@ -129,7 +129,7 @@ pub const Worktree = opaque {
         var c_options = internal.make_c_option.pruneOptions(options);
 
         try internal.wrapCall("git_worktree_prune", .{
-            @ptrCast(*c.git_worktree, self),
+            @as(*c.git_worktree, @ptrCast(self)),
             &c_options,
         });
     }

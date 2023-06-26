@@ -18,7 +18,7 @@ pub const StrArray = extern struct {
 
     pub fn toSlice(self: StrArray) []const [*:0]const u8 {
         if (self.count == 0) return &[_][*:0]const u8{};
-        return @ptrCast([*]const [*:0]const u8, self.strings)[0..self.count];
+        return @as([*]const [*:0]const u8, @ptrCast(self.strings))[0..self.count];
     }
 
     /// This should be called only on `StrArray`'s provided by the library
@@ -26,9 +26,9 @@ pub const StrArray = extern struct {
         if (internal.trace_log) log.debug("StrArray.deinit called", .{});
 
         if (@hasDecl(c, "git_strarray_dispose")) {
-            c.git_strarray_dispose(@ptrCast(*c.git_strarray, self));
+            c.git_strarray_dispose(@as(*c.git_strarray, @ptrCast(self)));
         } else {
-            c.git_strarray_free(@ptrCast(*c.git_strarray, self));
+            c.git_strarray_free(@as(*c.git_strarray, @ptrCast(self)));
         }
     }
 
@@ -37,8 +37,8 @@ pub const StrArray = extern struct {
 
         var result: StrArray = undefined;
         try internal.wrapCall("git_strarray_copy", .{
-            @ptrCast(*c.git_strarray, &result),
-            @ptrCast(*const c.git_strarray, &self),
+            @as(*c.git_strarray, @ptrCast(&result)),
+            @as(*const c.git_strarray, @ptrCast(&self)),
         });
 
         return result;

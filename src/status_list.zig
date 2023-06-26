@@ -9,21 +9,21 @@ pub const StatusList = opaque {
     pub fn deinit(self: *StatusList) void {
         if (internal.trace_log) log.debug("StatusList.deinit called", .{});
 
-        c.git_status_list_free(@ptrCast(*c.git_status_list, self));
+        c.git_status_list_free(@as(*c.git_status_list, @ptrCast(self)));
     }
 
     pub fn entryCount(self: *StatusList) usize {
         if (internal.trace_log) log.debug("StatusList.entryCount called", .{});
 
-        return c.git_status_list_entrycount(@ptrCast(*c.git_status_list, self));
+        return c.git_status_list_entrycount(@as(*c.git_status_list, @ptrCast(self)));
     }
 
     pub fn statusByIndex(self: *StatusList, index: usize) ?*const StatusEntry {
         if (internal.trace_log) log.debug("StatusList.statusByIndex called", .{});
 
-        return @ptrCast(
+        return @as(
             ?*const StatusEntry,
-            c.git_status_byindex(@ptrCast(*c.git_status_list, self), index),
+            @ptrCast(c.git_status_byindex(@as(*c.git_status_list, @ptrCast(self)), index)),
         );
     }
 
@@ -39,7 +39,7 @@ pub const StatusList = opaque {
 
         try internal.wrapCall("git_status_list_get_perfdata", .{
             &c_ret,
-            @ptrCast(*const c.git_status_list, self),
+            @as(*const c.git_status_list, @ptrCast(self)),
         });
 
         return git.DiffPerfData{

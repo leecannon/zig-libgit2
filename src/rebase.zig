@@ -9,23 +9,23 @@ pub const Rebase = opaque {
     pub fn deinit(self: *Rebase) void {
         if (internal.trace_log) log.debug("Rebase.deinit called", .{});
 
-        c.git_rebase_free(@ptrCast(*c.git_rebase, self));
+        c.git_rebase_free(@as(*c.git_rebase, @ptrCast(self)));
     }
 
     /// Gets the original `HEAD` ref name for merge rebases.
     pub fn originalHeadName(self: *Rebase) [:0]const u8 {
         if (internal.trace_log) log.debug("Rebase.originalHeadName called", .{});
 
-        return std.mem.sliceTo(c.git_rebase_orig_head_name(@ptrCast(*c.git_rebase, self)), 0);
+        return std.mem.sliceTo(c.git_rebase_orig_head_name(@as(*c.git_rebase, @ptrCast(self))), 0);
     }
 
     /// Gets the original `HEAD` id for merge rebases.
     pub fn originalHeadId(self: *Rebase) *const git.Oid {
         if (internal.trace_log) log.debug("Rebase.originalHeadId called", .{});
 
-        return @ptrCast(
+        return @as(
             *const git.Oid,
-            c.git_rebase_orig_head_id(@ptrCast(*c.git_rebase, self)),
+            @ptrCast(c.git_rebase_orig_head_id(@as(*c.git_rebase, @ptrCast(self)))),
         );
     }
 
@@ -33,16 +33,16 @@ pub const Rebase = opaque {
     pub fn originalOntoName(self: *Rebase) [:0]const u8 {
         if (internal.trace_log) log.debug("Rebase.originalOntoName called", .{});
 
-        return std.mem.sliceTo(c.git_rebase_onto_name(@ptrCast(*c.git_rebase, self)), 0);
+        return std.mem.sliceTo(c.git_rebase_onto_name(@as(*c.git_rebase, @ptrCast(self))), 0);
     }
 
     /// Gets the `onto` id for merge rebases.
     pub fn originalOntoId(self: *Rebase) *const git.Oid {
         if (internal.trace_log) log.debug("Rebase.originalOntoId called", .{});
 
-        return @ptrCast(
+        return @as(
             *const git.Oid,
-            c.git_rebase_onto_id(@ptrCast(*c.git_rebase, self)),
+            @ptrCast(c.git_rebase_onto_id(@as(*c.git_rebase, @ptrCast(self)))),
         );
     }
 
@@ -50,7 +50,7 @@ pub const Rebase = opaque {
     pub fn operationEntryCount(self: *Rebase) usize {
         if (internal.trace_log) log.debug("Rebase.operationEntryCount called", .{});
 
-        return c.git_rebase_operation_entrycount(@ptrCast(*c.git_rebase, self));
+        return c.git_rebase_operation_entrycount(@as(*c.git_rebase, @ptrCast(self)));
     }
 
     /// Gets the index of the rebase operation that is currently being applied. If the first operation has not yet been applied
@@ -58,7 +58,7 @@ pub const Rebase = opaque {
     pub fn currentOperation(self: *Rebase) ?usize {
         if (internal.trace_log) log.debug("Rebase.currentOperation called", .{});
 
-        const ret = c.git_rebase_operation_current(@ptrCast(*c.git_rebase, self));
+        const ret = c.git_rebase_operation_current(@as(*c.git_rebase, @ptrCast(self)));
 
         if (ret == c.GIT_REBASE_NO_OPERATION) return null;
 
@@ -72,12 +72,12 @@ pub const Rebase = opaque {
     pub fn getOperation(self: *Rebase, index: usize) ?*RebaseOperation {
         if (internal.trace_log) log.debug("Rebase.getOperation called", .{});
 
-        return @ptrCast(
+        return @as(
             ?*RebaseOperation,
-            c.git_rebase_operation_byindex(
-                @ptrCast(*c.git_rebase, self),
+            @ptrCast(c.git_rebase_operation_byindex(
+                @as(*c.git_rebase, @ptrCast(self)),
                 index,
-            ),
+            )),
         );
     }
 
@@ -90,8 +90,8 @@ pub const Rebase = opaque {
         var ret: *RebaseOperation = undefined;
 
         try internal.wrapCall("git_rebase_next", .{
-            @ptrCast(*?*c.git_rebase_operation, &ret),
-            @ptrCast(*c.git_rebase, self),
+            @as(*?*c.git_rebase_operation, @ptrCast(&ret)),
+            @as(*c.git_rebase, @ptrCast(self)),
         });
 
         return ret;
@@ -109,8 +109,8 @@ pub const Rebase = opaque {
         var ret: *git.Index = undefined;
 
         try internal.wrapCall("git_rebase_inmemory_index", .{
-            @ptrCast(*?*c.git_index, &ret),
-            @ptrCast(*c.git_rebase, self),
+            @as(*?*c.git_index, @ptrCast(&ret)),
+            @as(*c.git_rebase, @ptrCast(self)),
         });
 
         return ret;
@@ -141,10 +141,10 @@ pub const Rebase = opaque {
         const c_message = if (message) |s| s.ptr else null;
 
         try internal.wrapCall("git_rebase_commit", .{
-            @ptrCast(*c.git_oid, &ret),
-            @ptrCast(*c.git_rebase, self),
-            @ptrCast(?*const c.git_signature, author),
-            @ptrCast(*const c.git_signature, committer),
+            @as(*c.git_oid, @ptrCast(&ret)),
+            @as(*c.git_rebase, @ptrCast(self)),
+            @as(?*const c.git_signature, @ptrCast(author)),
+            @as(*const c.git_signature, @ptrCast(committer)),
             c_message_encoding,
             c_message,
         });
@@ -158,7 +158,7 @@ pub const Rebase = opaque {
         if (internal.trace_log) log.debug("Rebase.abort called", .{});
 
         try internal.wrapCall("git_rebase_abort", .{
-            @ptrCast(*c.git_rebase, self),
+            @as(*c.git_rebase, @ptrCast(self)),
         });
     }
 
@@ -167,8 +167,8 @@ pub const Rebase = opaque {
         if (internal.trace_log) log.debug("Rebase.finish called", .{});
 
         try internal.wrapCall("git_rebase_finish", .{
-            @ptrCast(*c.git_rebase, self),
-            @ptrCast(?*const c.git_signature, signature),
+            @as(*c.git_rebase, @ptrCast(self)),
+            @as(?*const c.git_signature, @ptrCast(signature)),
         });
     }
 

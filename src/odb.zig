@@ -9,7 +9,7 @@ pub const Odb = opaque {
     pub fn deinit(self: *Odb) void {
         if (internal.trace_log) log.debug("Odb.deinit called", .{});
 
-        c.git_odb_free(@ptrCast(*c.git_odb, self));
+        c.git_odb_free(@as(*c.git_odb, @ptrCast(self)));
     }
 
     pub fn repositoryOpen(self: *Odb) !*git.Repository {
@@ -18,8 +18,8 @@ pub const Odb = opaque {
         var repo: *git.Repository = undefined;
 
         try internal.wrapCall("git_repository_wrap_odb", .{
-            @ptrCast(*?*c.git_repository, &repo),
-            @ptrCast(*c.git_odb, self),
+            @as(*?*c.git_repository, @ptrCast(&repo)),
+            @as(*c.git_odb, @ptrCast(self)),
         });
 
         return repo;

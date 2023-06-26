@@ -18,8 +18,8 @@ pub const WriteStream = extern struct {
         var ret: git.Oid = undefined;
 
         try internal.wrapCall("git_blob_create_from_stream_commit", .{
-            @ptrCast(*c.git_oid, &ret),
-            @ptrCast(*c.git_writestream, self),
+            @as(*c.git_oid, @ptrCast(&ret)),
+            @as(*c.git_writestream, @ptrCast(self)),
         });
 
         return ret;

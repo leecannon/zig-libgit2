@@ -9,16 +9,16 @@ pub const AnnotatedCommit = opaque {
     pub fn deinit(self: *AnnotatedCommit) void {
         if (internal.trace_log) log.debug("AnnotatedCommit.deinit called", .{});
 
-        c.git_annotated_commit_free(@ptrCast(*c.git_annotated_commit, self));
+        c.git_annotated_commit_free(@ptrCast(self));
     }
 
     /// Gets the commit ID that the given `AnnotatedCommit` refers to.
     pub fn commitId(self: *AnnotatedCommit) !*const git.Oid {
         if (internal.trace_log) log.debug("AnnotatedCommit.commitId called", .{});
 
-        return @ptrCast(
+        return @as(
             *const git.Oid,
-            c.git_annotated_commit_id(@ptrCast(*c.git_annotated_commit, self)),
+            @ptrCast(c.git_annotated_commit_id(@ptrCast(self))),
         );
     }
 
@@ -27,7 +27,7 @@ pub const AnnotatedCommit = opaque {
         if (internal.trace_log) log.debug("AnnotatedCommit.refname called", .{});
 
         return std.mem.sliceTo(
-            c.git_annotated_commit_ref(@ptrCast(*c.git_annotated_commit, self)),
+            c.git_annotated_commit_ref(@ptrCast(self)),
             0,
         );
     }

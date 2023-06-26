@@ -10,7 +10,7 @@ pub const Pathspec = opaque {
     pub fn deinit(self: *Pathspec) void {
         if (internal.trace_log) log.debug("Pathspec.deinit called", .{});
 
-        c.git_pathspec_free(@ptrCast(*c.git_pathspec, self));
+        c.git_pathspec_free(@as(*c.git_pathspec, @ptrCast(self)));
     }
 
     /// Try to match a path against a pathspec
@@ -25,8 +25,8 @@ pub const Pathspec = opaque {
         if (internal.trace_log) log.debug("Pathspec.matchesPath called", .{});
 
         return (try internal.wrapCallWithReturn("git_pathspec_matches_path", .{
-            @ptrCast(*const c.git_pathspec, self),
-            @bitCast(c.git_pathspec_flag_t, options),
+            @as(*const c.git_pathspec, @ptrCast(self)),
+            @as(c.git_pathspec_flag_t, @bitCast(options)),
             path.ptr,
         })) != 0;
     }
@@ -92,7 +92,7 @@ pub const PathspecMatchList = opaque {
     pub fn deinit(self: *PathspecMatchList) void {
         if (internal.trace_log) log.debug("PathspecMatchList.deinit called", .{});
 
-        c.git_pathspec_match_list_free(@ptrCast(*c.git_pathspec_match_list, self));
+        c.git_pathspec_match_list_free(@as(*c.git_pathspec_match_list, @ptrCast(self)));
     }
 
     /// Get the number of items in a match list.
@@ -100,7 +100,7 @@ pub const PathspecMatchList = opaque {
         if (internal.trace_log) log.debug("PathspecMatchList.entryCount called", .{});
 
         return c.git_pathspec_match_list_entrycount(
-            @ptrCast(*const c.git_pathspec_match_list, self),
+            @as(*const c.git_pathspec_match_list, @ptrCast(self)),
         );
     }
 
@@ -114,7 +114,7 @@ pub const PathspecMatchList = opaque {
         if (internal.trace_log) log.debug("PathspecMatchList.getEntry called", .{});
 
         const opt_c_ptr = c.git_pathspec_match_list_entry(
-            @ptrCast(*const c.git_pathspec_match_list, self),
+            @as(*const c.git_pathspec_match_list, @ptrCast(self)),
             index,
         );
 
@@ -131,12 +131,12 @@ pub const PathspecMatchList = opaque {
     pub fn getDiffEntry(self: *const PathspecMatchList, index: usize) ?*const git.DiffDelta {
         if (internal.trace_log) log.debug("PathspecMatchList.getDiffEntry called", .{});
 
-        return @ptrCast(
+        return @as(
             ?*const git.DiffDelta,
-            c.git_pathspec_match_list_diff_entry(
-                @ptrCast(*const c.git_pathspec_match_list, self),
+            @ptrCast(c.git_pathspec_match_list_diff_entry(
+                @as(*const c.git_pathspec_match_list, @ptrCast(self)),
                 index,
-            ),
+            )),
         );
     }
 
@@ -147,7 +147,7 @@ pub const PathspecMatchList = opaque {
         if (internal.trace_log) log.debug("PathspecMatchList.failedEntryCount called", .{});
 
         return c.git_pathspec_match_list_failed_entrycount(
-            @ptrCast(*const c.git_pathspec_match_list, self),
+            @as(*const c.git_pathspec_match_list, @ptrCast(self)),
         );
     }
 
@@ -161,7 +161,7 @@ pub const PathspecMatchList = opaque {
         if (internal.trace_log) log.debug("PathspecMatchList.getFailedEntry called", .{});
 
         const opt_c_ptr = c.git_pathspec_match_list_failed_entry(
-            @ptrCast(*const c.git_pathspec_match_list, self),
+            @as(*const c.git_pathspec_match_list, @ptrCast(self)),
             index,
         );
 

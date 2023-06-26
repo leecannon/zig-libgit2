@@ -28,7 +28,7 @@ pub const Buf = extern struct {
     pub fn deinit(self: *Buf) void {
         if (internal.trace_log) log.debug("Buf.deinit called", .{});
 
-        c.git_buf_dispose(@ptrCast(*c.git_buf, self));
+        c.git_buf_dispose(@ptrCast(self));
     }
 
     /// Resize the buffer allocation to make more space.
@@ -45,13 +45,13 @@ pub const Buf = extern struct {
     pub fn grow(self: *Buf, target_size: usize) !void {
         if (internal.trace_log) log.debug("Buf.grow called", .{});
 
-        try internal.wrapCall("git_buf_grow", .{ @ptrCast(*c.git_buf, self), target_size });
+        try internal.wrapCall("git_buf_grow", .{ @as(*c.git_buf, @ptrCast(self)), target_size });
     }
 
     pub fn isBinary(self: *const Buf) bool {
         if (internal.trace_log) log.debug("Buf.isBinary called", .{});
 
-        return c.git_buf_is_binary(@ptrCast(*const c.git_buf, self)) == 1;
+        return c.git_buf_is_binary(@ptrCast(self)) == 1;
     }
 
     pub fn containsNull(self: Buf) bool {

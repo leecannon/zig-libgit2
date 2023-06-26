@@ -234,7 +234,7 @@ pub fn init() !git.Handle {
 }
 
 pub fn availableLibGit2Features() LibGit2Features {
-    return @bitCast(LibGit2Features, c.git_libgit2_features());
+    return @as(LibGit2Features, @bitCast(c.git_libgit2_features()));
 }
 
 pub const LibGit2Features = packed struct {

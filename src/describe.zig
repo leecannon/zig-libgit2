@@ -57,8 +57,8 @@ pub const DescribeResult = opaque {
         const c_options = internal.make_c_option.describeFormatOptions(options);
 
         try internal.wrapCall("git_describe_format", .{
-            @ptrCast(*c.git_buf, &buf),
-            @ptrCast(*const c.git_describe_result, self),
+            @as(*c.git_buf, @ptrCast(&buf)),
+            @as(*const c.git_describe_result, @ptrCast(self)),
             &c_options,
         });
 
@@ -68,7 +68,7 @@ pub const DescribeResult = opaque {
     pub fn deinit(self: *DescribeResult) void {
         if (internal.trace_log) log.debug("DescribeResult.deinit called", .{});
 
-        c.git_describe_result_free(@ptrCast(*c.git_describe_result, self));
+        c.git_describe_result_free(@as(*c.git_describe_result, @ptrCast(self)));
     }
 
     comptime {

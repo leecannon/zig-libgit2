@@ -9,16 +9,16 @@ pub const Tree = opaque {
     pub fn deinit(self: *Tree) void {
         if (internal.trace_log) log.debug("Tree.deinit called", .{});
 
-        c.git_tree_free(@ptrCast(*c.git_tree, self));
+        c.git_tree_free(@as(*c.git_tree, @ptrCast(self)));
     }
 
     /// Get the id of a tree.
     pub fn getId(self: *const Tree) *const git.Oid {
         if (internal.trace_log) log.debug("Tree.id called", .{});
 
-        return @ptrCast(
+        return @as(
             *const git.Oid,
-            c.git_tree_id(@ptrCast(*const c.git_tree, self)),
+            @ptrCast(c.git_tree_id(@as(*const c.git_tree, @ptrCast(self)))),
         );
     }
 
@@ -26,9 +26,9 @@ pub const Tree = opaque {
     pub fn owner(self: *const Tree) *git.Repository {
         if (internal.trace_log) log.debug("Tree.owner called", .{});
 
-        return @ptrCast(
+        return @as(
             *git.Repository,
-            c.git_tree_owner(@ptrCast(*const c.git_tree, self)),
+            @ptrCast(c.git_tree_owner(@as(*const c.git_tree, @ptrCast(self)))),
         );
     }
 
@@ -36,7 +36,7 @@ pub const Tree = opaque {
     pub fn entryCount(self: *const Tree) usize {
         if (internal.trace_log) log.debug("Tree.entryCount called", .{});
 
-        return c.git_tree_entrycount(@ptrCast(*const c.git_tree, self));
+        return c.git_tree_entrycount(@as(*const c.git_tree, @ptrCast(self)));
     }
 
     /// Lookup a tree entry by its filename
@@ -46,10 +46,10 @@ pub const Tree = opaque {
     pub fn entryByName(self: *const Tree, name: [:0]const u8) ?*const TreeEntry {
         if (internal.trace_log) log.debug("Tree.entryByName called", .{});
 
-        return @ptrCast(?*const TreeEntry, c.git_tree_entry_byname(
-            @ptrCast(*const c.git_tree, self),
+        return @as(?*const TreeEntry, @ptrCast(c.git_tree_entry_byname(
+            @as(*const c.git_tree, @ptrCast(self)),
             name.ptr,
-        ));
+        )));
     }
 
     /// Lookup a tree entry by its position in the tree
@@ -59,10 +59,10 @@ pub const Tree = opaque {
     pub fn entryByIndex(self: *const Tree, index: usize) ?*const TreeEntry {
         if (internal.trace_log) log.debug("Tree.entryByIndex called", .{});
 
-        return @ptrCast(?*const TreeEntry, c.git_tree_entry_byindex(
-            @ptrCast(*const c.git_tree, self),
+        return @as(?*const TreeEntry, @ptrCast(c.git_tree_entry_byindex(
+            @as(*const c.git_tree, @ptrCast(self)),
             index,
-        ));
+        )));
     }
 
     /// Duplicate a tree
@@ -74,8 +74,8 @@ pub const Tree = opaque {
         var ret: *Tree = undefined;
 
         try internal.wrapCall("git_tree_dup", .{
-            @ptrCast(*?*c.git_tree, &ret),
-            @ptrCast(*c.git_tree, self),
+            @as(*?*c.git_tree, @ptrCast(&ret)),
+            @as(*c.git_tree, @ptrCast(self)),
         });
 
         return ret;
@@ -90,10 +90,10 @@ pub const Tree = opaque {
     pub fn entryById(self: *const Tree, id: *const git.Oid) ?*const TreeEntry {
         if (internal.trace_log) log.debug("Tree.entryById called", .{});
 
-        return @ptrCast(?*const TreeEntry, c.git_tree_entry_byid(
-            @ptrCast(*const c.git_tree, self),
-            @ptrCast(*const c.git_oid, id),
-        ));
+        return @as(?*const TreeEntry, @ptrCast(c.git_tree_entry_byid(
+            @as(*const c.git_tree, @ptrCast(self)),
+            @as(*const c.git_oid, @ptrCast(id)),
+        )));
     }
 
     /// Retrieve a tree entry contained in a tree or in any of its subtrees, given its relative path.
@@ -106,8 +106,8 @@ pub const Tree = opaque {
         var ret: *TreeEntry = undefined;
 
         try internal.wrapCall("git_tree_entry_bypath", .{
-            @ptrCast(*?*c.git_tree_entry, &ret),
-            @ptrCast(*const c.git_tree, self),
+            @as(*?*c.git_tree_entry, @ptrCast(&ret)),
+            @as(*const c.git_tree, @ptrCast(self)),
             path.ptr,
         });
 
@@ -199,8 +199,8 @@ pub const Tree = opaque {
             ) callconv(.C) c_int {
                 return callback_fn(
                     std.mem.sliceTo(root, 0),
-                    @ptrCast(*const TreeEntry, entry),
-                    @ptrCast(UserDataType, @alignCast(alignment, payload)),
+                    @as(*const TreeEntry, @ptrCast(entry)),
+                    @as(UserDataType, @ptrCast(@alignCast(alignment, payload))),
                 );
             }
         }.cb;
@@ -208,7 +208,7 @@ pub const Tree = opaque {
         if (internal.trace_log) log.debug("Tree.walkWithUserData called", .{});
 
         _ = try internal.wrapCallWithReturn("git_tree_walk", .{
-            @ptrCast(*c.git_tree, self),
+            @as(*c.git_tree, @ptrCast(self)),
             @intFromEnum(mode),
             cb,
             user_data,
@@ -224,7 +224,7 @@ pub const TreeEntry = opaque {
     pub fn deinit(self: *TreeEntry) void {
         if (internal.trace_log) log.debug("TreeEntry.deinit called", .{});
 
-        c.git_tree_entry_free(@ptrCast(*c.git_tree_entry, self));
+        c.git_tree_entry_free(@as(*c.git_tree_entry, @ptrCast(self)));
     }
 
     /// Get the filename of a tree entry
@@ -232,7 +232,7 @@ pub const TreeEntry = opaque {
         if (internal.trace_log) log.debug("TreeEntry.filename called", .{});
 
         return std.mem.sliceTo(
-            c.git_tree_entry_name(@ptrCast(*const c.git_tree_entry, self)),
+            c.git_tree_entry_name(@as(*const c.git_tree_entry, @ptrCast(self))),
             0,
         );
     }
@@ -241,9 +241,9 @@ pub const TreeEntry = opaque {
     pub fn getId(self: *const TreeEntry) *const git.Oid {
         if (internal.trace_log) log.debug("TreeEntry.getId called", .{});
 
-        return @ptrCast(
+        return @as(
             *const git.Oid,
-            c.git_tree_entry_id(@ptrCast(*const c.git_tree_entry, self)),
+            @ptrCast(c.git_tree_entry_id(@as(*const c.git_tree_entry, @ptrCast(self)))),
         );
     }
 
@@ -251,14 +251,14 @@ pub const TreeEntry = opaque {
     pub fn getType(self: *const TreeEntry) git.ObjectType {
         if (internal.trace_log) log.debug("TreeEntry.getType called", .{});
 
-        return @enumFromInt(git.ObjectType, c.git_tree_entry_type(@ptrCast(*const c.git_tree_entry, self)));
+        return @as(git.ObjectType, @enumFromInt(c.git_tree_entry_type(@as(*const c.git_tree_entry, @ptrCast(self)))));
     }
 
     /// Get the UNIX file attributes of a tree entry
     pub fn filemode(self: *const TreeEntry) git.FileMode {
         if (internal.trace_log) log.debug("TreeEntry.filemode called", .{});
 
-        return @enumFromInt(git.FileMode, c.git_tree_entry_filemode(@ptrCast(*const c.git_tree_entry, self)));
+        return @as(git.FileMode, @enumFromInt(c.git_tree_entry_filemode(@as(*const c.git_tree_entry, @ptrCast(self)))));
     }
 
     /// Get the raw UNIX file attributes of a tree entry
@@ -268,7 +268,7 @@ pub const TreeEntry = opaque {
     pub fn filemodeRaw(self: *const TreeEntry) c_uint {
         if (internal.trace_log) log.debug("TreeEntry.filemodeRaw called", .{});
 
-        return c.git_tree_entry_filemode_raw(@ptrCast(*const c.git_tree_entry, self));
+        return c.git_tree_entry_filemode_raw(@as(*const c.git_tree_entry, @ptrCast(self)));
     }
 
     /// Compare two tree entries
@@ -278,8 +278,8 @@ pub const TreeEntry = opaque {
         if (internal.trace_log) log.debug("TreeEntry.compare called", .{});
 
         return c.git_tree_entry_cmp(
-            @ptrCast(*const c.git_tree_entry, self),
-            @ptrCast(*const c.git_tree_entry, other),
+            @as(*const c.git_tree_entry, @ptrCast(self)),
+            @as(*const c.git_tree_entry, @ptrCast(other)),
         );
     }
 
@@ -292,8 +292,8 @@ pub const TreeEntry = opaque {
         var ret: *TreeEntry = undefined;
 
         try internal.wrapCall("git_tree_entry_dup", .{
-            @ptrCast(*?*c.git_tree_entry, &ret),
-            @ptrCast(*c.git_tree_entry, self),
+            @as(*?*c.git_tree_entry, @ptrCast(&ret)),
+            @as(*c.git_tree_entry, @ptrCast(self)),
         });
 
         return ret;
@@ -312,7 +312,7 @@ pub const TreeBuilder = opaque {
     pub fn deinit(self: *TreeBuilder) void {
         if (internal.trace_log) log.debug("TreeBuilder.deinit called", .{});
 
-        c.git_treebuilder_free(@ptrCast(*c.git_treebuilder, self));
+        c.git_treebuilder_free(@as(*c.git_treebuilder, @ptrCast(self)));
     }
 
     /// Clear all the entires in the builder
@@ -320,7 +320,7 @@ pub const TreeBuilder = opaque {
         if (internal.trace_log) log.debug("Tree.clear called", .{});
 
         try internal.wrapCall("git_treebuilder_clear", .{
-            @ptrCast(*c.git_treebuilder, self),
+            @as(*c.git_treebuilder, @ptrCast(self)),
         });
     }
 
@@ -328,7 +328,7 @@ pub const TreeBuilder = opaque {
     pub fn entryCount(self: *TreeBuilder) usize {
         if (internal.trace_log) log.debug("TreeBuilder.entryCount called", .{});
 
-        return c.git_treebuilder_entrycount(@ptrCast(*c.git_treebuilder, self));
+        return c.git_treebuilder_entrycount(@as(*c.git_treebuilder, @ptrCast(self)));
     }
 
     /// Get an entry from the builder from its filename
@@ -337,12 +337,12 @@ pub const TreeBuilder = opaque {
     pub fn get(self: *TreeBuilder, filename: [:0]const u8) ?*const TreeEntry {
         if (internal.trace_log) log.debug("TreeBuilder.get called", .{});
 
-        return @ptrCast(
+        return @as(
             ?*const TreeEntry,
-            c.git_treebuilder_get(
-                @ptrCast(*c.git_treebuilder, self),
+            @ptrCast(c.git_treebuilder_get(
+                @as(*c.git_treebuilder, @ptrCast(self)),
                 filename.ptr,
-            ),
+            )),
         );
     }
 
@@ -362,10 +362,10 @@ pub const TreeBuilder = opaque {
         var ret: *const TreeEntry = undefined;
 
         try internal.wrapCall("git_treebuilder_insert", .{
-            @ptrCast(*?*const c.git_tree_entry, &ret),
-            @ptrCast(*c.git_treebuilder, self),
+            @as(*?*const c.git_tree_entry, @ptrCast(&ret)),
+            @as(*c.git_treebuilder, @ptrCast(self)),
             filename.ptr,
-            @ptrCast(*const c.git_oid, id),
+            @as(*const c.git_oid, @ptrCast(id)),
             @intFromEnum(filemode),
         });
 
@@ -377,7 +377,7 @@ pub const TreeBuilder = opaque {
         if (internal.trace_log) log.debug("TreeBuilder.remove called", .{});
 
         try internal.wrapCall("git_treebuilder_remove", .{
-            @ptrCast(*c.git_treebuilder, self),
+            @as(*c.git_treebuilder, @ptrCast(self)),
             filename.ptr,
         });
     }
@@ -440,8 +440,8 @@ pub const TreeBuilder = opaque {
                 payload: ?*anyopaque,
             ) callconv(.C) c_int {
                 return callback_fn(
-                    @ptrCast(*const TreeEntry, entry),
-                    @ptrCast(UserDataType, @alignCast(alignment, payload)),
+                    @as(*const TreeEntry, @ptrCast(entry)),
+                    @as(UserDataType, @ptrCast(@alignCast(alignment, payload))),
                 ) != 0;
             }
         }.cb;
@@ -449,7 +449,7 @@ pub const TreeBuilder = opaque {
         if (internal.trace_log) log.debug("Repository.filterWithUserData called", .{});
 
         _ = try internal.wrapCallWithReturn("git_treebuilder_filter", .{
-            @ptrCast(*c.git_treebuilder, self),
+            @as(*c.git_treebuilder, @ptrCast(self)),
             cb,
             user_data,
         });
@@ -464,8 +464,8 @@ pub const TreeBuilder = opaque {
         var ret: git.Oid = undefined;
 
         try internal.wrapCall("git_treebuilder_write", .{
-            @ptrCast(*c.git_oid, &ret),
-            @ptrCast(*c.git_treebuilder, self),
+            @as(*c.git_oid, @ptrCast(&ret)),
+            @as(*c.git_treebuilder, @ptrCast(self)),
         });
 
         return ret;
@@ -493,10 +493,10 @@ pub const TreeBuilder = opaque {
         if (internal.trace_log) log.debug("Tree.pathspecMatch called", .{});
 
         return (try internal.wrapCallWithReturn("git_pathspec_match_tree", .{
-            @ptrCast(?*?*c.git_pathspec_match_list, match_list),
-            @ptrCast(*c.git_tree, self),
-            @bitCast(c.git_pathspec_flag_t, options),
-            @ptrCast(*c.git_pathspec, pathspec),
+            @as(?*?*c.git_pathspec_match_list, @ptrCast(match_list)),
+            @as(*c.git_tree, @ptrCast(self)),
+            @as(c.git_pathspec_flag_t, @bitCast(options)),
+            @as(*c.git_pathspec, @ptrCast(pathspec)),
         })) != 0;
     }
 

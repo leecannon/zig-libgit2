@@ -11,7 +11,7 @@ pub fn rebaseOptions(self: git.RebaseOptions) c.git_rebase_options {
         .rewrite_notes_ref = if (self.rewrite_notes_ref) |s| s.ptr else null,
         .merge_options = mergeOptions(self.merge_options),
         .checkout_options = checkoutOptions(self.checkout_options),
-        .signing_cb = @ptrCast(c.git_commit_signing_cb, self.signing_cb),
+        .signing_cb = @ptrCast(self.signing_cb),
         .payload = self.payload,
     };
 }
@@ -19,11 +19,11 @@ pub fn rebaseOptions(self: git.RebaseOptions) c.git_rebase_options {
 pub fn diffOptions(self: git.DiffOptions) c.git_diff_options {
     return .{
         .version = c.GIT_DIFF_OPTIONS_VERSION,
-        .flags = @bitCast(u32, self.flags),
+        .flags = @bitCast(self.flags),
         .ignore_submodules = @intFromEnum(self.ignore_submodules),
-        .pathspec = @bitCast(c.git_strarray, self.pathspec),
-        .notify_cb = @ptrCast(c.git_diff_notify_cb, self.notify_cb),
-        .progress_cb = @ptrCast(c.git_diff_progress_cb, self.progress_cb),
+        .pathspec = @bitCast(self.pathspec),
+        .notify_cb = @ptrCast(self.notify_cb),
+        .progress_cb = @ptrCast(self.progress_cb),
         .payload = self.payload,
         .context_lines = self.context_lines,
         .interhunk_lines = self.interhunk_lines,
@@ -37,9 +37,9 @@ pub fn diffOptions(self: git.DiffOptions) c.git_diff_options {
 pub fn stashApplyOptions(self: git.StashApplyOptions) c.git_stash_apply_options {
     return .{
         .version = c.GIT_STASH_APPLY_OPTIONS_VERSION,
-        .flags = @bitCast(u32, self.flags),
+        .flags = @bitCast(self.flags),
         .checkout_options = checkoutOptions(self.checkout_options),
-        .progress_cb = @ptrCast(?*const fn (c.git_stash_apply_progress_t, ?*anyopaque) callconv(.C) c_int, self.progress_callback),
+        .progress_cb = @ptrCast(self.progress_callback),
         .progress_payload = self.progress_payload,
     };
 }
@@ -47,8 +47,8 @@ pub fn stashApplyOptions(self: git.StashApplyOptions) c.git_stash_apply_options 
 pub fn blobFilterOptions(self: git.BlobFilterOptions) c.git_blob_filter_options {
     return .{
         .version = c.GIT_BLOB_FILTER_OPTIONS_VERSION,
-        .flags = @bitCast(u32, self.flags),
-        .commit_id = @ptrCast(?*c.git_oid, self.commit_id),
+        .flags = @bitCast(self.flags),
+        .commit_id = @ptrCast(self.commit_id),
     };
 }
 
@@ -75,8 +75,8 @@ pub fn describeFormatOptions(self: git.DescribeFormatOptions) c.git_describe_for
 pub fn filterOptions(self: git.FilterOptions) c.git_filter_options {
     return .{
         .version = c.GIT_FILTER_OPTIONS_VERSION,
-        .flags = @bitCast(u32, self.flags),
-        .commit_id = @ptrCast(?*c.git_oid, self.commit_id),
+        .flags = @bitCast(self.flags),
+        .commit_id = @ptrCast(self.commit_id),
     };
 }
 
@@ -112,14 +112,14 @@ pub fn hashsigOptions(self: git.HashsigOptions) c.git_hashsig_option_t {
 pub fn mergeOptions(self: git.MergeOptions) c.git_merge_options {
     return .{
         .version = c.GIT_MERGE_OPTIONS_VERSION,
-        .flags = @bitCast(u32, self.flags),
+        .flags = @bitCast(self.flags),
         .rename_threshold = self.rename_threshold,
         .target_limit = self.target_limit,
-        .metric = @ptrCast(?*c.git_diff_similarity_metric, self.metric),
+        .metric = @ptrCast(self.metric),
         .recursion_limit = self.recursion_limit,
         .default_driver = if (self.default_driver) |ptr| ptr.ptr else null,
         .file_favor = @intFromEnum(self.file_favor),
-        .file_flags = @bitCast(u32, self.file_flags),
+        .file_flags = @bitCast(self.file_flags),
     };
 }
 
@@ -127,29 +127,29 @@ pub fn fileStatusOptions(self: git.FileStatusOptions) c.git_status_options {
     return .{
         .version = c.GIT_STATUS_OPTIONS_VERSION,
         .show = @intFromEnum(self.show),
-        .flags = @bitCast(c_uint, self.flags),
-        .pathspec = @bitCast(c.git_strarray, self.pathspec),
-        .baseline = @ptrCast(?*c.git_tree, self.baseline),
+        .flags = @as(c_uint, @bitCast(self.flags)),
+        .pathspec = @bitCast(self.pathspec),
+        .baseline = @ptrCast(self.baseline),
     };
 }
 
 pub fn applyOptions(self: git.ApplyOptions) c.git_apply_options {
     return .{
         .version = c.GIT_APPLY_OPTIONS_VERSION,
-        .delta_cb = @ptrCast(c.git_apply_delta_cb, self.delta_cb),
-        .hunk_cb = @ptrCast(c.git_apply_hunk_cb, self.hunk_cb),
+        .delta_cb = @ptrCast(self.delta_cb),
+        .hunk_cb = @ptrCast(self.hunk_cb),
         .payload = null,
-        .flags = @bitCast(c_uint, self.flags),
+        .flags = @bitCast(self.flags),
     };
 }
 
 pub fn applyOptionsWithUserData(comptime T: type, self: git.ApplyOptionsWithUserData(T)) c.git_apply_options {
     return .{
         .version = c.GIT_APPLY_OPTIONS_VERSION,
-        .delta_cb = @ptrCast(c.git_apply_delta_cb, self.delta_cb),
-        .hunk_cb = @ptrCast(c.git_apply_hunk_cb, self.hunk_cb),
+        .delta_cb = @ptrCast(self.delta_cb),
+        .hunk_cb = @ptrCast(self.hunk_cb),
         .payload = self.payload,
-        .flags = @bitCast(c_uint, self.flags),
+        .flags = @bitCast(self.flags),
     };
 }
 
@@ -163,10 +163,10 @@ comptime {
 pub fn blameOptions(self: git.BlameOptions) c.git_blame_options {
     return .{
         .version = c.GIT_BLAME_OPTIONS_VERSION,
-        .flags = @bitCast(u32, self.flags),
+        .flags = @bitCast(self.flags),
         .min_match_characters = self.min_match_characters,
-        .newest_commit = @bitCast(c.git_oid, self.newest_commit),
-        .oldest_commit = @bitCast(c.git_oid, self.oldest_commit),
+        .newest_commit = @bitCast(self.newest_commit),
+        .oldest_commit = @bitCast(self.oldest_commit),
         .min_line = self.min_line,
         .max_line = self.max_line,
     };
@@ -175,24 +175,24 @@ pub fn blameOptions(self: git.BlameOptions) c.git_blame_options {
 pub fn checkoutOptions(self: git.CheckoutOptions) c.git_checkout_options {
     return .{
         .version = c.GIT_CHECKOUT_OPTIONS_VERSION,
-        .checkout_strategy = @bitCast(c_uint, self.checkout_strategy),
+        .checkout_strategy = @bitCast(self.checkout_strategy),
         .disable_filters = @intFromBool(self.disable_filters),
         .dir_mode = self.dir_mode,
         .file_mode = self.file_mode,
         .file_open_flags = self.file_open_flags,
-        .notify_flags = @bitCast(c_uint, self.notify_flags),
-        .notify_cb = @ptrCast(c.git_checkout_notify_cb, self.notify_cb),
+        .notify_flags = @bitCast(self.notify_flags),
+        .notify_cb = @ptrCast(self.notify_cb),
         .notify_payload = self.notify_payload,
-        .progress_cb = @ptrCast(c.git_checkout_progress_cb, self.progress_cb),
+        .progress_cb = @ptrCast(self.progress_cb),
         .progress_payload = self.progress_payload,
-        .paths = @bitCast(c.git_strarray, self.paths),
-        .baseline = @ptrCast(?*c.git_tree, self.baseline),
-        .baseline_index = @ptrCast(?*c.git_index, self.baseline_index),
+        .paths = @bitCast(self.paths),
+        .baseline = @ptrCast(self.baseline),
+        .baseline_index = @ptrCast(self.baseline_index),
         .target_directory = if (self.target_directory) |ptr| ptr.ptr else null,
         .ancestor_label = if (self.ancestor_label) |ptr| ptr.ptr else null,
         .our_label = if (self.our_label) |ptr| ptr.ptr else null,
         .their_label = if (self.their_label) |ptr| ptr.ptr else null,
-        .perfdata_cb = @ptrCast(c.git_checkout_perfdata_cb, self.perfdata_cb),
+        .perfdata_cb = @ptrCast(self.perfdata_cb),
         .perfdata_payload = self.perfdata_payload,
     };
 }
@@ -210,7 +210,7 @@ pub fn attributeOptions(self: git.AttributeOptions) c.git_attr_options {
     return .{
         .version = c.GIT_ATTR_OPTIONS_VERSION,
         .flags = attributeFlags(self.flags),
-        .commit_id = @ptrCast(*c.git_oid, self.commit_id),
+        .commit_id = @ptrCast(self.commit_id),
     };
 }
 
@@ -242,7 +242,7 @@ pub fn worktreeAddOptions(self: git.WorktreeAddOptions) c.git_worktree_add_optio
     return .{
         .version = c.GIT_WORKTREE_ADD_OPTIONS_VERSION,
         .lock = @intFromBool(self.lock),
-        .ref = @ptrCast(?*c.git_reference, self.ref),
+        .ref = @ptrCast(self.ref),
     };
 }
 
@@ -258,12 +258,12 @@ pub fn revertOptions(self: git.RevertOptions) c.git_revert_options {
 pub fn fetchOptions(self: git.FetchOptions) c.git_fetch_options {
     return .{
         .version = c.GIT_FETCH_OPTIONS_VERSION,
-        .callbacks = @bitCast(c.git_remote_callbacks, self.callbacks),
+        .callbacks = @bitCast(self.callbacks),
         .prune = @intFromEnum(self.prune),
         .update_fetchhead = @intFromBool(self.update_fetchhead),
         .download_tags = @intFromEnum(self.download_tags),
         .proxy_opts = proxyOptions(self.proxy_opts),
-        .custom_headers = @bitCast(c.git_strarray, self.custom_headers),
+        .custom_headers = @bitCast(self.custom_headers),
     };
 }
 
@@ -275,9 +275,9 @@ pub fn cloneOptions(self: git.CloneOptions) c.git_clone_options {
         .bare = @intFromBool(self.bare),
         .local = @intFromEnum(self.local),
         .checkout_branch = if (self.checkout_branch) |b| b.ptr else null,
-        .repository_cb = @ptrCast(c.git_repository_create_cb, self.repository_cb),
+        .repository_cb = @ptrCast(self.repository_cb),
         .repository_cb_payload = self.repository_cb_payload,
-        .remote_cb = @ptrCast(c.git_remote_create_cb, self.remote_cb),
+        .remote_cb = @ptrCast(self.remote_cb),
         .remote_cb_payload = self.remote_cb_payload,
     };
 }
@@ -287,19 +287,19 @@ pub fn proxyOptions(self: git.ProxyOptions) c.git_proxy_options {
         .version = c.GIT_PROXY_OPTIONS_VERSION,
         .type = @intFromEnum(self.proxy_type),
         .url = if (self.url) |s| s.ptr else null,
-        .credentials = @ptrCast(c.git_credential_acquire_cb, self.credentials),
+        .credentials = @ptrCast(self.credentials),
         .payload = self.payload,
-        .certificate_check = @ptrCast(c.git_transport_certificate_check_cb, self.certificate_check),
+        .certificate_check = @ptrCast(self.certificate_check),
     };
 }
 
 pub fn createOptions(self: git.RemoteCreateOptions) c.git_remote_create_options {
     return .{
         .version = c.GIT_STATUS_OPTIONS_VERSION,
-        .repository = @ptrCast(?*c.git_repository, self.repository),
+        .repository = @ptrCast(self.repository),
         .name = if (self.name) |ptr| ptr.ptr else null,
         .fetchspec = if (self.fetchspec) |ptr| ptr.ptr else null,
-        .flags = @bitCast(c_uint, self.flags),
+        .flags = @bitCast(self.flags),
     };
 }
 
@@ -307,16 +307,16 @@ pub fn pushOptions(self: git.PushOptions) c.git_push_options {
     return .{
         .version = c.GIT_PUSH_OPTIONS_VERSION,
         .pb_parallelism = self.pb_parallelism,
-        .callbacks = @bitCast(c.git_remote_callbacks, self.callbacks),
+        .callbacks = @bitCast(self.callbacks),
         .proxy_opts = proxyOptions(self.proxy_opts),
-        .custom_headers = @bitCast(c.git_strarray, self.custom_headers),
+        .custom_headers = @bitCast(self.custom_headers),
     };
 }
 
 pub fn pruneOptions(self: git.PruneOptions) c.git_worktree_prune_options {
     return .{
         .version = c.GIT_WORKTREE_PRUNE_OPTIONS_VERSION,
-        .flags = @bitCast(u32, self),
+        .flags = @bitCast(self),
     };
 }
 

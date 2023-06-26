@@ -12,7 +12,7 @@ pub const Patch = opaque {
     pub fn deinit(self: *Patch) void {
         if (internal.trace_log) log.debug("Patch.deinit called", .{});
 
-        c.git_patch_free(@ptrCast(*c.git_patch, self));
+        c.git_patch_free(@as(*c.git_patch, @ptrCast(self)));
     }
 
     /// Get the delta associated with a patch. This delta points to internal data and you do not have to release it when you are
@@ -20,9 +20,9 @@ pub const Patch = opaque {
     pub fn getDelta(self: *const git.Patch) *const git.DiffDelta {
         if (internal.trace_log) log.debug("Patch.getDelta called", .{});
 
-        return @ptrCast(
+        return @as(
             *const git.DiffDelta,
-            c.git_patch_get_delta(@ptrCast(*const c.git_patch, self)),
+            @ptrCast(c.git_patch_get_delta(@as(*const c.git_patch, @ptrCast(self)))),
         );
     }
 
@@ -30,7 +30,7 @@ pub const Patch = opaque {
     pub fn numberOfHunks(self: *const git.Patch) usize {
         if (internal.trace_log) log.debug("Patch.numberOfHunks called", .{});
 
-        return c.git_patch_num_hunks(@ptrCast(*const c.git_patch, self));
+        return c.git_patch_num_hunks(@as(*const c.git_patch, @ptrCast(self)));
     }
 
     /// Get line counts of each type in a patch.
@@ -52,7 +52,7 @@ pub const Patch = opaque {
             total_context,
             total_additions,
             total_deletions,
-            @ptrCast(*const c.git_patch, self),
+            @as(*const c.git_patch, @ptrCast(self)),
         });
     }
 
@@ -68,9 +68,9 @@ pub const Patch = opaque {
         var ret: GetHunkResult = undefined;
 
         try internal.wrapCall("git_patch_get_hunk", .{
-            @ptrCast(*?*c.git_diff_hunk, &ret.diff_hunk),
+            @as(*?*c.git_diff_hunk, @ptrCast(&ret.diff_hunk)),
             &ret.lines_in_hunk,
-            @ptrCast(*c.git_patch, self),
+            @as(*c.git_patch, @ptrCast(self)),
             index,
         });
 
@@ -91,11 +91,11 @@ pub const Patch = opaque {
         if (internal.trace_log) log.debug("Patch.linesInHunk called", .{});
 
         const ret = try internal.wrapCallWithReturn("git_patch_num_lines_in_hunk", .{
-            @ptrCast(*const c.git_patch, self),
+            @as(*const c.git_patch, @ptrCast(self)),
             index,
         });
 
-        return @intCast(usize, ret);
+        return @as(usize, @intCast(ret));
     }
 
     /// Get data about a line in a hunk of a patch.
@@ -111,8 +111,8 @@ pub const Patch = opaque {
         var ret: *git.DiffLine = undefined;
 
         try internal.wrapCall("git_patch_get_line_in_hunk", .{
-            @ptrCast(*?*c.git_diff_line, &ret),
-            @ptrCast(*c.git_patch, self),
+            @as(*?*c.git_diff_line, @ptrCast(&ret)),
+            @as(*c.git_patch, @ptrCast(self)),
             hunk_index,
             line,
         });
@@ -136,7 +136,7 @@ pub const Patch = opaque {
         if (internal.trace_log) log.debug("Patch.size called", .{});
 
         const ret = c.git_patch_size(
-            @ptrCast(*c.git_patch, self),
+            @as(*c.git_patch, @ptrCast(self)),
             @intFromBool(include_context),
             @intFromBool(include_hunk_headers),
             @intFromBool(include_file_header),
@@ -217,10 +217,10 @@ pub const Patch = opaque {
                 payload: ?*anyopaque,
             ) callconv(.C) c_int {
                 return callback_fn(
-                    @ptrCast(*const git.DiffDelta, delta),
-                    @ptrCast(*const git.DiffHunk, hunk),
-                    @ptrCast(*const git.DiffLine, line),
-                    @ptrCast(UserDataType, @alignCast(alignment, payload)),
+                    @as(*const git.DiffDelta, @ptrCast(delta)),
+                    @as(*const git.DiffHunk, @ptrCast(hunk)),
+                    @as(*const git.DiffLine, @ptrCast(line)),
+                    @as(UserDataType, @ptrCast(@alignCast(alignment, payload))),
                 );
             }
         }.cb;
@@ -228,7 +228,7 @@ pub const Patch = opaque {
         if (internal.trace_log) log.debug("Patch.printWithUserData called", .{});
 
         return try internal.wrapCallWithReturn("git_patch_print", .{
-            @ptrCast(*c.git_patch, self),
+            @as(*c.git_patch, @ptrCast(self)),
             cb,
             user_data,
         });
@@ -241,8 +241,8 @@ pub const Patch = opaque {
         var buf: git.Buf = .{};
 
         try internal.wrapCall("git_patch_to_buf", .{
-            @ptrCast(*c.git_buf, &buf),
-            @ptrCast(*c.git_patch, self),
+            @as(*c.git_buf, @ptrCast(&buf)),
+            @as(*c.git_patch, @ptrCast(self)),
         });
 
         return buf;
@@ -252,9 +252,9 @@ pub const Patch = opaque {
     pub fn getOwner(self: *const Patch) ?*git.Repository {
         if (internal.trace_log) log.debug("Patch.getOwner called", .{});
 
-        return @ptrCast(
+        return @as(
             ?*git.Repository,
-            c.git_patch_owner(@ptrCast(*const c.git_patch, self)),
+            @ptrCast(c.git_patch_owner(@as(*const c.git_patch, @ptrCast(self)))),
         );
     }
 

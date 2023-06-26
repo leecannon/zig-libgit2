@@ -17,7 +17,7 @@ pub const OidArray = extern struct {
     pub fn deinit(self: *OidArray) void {
         if (internal.trace_log) log.debug("OidArray.deinit called", .{});
 
-        c.git_oidarray_free(@ptrCast(*c.git_oidarray, self));
+        c.git_oidarray_free(@as(*c.git_oidarray, @ptrCast(self)));
     }
 
     test {

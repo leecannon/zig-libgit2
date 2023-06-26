@@ -99,7 +99,7 @@ pub const FilterList = opaque {
     pub fn contains(self: *FilterList, name: [:0]const u8) bool {
         if (internal.trace_log) log.debug("FilterList.contains called", .{});
 
-        return c.git_filter_list_contains(@ptrCast(*c.git_filter_list, self), name.ptr) != 0;
+        return c.git_filter_list_contains(@as(*c.git_filter_list, @ptrCast(self)), name.ptr) != 0;
     }
 
     /// Apply a filter list to the contents of a file on disk
@@ -113,9 +113,9 @@ pub const FilterList = opaque {
         var ret: git.Buf = .{};
 
         try internal.wrapCall("git_filter_list_apply_to_file", .{
-            @ptrCast(*c.git_buf, &ret),
-            @ptrCast(*c.git_filter_list, self),
-            @ptrCast(*c.git_repository, repo),
+            @as(*c.git_buf, @ptrCast(&ret)),
+            @as(*c.git_filter_list, @ptrCast(self)),
+            @as(*c.git_repository, @ptrCast(repo)),
             path.ptr,
         });
 
@@ -132,9 +132,9 @@ pub const FilterList = opaque {
         var ret: git.Buf = .{};
 
         try internal.wrapCall("git_filter_list_apply_to_blob", .{
-            @ptrCast(*c.git_buf, &ret),
-            @ptrCast(*c.git_filter_list, self),
-            @ptrCast(*c.git_blob, blob),
+            @as(*c.git_buf, @ptrCast(&ret)),
+            @as(*c.git_filter_list, @ptrCast(self)),
+            @as(*c.git_blob, @ptrCast(blob)),
         });
 
         return ret;
@@ -155,10 +155,10 @@ pub const FilterList = opaque {
         if (internal.trace_log) log.debug("FilterList.applyToFileToStream called", .{});
 
         try internal.wrapCall("git_filter_list_stream_file", .{
-            @ptrCast(*c.git_filter_list, self),
-            @ptrCast(*c.git_repository, repo),
+            @as(*c.git_filter_list, @ptrCast(self)),
+            @as(*c.git_repository, @ptrCast(repo)),
             path.ptr,
-            @ptrCast(*c.git_writestream, target),
+            @as(*c.git_writestream, @ptrCast(target)),
         });
     }
 
@@ -171,16 +171,16 @@ pub const FilterList = opaque {
         if (internal.trace_log) log.debug("FilterList.applyToBlobToStream called", .{});
 
         try internal.wrapCall("git_filter_list_stream_blob", .{
-            @ptrCast(*c.git_filter_list, self),
-            @ptrCast(*c.git_blob, blob),
-            @ptrCast(*c.git_writestream, target),
+            @as(*c.git_filter_list, @ptrCast(self)),
+            @as(*c.git_blob, @ptrCast(blob)),
+            @as(*c.git_writestream, @ptrCast(target)),
         });
     }
 
     pub fn deinit(self: *FilterList) void {
         if (internal.trace_log) log.debug("FilterList.deinit called", .{});
 
-        c.git_filter_list_free(@ptrCast(*c.git_filter_list, self));
+        c.git_filter_list_free(@as(*c.git_filter_list, @ptrCast(self)));
     }
 
     /// Apply filter list to a data buffer.
@@ -193,8 +193,8 @@ pub const FilterList = opaque {
         var ret: git.Buf = .{};
 
         try internal.wrapCall("git_filter_list_apply_to_buffer", .{
-            @ptrCast(*c.git_buf, &ret),
-            @ptrCast(*c.git_filter_list, self),
+            @as(*c.git_buf, @ptrCast(&ret)),
+            @as(*c.git_filter_list, @ptrCast(self)),
             in.ptr,
             in.len,
         });
@@ -211,10 +211,10 @@ pub const FilterList = opaque {
         if (internal.trace_log) log.debug("FilterList.applyToBufferToStream called", .{});
 
         try internal.wrapCall("git_filter_list_stream_buffer", .{
-            @ptrCast(*c.git_filter_list, self),
+            @as(*c.git_filter_list, @ptrCast(self)),
             buffer.ptr,
             buffer.len,
-            @ptrCast(*c.git_writestream, target),
+            @as(*c.git_writestream, @ptrCast(target)),
         });
     }
 

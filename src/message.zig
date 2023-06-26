@@ -20,7 +20,7 @@ pub const MessageTrailerArray = extern struct {
     pub fn deinit(self: *MessageTrailerArray) void {
         if (internal.trace_log) log.debug("MessageTrailerArray.deinit called", .{});
 
-        c.git_message_trailer_array_free(@ptrCast(*c.git_message_trailer_array, self));
+        c.git_message_trailer_array_free(@as(*c.git_message_trailer_array, @ptrCast(self)));
     }
 
     /// Represents a single git message trailer.

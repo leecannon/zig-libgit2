@@ -9,13 +9,13 @@ pub const Blob = opaque {
     pub fn deinit(self: *Blob) void {
         if (internal.trace_log) log.debug("Blob.deinit called", .{});
 
-        c.git_blob_free(@ptrCast(*c.git_blob, self));
+        c.git_blob_free(@ptrCast(self));
     }
 
     pub fn id(self: *const Blob) *const git.Oid {
         if (internal.trace_log) log.debug("Blame.id called", .{});
 
-        return @ptrCast(*const git.Oid, c.git_blob_id(@ptrCast(*const c.git_blob, self)));
+        return @ptrCast(c.git_blob_id(@ptrCast(self)));
     }
 
     /// Directly generate a patch from the difference between two blobs.
@@ -46,10 +46,10 @@ pub const Blob = opaque {
         const c_options = internal.make_c_option.diffOptions(options);
 
         try internal.wrapCall("git_patch_from_blobs", .{
-            @ptrCast(*?*c.git_patch, &ret),
-            @ptrCast(?*const c.git_blob, old),
+            @as(*?*c.git_patch, @ptrCast(&ret)),
+            @as(?*const c.git_blob, @ptrCast(old)),
             c_old_as_path,
-            @ptrCast(?*const c.git_blob, new),
+            @as(?*const c.git_blob, @ptrCast(new)),
             c_new_as_path,
             &c_options,
         });
@@ -93,8 +93,8 @@ pub const Blob = opaque {
         }
 
         try internal.wrapCall("git_patch_from_blob_and_buffer", .{
-            @ptrCast(*?*c.git_patch, &ret),
-            @ptrCast(?*const c.git_blob, old),
+            @as(*?*c.git_patch, @ptrCast(&ret)),
+            @as(?*const c.git_blob, @ptrCast(old)),
             c_old_as_path,
             buffer_ptr,
             buffer_len,
@@ -108,28 +108,25 @@ pub const Blob = opaque {
     pub fn owner(self: *const Blob) *git.Repository {
         if (internal.trace_log) log.debug("Blame.owner called", .{});
 
-        return @ptrCast(
-            *git.Repository,
-            c.git_blob_owner(@ptrCast(*const c.git_blob, self)),
-        );
+        return @ptrCast(c.git_blob_owner(@ptrCast(self)));
     }
 
     pub fn rawContent(self: *const Blob) ?*const anyopaque {
         if (internal.trace_log) log.debug("Blame.rawContent called", .{});
 
-        return c.git_blob_rawcontent(@ptrCast(*const c.git_blob, self));
+        return c.git_blob_rawcontent(@ptrCast(self));
     }
 
     pub fn rawContentLength(self: *const Blob) u64 {
         if (internal.trace_log) log.debug("Blame.rawContentLength called", .{});
 
-        return c.git_blob_rawsize(@ptrCast(*const c.git_blob, self));
+        return c.git_blob_rawsize(@ptrCast(self));
     }
 
     pub fn isBinary(self: *const Blob) bool {
         if (internal.trace_log) log.debug("Blame.isBinary called", .{});
 
-        return c.git_blob_is_binary(@ptrCast(*const c.git_blob, self)) == 1;
+        return c.git_blob_is_binary(@ptrCast(self)) == 1;
     }
 
     pub fn copy(self: *Blob) !*Blob {
@@ -137,10 +134,7 @@ pub const Blob = opaque {
 
         var new_blob: *Blob = undefined;
 
-        const ret = c.git_blob_dup(
-            @ptrCast(*?*c.git_blob, &new_blob),
-            @ptrCast(*c.git_blob, self),
-        );
+        const ret = c.git_blob_dup(@ptrCast(&new_blob), @ptrCast(self));
         // This always returns 0
         std.debug.assert(ret == 0);
 
@@ -155,8 +149,8 @@ pub const Blob = opaque {
         var c_options = internal.make_c_option.blobFilterOptions(options);
 
         try internal.wrapCall("git_blob_filter", .{
-            @ptrCast(*c.git_buf, &buf),
-            @ptrCast(*c.git_blob, self),
+            @as(*c.git_buf, @ptrCast(&buf)),
+            @as(*c.git_blob, @ptrCast(self)),
             as_path.ptr,
             &c_options,
         });

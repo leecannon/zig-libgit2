@@ -17,7 +17,7 @@ pub const Diff = opaque {
     pub fn deinit(self: *Diff) void {
         if (internal.trace_log) log.debug("Diff.deinit called", .{});
 
-        c.git_diff_free(@ptrCast(*c.git_diff, self));
+        c.git_diff_free(@as(*c.git_diff, @ptrCast(self)));
     }
 
     /// Return a patch for an entry in the diff list.
@@ -36,8 +36,8 @@ pub const Diff = opaque {
         var ret: ?*git.Patch = undefined;
 
         try internal.wrapCall("git_patch_from_diff", .{
-            @ptrCast(*?*c.git_patch, &ret),
-            @ptrCast(*c.git_diff, self),
+            @as(*?*c.git_patch, @ptrCast(&ret)),
+            @as(*c.git_diff, @ptrCast(self)),
             index,
         });
 
@@ -66,10 +66,10 @@ pub const Diff = opaque {
         if (internal.trace_log) log.debug("Diff.pathspecMatch called", .{});
 
         return (try internal.wrapCallWithReturn("git_pathspec_match_diff", .{
-            @ptrCast(?*?*c.git_pathspec_match_list, match_list),
-            @ptrCast(*c.git_diff, self),
-            @bitCast(c.git_pathspec_flag_t, options),
-            @ptrCast(*c.git_pathspec, pathspec),
+            @as(?*?*c.git_pathspec_match_list, @ptrCast(match_list)),
+            @as(*c.git_diff, @ptrCast(self)),
+            @as(c.git_pathspec_flag_t, @bitCast(options)),
+            @as(*c.git_pathspec, @ptrCast(pathspec)),
         })) != 0;
     }
 
@@ -85,7 +85,7 @@ pub const Diff = opaque {
 
         try internal.wrapCall("git_diff_get_perfdata", .{
             &c_ret,
-            @ptrCast(*const c.git_diff, self),
+            @as(*const c.git_diff, @ptrCast(self)),
         });
 
         return DiffPerfData{
@@ -399,7 +399,7 @@ pub const DiffHunk = extern struct {
     z_header: [header_size]u8,
 
     pub fn header(self: DiffHunk) [:0]const u8 {
-        return std.mem.sliceTo(@ptrCast([*:0]const u8, &self.z_header), 0);
+        return std.mem.sliceTo(@as([*:0]const u8, @ptrCast(&self.z_header)), 0);
     }
 
     test {

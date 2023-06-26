@@ -9,7 +9,7 @@ pub const PackBuilder = opaque {
     pub fn deinit(self: *PackBuilder) void {
         if (internal.trace_log) log.debug("PackBuilder.deinit called", .{});
 
-        c.git_packbuilder_free(@ptrCast(*c.git_packbuilder, self));
+        c.git_packbuilder_free(@as(*c.git_packbuilder, @ptrCast(self)));
     }
 
     /// Set number of threads to spawn
@@ -19,7 +19,7 @@ pub const PackBuilder = opaque {
         if (internal.trace_log) log.debug("PackBuilder.setThreads called", .{});
 
         return c.git_packbuilder_set_threads(
-            @ptrCast(*c.git_packbuilder, self),
+            @as(*c.git_packbuilder, @ptrCast(self)),
             n,
         );
     }
@@ -28,14 +28,14 @@ pub const PackBuilder = opaque {
     pub fn objectCount(self: *PackBuilder) usize {
         if (internal.trace_log) log.debug("PackBuilder.objectCount called", .{});
 
-        return c.git_packbuilder_object_count(@ptrCast(*c.git_packbuilder, self));
+        return c.git_packbuilder_object_count(@as(*c.git_packbuilder, @ptrCast(self)));
     }
 
     /// Get the number of objects the packbuilder has already written out
     pub fn writtenCount(self: *PackBuilder) usize {
         if (internal.trace_log) log.debug("PackBuilder.writtenCount called", .{});
 
-        return c.git_packbuilder_written(@ptrCast(*c.git_packbuilder, self));
+        return c.git_packbuilder_written(@as(*c.git_packbuilder, @ptrCast(self)));
     }
 
     /// Insert a single object
@@ -45,8 +45,8 @@ pub const PackBuilder = opaque {
         if (internal.trace_log) log.debug("PackBuilder.insert called", .{});
 
         try internal.wrapCall("git_packbuilder_insert", .{
-            @ptrCast(*c.git_packbuilder, self),
-            @ptrCast(*const c.git_oid, id),
+            @as(*c.git_packbuilder, @ptrCast(self)),
+            @as(*const c.git_oid, @ptrCast(id)),
             name.ptr,
         });
     }
@@ -58,8 +58,8 @@ pub const PackBuilder = opaque {
         if (internal.trace_log) log.debug("PackBuilder.insertRecursive called", .{});
 
         try internal.wrapCall("git_packbuilder_insert_recur", .{
-            @ptrCast(*c.git_packbuilder, self),
-            @ptrCast(*const c.git_oid, id),
+            @as(*c.git_packbuilder, @ptrCast(self)),
+            @as(*const c.git_oid, @ptrCast(id)),
             name.ptr,
         });
     }
@@ -71,8 +71,8 @@ pub const PackBuilder = opaque {
         if (internal.trace_log) log.debug("PackBuilder.insertTree called", .{});
 
         try internal.wrapCall("git_packbuilder_insert_tree", .{
-            @ptrCast(*c.git_packbuilder, self),
-            @ptrCast(*const c.git_oid, id),
+            @as(*c.git_packbuilder, @ptrCast(self)),
+            @as(*const c.git_oid, @ptrCast(id)),
         });
     }
 
@@ -83,8 +83,8 @@ pub const PackBuilder = opaque {
         if (internal.trace_log) log.debug("PackBuilder.insertCommit called", .{});
 
         try internal.wrapCall("git_packbuilder_insert_commit", .{
-            @ptrCast(*c.git_packbuilder, self),
-            @ptrCast(*const c.git_oid, id),
+            @as(*c.git_packbuilder, @ptrCast(self)),
+            @as(*const c.git_oid, @ptrCast(id)),
         });
     }
 
@@ -95,8 +95,8 @@ pub const PackBuilder = opaque {
         if (internal.trace_log) log.debug("PackBuilder.insertWalk called", .{});
 
         try internal.wrapCall("git_packbuilder_insert_walk", .{
-            @ptrCast(*c.git_packbuilder, self),
-            @ptrCast(*c.git_revwalk, walk),
+            @as(*c.git_packbuilder, @ptrCast(self)),
+            @as(*c.git_revwalk, @ptrCast(walk)),
         });
     }
 
@@ -109,8 +109,8 @@ pub const PackBuilder = opaque {
         var buf: git.Buf = .{};
 
         try internal.wrapCall("git_packbuilder_write_buf", .{
-            @ptrCast(*c.git_buf, &buf),
-            @ptrCast(*c.git_packbuilder, self),
+            @as(*c.git_buf, @ptrCast(&buf)),
+            @as(*c.git_packbuilder, @ptrCast(self)),
         });
 
         return buf;
@@ -127,7 +127,7 @@ pub const PackBuilder = opaque {
         const path_c = if (path) |str| str.ptr else null;
 
         try internal.wrapCall("git_packbuilder_write", .{
-            @ptrCast(*c.git_packbuilder, self),
+            @as(*c.git_packbuilder, @ptrCast(self)),
             path_c,
             mode,
             null,
@@ -195,8 +195,8 @@ pub const PackBuilder = opaque {
                 payload: ?*anyopaque,
             ) callconv(.C) c_int {
                 return callback_fn(
-                    @ptrCast(*const git.IndexerProgress, stats),
-                    @ptrCast(UserDataType, @alignCast(alignment, payload)),
+                    @as(*const git.IndexerProgress, @ptrCast(stats)),
+                    @as(UserDataType, @ptrCast(@alignCast(alignment, payload))),
                 );
             }
         }.cb;
@@ -206,7 +206,7 @@ pub const PackBuilder = opaque {
         const path_c = if (path) |str| str.ptr else null;
 
         try internal.wrapCall("git_packbuilder_write", .{
-            @ptrCast(*c.git_packbuilder, self),
+            @as(*c.git_packbuilder, @ptrCast(self)),
             path_c,
             mode,
             cb,
@@ -221,9 +221,9 @@ pub const PackBuilder = opaque {
     pub fn hash(self: *PackBuilder) *const git.Oid {
         if (internal.trace_log) log.debug("PackBuilder.hash called", .{});
 
-        const ret = @ptrCast(
+        const ret = @as(
             *const git.Oid,
-            c.git_packbuilder_hash(@ptrCast(*c.git_packbuilder, self)),
+            @ptrCast(c.git_packbuilder_hash(@as(*c.git_packbuilder, @ptrCast(self)))),
         );
 
         return ret;
@@ -286,8 +286,8 @@ pub const PackBuilder = opaque {
                 payload: ?*anyopaque,
             ) callconv(.C) c_int {
                 return callback_fn(
-                    @ptrCast([*]u8, ptr)[0..len],
-                    @ptrCast(UserDataType, @alignCast(alignment, payload)),
+                    @as([*]u8, @ptrCast(ptr))[0..len],
+                    @as(UserDataType, @ptrCast(@alignCast(alignment, payload))),
                 );
             }
         }.cb;
@@ -295,7 +295,7 @@ pub const PackBuilder = opaque {
         if (internal.trace_log) log.debug("PackBuilder.foreachWithUserData called", .{});
 
         try internal.wrapCall("git_packbuilder_foreach", .{
-            @ptrCast(*c.git_packbuilder, self),
+            @as(*c.git_packbuilder, @ptrCast(self)),
             cb,
             user_data,
         });
@@ -358,10 +358,10 @@ pub const PackBuilder = opaque {
                 payload: ?*anyopaque,
             ) callconv(.C) c_int {
                 callback_fn(
-                    @enumFromInt(PackbuilderStage, stage),
+                    @as(PackbuilderStage, @enumFromInt(stage)),
                     current,
                     total,
-                    @ptrCast(UserDataType, @alignCast(alignment, payload)),
+                    @as(UserDataType, @ptrCast(@alignCast(alignment, payload))),
                 );
                 return 0;
             }
@@ -370,7 +370,7 @@ pub const PackBuilder = opaque {
         if (internal.trace_log) log.debug("PackBuilder.setCallbacksWithUserData called", .{});
 
         _ = c.git_packbuilder_set_callbacks(
-            @ptrCast(*c.git_packbuilder, self),
+            @as(*c.git_packbuilder, @ptrCast(self)),
             cb,
             user_data,
         );

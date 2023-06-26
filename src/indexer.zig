@@ -15,10 +15,10 @@ pub const Indexer = opaque {
         if (internal.trace_log) log.debug("Indexer.append called", .{});
 
         try internal.wrapCall("git_indexer_append", .{
-            @ptrCast(*c.git_indexer, self),
+            @as(*c.git_indexer, @ptrCast(self)),
             data.ptr,
             data.len,
-            @ptrCast(*c.git_indexer_progress, stats),
+            @as(*c.git_indexer_progress, @ptrCast(stats)),
         });
     }
 
@@ -33,8 +33,8 @@ pub const Indexer = opaque {
         if (internal.trace_log) log.debug("Indexer.commit called", .{});
 
         try internal.wrapCall("git_indexer_commit", .{
-            @ptrCast(*c.git_indexer, self),
-            @ptrCast(*c.git_indexer_progress, stats),
+            @as(*c.git_indexer, @ptrCast(self)),
+            @as(*c.git_indexer_progress, @ptrCast(stats)),
         });
     }
 
@@ -45,16 +45,16 @@ pub const Indexer = opaque {
     pub fn hash(self: *const Indexer) ?*const git.Oid {
         if (internal.trace_log) log.debug("Indexer.hash called", .{});
 
-        return @ptrCast(
+        return @as(
             ?*const git.Oid,
-            c.git_indexer_hash(@ptrCast(*const c.git_indexer, self)),
+            @ptrCast(c.git_indexer_hash(@as(*const c.git_indexer, @ptrCast(self)))),
         );
     }
 
     pub fn deinit(self: *Indexer) void {
         if (internal.trace_log) log.debug("Indexer.deinit called", .{});
 
-        c.git_indexer_free(@ptrCast(*c.git_indexer, self));
+        c.git_indexer_free(@as(*c.git_indexer, @ptrCast(self)));
     }
 
     comptime {

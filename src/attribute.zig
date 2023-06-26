@@ -53,7 +53,7 @@ pub const Attribute = struct {
     }
 
     pub fn getValue(self: Attribute) AttributeValue {
-        return @enumFromInt(AttributeValue, c.git_attr_value(self.z_attr));
+        return @enumFromInt(c.git_attr_value(self.z_attr));
     }
 
     pub const AttributeValue = enum(c_uint) {

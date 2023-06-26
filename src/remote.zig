@@ -10,7 +10,7 @@ pub const Remote = opaque {
     pub fn deinit(self: *Remote) !void {
         if (internal.trace_log) log.debug("Remote.deinit called", .{});
 
-        c.git_remote_free(@ptrCast(*c.git_remote, self));
+        c.git_remote_free(@as(*c.git_remote, @ptrCast(self)));
     }
 
     /// Create a copy of an existing remote. All internal strings are also duplicated. Callbacks are not duplicated.
@@ -20,8 +20,8 @@ pub const Remote = opaque {
         var remote: *Remote = undefined;
 
         try internal.wrapCall("git_remote_dup", .{
-            @ptrCast(*?*c.git_remote, &remote),
-            @ptrCast(*c.git_remote, self),
+            @as(*?*c.git_remote, @ptrCast(&remote)),
+            @as(*c.git_remote, @ptrCast(self)),
         });
 
         return remote;
@@ -31,9 +31,9 @@ pub const Remote = opaque {
     pub fn getOwner(self: *const Remote) ?*git.Repository {
         if (internal.trace_log) log.debug("Remote.getOwner called", .{});
 
-        return @ptrCast(
+        return @as(
             ?*git.Repository,
-            c.git_remote_owner(@ptrCast(*const c.git_remote, self)),
+            @ptrCast(c.git_remote_owner(@as(*const c.git_remote, @ptrCast(self)))),
         );
     }
 
@@ -41,7 +41,7 @@ pub const Remote = opaque {
     pub fn getName(self: *const Remote) ?[:0]const u8 {
         if (internal.trace_log) log.debug("Remote.getName called", .{});
 
-        return if (c.git_remote_name(@ptrCast(*const c.git_remote, self))) |r|
+        return if (c.git_remote_name(@as(*const c.git_remote, @ptrCast(self)))) |r|
             std.mem.sliceTo(r, 0)
         else
             null;
@@ -53,7 +53,7 @@ pub const Remote = opaque {
     pub fn getUrl(self: *const Remote) ?[:0]const u8 {
         if (internal.trace_log) log.debug("Remote.getUrl called", .{});
 
-        return if (c.git_remote_url(@ptrCast(*const c.git_remote, self))) |r|
+        return if (c.git_remote_url(@as(*const c.git_remote, @ptrCast(self)))) |r|
             std.mem.sliceTo(r, 0)
         else
             null;
@@ -63,7 +63,7 @@ pub const Remote = opaque {
     pub fn getPushUrl(self: *const Remote) ?[:0]const u8 {
         if (internal.trace_log) log.debug("Remote.getPushUrl called", .{});
 
-        return if (c.git_remote_pushurl(@ptrCast(*const c.git_remote, self))) |r|
+        return if (c.git_remote_pushurl(@as(*const c.git_remote, @ptrCast(self)))) |r|
             std.mem.sliceTo(r, 0)
         else
             null;
@@ -78,8 +78,8 @@ pub const Remote = opaque {
         var ret: git.StrArray = .{};
 
         try internal.wrapCall("git_remote_get_fetch_refspecs", .{
-            @ptrCast(*c.git_strarray, &ret),
-            @ptrCast(*const c.git_remote, self),
+            @as(*c.git_strarray, @ptrCast(&ret)),
+            @as(*const c.git_remote, @ptrCast(self)),
         });
 
         return ret;
@@ -94,8 +94,8 @@ pub const Remote = opaque {
         var ret: git.StrArray = .{};
 
         try internal.wrapCall("git_remote_get_push_refspecs", .{
-            @ptrCast(*c.git_strarray, &ret),
-            @ptrCast(*const c.git_remote, self),
+            @as(*c.git_strarray, @ptrCast(&ret)),
+            @as(*const c.git_remote, @ptrCast(self)),
         });
 
         return ret;
@@ -105,7 +105,7 @@ pub const Remote = opaque {
     pub fn getRefspecCount(self: *const Remote) usize {
         if (internal.trace_log) log.debug("Remote.getRefspecsCount called", .{});
 
-        return c.git_remote_refspec_count(@ptrCast(*const c.git_remote, self));
+        return c.git_remote_refspec_count(@as(*const c.git_remote, @ptrCast(self)));
     }
 
     /// Get a refspec from the remote
@@ -115,9 +115,9 @@ pub const Remote = opaque {
     pub fn getRefspec(self: *const Remote, n: usize) ?*const git.Refspec {
         if (internal.trace_log) log.debug("Remote.getRefspec called", .{});
 
-        return @ptrCast(
+        return @as(
             ?*const git.Refspec,
-            c.git_remote_get_refspec(@ptrCast(*const c.git_remote, self), n),
+            @ptrCast(c.git_remote_get_refspec(@as(*const c.git_remote, @ptrCast(self)), n)),
         );
     }
 
@@ -140,11 +140,11 @@ pub const Remote = opaque {
         const c_proxy_opts = internal.make_c_option.proxyOptions(proxy_opts);
 
         try internal.wrapCall("git_remote_connect", .{
-            @ptrCast(*c.git_remote, self),
+            @as(*c.git_remote, @ptrCast(self)),
             @intFromEnum(direction),
-            @ptrCast(*const c.git_remote_callbacks, &callbacks),
+            @as(*const c.git_remote_callbacks, @ptrCast(&callbacks)),
             &c_proxy_opts,
-            @ptrCast(*const c.git_strarray, &custom_headers),
+            @as(*const c.git_strarray, @ptrCast(&custom_headers)),
         });
     }
 
@@ -164,9 +164,9 @@ pub const Remote = opaque {
         var head_n: usize = undefined;
 
         try internal.wrapCall("git_remote_ls", .{
-            @ptrCast(*?[*]?*const c.git_remote_head, &head_ptr),
+            @as(*?[*]?*const c.git_remote_head, @ptrCast(&head_ptr)),
             &head_n,
-            @ptrCast(*c.git_remote, self),
+            @as(*c.git_remote, @ptrCast(self)),
         });
 
         return head_ptr[0..head_n];
@@ -218,7 +218,7 @@ pub const Remote = opaque {
     pub fn connected(self: *const Remote) bool {
         if (internal.trace_log) log.debug("Remote.connected called", .{});
 
-        return c.git_remote_connected(@ptrCast(*const c.git_remote, self)) != 0;
+        return c.git_remote_connected(@as(*const c.git_remote, @ptrCast(self))) != 0;
     }
 
     /// Cancel the operation.
@@ -229,7 +229,7 @@ pub const Remote = opaque {
         if (internal.trace_log) log.debug("Remote.stop called", .{});
 
         try internal.wrapCall("git_remote_stop", .{
-            @ptrCast(*c.git_remote, self),
+            @as(*c.git_remote, @ptrCast(self)),
         });
     }
 
@@ -240,7 +240,7 @@ pub const Remote = opaque {
         if (internal.trace_log) log.debug("Remote.diconnect called", .{});
 
         try internal.wrapCall("git_remote_disconnect", .{
-            @ptrCast(*c.git_remote, self),
+            @as(*c.git_remote, @ptrCast(self)),
         });
     }
 
@@ -260,8 +260,8 @@ pub const Remote = opaque {
         const c_options = internal.make_c_option.fetchOptions(options);
 
         try internal.wrapCall("git_remote_download", .{
-            @ptrCast(*c.git_remote, self),
-            @ptrCast(*const c.git_strarray, &refspecs),
+            @as(*c.git_remote, @ptrCast(self)),
+            @as(*const c.git_strarray, @ptrCast(&refspecs)),
             &c_options,
         });
     }
@@ -280,8 +280,8 @@ pub const Remote = opaque {
         const c_options = internal.make_c_option.pushOptions(options);
 
         try internal.wrapCall("git_remote_upload", .{
-            @ptrCast(*c.git_remote, self),
-            @ptrCast(*const c.git_strarray, &refspecs),
+            @as(*c.git_remote, @ptrCast(self)),
+            @as(*const c.git_strarray, @ptrCast(&refspecs)),
             &c_options,
         });
     }
@@ -310,8 +310,8 @@ pub const Remote = opaque {
         const c_reflog_message = if (reflog_message) |s| s.ptr else null;
 
         try internal.wrapCall("git_remote_update_tips", .{
-            @ptrCast(*c.git_remote, self),
-            @ptrCast(*const c.git_remote_callbacks, &callbacks),
+            @as(*c.git_remote, @ptrCast(self)),
+            @as(*const c.git_remote_callbacks, @ptrCast(&callbacks)),
             @intFromBool(update_fetchead),
             @intFromEnum(download_tags),
             c_reflog_message,
@@ -336,8 +336,8 @@ pub const Remote = opaque {
         const c_options = internal.make_c_option.fetchOptions(options);
 
         try internal.wrapCall("git_remote_fetch", .{
-            @ptrCast(*c.git_remote, self),
-            @ptrCast(*const c.git_strarray, &refspecs),
+            @as(*c.git_remote, @ptrCast(self)),
+            @as(*const c.git_strarray, @ptrCast(&refspecs)),
             &c_options,
             c_reflog_message,
         });
@@ -351,8 +351,8 @@ pub const Remote = opaque {
         if (internal.trace_log) log.debug("Remote.prune called", .{});
 
         try internal.wrapCall("git_remote_prune", .{
-            @ptrCast(*c.git_remote, self),
-            @ptrCast(*const c.git_remote_callbacks, &callbacks),
+            @as(*c.git_remote, @ptrCast(self)),
+            @as(*const c.git_remote_callbacks, @ptrCast(&callbacks)),
         });
     }
 
@@ -367,8 +367,8 @@ pub const Remote = opaque {
         const c_options = internal.make_c_option.pushOptions(options);
 
         try internal.wrapCall("git_remote_push", .{
-            @ptrCast(*c.git_remote, self),
-            @ptrCast(*const c.git_strarray, &refspecs),
+            @as(*c.git_remote, @ptrCast(self)),
+            @as(*const c.git_strarray, @ptrCast(&refspecs)),
             &c_options,
         });
     }
@@ -377,9 +377,9 @@ pub const Remote = opaque {
     pub fn getStats(self: *Remote) *const git.IndexerProgress {
         if (internal.trace_log) log.debug("Remote.getStats called", .{});
 
-        return @ptrCast(
+        return @as(
             *const git.IndexerProgress,
-            c.git_remote_stats(@ptrCast(*c.git_remote, self)),
+            @ptrCast(c.git_remote_stats(@as(*c.git_remote, @ptrCast(self)))),
         );
     }
 
@@ -387,9 +387,9 @@ pub const Remote = opaque {
     pub fn getAutotag(self: *const Remote) RemoteAutoTagOption {
         if (internal.trace_log) log.debug("Remote.getAutotag called", .{});
 
-        return @enumFromInt(
+        return @as(
             RemoteAutoTagOption,
-            c.git_remote_autotag(@ptrCast(*const c.git_remote, self)),
+            @enumFromInt(c.git_remote_autotag(@as(*const c.git_remote, @ptrCast(self)))),
         );
     }
 
@@ -397,7 +397,7 @@ pub const Remote = opaque {
     pub fn getPruneRefSetting(self: *const Remote) bool {
         if (internal.trace_log) log.debug("Remote.getPruneRefSetting called", .{});
 
-        return c.git_remote_prune_refs(@ptrCast(*const c.git_remote, self)) != 0;
+        return c.git_remote_prune_refs(@as(*const c.git_remote, @ptrCast(self))) != 0;
     }
 
     /// Retrieve the name of the remote's default branch
@@ -413,8 +413,8 @@ pub const Remote = opaque {
         var buf = git.Buf{};
 
         try internal.wrapCall("git_remote_default_branch", .{
-            @ptrCast(*c.git_buf, &buf),
-            @ptrCast(*c.git_remote, self),
+            @as(*c.git_buf, @ptrCast(&buf)),
+            @as(*c.git_remote, @ptrCast(self)),
         });
 
         return buf;

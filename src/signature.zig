@@ -28,7 +28,7 @@ pub const Signature = extern struct {
     pub fn deinit(self: *Signature) void {
         if (internal.trace_log) log.debug("Signature.deinit called", .{});
 
-        c.git_signature_free(@ptrCast(*c.git_signature, self));
+        c.git_signature_free(@as(*c.git_signature, @ptrCast(self)));
     }
 
     /// Create a new signature by parsing the given buffer, which is expected to be in the format
@@ -43,7 +43,7 @@ pub const Signature = extern struct {
         var ret: *git.Signature = undefined;
 
         try internal.wrapCall("git_signature_from_buffer", .{
-            @ptrCast(*?*c.git_signature, &ret),
+            @as(*?*c.git_signature, @ptrCast(&ret)),
             buf.ptr,
         });
 
@@ -57,8 +57,8 @@ pub const Signature = extern struct {
         var ret: *git.Signature = undefined;
 
         try internal.wrapCall("git_signature_dup", .{
-            @ptrCast(*?*c.git_signature, &ret),
-            @ptrCast(*const c.git_signature, self),
+            @as(*?*c.git_signature, @ptrCast(&ret)),
+            @as(*const c.git_signature, @ptrCast(self)),
         });
 
         return ret;

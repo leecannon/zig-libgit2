@@ -10,16 +10,16 @@ pub const RevWalk = opaque {
     pub fn deinit(self: *RevWalk) void {
         if (internal.trace_log) log.debug("RevWalk.deinit called", .{});
 
-        c.git_revwalk_free(@ptrCast(*c.git_revwalk, self));
+        c.git_revwalk_free(@as(*c.git_revwalk, @ptrCast(self)));
     }
 
     /// Return the repository on which this walker is operating.
     pub fn repository(self: *RevWalk) *git.Repository {
         if (internal.trace_log) log.debug("RevWalk.repository called", .{});
 
-        return @ptrCast(
+        return @as(
             *git.Repository,
-            c.git_revwalk_repository(@ptrCast(*c.git_revwalk, self)),
+            @ptrCast(c.git_revwalk_repository(@as(*c.git_revwalk, @ptrCast(self)))),
         );
     }
 
@@ -33,7 +33,7 @@ pub const RevWalk = opaque {
         if (internal.trace_log) log.debug("RevWalk.reset called", .{});
 
         try internal.wrapCall("git_revwalk_reset", .{
-            @ptrCast(*c.git_revwalk, self),
+            @as(*c.git_revwalk, @ptrCast(self)),
         });
     }
 
@@ -52,8 +52,8 @@ pub const RevWalk = opaque {
         if (internal.trace_log) log.debug("RevWalk.reset called", .{});
 
         try internal.wrapCall("git_revwalk_push", .{
-            @ptrCast(*c.git_revwalk, self),
-            @ptrCast(*const c.git_oid, id),
+            @as(*c.git_revwalk, @ptrCast(self)),
+            @as(*const c.git_oid, @ptrCast(id)),
         });
     }
 
@@ -71,7 +71,7 @@ pub const RevWalk = opaque {
         if (internal.trace_log) log.debug("RevWalk.pushGlob called", .{});
 
         try internal.wrapCall("git_revwalk_push_glob", .{
-            @ptrCast(*c.git_revwalk, self),
+            @as(*c.git_revwalk, @ptrCast(self)),
             glob.ptr,
         });
     }
@@ -81,7 +81,7 @@ pub const RevWalk = opaque {
         if (internal.trace_log) log.debug("RevWalk.pushHead called", .{});
 
         try internal.wrapCall("git_revwalk_push_head", .{
-            @ptrCast(*c.git_revwalk, self),
+            @as(*c.git_revwalk, @ptrCast(self)),
         });
     }
 
@@ -97,8 +97,8 @@ pub const RevWalk = opaque {
         if (internal.trace_log) log.debug("RevWalk.hide called", .{});
 
         try internal.wrapCall("git_revwalk_hide", .{
-            @ptrCast(*c.git_revwalk, self),
-            @ptrCast(*const c.git_oid, id),
+            @as(*c.git_revwalk, @ptrCast(self)),
+            @as(*const c.git_oid, @ptrCast(id)),
         });
     }
 
@@ -117,7 +117,7 @@ pub const RevWalk = opaque {
         if (internal.trace_log) log.debug("RevWalk.hideGlob called", .{});
 
         try internal.wrapCall("git_revwalk_hide_glob", .{
-            @ptrCast(*c.git_revwalk, self),
+            @as(*c.git_revwalk, @ptrCast(self)),
             glob.ptr,
         });
     }
@@ -127,7 +127,7 @@ pub const RevWalk = opaque {
         if (internal.trace_log) log.debug("RevWalk.hideHead called", .{});
 
         try internal.wrapCall("git_revwalk_hide_head", .{
-            @ptrCast(*c.git_revwalk, self),
+            @as(*c.git_revwalk, @ptrCast(self)),
         });
     }
 
@@ -141,7 +141,7 @@ pub const RevWalk = opaque {
         if (internal.trace_log) log.debug("RevWalk.pushRef called", .{});
 
         try internal.wrapCall("git_revwalk_push_ref", .{
-            @ptrCast(*c.git_revwalk, self),
+            @as(*c.git_revwalk, @ptrCast(self)),
             ref.ptr,
         });
     }
@@ -156,7 +156,7 @@ pub const RevWalk = opaque {
         if (internal.trace_log) log.debug("RevWalk.hideRef called", .{});
 
         try internal.wrapCall("git_revwalk_hide_ref", .{
-            @ptrCast(*c.git_revwalk, self),
+            @as(*c.git_revwalk, @ptrCast(self)),
             ref.ptr,
         });
     }
@@ -172,7 +172,7 @@ pub const RevWalk = opaque {
         if (internal.trace_log) log.debug("RevWalk.pushRange called", .{});
 
         try internal.wrapCall("git_revwalk_push_range", .{
-            @ptrCast(*c.git_revwalk, self),
+            @as(*c.git_revwalk, @ptrCast(self)),
             range.ptr,
         });
     }
@@ -184,7 +184,7 @@ pub const RevWalk = opaque {
         if (internal.trace_log) log.debug("RevWalk.simplifyFirstParent called", .{});
 
         try internal.wrapCall("git_revwalk_simplify_first_parent", .{
-            @ptrCast(*c.git_revwalk, self),
+            @as(*c.git_revwalk, @ptrCast(self)),
         });
     }
 
@@ -202,8 +202,8 @@ pub const RevWalk = opaque {
         var oid: git.Oid = undefined;
 
         internal.wrapCall("git_revwalk_next", .{
-            @ptrCast(*c.git_oid, &oid),
-            @ptrCast(*c.git_revwalk, self),
+            @as(*c.git_oid, @ptrCast(&oid)),
+            @as(*c.git_revwalk, @ptrCast(self)),
         }) catch |err| switch (err) {
             git.GitError.IterOver => return null,
             else => |e| return e,
@@ -222,8 +222,8 @@ pub const RevWalk = opaque {
         if (internal.trace_log) log.debug("RevWalk.setSortingMode called", .{});
 
         try internal.wrapCall("git_revwalk_sorting", .{
-            @ptrCast(*c.git_revwalk, self),
-            @bitCast(u32, sort_mode),
+            @as(*c.git_revwalk, @ptrCast(self)),
+            @as(u32, @bitCast(sort_mode)),
         });
     }
 
@@ -325,8 +325,8 @@ pub const RevWalk = opaque {
                 payload: ?*anyopaque,
             ) callconv(.C) c_int {
                 return callback_fn(
-                    @ptrCast(*const git.Oid, commit_id),
-                    @ptrCast(UserDataType, @alignCast(alignment, payload)),
+                    @as(*const git.Oid, @ptrCast(commit_id)),
+                    @as(UserDataType, @ptrCast(@alignCast(alignment, payload))),
                 );
             }
         }.cb;
@@ -334,7 +334,7 @@ pub const RevWalk = opaque {
         if (internal.trace_log) log.debug("RevWalk.addHideCallbackWithUserData called", .{});
 
         try internal.wrapCall("git_revwalk_add_hide_cb", .{
-            @ptrCast(*c.git_revwalk, self),
+            @as(*c.git_revwalk, @ptrCast(self)),
             cb,
             user_data,
         });

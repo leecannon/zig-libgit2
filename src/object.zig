@@ -17,16 +17,16 @@ pub const Object = opaque {
     pub fn deinit(self: *Object) void {
         if (internal.trace_log) log.debug("Object.deinit called", .{});
 
-        c.git_object_free(@ptrCast(*c.git_object, self));
+        c.git_object_free(@as(*c.git_object, @ptrCast(self)));
     }
 
     /// Get the id (SHA1) of a repository object
     pub fn id(self: *const Object) *const git.Oid {
         if (internal.trace_log) log.debug("Object.id called", .{});
 
-        return @ptrCast(
+        return @as(
             *const git.Oid,
-            c.git_object_id(@ptrCast(*const c.git_object, self)),
+            @ptrCast(c.git_object_id(@as(*const c.git_object, @ptrCast(self)))),
         );
     }
 
@@ -41,8 +41,8 @@ pub const Object = opaque {
         var buf: git.Buf = .{};
 
         try internal.wrapCall("git_object_short_id", .{
-            @ptrCast(*c.git_buf, &buf),
-            @ptrCast(*const c.git_object, self),
+            @as(*c.git_buf, @ptrCast(&buf)),
+            @as(*const c.git_object, @ptrCast(self)),
         });
 
         return buf;
@@ -52,9 +52,9 @@ pub const Object = opaque {
     pub fn objectType(self: *const Object) ObjectType {
         if (internal.trace_log) log.debug("Object.objectType called", .{});
 
-        return @enumFromInt(
+        return @as(
             ObjectType,
-            c.git_object_type(@ptrCast(*const c.git_object, self)),
+            @enumFromInt(c.git_object_type(@as(*const c.git_object, @ptrCast(self)))),
         );
     }
 
@@ -62,9 +62,9 @@ pub const Object = opaque {
     pub fn objectOwner(self: *const Object) *const git.Repository {
         if (internal.trace_log) log.debug("Object.objectOwner called", .{});
 
-        return @ptrCast(
+        return @as(
             *const git.Repository,
-            c.git_object_owner(@ptrCast(*const c.git_object, self)),
+            @ptrCast(c.git_object_owner(@as(*const c.git_object, @ptrCast(self)))),
         );
     }
 
@@ -79,8 +79,8 @@ pub const Object = opaque {
         var c_options = internal.make_c_option.describeOptions(options);
 
         try internal.wrapCall("git_describe_commit", .{
-            @ptrCast(*?*c.git_describe_result, &result),
-            @ptrCast(*c.git_object, self),
+            @as(*?*c.git_describe_result, @ptrCast(&result)),
+            @as(*c.git_object, @ptrCast(self)),
             &c_options,
         });
 
@@ -99,8 +99,8 @@ pub const Object = opaque {
         var ret: *Object = undefined;
 
         try internal.wrapCall("git_object_lookup_bypath", .{
-            @ptrCast(*?*c.git_object, &ret),
-            @ptrCast(*const c.git_object, self),
+            @as(*?*c.git_object, @ptrCast(&ret)),
+            @as(*const c.git_object, @ptrCast(self)),
             path.ptr,
             @intFromEnum(object_type),
         });
@@ -130,8 +130,8 @@ pub const Object = opaque {
         var ret: *Object = undefined;
 
         try internal.wrapCall("git_object_peel", .{
-            @ptrCast(*?*c.git_object, &ret),
-            @ptrCast(*const c.git_object, self),
+            @as(*?*c.git_object, @ptrCast(&ret)),
+            @as(*const c.git_object, @ptrCast(self)),
             @intFromEnum(target_type),
         });
 
@@ -145,8 +145,8 @@ pub const Object = opaque {
         var ret: *Object = undefined;
 
         _ = c.git_object_dup(
-            @ptrCast(*?*c.git_object, &ret),
-            @ptrCast(*c.git_object, self),
+            @as(*?*c.git_object, @ptrCast(&ret)),
+            @as(*c.git_object, @ptrCast(self)),
         );
 
         return ret;
@@ -188,7 +188,7 @@ pub const ObjectType = enum(c_int) {
     ///
     /// If the given string is not a valid object type `.invalid` is returned.
     pub fn fromString(str: [:0]const u8) ObjectType {
-        return @enumFromInt(ObjectType, c.git_object_string2type(str.ptr));
+        return @as(ObjectType, @enumFromInt(c.git_object_string2type(str.ptr)));
     }
 
     /// Determine if the given `ObjectType` is a valid loose object type.

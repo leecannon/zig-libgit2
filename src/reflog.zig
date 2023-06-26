@@ -11,7 +11,7 @@ pub const Reflog = opaque {
     pub fn deinit(self: *Reflog) void {
         if (internal.trace_log) log.debug("Reflog.deinit called", .{});
 
-        c.git_reflog_free(@ptrCast(*c.git_reflog, self));
+        c.git_reflog_free(@as(*c.git_reflog, @ptrCast(self)));
     }
 
     /// Write an existing in-memory reflog object back to disk using an atomic file lock.
@@ -19,7 +19,7 @@ pub const Reflog = opaque {
         if (internal.trace_log) log.debug("Reflog.write called", .{});
 
         try internal.wrapCall("git_reflog_write", .{
-            @ptrCast(*c.git_reflog, self),
+            @as(*c.git_reflog, @ptrCast(self)),
         });
     }
 
@@ -40,9 +40,9 @@ pub const Reflog = opaque {
         const c_msg = if (msg) |s| s.ptr else null;
 
         try internal.wrapCall("git_reflog_append", .{
-            @ptrCast(*c.git_reflog, self),
-            @ptrCast(*const c.git_oid, id),
-            @ptrCast(*const c.git_signature, signature),
+            @as(*c.git_reflog, @ptrCast(self)),
+            @as(*const c.git_oid, @ptrCast(id)),
+            @as(*const c.git_signature, @ptrCast(signature)),
             c_msg,
         });
     }
@@ -52,7 +52,7 @@ pub const Reflog = opaque {
         if (internal.trace_log) log.debug("Reflog.entryCount called", .{});
 
         return c.git_reflog_entrycount(
-            @ptrCast(*c.git_reflog, self),
+            @as(*c.git_reflog, @ptrCast(self)),
         );
     }
 
@@ -65,12 +65,12 @@ pub const Reflog = opaque {
     pub fn getEntry(self: *const Reflog, index: usize) ?*const ReflogEntry {
         if (internal.trace_log) log.debug("Reflog.getEntry called", .{});
 
-        return @ptrCast(
+        return @as(
             ?*const ReflogEntry,
-            c.git_reflog_entry_byindex(
-                @ptrCast(*const c.git_reflog, self),
+            @ptrCast(c.git_reflog_entry_byindex(
+                @as(*const c.git_reflog, @ptrCast(self)),
                 index,
-            ),
+            )),
         );
     }
 
@@ -87,7 +87,7 @@ pub const Reflog = opaque {
         if (internal.trace_log) log.debug("Reflog.removeEntry called", .{});
 
         try internal.wrapCall("git_reflog_drop", .{
-            @ptrCast(*c.git_reflog, self),
+            @as(*c.git_reflog, @ptrCast(self)),
             index,
             @intFromBool(rewrite_previous_entry),
         });
@@ -99,36 +99,36 @@ pub const Reflog = opaque {
         pub fn oldId(self: *const ReflogEntry) *const git.Oid {
             if (internal.trace_log) log.debug("ReflogEntry.oldId called", .{});
 
-            return @ptrCast(*const git.Oid, c.git_reflog_entry_id_old(
-                @ptrCast(*const c.git_reflog_entry, self),
-            ));
+            return @as(*const git.Oid, @ptrCast(c.git_reflog_entry_id_old(
+                @as(*const c.git_reflog_entry, @ptrCast(self)),
+            )));
         }
 
         /// Get the new oid
         pub fn newId(self: *const ReflogEntry) *const git.Oid {
             if (internal.trace_log) log.debug("ReflogEntry.newId called", .{});
 
-            return @ptrCast(*const git.Oid, c.git_reflog_entry_id_new(
-                @ptrCast(*const c.git_reflog_entry, self),
-            ));
+            return @as(*const git.Oid, @ptrCast(c.git_reflog_entry_id_new(
+                @as(*const c.git_reflog_entry, @ptrCast(self)),
+            )));
         }
 
         /// Get the committer of this entry
         pub fn commiter(self: *const ReflogEntry) *const git.Signature {
             if (internal.trace_log) log.debug("ReflogEntry.commiter called", .{});
 
-            return @ptrCast(*const git.Signature, c.git_reflog_entry_committer(
-                @ptrCast(*const c.git_reflog_entry, self),
-            ));
+            return @as(*const git.Signature, @ptrCast(c.git_reflog_entry_committer(
+                @as(*const c.git_reflog_entry, @ptrCast(self)),
+            )));
         }
 
         /// Get the log message
         pub fn message(self: *const ReflogEntry) ?[:0]const u8 {
             if (internal.trace_log) log.debug("ReflogEntry.message called", .{});
 
-            const opt_ret = @ptrCast(?[*:0]const u8, c.git_reflog_entry_message(
-                @ptrCast(*const c.git_reflog_entry, self),
-            ));
+            const opt_ret = @as(?[*:0]const u8, @ptrCast(c.git_reflog_entry_message(
+                @as(*const c.git_reflog_entry, @ptrCast(self)),
+            )));
 
             return if (opt_ret) |ret| std.mem.sliceTo(ret, 0) else null;
         }

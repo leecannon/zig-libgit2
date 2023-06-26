@@ -10,7 +10,7 @@ pub const Hashsig = opaque {
     pub fn deinit(self: *Hashsig) void {
         if (internal.trace_log) log.debug("Hashsig.deinit called", .{});
 
-        c.git_hashsig_free(@ptrCast(*c.git_hashsig, self));
+        c.git_hashsig_free(@as(*c.git_hashsig, @ptrCast(self)));
     }
 
     /// Measure similarity score between two similarity signatures
@@ -19,15 +19,15 @@ pub const Hashsig = opaque {
     pub fn compare(self: *const Hashsig, other: *const Hashsig) !u7 {
         if (internal.trace_log) log.debug("Hashsig.compare called", .{});
 
-        return @truncate(
+        return @as(
             u7,
-            @intCast(
+            @truncate(@as(
                 c_uint,
-                try internal.wrapCallWithReturn("git_hashsig_compare", .{
-                    @ptrCast(*const c.git_hashsig, self),
-                    @ptrCast(*const c.git_hashsig, other),
-                }),
-            ),
+                @intCast(try internal.wrapCallWithReturn("git_hashsig_compare", .{
+                    @as(*const c.git_hashsig, @ptrCast(self)),
+                    @as(*const c.git_hashsig, @ptrCast(other)),
+                })),
+            )),
         );
     }
 

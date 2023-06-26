@@ -10,25 +10,25 @@ pub const Tag = opaque {
     pub fn deinit(self: *Tag) void {
         if (internal.trace_log) log.debug("Tag.deinit called", .{});
 
-        c.git_tag_free(@ptrCast(*c.git_tag, self));
+        c.git_tag_free(@as(*c.git_tag, @ptrCast(self)));
     }
 
     /// Get the id of a tag.
     pub fn id(self: *const Tag) *const git.Oid {
         if (internal.trace_log) log.debug("Tag.id called", .{});
 
-        return @ptrCast(*const git.Oid, c.git_tag_id(
-            @ptrCast(*const c.git_tag, self),
-        ));
+        return @as(*const git.Oid, @ptrCast(c.git_tag_id(
+            @as(*const c.git_tag, @ptrCast(self)),
+        )));
     }
 
     /// Get the repository that contains the tag.
     pub fn owner(self: *const Tag) *git.Repository {
         if (internal.trace_log) log.debug("Tag.owner called", .{});
 
-        return @ptrCast(*git.Repository, c.git_tag_owner(
-            @ptrCast(*const c.git_tag, self),
-        ));
+        return @as(*git.Repository, @ptrCast(c.git_tag_owner(
+            @as(*const c.git_tag, @ptrCast(self)),
+        )));
     }
 
     /// Get the tagged object of a tag,
@@ -39,8 +39,8 @@ pub const Tag = opaque {
         var ret: *git.Object = undefined;
 
         try internal.wrapCall("git_tag_target", .{
-            @ptrCast(*?*c.git_object, &ret),
-            @ptrCast(*const c.git_tag, self),
+            @as(*?*c.git_object, @ptrCast(&ret)),
+            @as(*const c.git_tag, @ptrCast(self)),
         });
 
         return ret;
@@ -50,18 +50,18 @@ pub const Tag = opaque {
     pub fn targetId(self: *const Tag) *const git.Oid {
         if (internal.trace_log) log.debug("Tag.targetId called", .{});
 
-        return @ptrCast(*const git.Oid, c.git_tag_target_id(
-            @ptrCast(*const c.git_tag, self),
-        ));
+        return @as(*const git.Oid, @ptrCast(c.git_tag_target_id(
+            @as(*const c.git_tag, @ptrCast(self)),
+        )));
     }
 
     /// Get the type of a tag's tagged object,
     pub fn targetType(self: *const Tag) git.ObjectType {
         if (internal.trace_log) log.debug("Tag.targetType called", .{});
 
-        return @enumFromInt(git.ObjectType, c.git_tag_target_type(
-            @ptrCast(*const c.git_tag, self),
-        ));
+        return @as(git.ObjectType, @enumFromInt(c.git_tag_target_type(
+            @as(*const c.git_tag, @ptrCast(self)),
+        )));
     }
 
     /// Get the name of a tag.
@@ -69,7 +69,7 @@ pub const Tag = opaque {
         if (internal.trace_log) log.debug("Tag.name called", .{});
 
         return std.mem.sliceTo(c.git_tag_name(
-            @ptrCast(*const c.git_tag, self),
+            @as(*const c.git_tag, @ptrCast(self)),
         ), 0);
     }
 
@@ -77,16 +77,16 @@ pub const Tag = opaque {
     pub fn author(self: *const Tag) ?*const git.Signature {
         if (internal.trace_log) log.debug("Tag.author called", .{});
 
-        return @ptrCast(?*const git.Signature, c.git_tag_tagger(
-            @ptrCast(*const c.git_tag, self),
-        ));
+        return @as(?*const git.Signature, @ptrCast(c.git_tag_tagger(
+            @as(*const c.git_tag, @ptrCast(self)),
+        )));
     }
 
     /// Get the message of a tag.
     pub fn message(self: *const Tag) ?[:0]const u8 {
         if (internal.trace_log) log.debug("Tag.message called", .{});
 
-        return if (c.git_tag_message(@ptrCast(*const c.git_tag, self))) |s| std.mem.sliceTo(s, 0) else null;
+        return if (c.git_tag_message(@as(*const c.git_tag, @ptrCast(self)))) |s| std.mem.sliceTo(s, 0) else null;
     }
 
     /// Recursively peel a tag until a non tag git_object is found
@@ -98,8 +98,8 @@ pub const Tag = opaque {
         var ret: *git.Object = undefined;
 
         try internal.wrapCall("git_tag_peel", .{
-            @ptrCast(*?*c.git_object, &ret),
-            @ptrCast(*const c.git_tag, self),
+            @as(*?*c.git_object, @ptrCast(&ret)),
+            @as(*const c.git_tag, @ptrCast(self)),
         });
 
         return ret;
@@ -112,8 +112,8 @@ pub const Tag = opaque {
         var tag: *Tag = undefined;
 
         try internal.wrapCall("git_tag_dup", .{
-            @ptrCast(*?*c.git_tag, &tag),
-            @ptrCast(*c.git_tag, self),
+            @as(*?*c.git_tag, @ptrCast(&tag)),
+            @as(*c.git_tag, @ptrCast(self)),
         });
 
         return tag;

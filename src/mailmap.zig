@@ -10,7 +10,7 @@ pub const Mailmap = opaque {
     pub fn deinit(self: *Mailmap) void {
         if (internal.trace_log) log.debug("Mailmap.deinit called", .{});
 
-        c.git_mailmap_free(@ptrCast(*c.git_mailmap, self));
+        c.git_mailmap_free(@as(*c.git_mailmap, @ptrCast(self)));
     }
 
     /// Add a single entry to the given mailmap object. If the entry already exists, it will be replaced with the new entry.
@@ -34,7 +34,7 @@ pub const Mailmap = opaque {
         const c_replace_name = if (replace_name) |ptr| ptr.ptr else null;
 
         try internal.wrapCall("git_mailmap_add_entry", .{
-            @ptrCast(*c.git_mailmap, self),
+            @as(*c.git_mailmap, @ptrCast(self)),
             c_real_name,
             c_real_email,
             c_replace_name,
@@ -64,7 +64,7 @@ pub const Mailmap = opaque {
         try internal.wrapCall("git_mailmap_resolve", .{
             &real_name,
             &real_email,
-            @ptrCast(*const c.git_mailmap, self),
+            @as(*const c.git_mailmap, @ptrCast(self)),
             name.ptr,
             email.ptr,
         });
@@ -87,9 +87,9 @@ pub const Mailmap = opaque {
         var sig: *git.Signature = undefined;
 
         try internal.wrapCall("git_mailmap_resolve_signature", .{
-            @ptrCast(*?*c.git_signature, &sig),
-            @ptrCast(*const c.git_mailmap, self),
-            @ptrCast(*const c.git_signature, signature),
+            @as(*?*c.git_signature, @ptrCast(&sig)),
+            @as(*const c.git_mailmap, @ptrCast(self)),
+            @as(*const c.git_signature, @ptrCast(signature)),
         });
 
         return sig;

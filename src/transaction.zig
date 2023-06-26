@@ -12,7 +12,7 @@ pub const Transaction = opaque {
     pub fn deinit(self: *Transaction) !void {
         if (internal.trace_log) log.debug("Transaction.deinit called", .{});
 
-        c.git_transaction_free(@ptrCast(*c.git_transaction, self));
+        c.git_transaction_free(@as(*c.git_transaction, @ptrCast(self)));
     }
 
     /// Lock a reference
@@ -25,7 +25,7 @@ pub const Transaction = opaque {
         if (internal.trace_log) log.debug("Transaction.lockReference called", .{});
 
         try internal.wrapCall("git_transaction_lock_ref", .{
-            @ptrCast(*c.git_transaction, self),
+            @as(*c.git_transaction, @ptrCast(self)),
             refname.ptr,
         });
     }
@@ -49,10 +49,10 @@ pub const Transaction = opaque {
         if (internal.trace_log) log.debug("Transaction.setTarget called", .{});
 
         try internal.wrapCall("git_transaction_set_target", .{
-            @ptrCast(*c.git_transaction, self),
+            @as(*c.git_transaction, @ptrCast(self)),
             refname.ptr,
-            @ptrCast(*const c.git_oid, target),
-            @ptrCast(?*const c.git_signature, signature),
+            @as(*const c.git_oid, @ptrCast(target)),
+            @as(?*const c.git_signature, @ptrCast(signature)),
             message.ptr,
         });
     }
@@ -76,10 +76,10 @@ pub const Transaction = opaque {
         if (internal.trace_log) log.debug("Transaction.setSymbolicTarget called", .{});
 
         try internal.wrapCall("git_transaction_set_symbolic_target", .{
-            @ptrCast(*c.git_transaction, self),
+            @as(*c.git_transaction, @ptrCast(self)),
             refname.ptr,
             target.ptr,
-            @ptrCast(?*const c.git_signature, signature),
+            @as(?*const c.git_signature, @ptrCast(signature)),
             message.ptr,
         });
     }
@@ -96,9 +96,9 @@ pub const Transaction = opaque {
         if (internal.trace_log) log.debug("Transaction.setReflog called", .{});
 
         try internal.wrapCall("git_transaction_set_reflog", .{
-            @ptrCast(*c.git_transaction, self),
+            @as(*c.git_transaction, @ptrCast(self)),
             refname.ptr,
-            @ptrCast(?*const c.git_reflog, reflog),
+            @as(?*const c.git_reflog, @ptrCast(reflog)),
         });
     }
 
@@ -110,7 +110,7 @@ pub const Transaction = opaque {
         if (internal.trace_log) log.debug("Transaction.remove called", .{});
 
         try internal.wrapCall("git_transaction_remove", .{
-            @ptrCast(*c.git_transaction, self),
+            @as(*c.git_transaction, @ptrCast(self)),
             refname.ptr,
         });
     }
@@ -123,7 +123,7 @@ pub const Transaction = opaque {
         if (internal.trace_log) log.debug("Transaction.commit called", .{});
 
         try internal.wrapCall("git_transaction_commit", .{
-            @ptrCast(*c.git_transaction, self),
+            @as(*c.git_transaction, @ptrCast(self)),
         });
     }
 

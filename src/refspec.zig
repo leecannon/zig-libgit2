@@ -11,7 +11,7 @@ pub const Refspec = opaque {
     pub fn deinit(self: *Refspec) void {
         if (internal.trace_log) log.debug("Refspec.deinit called", .{});
 
-        c.git_refspec_free(@ptrCast(*c.git_refspec, self));
+        c.git_refspec_free(@as(*c.git_refspec, @ptrCast(self)));
     }
 
     /// Get the source specifier.
@@ -19,9 +19,9 @@ pub const Refspec = opaque {
         if (internal.trace_log) log.debug("Refspec.source called", .{});
 
         return std.mem.sliceTo(
-            c.git_refspec_src(@ptrCast(
+            c.git_refspec_src(@as(
                 *const c.git_refspec,
-                self,
+                @ptrCast(self),
             )),
             0,
         );
@@ -32,9 +32,9 @@ pub const Refspec = opaque {
         if (internal.trace_log) log.debug("Refspec.destination called", .{});
 
         return std.mem.sliceTo(
-            c.git_refspec_dst(@ptrCast(
+            c.git_refspec_dst(@as(
                 *const c.git_refspec,
-                self,
+                @ptrCast(self),
             )),
             0,
         );
@@ -45,9 +45,9 @@ pub const Refspec = opaque {
         if (internal.trace_log) log.debug("Refspec.string called", .{});
 
         return std.mem.sliceTo(
-            c.git_refspec_string(@ptrCast(
+            c.git_refspec_string(@as(
                 *const c.git_refspec,
-                self,
+                @ptrCast(self),
             )),
             0,
         );
@@ -57,19 +57,19 @@ pub const Refspec = opaque {
     pub fn isForceUpdate(self: *const Refspec) bool {
         if (internal.trace_log) log.debug("Refspec.isForceUpdate called", .{});
 
-        return c.git_refspec_force(@ptrCast(*const c.git_refspec, self)) != 0;
+        return c.git_refspec_force(@as(*const c.git_refspec, @ptrCast(self))) != 0;
     }
 
     /// Get the refspec's direction.
     pub fn direction(self: *const Refspec) git.Direction {
         if (internal.trace_log) log.debug("Refspec.direction called", .{});
 
-        return @enumFromInt(
+        return @as(
             git.Direction,
-            c.git_refspec_direction(@ptrCast(
+            @enumFromInt(c.git_refspec_direction(@as(
                 *const c.git_refspec,
-                self,
-            )),
+                @ptrCast(self),
+            ))),
         );
     }
 
@@ -78,7 +78,7 @@ pub const Refspec = opaque {
         if (internal.trace_log) log.debug("Refspec.srcMatches called", .{});
 
         return c.git_refspec_src_matches(
-            @ptrCast(*const c.git_refspec, self),
+            @as(*const c.git_refspec, @ptrCast(self)),
             refname.ptr,
         ) != 0;
     }
@@ -88,7 +88,7 @@ pub const Refspec = opaque {
         if (internal.trace_log) log.debug("Refspec.destMatches called", .{});
 
         return c.git_refspec_dst_matches(
-            @ptrCast(*const c.git_refspec, self),
+            @as(*const c.git_refspec, @ptrCast(self)),
             refname.ptr,
         ) != 0;
     }
@@ -103,8 +103,8 @@ pub const Refspec = opaque {
         var ret: git.Buf = .{};
 
         try internal.wrapCall("git_refspec_transform", .{
-            @ptrCast(*c.git_buf, &ret),
-            @ptrCast(*const c.git_refspec, self),
+            @as(*c.git_buf, @ptrCast(&ret)),
+            @as(*const c.git_refspec, @ptrCast(self)),
             name.ptr,
         });
 
@@ -121,8 +121,8 @@ pub const Refspec = opaque {
         var ret: git.Buf = .{};
 
         try internal.wrapCall("git_refspec_rtransform", .{
-            @ptrCast(*c.git_buf, &ret),
-            @ptrCast(*const c.git_refspec, self),
+            @as(*c.git_buf, @ptrCast(&ret)),
+            @as(*const c.git_refspec, @ptrCast(self)),
             name.ptr,
         });
 

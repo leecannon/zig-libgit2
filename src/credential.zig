@@ -13,9 +13,9 @@ pub const Credential = extern struct {
         if (internal.trace_log) log.debug("Credential.deinit called", .{});
 
         if (internal.has_credential) {
-            c.git_credential_free(@ptrCast(*internal.RawCredentialType, self));
+            c.git_credential_free(@as(*internal.RawCredentialType, @ptrCast(self)));
         } else {
-            c.git_cred_free(@ptrCast(*internal.RawCredentialType, self));
+            c.git_cred_free(@as(*internal.RawCredentialType, @ptrCast(self)));
         }
     }
 
@@ -23,18 +23,18 @@ pub const Credential = extern struct {
         if (internal.trace_log) log.debug("Credential.hasUsername called", .{});
 
         return if (internal.has_credential)
-            c.git_credential_has_username(@ptrCast(*internal.RawCredentialType, self)) != 0
+            c.git_credential_has_username(@as(*internal.RawCredentialType, @ptrCast(self))) != 0
         else
-            c.git_cred_has_username(@ptrCast(*internal.RawCredentialType, self)) != 0;
+            c.git_cred_has_username(@as(*internal.RawCredentialType, @ptrCast(self))) != 0;
     }
 
     pub fn getUsername(self: *Credential) ?[:0]const u8 {
         if (internal.trace_log) log.debug("Credential.getUsername called", .{});
 
         const opt_username = if (internal.has_credential)
-            c.git_credential_get_username(@ptrCast(*internal.RawCredentialType, self))
+            c.git_credential_get_username(@as(*internal.RawCredentialType, @ptrCast(self)))
         else
-            c.git_cred_get_username(@ptrCast(*internal.RawCredentialType, self));
+            c.git_cred_get_username(@as(*internal.RawCredentialType, @ptrCast(self)));
 
         return if (opt_username) |username| std.mem.sliceTo(username, 0) else null;
     }
@@ -67,7 +67,7 @@ pub const Credential = extern struct {
 
         /// The username to authenticate as
         pub fn username(self: CredentialUsername) [:0]const u8 {
-            return std.mem.sliceTo(@ptrCast([*:0]const u8, &self.z_username), 0);
+            return std.mem.sliceTo(@as([*:0]const u8, @ptrCast(&self.z_username)), 0);
         }
 
         test {

@@ -9,16 +9,16 @@ pub const Note = opaque {
     pub fn deinit(self: *Note) void {
         if (internal.trace_log) log.debug("Note.deinit called", .{});
 
-        c.git_note_free(@ptrCast(*c.git_note, self));
+        c.git_note_free(@as(*c.git_note, @ptrCast(self)));
     }
 
     /// Get the note author
     pub fn author(self: *const Note) *const git.Signature {
         if (internal.trace_log) log.debug("Note.author called", .{});
 
-        return @ptrCast(
+        return @as(
             *const git.Signature,
-            c.git_note_author(@ptrCast(*const c.git_note, self)),
+            @ptrCast(c.git_note_author(@as(*const c.git_note, @ptrCast(self)))),
         );
     }
 
@@ -26,9 +26,9 @@ pub const Note = opaque {
     pub fn committer(self: *const Note) *const git.Signature {
         if (internal.trace_log) log.debug("Note.committer called", .{});
 
-        return @ptrCast(
+        return @as(
             *const git.Signature,
-            c.git_note_committer(@ptrCast(*const c.git_note, self)),
+            @ptrCast(c.git_note_committer(@as(*const c.git_note, @ptrCast(self)))),
         );
     }
 
@@ -37,7 +37,7 @@ pub const Note = opaque {
         if (internal.trace_log) log.debug("Note.message called", .{});
 
         return std.mem.sliceTo(
-            c.git_note_message(@ptrCast(*const c.git_note, self)),
+            c.git_note_message(@as(*const c.git_note, @ptrCast(self))),
             0,
         );
     }
@@ -46,9 +46,9 @@ pub const Note = opaque {
     pub fn id(self: *const Note) *const git.Oid {
         if (internal.trace_log) log.debug("Note.id called", .{});
 
-        return @ptrCast(
+        return @as(
             *const git.Oid,
-            c.git_note_id(@ptrCast(*const c.git_note, self)),
+            @ptrCast(c.git_note_id(@as(*const c.git_note, @ptrCast(self)))),
         );
     }
 
@@ -65,9 +65,9 @@ pub const NoteIterator = opaque {
         var ret: NextItem = undefined;
 
         internal.wrapCall("git_note_next", .{
-            @ptrCast(*c.git_oid, &ret.note_id),
-            @ptrCast(*c.git_oid, &ret.annotated_id),
-            @ptrCast(*c.git_note_iterator, self),
+            @as(*c.git_oid, @ptrCast(&ret.note_id)),
+            @as(*c.git_oid, @ptrCast(&ret.annotated_id)),
+            @as(*c.git_note_iterator, @ptrCast(self)),
         }) catch |err| switch (err) {
             git.GitError.IterOver => return null,
             else => |e| return e,
@@ -79,7 +79,7 @@ pub const NoteIterator = opaque {
     pub fn deinit(self: *NoteIterator) void {
         if (internal.trace_log) log.debug("NoteIterator.deinit called", .{});
 
-        c.git_note_iterator_free(@ptrCast(*c.git_note_iterator, self));
+        c.git_note_iterator_free(@as(*c.git_note_iterator, @ptrCast(self)));
     }
 
     pub const NextItem = struct {

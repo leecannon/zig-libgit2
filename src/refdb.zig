@@ -9,7 +9,7 @@ pub const Refdb = opaque {
     pub fn deinit(self: *Refdb) void {
         if (internal.trace_log) log.debug("Refdb.deinit called", .{});
 
-        c.git_refdb_free(@ptrCast(*c.git_refdb, self));
+        c.git_refdb_free(@as(*c.git_refdb, @ptrCast(self)));
     }
 
     /// Suggests that the given refdb compress or optimize its references.
@@ -20,7 +20,7 @@ pub const Refdb = opaque {
         if (internal.trace_log) log.debug("Refdb.compress called", .{});
 
         try internal.wrapCall("git_refdb_compress", .{
-            @ptrCast(*c.git_refdb, self),
+            @as(*c.git_refdb, @ptrCast(self)),
         });
     }
 

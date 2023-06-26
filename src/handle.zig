@@ -34,7 +34,7 @@ pub const Handle = struct {
         var index: *git.Index = undefined;
 
         try internal.wrapCall("git_index_open", .{
-            @ptrCast(*?*c.git_index, &index),
+            @as(*?*c.git_index, @ptrCast(&index)),
             path.ptr,
         });
 
@@ -52,7 +52,7 @@ pub const Handle = struct {
         var index: *git.Index = undefined;
 
         try internal.wrapCall("git_index_new", .{
-            @ptrCast(*?*c.git_index, &index),
+            @as(*?*c.git_index, @ptrCast(&index)),
         });
 
         return index;
@@ -73,7 +73,7 @@ pub const Handle = struct {
         var repo: *git.Repository = undefined;
 
         try internal.wrapCall("git_repository_init", .{
-            @ptrCast(*?*c.git_repository, &repo),
+            @as(*?*c.git_repository, @ptrCast(&repo)),
             path.ptr,
             @intFromBool(is_bare),
         });
@@ -96,7 +96,7 @@ pub const Handle = struct {
         var c_options = internal.make_c_option.repositoryInitOptions(options);
 
         try internal.wrapCall("git_repository_init_ext", .{
-            @ptrCast(*?*c.git_repository, &repo),
+            @as(*?*c.git_repository, @ptrCast(&repo)),
             path.ptr,
             &c_options,
         });
@@ -116,7 +116,7 @@ pub const Handle = struct {
         var repo: *git.Repository = undefined;
 
         try internal.wrapCall("git_repository_open", .{
-            @ptrCast(*?*c.git_repository, &repo),
+            @as(*?*c.git_repository, @ptrCast(&repo)),
             path.ptr,
         });
 
@@ -148,7 +148,7 @@ pub const Handle = struct {
         const ceiling_dirs_temp = if (ceiling_dirs) |slice| slice.ptr else null;
 
         try internal.wrapCall("git_repository_open_ext", .{
-            @ptrCast(*?*c.git_repository, &repo),
+            @as(*?*c.git_repository, @ptrCast(&repo)),
             path_temp,
             flags.toInt(),
             ceiling_dirs_temp,
@@ -169,7 +169,7 @@ pub const Handle = struct {
         var repo: *git.Repository = undefined;
 
         try internal.wrapCall("git_repository_open_bare", .{
-            @ptrCast(*?*c.git_repository, &repo),
+            @as(*?*c.git_repository, @ptrCast(&repo)),
             path.ptr,
         });
 
@@ -196,7 +196,7 @@ pub const Handle = struct {
         const ceiling_dirs_temp = if (ceiling_dirs) |slice| slice.ptr else null;
 
         try internal.wrapCall("git_repository_discover", .{
-            @ptrCast(*c.git_buf, &buf),
+            @as(*c.git_buf, @ptrCast(&buf)),
             start_path.ptr,
             @intFromBool(across_fs),
             ceiling_dirs_temp,
@@ -224,7 +224,7 @@ pub const Handle = struct {
         const c_options = internal.make_c_option.cloneOptions(options);
 
         try internal.wrapCall("git_clone", .{
-            @ptrCast(*?*c.git_repository, &repo),
+            @as(*?*c.git_repository, @ptrCast(&repo)),
             url.ptr,
             local_path.ptr,
             &c_options,
@@ -304,7 +304,7 @@ pub const Handle = struct {
         try internal.wrapCall("git_libgit2_opts", .{
             c.GIT_OPT_GET_SEARCH_PATH,
             @intFromEnum(level),
-            @ptrCast(*c.git_buf, &buf),
+            @as(*c.git_buf, @ptrCast(&buf)),
         });
 
         return buf;
@@ -372,7 +372,7 @@ pub const Handle = struct {
         var result: git.Buf = .{};
         try internal.wrapCall("git_libgit2_opts", .{
             c.GIT_OPT_GET_TEMPLATE_PATH,
-            @ptrCast(*c.git_buf, &result),
+            @as(*c.git_buf, @ptrCast(&result)),
         });
 
         return result;
@@ -415,7 +415,7 @@ pub const Handle = struct {
 
         try internal.wrapCall("git_libgit2_opts", .{
             c.GIT_OPT_GET_USER_AGENT,
-            @ptrCast(*c.git_buf, &result),
+            @as(*c.git_buf, @ptrCast(&result)),
         });
 
         return result;
@@ -585,14 +585,14 @@ pub const Handle = struct {
 
         if (strip_comment_char) |char| {
             try internal.wrapCall("git_message_prettify", .{
-                @ptrCast(*c.git_buf, &ret),
+                @as(*c.git_buf, @ptrCast(&ret)),
                 message.ptr,
                 1,
                 char,
             });
         } else {
             try internal.wrapCall("git_message_prettify", .{
-                @ptrCast(*c.git_buf, &ret),
+                @as(*c.git_buf, @ptrCast(&ret)),
                 message.ptr,
                 0,
                 0,
@@ -614,7 +614,7 @@ pub const Handle = struct {
         var ret: git.MessageTrailerArray = undefined;
 
         try internal.wrapCall("git_message_trailers", .{
-            @ptrCast(*c.git_message_trailer_array, &ret),
+            @as(*c.git_message_trailer_array, @ptrCast(&ret)),
             message.ptr,
         });
 
@@ -665,7 +665,7 @@ pub const Handle = struct {
                 msg: ?[*:0]const u8,
             ) callconv(.C) void {
                 callback_fn(
-                    @enumFromInt(TraceLevel, c_level),
+                    @as(TraceLevel, @enumFromInt(c_level)),
                     std.mem.sliceTo(msg.?, 0),
                 );
             }
@@ -728,7 +728,7 @@ pub const Handle = struct {
         var config: *git.Config = undefined;
 
         try internal.wrapCall("git_config_new", .{
-            @ptrCast(*?*c.git_config, &config),
+            @as(*?*c.git_config, @ptrCast(&config)),
         });
 
         return config;
@@ -742,7 +742,7 @@ pub const Handle = struct {
         var config: *git.Config = undefined;
 
         try internal.wrapCall("git_config_open_ondisk", .{
-            @ptrCast(*?*c.git_config, &config),
+            @as(*?*c.git_config, @ptrCast(&config)),
             path.ptr,
         });
 
@@ -757,7 +757,7 @@ pub const Handle = struct {
         var config: *git.Config = undefined;
 
         try internal.wrapCall("git_config_open_default", .{
-            @ptrCast(*?*c.git_config, &config),
+            @as(*?*c.git_config, @ptrCast(&config)),
         });
 
         return config;
@@ -770,7 +770,7 @@ pub const Handle = struct {
 
         var buf: git.Buf = .{};
 
-        if (c.git_config_find_global(@ptrCast(*c.git_buf, &buf)) == 0) return null;
+        if (c.git_config_find_global(@as(*c.git_buf, @ptrCast(&buf))) == 0) return null;
 
         return buf;
     }
@@ -782,7 +782,7 @@ pub const Handle = struct {
 
         var buf: git.Buf = .{};
 
-        if (c.git_config_find_xdg(@ptrCast(*c.git_buf, &buf)) == 0) return null;
+        if (c.git_config_find_xdg(@as(*c.git_buf, @ptrCast(&buf))) == 0) return null;
 
         return buf;
     }
@@ -794,7 +794,7 @@ pub const Handle = struct {
 
         var buf: git.Buf = .{};
 
-        if (c.git_config_find_system(@ptrCast(*c.git_buf, &buf)) == 0) return null;
+        if (c.git_config_find_system(@as(*c.git_buf, @ptrCast(&buf))) == 0) return null;
 
         return buf;
     }
@@ -806,7 +806,7 @@ pub const Handle = struct {
 
         var buf: git.Buf = .{};
 
-        if (c.git_config_find_programdata(@ptrCast(*c.git_buf, &buf)) == 0) return null;
+        if (c.git_config_find_programdata(@as(*c.git_buf, @ptrCast(&buf))) == 0) return null;
 
         return buf;
     }
@@ -820,13 +820,13 @@ pub const Handle = struct {
 
         if (internal.has_credential) {
             try internal.wrapCall("git_credential_userpass_plaintext_new", .{
-                @ptrCast(*?*internal.RawCredentialType, &cred),
+                @as(*?*internal.RawCredentialType, @ptrCast(&cred)),
                 username.ptr,
                 password.ptr,
             });
         } else {
             try internal.wrapCall("git_cred_userpass_plaintext_new", .{
-                @ptrCast(*?*internal.RawCredentialType, &cred),
+                @as(*?*internal.RawCredentialType, @ptrCast(&cred)),
                 username.ptr,
                 password.ptr,
             });
@@ -845,11 +845,11 @@ pub const Handle = struct {
 
         if (internal.has_credential) {
             try internal.wrapCall("git_credential_default_new", .{
-                @ptrCast(*?*internal.RawCredentialType, &cred),
+                @as(*?*internal.RawCredentialType, @ptrCast(&cred)),
             });
         } else {
             try internal.wrapCall("git_cred_default_new", .{
-                @ptrCast(*?*internal.RawCredentialType, &cred),
+                @as(*?*internal.RawCredentialType, @ptrCast(&cred)),
             });
         }
 
@@ -868,12 +868,12 @@ pub const Handle = struct {
 
         if (internal.has_credential) {
             try internal.wrapCall("git_credential_username_new", .{
-                @ptrCast(*?*internal.RawCredentialType, &cred),
+                @as(*?*internal.RawCredentialType, @ptrCast(&cred)),
                 username.ptr,
             });
         } else {
             try internal.wrapCall("git_cred_username_new", .{
-                @ptrCast(*?*internal.RawCredentialType, &cred),
+                @as(*?*internal.RawCredentialType, @ptrCast(&cred)),
                 username.ptr,
             });
         }
@@ -906,7 +906,7 @@ pub const Handle = struct {
 
         if (internal.has_credential) {
             try internal.wrapCall("git_credential_ssh_key_new", .{
-                @ptrCast(*?*internal.RawCredentialType, &cred),
+                @as(*?*internal.RawCredentialType, @ptrCast(&cred)),
                 username.ptr,
                 publickey_c,
                 privatekey.ptr,
@@ -914,7 +914,7 @@ pub const Handle = struct {
             });
         } else {
             try internal.wrapCall("git_cred_ssh_key_new", .{
-                @ptrCast(*?*internal.RawCredentialType, &cred),
+                @as(*?*internal.RawCredentialType, @ptrCast(&cred)),
                 username.ptr,
                 publickey_c,
                 privatekey.ptr,
@@ -950,7 +950,7 @@ pub const Handle = struct {
 
         if (internal.has_credential) {
             try internal.wrapCall("git_credential_ssh_key_memory_new", .{
-                @ptrCast(*?*internal.RawCredentialType, &cred),
+                @as(*?*internal.RawCredentialType, @ptrCast(&cred)),
                 username.ptr,
                 publickey_c,
                 privatekey.ptr,
@@ -958,7 +958,7 @@ pub const Handle = struct {
             });
         } else {
             try internal.wrapCall("git_cred_ssh_key_memory_new", .{
-                @ptrCast(*?*internal.RawCredentialType, &cred),
+                @as(*?*internal.RawCredentialType, @ptrCast(&cred)),
                 username.ptr,
                 publickey_c,
                 privatekey.ptr,
@@ -978,12 +978,12 @@ pub const Handle = struct {
 
         if (internal.has_credential) {
             try internal.wrapCall("git_credential_ssh_key_from_agent", .{
-                @ptrCast(*?*internal.RawCredentialType, &cred),
+                @as(*?*internal.RawCredentialType, @ptrCast(&cred)),
                 username.ptr,
             });
         } else {
             try internal.wrapCall("git_cred_ssh_key_from_agent", .{
-                @ptrCast(*?*internal.RawCredentialType, &cred),
+                @as(*?*internal.RawCredentialType, @ptrCast(&cred)),
                 username.ptr,
             });
         }
@@ -994,7 +994,7 @@ pub const Handle = struct {
     /// Get detailed information regarding the last error that occured on *this* thread.
     pub fn getDetailedLastError(self: Handle) ?*const git.DetailedError {
         _ = self;
-        return @ptrCast(?*const git.DetailedError, c.git_error_last());
+        return @as(?*const git.DetailedError, @ptrCast(c.git_error_last()));
     }
 
     /// Clear the last error that occured on *this* thread.
@@ -1071,8 +1071,8 @@ pub const Handle = struct {
                 payload: ?*anyopaque,
             ) callconv(.C) c_int {
                 return callback_fn(
-                    @ptrCast(*const git.IndexerProgress, stats),
-                    @ptrCast(UserDataType, @alignCast(alignment, payload)),
+                    @as(*const git.IndexerProgress, @ptrCast(stats)),
+                    @as(UserDataType, @ptrCast(@alignCast(alignment, payload))),
                 );
             }
         }.cb;
@@ -1089,10 +1089,10 @@ pub const Handle = struct {
         var ret: *git.Indexer = undefined;
 
         try internal.wrapCall("git_indexer_new", .{
-            @ptrCast(*c.git_indexer, &ret),
+            @as(*c.git_indexer, @ptrCast(&ret)),
             path.ptr,
             options.mode,
-            @ptrCast(?*c.git_oid, odb),
+            @as(?*c.git_oid, @ptrCast(odb)),
             &c_opts,
         });
 
@@ -1111,7 +1111,7 @@ pub const Handle = struct {
         var mailmap: *git.Mailmap = undefined;
 
         try internal.wrapCall("git_mailmap_new", .{
-            @ptrCast(*?*c.git_mailmap, &mailmap),
+            @as(*?*c.git_mailmap, @ptrCast(&mailmap)),
         });
 
         return mailmap;
@@ -1129,8 +1129,8 @@ pub const Handle = struct {
         var ret: *git.Pathspec = undefined;
 
         try internal.wrapCall("git_pathspec_new", .{
-            @ptrCast(*?*c.git_pathspec, &ret),
-            @ptrCast(*const c.git_strarray, pathspec),
+            @as(*?*c.git_pathspec, @ptrCast(&ret)),
+            @as(*const c.git_strarray, @ptrCast(pathspec)),
         });
 
         return ret;
@@ -1149,7 +1149,7 @@ pub const Handle = struct {
         var ret: *git.Refspec = undefined;
 
         try internal.wrapCall("git_refspec_parse", .{
-            @ptrCast(*?*c.git_refspec, &ret),
+            @as(*?*c.git_refspec, @ptrCast(&ret)),
             input.ptr,
             @intFromBool(is_fetch),
         });
@@ -1174,7 +1174,7 @@ pub const Handle = struct {
         const c_opts = internal.make_c_option.createOptions(options);
 
         try internal.wrapCall("git_remote_create_with_opts", .{
-            @ptrCast(*?*c.git_remote, &remote),
+            @as(*?*c.git_remote, @ptrCast(&remote)),
             url.ptr,
             &c_opts,
         });
@@ -1199,7 +1199,7 @@ pub const Handle = struct {
         var remote: *git.Remote = undefined;
 
         try internal.wrapCall("git_remote_create_detached", .{
-            @ptrCast(*?*c.git_remote, &remote),
+            @as(*?*c.git_remote, @ptrCast(&remote)),
             url.ptr,
         });
 
@@ -1213,7 +1213,7 @@ pub const Handle = struct {
         if (internal.trace_log) log.debug("Handle.oidShortenerInit called", .{});
 
         if (c.git_oid_shorten_new(min_length)) |ret| {
-            return @ptrCast(*git.OidShortener, ret);
+            return @as(*git.OidShortener, @ptrCast(ret));
         }
 
         return error.OutOfMemory;
@@ -1230,7 +1230,7 @@ pub const Handle = struct {
 
         var result: git.Oid = undefined;
 
-        internal.wrapCall("git_oid_fromstrp", .{ @ptrCast(*c.git_oid, &result), str }) catch {
+        internal.wrapCall("git_oid_fromstrp", .{ @as(*c.git_oid, @ptrCast(&result)), str }) catch {
             return null;
         };
 
@@ -1246,7 +1246,7 @@ pub const Handle = struct {
         if (buf.len < length) return error.BufferTooShort;
 
         var result: git.Oid = undefined;
-        try internal.wrapCall("git_oid_fromstrn", .{ @ptrCast(*c.git_oid, &result), buf.ptr, length });
+        try internal.wrapCall("git_oid_fromstrn", .{ @as(*c.git_oid, @ptrCast(&result)), buf.ptr, length });
         return result;
     }
 
@@ -1273,7 +1273,7 @@ pub const Handle = struct {
         var ret: *git.Signature = undefined;
 
         try internal.wrapCall("git_signature_new", .{
-            @ptrCast(*?*c.git_signature, &ret),
+            @as(*?*c.git_signature, @ptrCast(&ret)),
             name.ptr,
             email.ptr,
             time,
@@ -1302,7 +1302,7 @@ pub const Handle = struct {
         var ret: *git.Signature = undefined;
 
         try internal.wrapCall("git_signature_now", .{
-            @ptrCast(*?*c.git_signature, &ret),
+            @as(*?*c.git_signature, @ptrCast(&ret)),
             name.ptr,
             email.ptr,
         });
@@ -1326,7 +1326,7 @@ pub const Handle = struct {
         var ret: *git.Hashsig = undefined;
 
         try internal.wrapCall("git_hashsig_create", .{
-            @ptrCast(*?*c.git_hashsig, &ret),
+            @as(*?*c.git_hashsig, @ptrCast(&ret)),
             buf.ptr,
             buf.len,
             internal.make_c_option.hashsigOptions(options),
@@ -1351,7 +1351,7 @@ pub const Handle = struct {
         var ret: *git.Hashsig = undefined;
 
         try internal.wrapCall("git_hashsig_create_fromfile", .{
-            @ptrCast(*?*c.git_hashsig, &ret),
+            @as(*?*c.git_hashsig, @ptrCast(&ret)),
             path.ptr,
             internal.make_c_option.hashsigOptions(options),
         });
@@ -1405,7 +1405,7 @@ pub const Handle = struct {
         }
 
         try internal.wrapCall("git_patch_from_buffers", .{
-            @ptrCast(*?*c.git_patch, &ret),
+            @as(*?*c.git_patch, @ptrCast(&ret)),
             old_buffer_ptr,
             old_buffer_len,
             c_old_as_path,
@@ -1485,14 +1485,14 @@ pub const Handle = struct {
 
             if (internal.has_credential) {
                 try internal.wrapCall("git_credential_ssh_interactive_new", .{
-                    @ptrCast(*?*internal.RawCredentialType, &cred),
+                    @as(*?*internal.RawCredentialType, @ptrCast(&cred)),
                     username.ptr,
                     cb,
                     user_data,
                 });
             } else {
                 try internal.wrapCall("git_cred_ssh_interactive_new", .{
-                    @ptrCast(*?*internal.RawCredentialType, &cred),
+                    @as(*?*internal.RawCredentialType, @ptrCast(&cred)),
                     username.ptr,
                     cb,
                     user_data,
@@ -1547,7 +1547,7 @@ pub const Handle = struct {
 
             if (internal.has_credential) {
                 try internal.wrapCall("git_credential_ssh_custom_new", .{
-                    @ptrCast(*?*internal.RawCredentialType, &cred),
+                    @as(*?*internal.RawCredentialType, @ptrCast(&cred)),
                     username.ptr,
                     publickey.ptr,
                     publickey.len,
@@ -1556,7 +1556,7 @@ pub const Handle = struct {
                 });
             } else {
                 try internal.wrapCall("git_cred_ssh_custom_new", .{
-                    @ptrCast(*?*internal.RawCredentialType, &cred),
+                    @as(*?*internal.RawCredentialType, @ptrCast(&cred)),
                     username.ptr,
                     publickey.ptr,
                     publickey.len,
