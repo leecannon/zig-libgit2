@@ -1,5 +1,12 @@
 # zig-libgit2
 
+## Warning
+This project is not currently in a good state and is not 100% compatible with any of libgit2's releases.
+
+Work on this project stalled at step one in [TODO](TODO.md)
+
+---
+
 Zig bindings to [libgit2](https://github.com/libgit2/libgit2)
 
 This is an in-progress zig binding to libgit2, unfortunately libgit2 doesn't full document all possible errors so every errorable function returns the full errorset.
@@ -13,7 +20,10 @@ There is currently no plan to port all the headers within "include/git2/sys", if
 - [X] attr.h
 - [X] blame.h
 - [X] blob.h
-- [X] branch.h
+- [X] branch.h**This project has turned out to be more work than it is worth.**
+**I have projects that just use `@cImport({@cInclude("git2.h");});` directly without too much friction.**
+**Due to this my work on this project has stopped.**
+
 - [X] buffer.h
 - [X] cert.h
 - [X] checkout.h
