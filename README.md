@@ -20,10 +20,7 @@ There is currently no plan to port all the headers within "include/git2/sys", if
 - [X] attr.h
 - [X] blame.h
 - [X] blob.h
-- [X] branch.h**This project has turned out to be more work than it is worth.**
-**I have projects that just use `@cImport({@cInclude("git2.h");});` directly without too much friction.**
-**Due to this my work on this project has stopped.**
-
+- [X] branch.h
 - [X] buffer.h
 - [X] cert.h
 - [X] checkout.h
