@@ -185,9 +185,6 @@ pub const PackBuilder = opaque {
         ) c_int,
     ) !void {
         const UserDataType = @TypeOf(user_data);
-        const ptr_info = @typeInfo(UserDataType);
-        comptime std.debug.assert(ptr_info == .Pointer); // Must be a pointer
-        const alignment = ptr_info.Pointer.alignment;
 
         const cb = struct {
             pub fn cb(
@@ -196,7 +193,7 @@ pub const PackBuilder = opaque {
             ) callconv(.C) c_int {
                 return callback_fn(
                     @as(*const git.IndexerProgress, @ptrCast(stats)),
-                    @as(UserDataType, @ptrCast(@alignCast(alignment, payload))),
+                    @as(UserDataType, @ptrCast(@alignCast( payload))),
                 );
             }
         }.cb;
@@ -275,9 +272,6 @@ pub const PackBuilder = opaque {
         ) c_int,
     ) !void {
         const UserDataType = @TypeOf(user_data);
-        const ptr_info = @typeInfo(UserDataType);
-        comptime std.debug.assert(ptr_info == .Pointer); // Must be a pointer
-        const alignment = ptr_info.Pointer.alignment;
 
         const cb = struct {
             pub fn cb(
@@ -287,7 +281,7 @@ pub const PackBuilder = opaque {
             ) callconv(.C) c_int {
                 return callback_fn(
                     @as([*]u8, @ptrCast(ptr))[0..len],
-                    @as(UserDataType, @ptrCast(@alignCast(alignment, payload))),
+                    @as(UserDataType, @ptrCast(@alignCast( payload))),
                 );
             }
         }.cb;
@@ -346,9 +340,6 @@ pub const PackBuilder = opaque {
         ) void,
     ) void {
         const UserDataType = @TypeOf(user_data);
-        const ptr_info = @typeInfo(UserDataType);
-        comptime std.debug.assert(ptr_info == .Pointer); // Must be a pointer
-        const alignment = ptr_info.Pointer.alignment;
 
         const cb = struct {
             pub fn cb(
@@ -361,7 +352,7 @@ pub const PackBuilder = opaque {
                     @as(PackbuilderStage, @enumFromInt(stage)),
                     current,
                     total,
-                    @as(UserDataType, @ptrCast(@alignCast(alignment, payload))),
+                    @as(UserDataType, @ptrCast(@alignCast( payload))),
                 );
                 return 0;
             }
