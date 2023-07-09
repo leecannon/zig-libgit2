@@ -354,9 +354,6 @@ pub const Index = opaque {
 
         if (callback_fn) |callback| {
             const UserDataType = @TypeOf(user_data);
-            const ptr_info = @typeInfo(UserDataType);
-            comptime std.debug.assert(ptr_info == .Pointer); // Must be a pointer
-            const alignment = ptr_info.Pointer.alignment;
 
             const cb = struct {
                 pub fn cb(
@@ -367,7 +364,7 @@ pub const Index = opaque {
                     return callback(
                         std.mem.sliceTo(path, 0),
                         std.mem.sliceTo(matched_pathspec, 0),
-                        @as(UserDataType, @ptrCast(@alignCast(alignment, payload))),
+                        @as(UserDataType, @ptrCast(@alignCast(payload))),
                     );
                 }
             }.cb;
@@ -458,9 +455,6 @@ pub const Index = opaque {
 
         if (callback_fn) |callback| {
             const UserDataType = @TypeOf(user_data);
-            const ptr_info = @typeInfo(UserDataType);
-            comptime std.debug.assert(ptr_info == .Pointer); // Must be a pointer
-            const alignment = ptr_info.Pointer.alignment;
 
             const cb = struct {
                 pub fn cb(
@@ -471,7 +465,7 @@ pub const Index = opaque {
                     return callback(
                         std.mem.sliceTo(path, 0),
                         std.mem.sliceTo(matched_pathspec, 0),
-                        @as(UserDataType, @ptrCast(@alignCast(alignment, payload))),
+                        @as(UserDataType, @ptrCast(@alignCast(payload))),
                     );
                 }
             }.cb;
@@ -582,9 +576,6 @@ pub const Index = opaque {
 
         if (callback_fn) |callback| {
             const UserDataType = @TypeOf(user_data);
-            const ptr_info = @typeInfo(UserDataType);
-            comptime std.debug.assert(ptr_info == .Pointer); // Must be a pointer
-            const alignment = ptr_info.Pointer.alignment;
 
             const cb = struct {
                 pub fn cb(
@@ -595,7 +586,7 @@ pub const Index = opaque {
                     return callback(
                         std.mem.sliceTo(path, 0),
                         std.mem.sliceTo(matched_pathspec, 0),
-                        @as(UserDataType, @ptrCast(@alignCast(alignment, payload))),
+                        @as(UserDataType, @ptrCast(@alignCast(payload))),
                     );
                 }
             }.cb;

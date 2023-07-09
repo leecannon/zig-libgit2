@@ -155,9 +155,6 @@ pub const Config = opaque {
         comptime callback_fn: fn (entry: *const ConfigEntry, user_data_ptr: @TypeOf(user_data)) c_int,
     ) !c_int {
         const UserDataType = @TypeOf(user_data);
-        const ptr_info = @typeInfo(UserDataType);
-        comptime std.debug.assert(ptr_info == .Pointer); // Must be a pointer
-        const alignment = ptr_info.Pointer.alignment;
 
         const cb = struct {
             pub fn cb(
@@ -166,7 +163,7 @@ pub const Config = opaque {
             ) callconv(.C) c_int {
                 return callback_fn(
                     @as(*const ConfigEntry, @ptrCast(entry)),
-                    @as(UserDataType, @ptrCast(@alignCast(alignment, payload))),
+                    @as(UserDataType, @ptrCast(@alignCast(payload))),
                 );
             }
         }.cb;
@@ -207,9 +204,6 @@ pub const Config = opaque {
         comptime callback_fn: fn (entry: *const ConfigEntry, user_data_ptr: @TypeOf(user_data)) c_int,
     ) !c_int {
         const UserDataType = @TypeOf(user_data);
-        const ptr_info = @typeInfo(UserDataType);
-        comptime std.debug.assert(ptr_info == .Pointer); // Must be a pointer
-        const alignment = ptr_info.Pointer.alignment;
 
         const cb = struct {
             pub fn cb(
@@ -218,7 +212,7 @@ pub const Config = opaque {
             ) callconv(.C) c_int {
                 return callback_fn(
                     @as(*const ConfigEntry, @ptrCast(entry)),
-                    @as(UserDataType, @ptrCast(@alignCast(alignment, payload))),
+                    @as(UserDataType, @ptrCast(@alignCast(payload))),
                 );
             }
         }.cb;
@@ -257,9 +251,6 @@ pub const Config = opaque {
         comptime callback_fn: fn (entry: *const ConfigEntry, user_data_ptr: @TypeOf(user_data)) c_int,
     ) !c_int {
         const UserDataType = @TypeOf(user_data);
-        const ptr_info = @typeInfo(UserDataType);
-        comptime std.debug.assert(ptr_info == .Pointer); // Must be a pointer
-        const alignment = ptr_info.Pointer.alignment;
 
         const cb = struct {
             pub fn cb(
@@ -268,7 +259,7 @@ pub const Config = opaque {
             ) callconv(.C) c_int {
                 return callback_fn(
                     @as(*const ConfigEntry, @ptrCast(entry)),
-                    @as(UserDataType, @ptrCast(@alignCast(alignment, payload))),
+                    @as(UserDataType, @ptrCast(@alignCast(payload))),
                 );
             }
         }.cb;
@@ -578,9 +569,6 @@ pub const ConfigBackend = opaque {
         comptime callback_fn: fn (entry: *const Config.ConfigEntry, user_data_ptr: @TypeOf(user_data)) c_int,
     ) !c_int {
         const UserDataType = @TypeOf(user_data);
-        const ptr_info = @typeInfo(UserDataType);
-        comptime std.debug.assert(ptr_info == .Pointer); // Must be a pointer
-        const alignment = ptr_info.Pointer.alignment;
 
         const cb = struct {
             pub fn cb(
@@ -589,7 +577,7 @@ pub const ConfigBackend = opaque {
             ) callconv(.C) c_int {
                 return callback_fn(
                     @as(*const Config.ConfigEntry, @ptrCast(entry)),
-                    @as(UserDataType, @ptrCast(@alignCast(alignment, payload))),
+                    @as(UserDataType, @ptrCast(@alignCast(payload))),
                 );
             }
         }.cb;
